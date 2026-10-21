@@ -54,7 +54,7 @@ const EnvSchema = z
     AI_PROVIDER: z.enum(["none", "anthropic"]).default("none"),
     ANTHROPIC_API_KEY: optionalString,
     AI_MODEL: optionalString,
-    AI_MAX_OUTPUT_TOKENS: intWithDefault(1_500, 100, 8_000),
+    AI_MAX_OUTPUT_TOKENS: intWithDefault(8_000, 1_000, 16_000),
     AI_TIMEOUT_MS: intWithDefault(60_000, 5_000, 180_000),
 
     // Jobs
