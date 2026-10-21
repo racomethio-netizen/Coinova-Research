@@ -21,10 +21,10 @@ import { SCORE_CATEGORIES, type ScoreCategory, type ScoringConfig } from "@/conf
 export const ScoringInputSchema = z.object({
   coinId: z.string().min(1),
   /** Evaluation time (ISO 8601). Used for staleness checks only. */
-  asOf: z.iso.datetime(),
+  asOf: z.iso.datetime({ offset: true }),
   market: z.object({
     /** When the market inputs were observed (ISO 8601). */
-    observedAt: z.iso.datetime().nullable(),
+    observedAt: z.iso.datetime({ offset: true }).nullable(),
     priceUsd: z.number().nullable(),
     marketCapUsd: z.number().nullable(),
     fullyDilutedValuationUsd: z.number().nullable(),

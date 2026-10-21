@@ -31,9 +31,9 @@ export function buildScoringInput(params: {
 
   return {
     coinId: coin.id,
-    asOf: params.asOf,
+    asOf: toUtcIso(params.asOf) ?? params.asOf,
     market: {
-      observedAt: params.observedAt,
+      observedAt: toUtcIso(params.observedAt),
       priceUsd: coin.priceUsd,
       marketCapUsd: coin.marketCapUsd,
       fullyDilutedValuationUsd: coin.fullyDilutedValuationUsd,
@@ -60,4 +60,11 @@ export function dailyCloses(points: readonly PricePoint[]): number[] {
   const byDay = new Map<number, number>();
   for (const p of [...points].sort((a, b) => a.t - b.t)) byDay.set(Math.floor(p.t / 86_400_000), p.priceUsd);
   return [...byDay.entries()].sort((a, b) => a[0] - b[0]).map(([, v]) => v);
+}
+
+/** Normalize any parseable timestamp (e.g. Postgres "+00:00" form) to canonical UTC ISO so input hashes are stable. */
+export function toUtcIso(s: string | null): string | null {
+  if (!s) return null;
+  const t = Date.parse(s);
+  return Number.isFinite(t) ? new Date(t).toISOString() : null;
 }

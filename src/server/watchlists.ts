@@ -50,6 +50,9 @@ export async function addItem(sb: SupabaseClient, userId: string, watchlistId: s
   assertSupported(coinId);
   const { data: wl } = await sb.from("watchlists").select("id").eq("id", watchlistId).eq("user_id", userId).maybeSingle();
   if (!wl) throw new ApiError("not_found", "Watchlist not found.");
+  // Idempotent: check first, because the limit trigger runs before the primary-key conflict.
+  const { data: existing } = await sb.from("watchlist_items").select("coin_id").eq("watchlist_id", watchlistId).eq("coin_id", coinId).maybeSingle();
+  if (existing) return;
   const { error } = await sb.from("watchlist_items").insert({ watchlist_id: watchlistId, coin_id: coinId, user_id: userId });
   if (error) {
     if (error.code === "23505") return; // already present: idempotent

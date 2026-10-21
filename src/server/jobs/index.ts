@@ -18,7 +18,8 @@ interface JobDef {
 
 async function syncPlans({ db }: JobContext) {
   const rows = [
-    { id: "free", tier: "free", name: "Free", billing_interval: null, price_cents: 0, limits: TIER_LIMITS.free, sort_order: 0, is_active: true },
+    // Every row lists every column: in a bulk upsert, missing keys are sent as NULL.
+    { id: "free", tier: "free", name: "Free", billing_interval: null, price_cents: 0, limits: TIER_LIMITS.free, provider_price_ids: {}, sort_order: 0, is_active: true },
     ...PAID_PLANS.map((p, i) => ({
       id: p.id,
       tier: p.tier,

@@ -158,3 +158,12 @@ body {
   background: none;
   padding: 0;
 }
+
+/*
+ * Scroll containers must be positioned so absolutely positioned descendants
+ * (e.g. sr-only labels inside wide tables) stay inside them instead of
+ * widening the page on small screens.
+ */
+.overflow-x-auto {
+  position: relative;
+}

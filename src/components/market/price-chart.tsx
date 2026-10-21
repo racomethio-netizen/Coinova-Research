@@ -40,6 +40,8 @@ export function PriceChart({ coinId, initial, initialPeriod = "30d" }: { coinId:
     if (!container.current) return;
     const chart = createChart(container.current, {
       autoSize: true,
+      // Explicit locale: navigator.language can be a tag Intl rejects (e.g. "en-US@posix"), which breaks rendering.
+      localization: { locale: "en-US" },
       layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: cssVar("--fg-muted"), attributionLogo: true },
       grid: { vertLines: { color: cssVar("--border") }, horzLines: { color: cssVar("--border") } },
       rightPriceScale: { borderColor: cssVar("--border") },

@@ -43,7 +43,6 @@ const nextConfig: NextConfig = {
   cacheComponents: false,
   poweredByHeader: false,
   reactStrictMode: true,
-  output: "standalone",
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "assets.coingecko.com" },

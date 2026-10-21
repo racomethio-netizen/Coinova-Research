@@ -13,11 +13,14 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:db": "vitest run --config vitest.db.config.ts",
+    "test:db": "vitest run --config vitest.db.config.mts",
     "test:e2e": "playwright test",
     "check": "npm run typecheck && npm run lint && npm run test",
     "job": "tsx scripts/run-job.ts",
-    "admin:grant": "tsx scripts/grant-admin.ts"
+    "admin:grant": "tsx scripts/grant-admin.ts",
+    "test:integration": "vitest run --config vitest.integration.config.mts",
+    "db:test:up": "bash scripts/db-test.sh up",
+    "db:test:down": "bash scripts/db-test.sh down"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.0",

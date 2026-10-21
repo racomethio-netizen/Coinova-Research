@@ -21,18 +21,22 @@ async function AccountLinks() {
         <Link href="/login" className={buttonClass("ghost", "sm")}>
           Sign in
         </Link>
-        <Link href="/register" className={buttonClass("primary", "sm", "hidden sm:inline-flex")}>
-          Create account
-        </Link>
+        <span className="hidden sm:inline">
+          <Link href="/register" className={buttonClass("primary", "sm")}>
+            Create account
+          </Link>
+        </span>
       </>
     );
   }
   return (
     <>
       {viewer.isStaff ? (
-        <Link href="/admin" className={buttonClass("ghost", "sm", "hidden sm:inline-flex")}>
-          Admin
-        </Link>
+        <span className="hidden sm:inline">
+          <Link href="/admin" className={buttonClass("ghost", "sm")}>
+            Admin
+          </Link>
+        </span>
       ) : null}
       <Link href="/dashboard" className={buttonClass("secondary", "sm")}>
         Dashboard

@@ -1,0 +1,96 @@
+# Render Blueprint (https://render.com/docs/blueprint-spec).
+# Review before applying: creating these services incurs cost. Secrets are
+# declared with `sync: false` so they are entered in the Render dashboard,
+# never stored in this file. The database is a separate Supabase project.
+services:
+  - type: web
+    name: cryptoscope-web
+    runtime: node
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start -- -p $PORT
+    healthCheckPath: /api/health
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: APP_ENV
+        value: production
+      - key: NEXT_PUBLIC_SITE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: MARKET_DATA_PROVIDER
+        value: coingecko
+      - key: COINGECKO_API_PLAN
+        value: demo
+      - key: COINGECKO_API_KEY
+        sync: false
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+      - key: BILLING_PROVIDER
+        value: none
+
+  # Scheduled jobs call the web service's authenticated cron endpoint.
+  # Each job is idempotent per time window, so overlaps and retries are safe.
+  - type: cron
+    name: cryptoscope-refresh-markets
+    runtime: node
+    plan: starter
+    schedule: "*/5 * * * *"
+    buildCommand: "true"
+    startCommand: 'curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/refresh-markets" && curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/evaluate-alerts"'
+    envVars:
+      - key: APP_URL
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+
+  - type: cron
+    name: cryptoscope-deliver-notifications
+    runtime: node
+    plan: starter
+    schedule: "* * * * *"
+    buildCommand: "true"
+    startCommand: 'curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/deliver-notifications"'
+    envVars:
+      - key: APP_URL
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+
+  - type: cron
+    name: cryptoscope-hourly
+    runtime: node
+    plan: starter
+    schedule: "7 * * * *"
+    buildCommand: "true"
+    startCommand: 'for j in refresh-history refresh-fundamentals compute-scores; do curl -fsS -m 1700 -X POST -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/$j" || exit 1; done'
+    envVars:
+      - key: APP_URL
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+
+  - type: cron
+    name: cryptoscope-daily-cleanup
+    runtime: node
+    plan: starter
+    schedule: "23 3 * * *"
+    buildCommand: "true"
+    startCommand: 'curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/cleanup"'
+    envVars:
+      - key: APP_URL
+        sync: false
+      - key: CRON_SECRET
+        sync: false
