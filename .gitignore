@@ -1,0 +1,34 @@
+# dependencies
+/node_modules
+
+# testing
+/coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/.tmp/
+
+# next.js
+/.next/
+/out/
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+
+# env files: never commit secrets. .env.example is the only tracked env file.
+.env*
+!.env.example
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# local supabase
+/supabase/.temp/
+/supabase/.branches/
