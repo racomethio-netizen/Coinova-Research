@@ -1,0 +1,20 @@
+/node_modules
+/.next/
+/out/
+/build
+/coverage
+/test-results/
+/playwright-report/
+/blob-report/
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+*.pem
+npm-debug.log*
+
+# Local inquiry fallback storage (development only). Contains personal data.
+/.data/
+
+# Env files: never commit secrets. .env.example is the only tracked env file.
+.env*
+!.env.example

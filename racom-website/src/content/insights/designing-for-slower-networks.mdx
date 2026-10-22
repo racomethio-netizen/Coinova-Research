@@ -1,0 +1,57 @@
+export const metadata = {
+  title: "Designing web software for slower and unreliable networks",
+  description:
+    "Performance budgets, server rendering and offline tolerance: practical techniques for software that works well on real-world connections.",
+  publishedAt: "2026-10-22",
+  author: "Racom Technology",
+  tags: ["Performance", "Engineering"],
+};
+
+Many web applications are built and tested on fast office connections and powerful laptops. Their real users often have neither. A mid-range phone on a congested mobile network experiences a very different product from the one its developers see.
+
+Designing for slower networks is not a niche concern. It makes software better for everyone — including people on fast connections who simply want things to feel instant.
+
+## Set a budget and measure against it
+
+Performance improves when it is treated as a requirement with numbers attached, not a vague aspiration. Before building, agree on budgets such as:
+
+- the maximum amount of JavaScript sent for a typical page,
+- the total weight of images above the fold,
+- the target time for the main content to appear on a mid-range phone with a throttled connection.
+
+Then measure. Browser developer tools can throttle the network and CPU; automated checks in your build pipeline can fail when a budget is exceeded. A number you check every week is worth more than a perfect score measured once.
+
+## Send HTML, not just JavaScript
+
+Rendering pages on the server means the browser receives readable content immediately, rather than downloading and running a large application before anything appears. Interactive parts can then be added only where they are needed.
+
+In practice this means:
+
+1. Render content on the server by default.
+2. Keep client-side code for genuinely interactive components — forms, filters, menus.
+3. Avoid shipping large libraries for small effects. CSS can handle most animation.
+
+## Be deliberate with images and fonts
+
+Images are often the heaviest part of a page. Serve them in modern formats, at the size they are displayed, and load below-the-fold images lazily. For decorative visuals, lightweight SVG or CSS can replace large files entirely.
+
+Fonts deserve the same care: use few weights, subset them to the characters you need, host them yourself and let text appear immediately with a fallback font while they load.
+
+## Tolerate the connection dropping
+
+On mobile networks, requests fail halfway more often than developers expect. Software that assumes every request succeeds will eventually lose someone's work.
+
+Some techniques that help:
+
+- **Idempotent operations.** Design actions so that retrying them is always safe, so a repeated request never creates a duplicate record.
+- **Clear pending states.** Show that something is saving, and make it obvious when it has failed and can be retried.
+- **Local drafts.** Keep unsent form data on the device so a failed submission does not mean starting again.
+- **Offline queues** for field applications, syncing changes once the connection returns.
+
+## Respect the user's data allowance
+
+For many people, mobile data is a cost they notice. Avoid autoplaying video, unnecessary background requests and large downloads users did not ask for. Lightweight software is a form of respect.
+
+## The result
+
+Fast, resilient software feels trustworthy. People return to tools that work when they need them. If you want help making an existing application faster or more reliable, [our consulting and modernization service](/services/technical-consulting) starts with exactly this kind of review.

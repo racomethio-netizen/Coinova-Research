@@ -1,0 +1,56 @@
+export const metadata = {
+  title: "Practical AI automation: start with the boring workflows",
+  description:
+    "Where language models genuinely save time in a business, how to keep people in control, and how to tell whether automation is working.",
+  publishedAt: "2026-10-22",
+  author: "Racom Technology",
+  tags: ["AI", "Automation"],
+};
+
+It is tempting to begin an AI project with the most impressive idea on the whiteboard. In our experience, the best place to start is usually the most boring one: a repetitive task that happens many times a day, follows a recognisable pattern and currently eats into people's time.
+
+## Good first candidates
+
+Language models are well suited to work that involves reading, sorting and drafting text. Typical examples:
+
+- **Classifying and routing** incoming emails, forms or support requests to the right person.
+- **Extracting structured data** from documents such as invoices, applications or delivery notes.
+- **Summarising** long threads or reports into a few lines for a busy reader.
+- **Drafting** routine replies that a person reviews and sends.
+
+What these have in common is that a mistake is cheap to catch. A misrouted email can be moved; a draft can be edited. That makes them safe places to learn.
+
+## Poor first candidates
+
+Be cautious with tasks where an error is costly and hard to notice: final financial decisions, legal or medical judgements, anything sent to customers without review, or processes where nobody can say what the "right" answer looks like. These may still be candidates later — but not as the first step.
+
+## Keep people in control
+
+The most reliable pattern we know is **human-in-the-loop by default**. The model suggests; a person decides. Over time, as you gather evidence that certain suggestions are consistently right, you can choose to automate those specific cases fully.
+
+Design the interface so that reviewing is fast:
+
+1. Show the suggestion next to the original input.
+2. Make accepting, editing and rejecting each a single action.
+3. Record what the reviewer did — that record becomes your evaluation data.
+
+## Measure before you scale
+
+Before launch, collect a set of real examples with the answers you would expect. This **evaluation set** lets you check accuracy objectively, compare prompt or model changes, and spot regressions before your users do.
+
+After launch, track a small number of things:
+
+- how often reviewers accept suggestions without changes,
+- how long the task takes compared with before,
+- cost per processed item,
+- the cases the system gets wrong, grouped by type.
+
+These numbers tell you whether the automation is earning its place — and where to improve it next.
+
+## Plan for failure
+
+Models occasionally produce confident, wrong output, and external APIs occasionally go down. A production system should handle both gracefully: fall back to the manual process when the service is unavailable, flag low-confidence results for closer review, and never silently drop an item.
+
+## Where to begin
+
+Pick one workflow. Write down how it works today, how often it happens and what a good result looks like. That single page is enough to judge whether automation is worth building — and it is exactly what we ask for when someone [comes to us with an automation idea](/services/ai-automation).

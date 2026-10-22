@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Separate Next.js app with its own lint config.
+    "racom-website/**",
   ]),
 ]);
 
