@@ -18,3 +18,6 @@ npm-debug.log*
 # Env files: never commit secrets. .env.example is the only tracked env file.
 .env*
 !.env.example
+
+# Local preview screenshots
+/preview/
