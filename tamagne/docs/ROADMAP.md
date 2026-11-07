@@ -1,21 +1,21 @@
 # TAMAGNE roadmap and status
 
-_Last updated: 2026-11-07 (session 1, Phases 1–3)._
+_Last updated: 2026-11-07 (session 1, Phases 1–4)._
 
 Legend: ✅ done and covered by automated tests · 🟡 done, partially verified ·
 ⛔ blocked on an external party or owner decision · ⬜ not started.
 
-## Verified (Phase 3)
+## Verified (Phase 4)
 
 | Check | Result |
 |---|---|
 | `npm run typecheck` (core, db, api, web) | ✅ pass |
 | `npm run lint` (typescript-eslint; Next.js rules for web) | ✅ 0 problems |
-| `npm test`: core unit | ✅ 38 / 38 (incl. RFC 6238 and RFC 7636 test vectors) |
-| `npm test`: API (config, HTTP, auth, sessions, CSRF, rate limits, sellers, consents, staff MFA, verify, QR) | ✅ 57 / 57 + Redis test (✅ with `REDIS_TEST_URL`) |
+| `npm test`: core unit | ✅ 42 / 42 (incl. RFC 6238 and RFC 7636 test vectors) |
+| `npm test`: API (config, HTTP, auth, sessions, CSRF, rate limits, sellers, consents, staff MFA, verify, QR, businesses, documents, review, adapters) | ✅ 79 / 79 + Redis test (✅ with `REDIS_TEST_URL`) |
 | `npm test`: web dictionaries (EN/AM parity, Ethiopic script) | ✅ 4 / 4 |
-| `npm run test:db`: integrity rules on PostgreSQL 16 | ✅ 31 / 31 (3 migrations) |
-| `npm run test:e2e`: Playwright, desktop + Pixel 7 | ✅ 14 / 14 |
+| `npm run test:db`: integrity rules on PostgreSQL 16 | ✅ 31 / 31 (4 migrations) |
+| `npm run test:e2e`: Playwright, desktop + Pixel 7 | ✅ 16 / 16 |
 | `npm run build` | ✅ pass |
 | `npm audit --omit=dev` | ✅ 0 vulnerabilities (dev-only: moderate `minimatch` advisory via typescript-eslint) |
 | GitHub Actions `.github/workflows/tamagne-ci.yml` | 🟡 updated (Redis service, lint, e2e); not yet run on GitHub |
@@ -65,9 +65,27 @@ integrity migration, core primitives, API and web skeletons, Docker, compose, CI
 - QR download is SVG only (PNG/print sheet later if sellers ask).
 - Lookups are not logged per request (no buyer tracking). Aggregate counts can be added later if needed.
 
+## Phase 4: business document verification ✅
+
+- ✅ Business details (one per seller), editable in draft/rejected only; `POST /businesses`, `GET/PATCH /businesses/me`
+- ✅ `POST /api/v1/businesses/documents`: consent required; byte-level type check; active-content PDFs refused; malware scan before storage; infected files never stored; AES-256-GCM encryption at rest; server-generated keys; 10 MB / 30 per hour limits
+- ✅ Submission (business licence required), lock while under review
+- ✅ Reviewer API: queue, detail, audited sandboxed download (clean files only), approve / reject / request changes with reasons, second reviewer for HIGH risk (both must approve), no self-review, duplicate TIN protection, re-scan
+- ✅ Level 3 badge issued only through a final approving review (DB-enforced), retention dates set, in-app notification rows
+- ✅ Web: business verification page (details, consent, uploads, status, reasons, submit) in EN/AM; dashboard link
+- Tests: 4 new core, 21 new API (incl. ClamAV protocol and encrypted storage), 1 new e2e scenario (seller → reviewer → public page)
+- Docker: API image rebuilt; runs as `node`, only the document directory is writable
+
+### Phase 4 limitations
+- ⛔ Production object storage: needs an Ethiopia-hosted S3-compatible provider (Ethio telecom?); `STORAGE_DRIVER` stays `disabled` in production until then.
+- 🟡 ClamAV client verified against a protocol-accurate fake daemon only; run once against real ClamAV (`docker compose --profile scanning up -d clamav`) before launch.
+- Scanning is synchronous at upload (fine at current scale); a background queue and periodic re-scans are Phase 7/8.
+- No reviewer UI yet (Phase 6 admin dashboard); reviewers use the API.
+- Retention periods (1 year after badge expiry, 90 days after rejection) are proposals pending legal review; the purge job is Phase 7.
+- Notifications are recorded but not yet delivered or shown (Phase 6).
+
 ## Next phases
 
-### Phase 4: business document verification ⬜
 ### Phase 5: Fayda sandbox integration ⛔ (needs NIDP sandbox access)
 ### Phase 6: admin dashboard and fraud reporting ⬜
 ### Phase 7: security, privacy, compliance ⬜
@@ -76,7 +94,7 @@ integrity migration, core primitives, API and web skeletons, Docker, compose, CI
 ## Blockers and owner decisions
 
 1. ⛔ Fayda: NIDP relying-party onboarding and sandbox credentials.
-2. ⛔ Ethio telecom: confirm whether it is the SMS gateway, the production host, or both; then contract and credentials.
+2. ⛔ Ethio telecom: confirm whether it is the SMS gateway, the production host / object storage, or all of these; then contract and credentials.
 3. ⛔ Legal review: retention, cross-border transfers, consent and policy texts, Amharic copy (native-speaker review).
 4. ⛔ Payment provider selection.
 5. Recommended: move `tamagne/` to its own repository.

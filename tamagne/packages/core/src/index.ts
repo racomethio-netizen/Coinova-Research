@@ -4,3 +4,4 @@ export * from "./verification.js";
 export * from "./phone.js";
 export * from "./otp.js";
 export * from "./policies.js";
+export * from "./documents.js";

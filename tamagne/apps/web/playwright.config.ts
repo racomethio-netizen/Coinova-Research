@@ -36,6 +36,9 @@ export default defineConfig({
         SMS_PROVIDER: "test",
         ALLOW_TEST_PHONE_NUMBERS: "true",
         TRUST_PROXY_HOPS: "1",
+        STORAGE_DRIVER: "local",
+        STORAGE_LOCAL_DIR: "../../.tmp/e2e-storage",
+        SCANNER: "eicar-only",
       },
     },
     {

@@ -474,7 +474,7 @@ model SellerProfile {
   deletedAt        DateTime?           @db.Timestamptz(6)
 
   user                   User                   @relation(fields: [userId], references: [id], onDelete: Restrict)
-  businesses             Business[]
+  business               Business?
   identityVerifications  IdentityVerification[]
   oidcAuthRequests       OidcAuthRequest[]
   badges                 SellerBadge[]
@@ -491,7 +491,7 @@ model SellerProfile {
 
 model Business {
   id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sellerProfileId    String            @db.Uuid
+  sellerProfileId    String            @unique @db.Uuid
   legalName          String            @db.VarChar(200)
   tradeName          String?           @db.VarChar(200)
   legalForm          BusinessLegalForm
@@ -500,13 +500,16 @@ model Business {
   region             String?           @db.VarChar(80)
   city               String?           @db.VarChar(80)
   status             BusinessStatus    @default(DRAFT)
+  submittedAt        DateTime?         @db.Timestamptz(6)
+  decidedAt          DateTime?         @db.Timestamptz(6)
+  /// Reviewer's reason shown to the seller on rejection or change request.
+  decisionReason     String?           @db.VarChar(2000)
   createdAt          DateTime          @default(now()) @db.Timestamptz(6)
   updatedAt          DateTime          @updatedAt @db.Timestamptz(6)
 
   sellerProfile SellerProfile      @relation(fields: [sellerProfileId], references: [id], onDelete: Restrict)
   documents     BusinessDocument[]
 
-  @@index([sellerProfileId])
   @@index([status])
   @@map("businesses")
 }

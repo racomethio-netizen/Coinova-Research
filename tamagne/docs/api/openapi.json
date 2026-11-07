@@ -460,6 +460,276 @@
           "admin"
         ]
       }
+    },
+    "/api/v1/businesses/me": {
+      "get": {
+        "operationId": "BusinessesController_me_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "The signed-in seller's business and document status",
+        "tags": [
+          "businesses"
+        ]
+      },
+      "patch": {
+        "operationId": "BusinessesController_update_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Edit business details while in draft or after rejection",
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/api/v1/businesses": {
+      "post": {
+        "operationId": "BusinessesController_create_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Add business details (one business per seller)",
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/api/v1/businesses/documents": {
+      "post": {
+        "operationId": "BusinessesController_upload_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "type",
+                  "file"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "BUSINESS_LICENSE",
+                      "COMMERCIAL_REGISTRATION",
+                      "TIN_CERTIFICATE",
+                      "VAT_CERTIFICATE",
+                      "MEMORANDUM_OF_ASSOCIATION",
+                      "OTHER"
+                    ]
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PDF, JPEG or PNG, ≤ 10 MB"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Upload a business document (type-checked, malware-scanned, encrypted at rest)",
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/api/v1/businesses/me/documents/{id}": {
+      "delete": {
+        "operationId": "BusinessesController_remove_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Remove a document before submission",
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/api/v1/businesses/me/submit": {
+      "post": {
+        "operationId": "BusinessesController_submit_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Submit the business for review",
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/api/v1/admin/reviews/businesses": {
+      "get": {
+        "operationId": "ReviewController_queue_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Business verification queue (oldest first) and pending second reviews",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/businesses/{id}": {
+      "get": {
+        "operationId": "ReviewController_detail_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Business details, documents (metadata) and review history",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/documents/{id}/file": {
+      "get": {
+        "operationId": "ReviewController_file_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Download a scanned document (audited)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/businesses/{id}/decision": {
+      "post": {
+        "operationId": "ReviewController_decide_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Approve, reject or request changes (reasons required; HIGH risk needs a second reviewer)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/reviews/{id}/second-review": {
+      "post": {
+        "operationId": "ReviewController_second_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Second reviewer's decision on a high-risk review",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/documents/{id}/rescan": {
+      "post": {
+        "operationId": "ReviewController_rescan_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Re-run the malware scan on a document whose scan failed",
+        "tags": [
+          "admin"
+        ]
+      }
     }
   },
   "info": {

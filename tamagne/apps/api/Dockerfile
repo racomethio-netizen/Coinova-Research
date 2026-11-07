@@ -44,7 +44,9 @@ COPY --from=build --chown=root:root /app/packages/db/package.json packages/db/
 COPY --from=build --chown=root:root /app/packages/db/dist packages/db/dist
 COPY --from=build --chown=root:root /app/apps/api/package.json apps/api/
 COPY --from=build --chown=root:root /app/apps/api/dist apps/api/dist
-# Files are root-owned and read-only to the runtime user.
+# Files are root-owned and read-only to the runtime user; only the local document
+# directory (development stack) is writable.
+RUN mkdir -p /app/.tmp/storage && chown node:node /app/.tmp/storage && chmod 700 /app/.tmp/storage
 USER node
 EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||4000)+'/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"

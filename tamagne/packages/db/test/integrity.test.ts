@@ -380,12 +380,19 @@ describe("business documents", () => {
     const tin = String(Math.floor(1e9 + Math.random() * 8e9));
     const a = await createSeller(db);
     const b = await createSeller(db);
-    await db.business.create({ data: { sellerProfileId: a.seller.id, legalName: "Fixture A", legalForm: "SOLE_PROPRIETORSHIP", tinNumber: tin, status: "VERIFIED" } });
-    await db.business.create({ data: { sellerProfileId: b.seller.id, legalName: "Fixture B", legalForm: "SOLE_PROPRIETORSHIP", tinNumber: tin, status: "SUBMITTED" } });
+    await db.business.create({
+      data: { sellerProfileId: a.seller.id, legalName: "Fixture A", legalForm: "SOLE_PROPRIETORSHIP", tinNumber: tin, status: "VERIFIED", submittedAt: new Date(), decidedAt: new Date() },
+    });
+    await db.business.create({ data: { sellerProfileId: b.seller.id, legalName: "Fixture B", legalForm: "SOLE_PROPRIETORSHIP", tinNumber: tin, status: "SUBMITTED", submittedAt: new Date() } });
+    const c = await createSeller(db);
     await rejects(
-      db.business.create({ data: { sellerProfileId: b.seller.id, legalName: "Fixture B2", legalForm: "SOLE_PROPRIETORSHIP", tinNumber: tin, status: "VERIFIED" } }),
-      /Unique constraint|unique/i,
+      db.business.create({
+        data: { sellerProfileId: c.seller.id, legalName: "Fixture C", legalForm: "SOLE_PROPRIETORSHIP", tinNumber: tin, status: "VERIFIED", submittedAt: new Date(), decidedAt: new Date() },
+      }),
+      /business_verified_tin|Unique constraint/i,
     );
+    // One business per seller (Phase 4 rule).
+    await rejects(db.business.create({ data: { sellerProfileId: b.seller.id, legalName: "Fixture B2", legalForm: "OTHER" } }), /Unique constraint/i);
   });
 });
 

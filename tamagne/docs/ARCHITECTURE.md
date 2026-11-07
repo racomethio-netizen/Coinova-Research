@@ -1,6 +1,6 @@
 # TAMAGNE architecture
 
-_Status: Phase 3 (public verification and QR codes), 2026-11-07._
+_Status: Phase 4 (business document verification), 2026-11-07._
 
 TAMAGNE ("ታማኝ", trustworthy) is an independent private platform that lets Ethiopian
 online sellers prove who they are, and lets buyers check that proof through a
@@ -213,10 +213,38 @@ storage). A Verification Officer compares and records a `ReviewRecord`
 `IDENTITY_MANUAL_REVIEW` badge with a shorter validity. The public page never calls
 it Fayda verification. Source images are deleted per the retention schedule.
 
-### 5.4 Level 3: business documents (Phase 4)
-Upload (multipart, size and MIME limits, magic-byte sniffing, server-generated key,
-SHA-256) → quarantine → malware scan → `CLEAN` → review queue → `ReviewRecord` → badge.
-The DB refuses to approve a document that is not `CLEAN`.
+### 5.4 Level 3: business documents (implemented in Phase 4)
+
+Seller side (`/api/v1/businesses…`, web `/[lang]/dashboard/business`):
+1. Business details (one business per seller, DB-enforced): legal name, legal form, optional registration
+   number, TIN (10 digits), region, city. Editable only in `DRAFT`/`REJECTED`.
+2. `BUSINESS_DOCUMENT_PROCESSING` consent is required before any upload or submission.
+3. `POST /api/v1/businesses/documents` (multipart, 1 file, ≤ 10 MB, 30 uploads/hour/user):
+   type decided from the file's bytes (PDF/JPEG/PNG only; declared type must agree) → PDFs with
+   JavaScript, launch actions, embedded files, RichMedia or XFA refused → malware scan →
+   **infected files are never stored** (row kept as `INFECTED`, purged, audited with the signature
+   name) → AES-256-GCM encryption bound to the storage key → private object storage under a
+   server-generated key (`business-documents/<businessId>/<uuid>`). The original file name is not kept.
+4. Submit needs a clean, non-rejected business licence. The business is then locked.
+
+Reviewer side (`/api/v1/admin/…`, Super Admin / Verification Officer, MFA required):
+- Queue (oldest first), business detail with document metadata and review history, document download
+  (only `CLEAN` files; `Content-Disposition: attachment`, `CSP: sandbox`, every view audited).
+- Decision: `APPROVE` (every document approved and the required types present), `REJECT` or
+  `REQUEST_CHANGES`, each with a reason; non-approved documents need their own reason. Reviewers cannot
+  review their own seller account.
+- `HIGH` risk decisions wait for a different second reviewer (Super Admin, Verification Officer or
+  Security Officer). The business is approved only if **both** approve; otherwise the more cautious outcome applies.
+- Approval: business `VERIFIED`, any previous business badge superseded, Level 3 badge issued for 365 days
+  (the DB trigger re-checks the final approving review), documents get `retainUntil` = badge expiry + 1 year,
+  an in-app notification is recorded. Rejection: reason shown to the seller, documents retained 90 days for appeals.
+- A TIN or registration number can back only one verified business: a duplicate approval returns 409.
+- Scanner outage: documents stay `FAILED`, cannot be submitted, approved or downloaded; staff can re-scan.
+
+Adapters: storage `disabled` | `local` (dev/test, encrypted files, 0600) — **production object storage in
+Ethiopia is not implemented yet** (provider decision). Scanner `disabled` | `clamav` (clamd INSTREAM over TCP)
+| `eicar-only` (dev/test). The ClamAV client is tested against a protocol-accurate fake daemon, **not yet
+against a real ClamAV**.
 
 ### 5.5 Expiry, suspension, revocation, appeals
 - Worker job marks `ACTIVE` badges past `expiresAt` as `EXPIRED` and notifies sellers before expiry. Public reads also evaluate expiry, so a lagging job cannot show a lapsed badge.

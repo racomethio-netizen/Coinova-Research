@@ -46,3 +46,15 @@ export async function apiSend<T>(method: "POST" | "PATCH" | "DELETE", path: stri
   }
   return json.data as T;
 }
+
+/** Multipart upload through the same-origin proxy (browser sets the boundary). */
+export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  const token = await csrfToken();
+  const res = await fetch(`/api/v1${path}`, { method: "POST", credentials: "same-origin", headers: { "X-CSRF-Token": token }, body: form });
+  const json = (await res.json().catch(() => ({}))) as { data?: T; error?: { code: string; message: string } };
+  if (!res.ok || json.error) {
+    const code = res.status === 413 ? "document_too_large" : (json.error?.code ?? "error");
+    throw new ApiRequestError(res.status, code, json.error?.message ?? "Upload failed");
+  }
+  return json.data as T;
+}

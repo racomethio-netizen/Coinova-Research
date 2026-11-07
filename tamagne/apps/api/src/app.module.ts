@@ -22,16 +22,34 @@ import { AdminQrController, SellerQrController } from "./qr/qr.controller.js";
 import { QrService } from "./qr/qr.service.js";
 import { VerifyController } from "./verify/verify.controller.js";
 import { VerifyService } from "./verify/verify.service.js";
+import { BusinessesController } from "./businesses/businesses.controller.js";
+import { BusinessesService } from "./businesses/businesses.service.js";
+import { ReviewController } from "./review/review.controller.js";
+import { ReviewService } from "./review/review.service.js";
+import { ClamAvScanner, DisabledScanner, EicarOnlyScanner, MALWARE_SCANNER, type MalwareScanner } from "./scanning/scanner.js";
+import { DisabledObjectStore, EncryptedObjectStore, LocalObjectStore, OBJECT_STORE, type ObjectStore } from "./storage/storage.js";
 
 export interface AppOverrides {
   rateLimitStore?: RateLimitStore;
   smsSender?: SmsSender;
+  objectStore?: ObjectStore;
+  scanner?: MalwareScanner;
+}
+
+function createObjectStore(config: AppConfig): ObjectStore {
+  return config.storage.driver === "local" ? new LocalObjectStore(config.storage.localDir) : new DisabledObjectStore();
+}
+
+function createScanner(config: AppConfig): MalwareScanner {
+  if (config.scanner.kind === "clamav") return new ClamAvScanner(config.scanner.host, config.scanner.port);
+  if (config.scanner.kind === "eicar-only") return new EicarOnlyScanner();
+  return new DisabledScanner();
 }
 
 @Module({})
 export class AppModule {
   static forRoot(config: AppConfig, overrides: AppOverrides = {}): DynamicModule {
-    const controllers: Type[] = [HealthController, FaydaStatusController, AuthController, MfaController, SellersController, ConsentsController, AdminController, VerifyController, SellerQrController, AdminQrController];
+    const controllers: Type[] = [HealthController, FaydaStatusController, AuthController, MfaController, SellersController, ConsentsController, AdminController, VerifyController, SellerQrController, AdminQrController, BusinessesController, ReviewController];
     if (config.smsProvider === "test" && config.appEnv === "test") controllers.push(TestOutboxController);
     return {
       module: AppModule,
@@ -46,11 +64,19 @@ export class AppModule {
         SellersService,
         VerifyService,
         QrService,
+        BusinessesService,
+        ReviewService,
         AuthGuard,
         StaffGuard,
         RateLimiter,
         { provide: RATE_LIMIT_STORE, useFactory: () => overrides.rateLimitStore ?? createRateLimitStore(config) },
         { provide: SMS_SENDER, useFactory: () => overrides.smsSender ?? createSmsSender(config) },
+        {
+          provide: OBJECT_STORE,
+          inject: [CryptoService],
+          useFactory: (crypto: CryptoService) => new EncryptedObjectStore(overrides.objectStore ?? createObjectStore(config), crypto.cipher),
+        },
+        { provide: MALWARE_SCANNER, useFactory: () => overrides.scanner ?? createScanner(config) },
       ],
     };
   }

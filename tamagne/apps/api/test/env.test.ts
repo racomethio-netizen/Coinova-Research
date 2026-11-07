@@ -107,4 +107,12 @@ describe("configuration", () => {
     expect(loadConfig(prod).secureCookies).toBe(true);
     expect(loadConfig(dev).secureCookies).toBe(false);
   });
+
+  it("document storage and scanning are confined to safe settings", () => {
+    expect(issues({ ...prod, STORAGE_DRIVER: "local" }).join()).toMatch(/STORAGE_DRIVER=local is only for development/);
+    expect(issues({ ...prod, SCANNER: "eicar-only" }).join()).toMatch(/not malware protection/);
+    expect(loadConfig({ ...dev, STORAGE_DRIVER: "local", SCANNER: "eicar-only" }).storage.driver).toBe("local");
+    expect(loadConfig(prod).storage.driver).toBe("disabled");
+    expect(loadConfig({ ...prod, SCANNER: "clamav", CLAMAV_HOST: "clamav.internal" }).scanner).toEqual({ kind: "clamav", host: "clamav.internal", port: 3310 });
+  });
 });

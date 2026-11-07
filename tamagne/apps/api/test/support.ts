@@ -1,8 +1,13 @@
 import { randomInt } from "node:crypto";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { base32Decode, totpAt, totpStep } from "@tamagne/core";
 import type { INestApplication } from "@nestjs/common";
 import request from "supertest";
 import type TestAgent from "supertest/lib/agent.js";
 import { createApp } from "../src/app.factory.js";
+import type { AppOverrides } from "../src/app.module.js";
 import { loadConfig } from "../src/config/env.js";
 import { PrismaService } from "../src/database/prisma.service.js";
 import { MemoryRateLimitStore } from "../src/security/rate-limit.js";
@@ -36,16 +41,17 @@ export interface TestHarness {
   close(): Promise<void>;
 }
 
-export async function startApp(env: Record<string, string> = {}): Promise<TestHarness> {
+export async function startApp(env: Record<string, string> = {}, overrides: AppOverrides = {}): Promise<TestHarness & { storageDir: string }> {
   const sms = new TestOutboxSmsSender();
   const clock = { now: Date.now() };
-  const app = await createApp(loadConfig({ ...testEnv, ...env }), {
-    smsSender: sms,
-    rateLimitStore: new MemoryRateLimitStore(() => clock.now),
-  });
+  const storageDir = mkdtempSync(join(tmpdir(), "tamagne-docs-"));
+  const app = await createApp(
+    loadConfig({ STORAGE_DRIVER: "local", STORAGE_LOCAL_DIR: storageDir, SCANNER: "eicar-only", ...testEnv, ...env }),
+    { smsSender: sms, rateLimitStore: new MemoryRateLimitStore(() => clock.now), ...overrides },
+  );
   await app.listen(0, "127.0.0.1");
   const url = await app.getUrl();
-  return { app, url: url.replace("[::1]", "127.0.0.1"), sms, clock, db: app.get(PrismaService).client, close: () => app.close() };
+  return { app, url: url.replace("[::1]", "127.0.0.1"), sms, clock, storageDir, db: app.get(PrismaService).client, close: () => app.close() };
 }
 
 /** A browser-like client: keeps cookies, sends Origin and the CSRF header. */
@@ -95,6 +101,15 @@ export class Client {
     return this.track(await this.agent.delete(path).set("Origin", this.origin).set("X-CSRF-Token", token));
   }
 
+  /** Multipart upload with CSRF headers. */
+  async upload(path: string, fields: Record<string, string>, file?: { data: Buffer; filename: string; contentType: string }) {
+    const token = await this.token();
+    let req = this.agent.post(path).set("Origin", this.origin).set("X-CSRF-Token", token);
+    for (const [k, v] of Object.entries(fields)) req = req.field(k, v);
+    if (file) req = req.attach("file", file.data, { filename: file.filename, contentType: file.contentType });
+    return this.track(await req);
+  }
+
   /** Full phone sign-up/sign-in; returns the verify response body. */
   async signIn(phone: string, purpose: "register" | "login" = "register") {
     const start = await this.post(
@@ -110,4 +125,17 @@ export class Client {
     if (verify.status !== 200) throw new Error(`verify failed: ${verify.status} ${JSON.stringify(verify.body)}`);
     return verify.body.data as { userId: string; isNew: boolean; hasSellerProfile: boolean };
   }
+}
+
+/** Signs in a new staff member with `role`, enrols TOTP and completes MFA for the session. */
+export async function staffClient(h: TestHarness, role: "SUPER_ADMIN" | "VERIFICATION_OFFICER" | "SUPPORT_OFFICER" | "SECURITY_OFFICER" | "FINANCE_OFFICER") {
+  const c = new Client(h);
+  const phone = fakePhone();
+  const { userId } = await c.signIn(phone);
+  await h.db.staffRoleAssignment.create({ data: { userId, role } });
+  await c.signIn(phone, "login");
+  const { secret } = (await c.post("/api/v1/auth/mfa/totp/enroll")).body.data;
+  const ok = await c.post("/api/v1/auth/mfa/totp/confirm", { code: totpAt(base32Decode(secret), totpStep(new Date())) });
+  if (ok.status !== 200) throw new Error(`MFA confirm failed: ${ok.status}`);
+  return { c, userId };
 }

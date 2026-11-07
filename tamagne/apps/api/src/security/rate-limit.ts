@@ -70,6 +70,7 @@ export const RULES = {
   mfaVerifyPerUser: { name: "mfa-verify-user", limit: 5, windowSeconds: 300 },
   mutationsPerSession: { name: "mutations-session", limit: 60, windowSeconds: 60 },
   // Generous: mobile carriers put many buyers behind one IP (carrier-grade NAT).
+  uploadPerUser: { name: "upload-user", limit: 30, windowSeconds: 3600 },
   verifyPerIp: { name: "verify-ip", limit: 120, windowSeconds: 60 },
 } as const satisfies Record<string, RateRule>;
 

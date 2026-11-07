@@ -105,3 +105,36 @@ export interface MyQr {
 export async function getMyQr(): Promise<MyQr | null> {
   return (await apiGet<MyQr>("/sellers/me/qr")).data;
 }
+
+export interface MyBusiness {
+  id: string;
+  legalName: string;
+  tradeName: string | null;
+  legalForm: "SOLE_PROPRIETORSHIP" | "PRIVATE_LIMITED_COMPANY" | "SHARE_COMPANY" | "PARTNERSHIP" | "COOPERATIVE" | "OTHER";
+  registrationNumber: string | null;
+  tinNumber: string | null;
+  region: string | null;
+  city: string | null;
+  status: "DRAFT" | "SUBMITTED" | "VERIFIED" | "REJECTED" | "SUSPENDED";
+  decisionReason: string | null;
+  requiredDocumentTypes: string[];
+  documents: {
+    id: string;
+    type: "BUSINESS_LICENSE" | "COMMERCIAL_REGISTRATION" | "TIN_CERTIFICATE" | "VAT_CERTIFICATE" | "MEMORANDUM_OF_ASSOCIATION" | "OTHER";
+    mimeType: string;
+    sizeBytes: number;
+    scanStatus: "PENDING" | "CLEAN" | "INFECTED" | "FAILED";
+    reviewStatus: "PENDING" | "APPROVED" | "REJECTED" | "NEEDS_RESUBMISSION";
+    rejectionReason: string | null;
+    uploadedAt: string;
+  }[];
+}
+
+export async function getMyBusiness(): Promise<MyBusiness | null> {
+  return (await apiGet<MyBusiness | null>("/businesses/me")).data;
+}
+
+export async function hasConsent(purpose: string): Promise<boolean> {
+  const list = (await apiGet<{ purpose: string; status: string }[]>("/consents")).data ?? [];
+  return list.some((c) => c.purpose === purpose && c.status === "GRANTED");
+}

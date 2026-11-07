@@ -34,6 +34,13 @@ const EnvSchema = z.object({
   OPENAPI_ENABLED: booleanString,
   /** SMS delivery for OTP. "console" prints codes (development only); "test" keeps an in-memory outbox (APP_ENV=test only). */
   SMS_PROVIDER: z.enum(["disabled", "console", "test"]).default("disabled"),
+  /** Document storage. "local" encrypts files to a directory (development/test only). */
+  STORAGE_DRIVER: z.enum(["disabled", "local"]).default("disabled"),
+  STORAGE_LOCAL_DIR: z.string().default(".tmp/storage"),
+  /** Malware scanning. "eicar-only" detects the EICAR test file only (development/test). */
+  SCANNER: z.enum(["disabled", "clamav", "eicar-only"]).default("disabled"),
+  CLAMAV_HOST: z.string().default("127.0.0.1"),
+  CLAMAV_PORT: z.coerce.number().int().min(1).max(65535).default(3310),
   /** Accept synthetic +999 phone numbers. Never in production. */
   ALLOW_TEST_PHONE_NUMBERS: booleanString,
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
@@ -78,6 +85,8 @@ export interface AppConfig {
   hmacPepper: Buffer;
   openApiEnabled: boolean;
   smsProvider: "disabled" | "console" | "test";
+  storage: { driver: "disabled" | "local"; localDir: string };
+  scanner: { kind: "disabled" | "clamav" | "eicar-only"; host: string; port: number };
   allowTestPhoneNumbers: boolean;
   /** Cookies are Secure and use the __Host- prefix outside development/test. */
   secureCookies: boolean;
@@ -183,6 +192,16 @@ export function loadConfig(source: Record<string, string | undefined> = process.
   if (env.SMS_PROVIDER === "console" && !["development", "test"].includes(env.APP_ENV)) {
     issues.push("SMS_PROVIDER=console prints OTP codes and is only allowed in development/test");
   }
+  const devOrTest = env.APP_ENV === "development" || env.APP_ENV === "test";
+  if (env.STORAGE_DRIVER === "local" && !devOrTest) {
+    issues.push("STORAGE_DRIVER=local is only for development/test; production needs Ethiopia-hosted object storage");
+  }
+  if (env.SCANNER === "eicar-only" && !devOrTest) {
+    issues.push("SCANNER=eicar-only is not malware protection and is only allowed in development/test");
+  }
+  if (env.STORAGE_DRIVER !== "disabled" && env.SCANNER === "disabled" && !devOrTest) {
+    issues.push("Document storage requires SCANNER=clamav outside development/test");
+  }
   if (env.SMS_PROVIDER === "test" && env.APP_ENV !== "test") {
     issues.push("SMS_PROVIDER=test is only allowed when APP_ENV=test");
   }
@@ -208,6 +227,8 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     hmacPepper: Buffer.from(env.HMAC_PEPPER, "base64"),
     openApiEnabled: env.OPENAPI_ENABLED,
     smsProvider: env.SMS_PROVIDER,
+    storage: { driver: env.STORAGE_DRIVER, localDir: env.STORAGE_LOCAL_DIR },
+    scanner: { kind: env.SCANNER, host: env.CLAMAV_HOST, port: env.CLAMAV_PORT },
     allowTestPhoneNumbers: env.ALLOW_TEST_PHONE_NUMBERS,
     secureCookies: env.APP_ENV === "production" || env.APP_ENV === "staging",
     trustProxyHops: env.TRUST_PROXY_HOPS,

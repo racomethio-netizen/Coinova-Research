@@ -64,7 +64,9 @@ export class ApiExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const body = exception.getResponse();
-      if (status < 500) {
+      // ApiError carries a deliberate, user-safe code and message even for 5xx (e.g. storage_unavailable).
+      const deliberate = body && typeof body === "object" && typeof (body as { code?: unknown }).code === "string";
+      if (status < 500 || deliberate) {
         if (typeof body === "string") message = body;
         else if (body && typeof body === "object") {
           const m = (body as { message?: unknown }).message;

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { PublicToggle } from "@/components/public-toggle";
 import { QrCard } from "@/components/qr-card";
@@ -85,7 +86,12 @@ export default async function DashboardPage({ params }: PageProps<"/[lang]/dashb
             <CardTitle>{d.nextSteps}</CardTitle>
             <ul className="mt-2 list-disc space-y-2 ps-5 text-sm text-muted">
               <li>{d.faydaPending}</li>
-              <li>{d.businessPending}</li>
+              <li>
+                <Link href={`/${lang}/dashboard/business`} className="font-semibold text-emerald-700 underline-offset-4 hover:underline">
+                  {t.business.manage}
+                </Link>{" "}
+                ({t.business.lead})
+              </li>
             </ul>
           </Card>
         </div>
