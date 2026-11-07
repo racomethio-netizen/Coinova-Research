@@ -1,21 +1,21 @@
 # TAMAGNE roadmap and status
 
-_Last updated: 2026-11-07 (session 1, Phases 1–2)._
+_Last updated: 2026-11-07 (session 1, Phases 1–3)._
 
 Legend: ✅ done and covered by automated tests · 🟡 done, partially verified ·
 ⛔ blocked on an external party or owner decision · ⬜ not started.
 
-## Verified (Phase 2)
+## Verified (Phase 3)
 
 | Check | Result |
 |---|---|
 | `npm run typecheck` (core, db, api, web) | ✅ pass |
 | `npm run lint` (typescript-eslint; Next.js rules for web) | ✅ 0 problems |
 | `npm test`: core unit | ✅ 38 / 38 (incl. RFC 6238 and RFC 7636 test vectors) |
-| `npm test`: API (config, HTTP, auth, sessions, CSRF, rate limits, sellers, consents, staff MFA) | ✅ 44 / 44 + Redis test (✅ 3 / 3 with `REDIS_TEST_URL`) |
+| `npm test`: API (config, HTTP, auth, sessions, CSRF, rate limits, sellers, consents, staff MFA, verify, QR) | ✅ 57 / 57 + Redis test (✅ with `REDIS_TEST_URL`) |
 | `npm test`: web dictionaries (EN/AM parity, Ethiopic script) | ✅ 4 / 4 |
 | `npm run test:db`: integrity rules on PostgreSQL 16 | ✅ 31 / 31 (3 migrations) |
-| `npm run test:e2e`: Playwright, desktop + Pixel 7 | ✅ 6 / 6 |
+| `npm run test:e2e`: Playwright, desktop + Pixel 7 | ✅ 14 / 14 |
 | `npm run build` | ✅ pass |
 | `npm audit --omit=dev` | ✅ 0 vulnerabilities (dev-only: moderate `minimatch` advisory via typescript-eslint) |
 | GitHub Actions `.github/workflows/tamagne-ci.yml` | 🟡 updated (Redis service, lint, e2e); not yet run on GitHub |
@@ -49,13 +49,23 @@ integrity migration, core primitives, API and web skeletons, Docker, compose, CI
 - Policy texts (ToS, privacy) are drafts; consent records carry version `2026-11-draft`.
 - Docker: API and web images rebuilt successfully after the Phase 2 changes; the web container's `/api` proxy reached the API using an address set only at runtime.
 
-## Next phases
+## Phase 3: profiles and QR verification ✅
 
-### Phase 3: profiles and QR verification ⬜
-- `GET /api/v1/verify/:sellerId` (Tamagne ID or QR token), `GET /api/v1/sellers/:sellerId/qr`
-- Web `/verify/[id]` public page and lookup form; QR image generation; rotation and revocation
-- Enumeration-safe responses, lookup rate limits, public profile consent enforced
-- Tests: QR validation, QR revocation, public field allow-list
+- ✅ `GET /api/v1/verify/:sellerId` by Tamagne ID (typing errors normalized) or QR token; exact public field allow-list; `no-store`; disclaimer included
+- ✅ Private profiles and unknown IDs indistinguishable (404); withdrawing consent hides the seller immediately
+- ✅ Suspended sellers shown as suspended with no current verification; expiry evaluated at read time
+- ✅ `GET /api/v1/sellers/:sellerId/qr` (`me` or own Tamagne ID only; requires a public profile), SVG + verify URL
+- ✅ QR rotation by the seller and revocation by staff (role + MFA + reason); revoked codes return 410 and can never be reactivated
+- ✅ Lookup rate limit (120/min/IP, CGNAT-aware), visitor IP forwarded from the web server
+- ✅ Web: lookup form on the home page and `/verify`, result page (EN/AM, noindex, safety tips), language-neutral QR redirect, dashboard QR card with download and replace
+- Tests: 13 new API tests; 4 new e2e scenarios (desktop + mobile)
+
+### Phase 3 limitations / decisions for the owner
+- Suspended seller + withdrawn public consent → currently hidden from buyers (privacy-first). Confirm or change.
+- QR download is SVG only (PNG/print sheet later if sellers ask).
+- Lookups are not logged per request (no buyer tracking). Aggregate counts can be added later if needed.
+
+## Next phases
 
 ### Phase 4: business document verification ⬜
 ### Phase 5: Fayda sandbox integration ⛔ (needs NIDP sandbox access)

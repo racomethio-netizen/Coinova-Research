@@ -18,6 +18,10 @@ import { CryptoService } from "./security/crypto.service.js";
 import { RATE_LIMIT_STORE, RateLimiter, createRateLimitStore, type RateLimitStore } from "./security/rate-limit.js";
 import { SMS_SENDER, createSmsSender, type SmsSender } from "./sms/sms.js";
 import { TestOutboxController } from "./sms/test-outbox.controller.js";
+import { AdminQrController, SellerQrController } from "./qr/qr.controller.js";
+import { QrService } from "./qr/qr.service.js";
+import { VerifyController } from "./verify/verify.controller.js";
+import { VerifyService } from "./verify/verify.service.js";
 
 export interface AppOverrides {
   rateLimitStore?: RateLimitStore;
@@ -27,7 +31,7 @@ export interface AppOverrides {
 @Module({})
 export class AppModule {
   static forRoot(config: AppConfig, overrides: AppOverrides = {}): DynamicModule {
-    const controllers: Type[] = [HealthController, FaydaStatusController, AuthController, MfaController, SellersController, ConsentsController, AdminController];
+    const controllers: Type[] = [HealthController, FaydaStatusController, AuthController, MfaController, SellersController, ConsentsController, AdminController, VerifyController, SellerQrController, AdminQrController];
     if (config.smsProvider === "test" && config.appEnv === "test") controllers.push(TestOutboxController);
     return {
       module: AppModule,
@@ -40,6 +44,8 @@ export class AppModule {
         SessionService,
         AuthService,
         SellersService,
+        VerifyService,
+        QrService,
         AuthGuard,
         StaffGuard,
         RateLimiter,

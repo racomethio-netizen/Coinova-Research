@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
+import { VerifyLookupForm } from "@/components/verify-lookup-form";
 import { notFound } from "next/navigation";
 import { getDictionary, hasLocale } from "@/i18n/dictionaries";
 
@@ -17,8 +18,12 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
           <div className="mx-auto max-w-5xl px-4 pb-16 pt-10 sm:pt-16">
             <h1 className="text-3xl font-bold leading-tight sm:text-5xl">{t.hero.tagline}</h1>
             <p className="mt-5 max-w-2xl text-base text-white/85 sm:text-lg">{t.hero.lead}</p>
+            <div className="mt-8 max-w-xl rounded-xl border border-white/15 bg-navy-900 p-4 sm:p-5">
+              <h2 className="mb-3 text-lg font-semibold">{t.verify.title}</h2>
+              <VerifyLookupForm lang={lang} t={t.verify} tone="dark" />
+            </div>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={`/${lang}/register`} className="inline-flex min-h-12 items-center rounded-md bg-emerald-700 px-6 font-semibold hover:bg-emerald-600">
+              <Link href={`/${lang}/register`} className="inline-flex min-h-12 items-center rounded-md border border-emerald-600 px-6 font-semibold hover:bg-white/10">
                 {t.nav.register}
               </Link>
               <Link href={`/${lang}/login`} className="inline-flex min-h-12 items-center rounded-md border border-white/40 px-6 font-semibold hover:bg-white/10">

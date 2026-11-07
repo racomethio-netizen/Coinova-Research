@@ -69,6 +69,8 @@ export const RULES = {
   otpVerifyPerIp: { name: "otp-verify-ip", limit: 30, windowSeconds: 900 },
   mfaVerifyPerUser: { name: "mfa-verify-user", limit: 5, windowSeconds: 300 },
   mutationsPerSession: { name: "mutations-session", limit: 60, windowSeconds: 60 },
+  // Generous: mobile carriers put many buyers behind one IP (carrier-grade NAT).
+  verifyPerIp: { name: "verify-ip", limit: 120, windowSeconds: 60 },
 } as const satisfies Record<string, RateRule>;
 
 export class RateLimitedError extends ApiError {

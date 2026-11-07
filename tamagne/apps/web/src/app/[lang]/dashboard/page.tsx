@@ -1,10 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import { PublicToggle } from "@/components/public-toggle";
+import { QrCard } from "@/components/qr-card";
 import { SiteHeader } from "@/components/site-header";
 import { StatusPill } from "@/components/status-pill";
 import { Alert, Card, CardTitle } from "@/components/ui/card";
 import { getDictionary, hasLocale } from "@/i18n/dictionaries";
-import { getMySeller, getViewer, type SellerMe } from "@/lib/server-api";
+import { getMyQr, getMySeller, getViewer, type SellerMe } from "@/lib/server-api";
 
 const ORDER = ["phone", "faydaIdentity", "identityManualReview", "business", "enhancedReview"] as const;
 
@@ -17,6 +18,7 @@ export default async function DashboardPage({ params }: PageProps<"/[lang]/dashb
   if (!seller) redirect(`/${lang}/dashboard/setup`);
   const t = getDictionary(lang);
   const d = t.dashboard;
+  const qr = seller.isPublic ? await getMyQr() : null;
   const fmt = new Intl.DateTimeFormat(lang === "am" ? "am-ET" : "en-GB", { dateStyle: "medium", timeZone: "Africa/Addis_Ababa" });
   const name = lang === "am" && seller.displayNameAm ? seller.displayNameAm : seller.displayName;
 
@@ -63,6 +65,12 @@ export default async function DashboardPage({ params }: PageProps<"/[lang]/dashb
               );
             })}
           </ul>
+        </Card>
+
+        <Card data-testid="qr-card">
+          <CardTitle>{t.qr.title}</CardTitle>
+          <p className="mt-1 text-sm text-muted">{seller.isPublic ? t.qr.lead : t.qr.needsPublic}</p>
+          {qr ? <div className="mt-4"><QrCard url={qr.url} svg={qr.svg} t={t.qr} /></div> : null}
         </Card>
 
         <div className="grid gap-6 md:grid-cols-2">

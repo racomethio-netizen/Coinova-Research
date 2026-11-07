@@ -360,6 +360,106 @@
           "admin"
         ]
       }
+    },
+    "/api/v1/verify/{sellerId}": {
+      "get": {
+        "operationId": "VerifyController_lookup_v1",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "required": true,
+            "in": "path",
+            "description": "Tamagne ID (e.g. TMG-7K3QX9M2BD) or QR token",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public verification summary (approved fields only)"
+          },
+          "404": {
+            "description": "No public seller with this ID"
+          },
+          "410": {
+            "description": "QR code has been revoked"
+          }
+        },
+        "summary": "Public verification status by Tamagne ID or QR token",
+        "tags": [
+          "verify"
+        ]
+      }
+    },
+    "/api/v1/sellers/{sellerId}/qr": {
+      "get": {
+        "operationId": "SellerQrController_get_v1",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "required": true,
+            "in": "path",
+            "description": "'me' or your own Tamagne ID",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          },
+          "409": {
+            "description": "Profile is not public"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "The signed-in seller's QR code (sellerId: 'me' or own Tamagne ID)",
+        "tags": [
+          "sellers"
+        ]
+      }
+    },
+    "/api/v1/sellers/me/qr/rotate": {
+      "post": {
+        "operationId": "SellerQrController_rotate_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Revoke the current QR code and issue a new one",
+        "tags": [
+          "sellers"
+        ]
+      }
+    },
+    "/api/v1/admin/sellers/{tamagneId}/qr/revoke": {
+      "post": {
+        "operationId": "AdminQrController_revoke_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Revoke a seller's active QR code (with a reason)",
+        "tags": [
+          "admin"
+        ]
+      }
     }
   },
   "info": {

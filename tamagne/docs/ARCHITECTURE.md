@@ -1,6 +1,6 @@
 # TAMAGNE architecture
 
-_Status: Phase 2 (authentication and seller registration), 2026-11-07._
+_Status: Phase 3 (public verification and QR codes), 2026-11-07._
 
 TAMAGNE ("ታማኝ", trustworthy) is an independent private platform that lets Ethiopian
 online sellers prove who they are, and lets buyers check that proof through a
@@ -224,16 +224,38 @@ The DB refuses to approve a document that is not `CLEAN`.
 - Revocation requires a reason and is final for that badge row.
 - Sellers appeal badge decisions, suspensions, fraud outcomes and document rejections; reviewers other than the submitter decide, with a written note.
 
-## 6. Public verification
+## 6. Public verification (implemented in Phase 3)
 
-`GET /verify/:sellerId` (web) and `GET /api/v1/verify/:sellerId` (API), where
-`sellerId` is a Tamagne ID or a QR token. Response is built only by
-`buildPublicVerificationSummary` plus an allow-list of profile fields:
+`GET /api/v1/verify/:sellerId` (public, no sign-in), where `sellerId` is a Tamagne ID
+(case, missing dash and I/L/O look-alikes are normalized) or a QR token. Web pages:
+`/[lang]/verify` (lookup form, works without JavaScript) and `/[lang]/verify/[id]`
+(result). QR codes encode the language-neutral `/verify/<token>`, which redirects to
+Amharic or English from the browser's `Accept-Language`.
 
-- Exposed: display name (EN/AM), Tamagne ID, phone/Fayda/manual-identity/business/enhanced status, account status, verification and expiry dates.
-- Never exposed: phone number, Fayda numbers or subject, documents, verified legal name, tokens, risk levels, reviewer identities, fraud reports.
-- Profiles are listed only while `PUBLIC_PROFILE_DISPLAY` consent is granted; otherwise lookups return a minimal "not available" result.
-- Revoked or unknown QR tokens return the same response shape and timing as a not-found to avoid enumeration. Lookups are rate limited.
+- **Exposed (exact allow-list, tested):** `tamagneId`, `displayName`, `displayNameAm`,
+  `accountStatus`, and for each of phone / Fayda identity / manual identity review /
+  business / enhanced review: status, verification date, expiry date; plus `matchedBy`
+  and `checkedAt`. The response also carries the "not a government institution / not a
+  guarantee" disclaimer.
+- **Never exposed:** phone number, internal IDs, region/city, seller type, Fayda numbers
+  or subject, documents, verified legal name, tokens, risk levels, reviewers, suspension
+  reasons, fraud reports.
+- **Consent:** only profiles with `PUBLIC_PROFILE_DISPLAY` consent are returned. Unknown
+  IDs and private profiles get the identical 404. A seller needs a public profile to get
+  a QR code. _Owner decision pending:_ whether a suspended seller who withdraws public
+  consent should still show as suspended to buyers (currently: hidden, privacy-first).
+- **QR tokens:** 256-bit random, one active per seller (DB-enforced), stable until the
+  seller replaces it (`POST /sellers/me/qr/rotate`) or staff revoke it with a reason
+  (`POST /admin/sellers/:tamagneId/qr/revoke`, Super Admin / Verification Officer /
+  Security Officer + MFA). A revoked token returns **410 "no longer valid"** so buyers are
+  warned about stale or misused printed codes; this reveals nothing enumerable. Revoked
+  tokens can never be reactivated (DB trigger).
+- **Freshness:** `Cache-Control: no-store`; status, expiry and suspension are evaluated
+  at request time.
+- **Abuse:** 120 lookups per minute per IP (high because mobile carriers share IPs via
+  CGNAT); the web server forwards the visitor's `X-Forwarded-For` so the limit applies
+  per buyer. Result pages are `noindex`. The QR image is shown as an `<img>` data URI
+  (the SVG is never injected into the page).
 
 ## 7. Security architecture
 

@@ -1,5 +1,5 @@
 import "server-only";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 const API = process.env.API_INTERNAL_URL ?? "http://127.0.0.1:4000";
 
@@ -54,4 +54,54 @@ export async function getViewer(): Promise<Viewer | null> {
 
 export async function getMySeller(): Promise<SellerMe | null> {
   return (await apiGet<SellerMe>("/sellers/me")).data;
+}
+
+export interface PublicSeller {
+  tamagneId: string;
+  displayName: string;
+  displayNameAm: string | null;
+  accountStatus: SellerMe["accountStatus"];
+  verification: SellerMe["verification"];
+  matchedBy: "tamagne_id" | "qr_token";
+  checkedAt: string;
+}
+
+export type LookupOutcome =
+  | { kind: "found"; seller: PublicSeller }
+  | { kind: "not_found" }
+  | { kind: "qr_revoked" }
+  | { kind: "rate_limited" }
+  | { kind: "unavailable" };
+
+/**
+ * Public lookup, rendered server-side. Forwards the visitor's X-Forwarded-For (set by
+ * our load balancer) so the API's per-IP rate limit applies to the buyer, not to this server.
+ */
+export async function lookupSeller(id: string): Promise<LookupOutcome> {
+  const h = await headers();
+  const xff = h.get("x-forwarded-for");
+  let res: Response;
+  try {
+    res = await fetch(`${API}/api/v1/verify/${encodeURIComponent(id)}`, {
+      headers: xff ? { "x-forwarded-for": xff } : {},
+      cache: "no-store",
+    });
+  } catch {
+    return { kind: "unavailable" };
+  }
+  if (res.ok) return { kind: "found", seller: ((await res.json()) as { data: PublicSeller }).data };
+  if (res.status === 404) return { kind: "not_found" };
+  if (res.status === 410) return { kind: "qr_revoked" };
+  if (res.status === 429) return { kind: "rate_limited" };
+  return { kind: "unavailable" };
+}
+
+export interface MyQr {
+  url: string;
+  svg: string;
+  createdAt: string;
+}
+
+export async function getMyQr(): Promise<MyQr | null> {
+  return (await apiGet<MyQr>("/sellers/me/qr")).data;
 }

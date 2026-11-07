@@ -13,7 +13,10 @@ export function SiteHeader({ lang, t, path = "", signedIn = false }: { lang: Loc
           <ShieldMark className="size-7 text-emerald-600" />
           TAMAGNE
         </Link>
-        <nav aria-label="Main" className="flex items-center gap-2 text-sm">
+        <nav aria-label="Main" className="flex flex-wrap items-center gap-1 text-sm sm:gap-2">
+          <Link href={`/${lang}/verify`} className="rounded-md px-3 py-2 hover:bg-white/10">
+            {t.nav.verify}
+          </Link>
           {signedIn ? (
             <>
               <Link href={`/${lang}/dashboard`} className="rounded-md px-3 py-2 hover:bg-white/10">
