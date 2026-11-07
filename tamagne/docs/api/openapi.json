@@ -1,0 +1,73 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_live_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Process is alive"
+          }
+        },
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "operationId": "HealthController_ready_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Ready to serve traffic"
+          },
+          "503": {
+            "description": "A dependency is unavailable"
+          }
+        },
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/fayda/status": {
+      "get": {
+        "operationId": "FaydaStatusController_status_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Fayda integration availability"
+          }
+        },
+        "tags": [
+          "fayda"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "TAMAGNE API",
+    "description": "Seller identity and business verification for Ethiopia. TAMAGNE is an independent private platform, not a government institution. Verification confirms identity or documents at a point in time; it does not guarantee honesty, product authenticity or delivery.",
+    "version": "1",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "cookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "tamagne_session"
+      },
+      "marketplace": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key"
+      }
+    },
+    "schemas": {}
+  }
+}

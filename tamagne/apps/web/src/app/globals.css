@@ -1,0 +1,41 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/noto-sans-ethiopic";
+
+/* Brand tokens: deep navy, emerald, white, light grey. Contrast pairs meet WCAG AA. */
+@theme {
+  --color-navy-950: #071226;
+  --color-navy-900: #0b1b36;
+  --color-navy-800: #12284d;
+  --color-navy-700: #1c3a6b;
+  --color-emerald-700: #047857;
+  --color-emerald-600: #059669;
+  --color-emerald-100: #d1fae5;
+  --color-mist: #f3f5f8;
+  --color-line: #dde3ec;
+  --color-ink: #0b1b36;
+  --color-muted: #4a5873;
+  --font-sans: "Inter Variable", "Noto Sans Ethiopic Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-ethiopic: "Noto Sans Ethiopic Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: #ffffff;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Ethiopic script needs a little more line height to stay legible. */
+:lang(am) body {
+  font-family: var(--font-ethiopic);
+  line-height: 1.7;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-emerald-600);
+  outline-offset: 2px;
+}

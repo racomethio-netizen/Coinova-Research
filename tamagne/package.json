@@ -1,0 +1,28 @@
+{
+  "name": "tamagne",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TAMAGNE: Ethiopian online seller identity and business verification platform",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "db:generate": "npm run generate -w @tamagne/db",
+    "db:migrate:deploy": "npm run migrate:deploy -w @tamagne/db",
+    "db:test:up": "bash packages/db/scripts/test-db.sh up",
+    "db:test:down": "bash packages/db/scripts/test-db.sh down",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:db": "npm run test:db -w @tamagne/db",
+    "build": "npm run build --workspaces --if-present",
+    "check": "npm run db:generate && npm run typecheck && npm test && npm run test:db"
+  },
+  "overrides": {
+    "multer": "2.5.0"
+  }
+}

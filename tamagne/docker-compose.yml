@@ -1,0 +1,75 @@
+# Local development stack ONLY. Synthetic data only: never load real seller identity
+# data here. Production runs on Ethiopia-hosted infrastructure (docs/DEPLOYMENT.md).
+#
+#   cp .env.example .env            # then replace the dev placeholders
+#   docker compose up -d postgres redis
+#   docker compose run --rm migrate
+#   docker compose up -d api web
+#
+# All ports bind to 127.0.0.1 so nothing is exposed to the network.
+name: tamagne
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: tamagne
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: tamagne
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tamagne -d tamagne"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports: ["127.0.0.1:6379:6379"]
+    volumes: ["redisdata:/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" --no-auth-warning ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    build: { context: ., dockerfile: apps/api/Dockerfile, target: migrate }
+    environment:
+      DATABASE_URL: postgresql://tamagne:${POSTGRES_PASSWORD}@postgres:5432/tamagne
+    depends_on:
+      postgres: { condition: service_healthy }
+    profiles: ["tools"]
+
+  api:
+    build: { context: ., dockerfile: apps/api/Dockerfile, target: runtime }
+    env_file:
+      - { path: .env, required: false }
+    environment:
+      DATABASE_URL: postgresql://tamagne:${POSTGRES_PASSWORD}@postgres:5432/tamagne
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      PORT: "4000"
+    ports: ["127.0.0.1:4000:4000"]
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  web:
+    build: { context: ., dockerfile: apps/web/Dockerfile }
+    ports: ["127.0.0.1:3000:3000"]
+    read_only: true
+    tmpfs: ["/tmp", "/app/apps/web/.next/cache"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+volumes:
+  pgdata:
+  redisdata:

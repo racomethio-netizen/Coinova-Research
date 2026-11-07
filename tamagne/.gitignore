@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+coverage/
+.tmp/
+*.log
+
+# Prisma generated client (run `npm run db:generate`)
+packages/db/src/generated/
+
+# Secrets: never commit. .env.example is the only tracked env file.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.jwk
