@@ -47,7 +47,7 @@ integrity migration, core primitives, API and web skeletons, Docker, compose, CI
 - Phone number change and account deletion flows are not built yet (Phase 7 covers deletion).
 - Staff role management UI/API (grant/revoke by a Super Admin) is Phase 6; only the bootstrap script exists.
 - Policy texts (ToS, privacy) are drafts; consent records carry version `2026-11-draft`.
-- Docker: the API runtime image was rebuilt successfully after the Phase 2 changes; the web image rebuild had not finished when this was committed (check `docker build -f apps/web/Dockerfile .`).
+- Docker: API and web images rebuilt successfully after the Phase 2 changes; the web container's `/api` proxy reached the API using an address set only at runtime.
 
 ## Next phases
 
