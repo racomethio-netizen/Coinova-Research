@@ -53,7 +53,10 @@ export default async function DashboardPage({ params }: PageProps<"/[lang]/dashb
               const c = seller.verification[key as keyof SellerMe["verification"]];
               return (
                 <li key={key} className="flex flex-wrap items-center justify-between gap-2 py-3" data-testid={`verification-${key}`}>
-                  <span className="font-medium">{d.categories[key]}</span>
+                  <span className="font-medium">
+                    {d.categories[key]}
+                    {c.testMode ? <span className="ms-2 rounded border border-amber-600/50 bg-amber-50 px-1.5 py-0.5 text-xs font-semibold text-amber-900">{t.identity.testLabel}</span> : null}
+                  </span>
                   <span className="flex flex-wrap items-center gap-3 text-sm text-muted">
                     {c.status === "VERIFIED" && c.expiresAt ? (
                       <span>
@@ -85,7 +88,12 @@ export default async function DashboardPage({ params }: PageProps<"/[lang]/dashb
           <Card>
             <CardTitle>{d.nextSteps}</CardTitle>
             <ul className="mt-2 list-disc space-y-2 ps-5 text-sm text-muted">
-              <li>{d.faydaPending}</li>
+              <li>
+                <Link href={`/${lang}/dashboard/identity`} className="font-semibold text-emerald-700 underline-offset-4 hover:underline">
+                  {t.identity.manage}
+                </Link>{" "}
+                ({t.identity.lead})
+              </li>
               <li>
                 <Link href={`/${lang}/dashboard/business`} className="font-semibold text-emerald-700 underline-offset-4 hover:underline">
                   {t.business.manage}

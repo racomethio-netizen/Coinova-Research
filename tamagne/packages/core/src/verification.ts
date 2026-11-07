@@ -65,6 +65,8 @@ export interface PublicCategory {
   status: PublicStatus;
   verifiedAt: string | null;
   expiresAt: string | null;
+  /** Present (true) only for a Fayda result from the SANDBOX on a non-production deployment. */
+  testMode?: true;
 }
 
 export interface PublicVerificationSummary {
@@ -121,11 +123,21 @@ export function buildPublicVerificationSummary(
   return {
     accountStatus,
     phone: categoryFor(badges, "PHONE", now, active, any),
-    faydaIdentity: categoryFor(badges, "FAYDA_IDENTITY", now, active, (b) =>
-      production ? b.identityEnvironment === "PRODUCTION" : b.identityEnvironment !== null && b.identityEnvironment !== undefined,
-    ),
+    faydaIdentity: faydaCategory(badges, now, active, production),
     identityManualReview: categoryFor(badges, "IDENTITY_MANUAL_REVIEW", now, active, any),
     business: categoryFor(badges, "BUSINESS_DOCUMENTS", now, active, any),
     enhancedReview: categoryFor(badges, "ENHANCED_REVIEW", now, active, any),
   };
+}
+
+function faydaCategory(badges: readonly BadgeInput[], now: Date, accountActive: boolean, production: boolean): PublicCategory {
+  if (production) {
+    // Only PRODUCTION Fayda results ever count on the production deployment.
+    return categoryFor(badges, "FAYDA_IDENTITY", now, accountActive, (b) => b.identityEnvironment === "PRODUCTION");
+  }
+  const result = categoryFor(badges, "FAYDA_IDENTITY", now, accountActive, (b) => b.identityEnvironment === "PRODUCTION" || b.identityEnvironment === "SANDBOX");
+  const realCurrent = badges.some(
+    (b) => b.level === "FAYDA_IDENTITY" && b.identityEnvironment === "PRODUCTION" && b.status === "ACTIVE" && b.expiresAt !== null && b.expiresAt > now,
+  );
+  return result.status === "VERIFIED" && !realCurrent ? { ...result, testMode: true } : result;
 }

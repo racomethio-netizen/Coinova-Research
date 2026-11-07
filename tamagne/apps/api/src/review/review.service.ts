@@ -7,6 +7,7 @@ import { PrismaService } from "../database/prisma.service.js";
 import { MALWARE_SCANNER, type MalwareScanner } from "../scanning/scanner.js";
 import { OBJECT_STORE, type EncryptedObjectStore } from "../storage/storage.js";
 import type { Viewer } from "../auth/session.service.js";
+import { IdentityReviewService } from "../identity/identity-review.service.js";
 
 type Tx = Prisma.TransactionClient;
 
@@ -40,6 +41,7 @@ export class ReviewService {
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(OBJECT_STORE) private readonly store: EncryptedObjectStore,
     @Inject(MALWARE_SCANNER) private readonly scanner: MalwareScanner,
+    @Inject(IdentityReviewService) private readonly identity: IdentityReviewService,
   ) {}
 
   async queue() {
@@ -212,7 +214,7 @@ export class ReviewService {
    */
   async secondReview(staff: Viewer, reviewId: string, input: { decision: "APPROVE" | "REJECT" | "REQUEST_CHANGES"; reason: string }, meta: Meta) {
     const review = await this.prisma.client.reviewRecord.findUnique({ where: { id: reviewId } });
-    if (!review || review.targetType !== "BUSINESS" || review.status !== "PENDING_SECOND_REVIEW") {
+    if (!review || !["BUSINESS", "IDENTITY_MANUAL"].includes(review.targetType) || review.status !== "PENDING_SECOND_REVIEW") {
       throw new ApiError(HttpStatus.NOT_FOUND, "not_found", "No review is waiting for a second decision.");
     }
     if (review.reviewerId === staff.userId) {
@@ -232,6 +234,11 @@ export class ReviewService {
         );
         const first = review.decision as "APPROVE" | "REJECT" | "REQUEST_CHANGES";
         const outcome = first === "APPROVE" && input.decision === "APPROVE" ? "APPROVE" : input.decision !== "APPROVE" ? input.decision : first;
+        if (review.targetType === "IDENTITY_MANUAL") {
+          const idOutcome = outcome === "APPROVE" ? "APPROVE" : "REJECT";
+          await this.identity.finalize(tx, review.targetId, review.id, idOutcome, outcome === input.decision ? input.reason : review.reason, staff.userId);
+          return { status: "FINAL" as const, reviewId: review.id, outcome: idOutcome };
+        }
         if (outcome === "APPROVE") await this.finalizeApproval(tx, review.targetId, review.id, staff.userId);
         else await this.closeWithoutApproval(tx, review.targetId, outcome, outcome === input.decision ? input.reason : review.reason, staff.userId);
         return { status: "FINAL" as const, reviewId: review.id, outcome };

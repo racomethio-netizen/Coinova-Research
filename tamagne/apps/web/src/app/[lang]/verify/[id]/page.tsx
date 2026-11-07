@@ -95,7 +95,10 @@ export default async function VerifyResultPage({ params }: PageProps<"/[lang]/ve
             return (
               <li key={key} className="py-3" data-testid={`verify-${key}`}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-medium">{d.categories[key]}</span>
+                  <span className="font-medium">
+                    {d.categories[key]}
+                    {c.testMode ? <span className="ms-2 rounded border border-amber-600/50 bg-amber-50 px-1.5 py-0.5 text-xs font-semibold text-amber-900">{t.identity.testLabel}</span> : null}
+                  </span>
                   <StatusPill status={c.status} label={d.statuses[c.status]} />
                 </div>
                 {c.status === "VERIFIED" && c.verifiedAt && c.expiresAt ? (

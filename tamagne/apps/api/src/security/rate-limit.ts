@@ -65,11 +65,13 @@ export interface RateRule {
 export const RULES = {
   otpSendPerPhone: { name: "otp-send-phone", limit: 3, windowSeconds: 900 },
   otpResendGap: { name: "otp-resend-gap", limit: 1, windowSeconds: 60 },
-  otpSendPerIp: { name: "otp-send-ip", limit: 10, windowSeconds: 900 },
+  /** Limit comes from OTP_SEND_LIMIT_PER_IP (see AuthService). */
+  otpSendPerIp: { name: "otp-send-ip", limit: 30, windowSeconds: 900 },
   otpVerifyPerIp: { name: "otp-verify-ip", limit: 30, windowSeconds: 900 },
   mfaVerifyPerUser: { name: "mfa-verify-user", limit: 5, windowSeconds: 300 },
   mutationsPerSession: { name: "mutations-session", limit: 60, windowSeconds: 60 },
   // Generous: mobile carriers put many buyers behind one IP (carrier-grade NAT).
+  faydaStartPerUser: { name: "fayda-start-user", limit: 5, windowSeconds: 3600 },
   uploadPerUser: { name: "upload-user", limit: 30, windowSeconds: 3600 },
   verifyPerIp: { name: "verify-ip", limit: 120, windowSeconds: 60 },
 } as const satisfies Record<string, RateRule>;

@@ -1,21 +1,21 @@
 # TAMAGNE roadmap and status
 
-_Last updated: 2026-11-07 (session 1, Phases 1–4)._
+_Last updated: 2026-11-07 (session 1, Phases 1–5)._
 
 Legend: ✅ done and covered by automated tests · 🟡 done, partially verified ·
 ⛔ blocked on an external party or owner decision · ⬜ not started.
 
-## Verified (Phase 4)
+## Verified (Phase 5)
 
 | Check | Result |
 |---|---|
 | `npm run typecheck` (core, db, api, web) | ✅ pass |
 | `npm run lint` (typescript-eslint; Next.js rules for web) | ✅ 0 problems |
 | `npm test`: core unit | ✅ 42 / 42 (incl. RFC 6238 and RFC 7636 test vectors) |
-| `npm test`: API (config, HTTP, auth, sessions, CSRF, rate limits, sellers, consents, staff MFA, verify, QR, businesses, documents, review, adapters) | ✅ 79 / 79 + Redis test (✅ with `REDIS_TEST_URL`) |
+| `npm test`: API (auth, sessions, CSRF, rate limits, sellers, consents, MFA, verify, QR, businesses, documents, review, adapters, Fayda OIDC, manual identity review) | ✅ 113 / 113 + Redis test (✅ with `REDIS_TEST_URL`) |
 | `npm test`: web dictionaries (EN/AM parity, Ethiopic script) | ✅ 4 / 4 |
-| `npm run test:db`: integrity rules on PostgreSQL 16 | ✅ 31 / 31 (4 migrations) |
-| `npm run test:e2e`: Playwright, desktop + Pixel 7 | ✅ 16 / 16 |
+| `npm run test:db`: integrity rules on PostgreSQL 16 | ✅ 31 / 31 (5 migrations) |
+| `npm run test:e2e`: Playwright, desktop + Pixel 7 | ✅ 20 / 20 (incl. the Fayda redirect round trip against the TEST provider) |
 | `npm run build` | ✅ pass |
 | `npm audit --omit=dev` | ✅ 0 vulnerabilities (dev-only: moderate `minimatch` advisory via typescript-eslint) |
 | GitHub Actions `.github/workflows/tamagne-ci.yml` | 🟡 updated (Redis service, lint, e2e); not yet run on GitHub |
@@ -84,9 +84,25 @@ integrity migration, core primitives, API and web skeletons, Docker, compose, CI
 - Retention periods (1 year after badge expiry, 90 days after rejection) are proposals pending legal review; the purge job is Phase 7.
 - Notifications are recorded but not yet delivered or shown (Phase 6).
 
+## Phase 5: Fayda integration adapter + manual identity review 🟡
+
+- ✅ eSignet/OIDC relying party: discovery with issuer pinning, consent, state/nonce (hashed), PKCE S256, private_key_jwt, JWKS signature checks (RS256/PS256/ES256 only), iss/aud/azp/exp/iat/nonce/acr, signed userinfo with subject match, single-use callback bound to the signed-in user
+- ✅ Only HMAC of the subject stored; name encrypted; no biometrics or ID numbers requested (config refuses them); tokens never stored or logged
+- ✅ Duplicate identity across sellers refused; re-verification supersedes; consent withdrawal revokes badge and result
+- ✅ Sandbox results labelled "sandbox test" everywhere on non-production; never counted on production
+- ✅ Every negative test from the brief (invalid/expired JWT, wrong issuer/audience, invalid state and nonce, alg none, HS256 confusion, unknown key, replay, cross-user callback, unsigned userinfo, …) automated against a TEST provider; mutation check (removing nonce or audience validation) makes the tests fail
+- ✅ Manual identity review (interim): consented ID upload (scanned, encrypted, no ID numbers), reviewer approve/reject, second review for HIGH risk, separate badge never shown as Fayda, short image retention, seller withdrawal
+- ✅ Web: identity page (Fayda start or an honest "not available yet", manual review), sandbox labels on dashboard and public page
+- Fix found by e2e planning: the web proxy did not forward `Location`, which would have broken the OIDC callback redirect
+
+### Phase 5 blockers / limitations
+- ⛔ **Not connected to Fayda.** Needs NIDP relying-party onboarding and sandbox credentials. Then verify against the real eSignet: acr values, claim names, userinfo JWS vs JWE (JWE not implemented), error formats.
+- Proposed retention for ID images (30 / 90 days) needs legal review; the purge job is Phase 7.
+- No reviewer UI yet (Phase 6).
+- OTP per-IP limit is now configurable (`OTP_SEND_LIMIT_PER_IP`, default 30) because of carrier-grade NAT.
+
 ## Next phases
 
-### Phase 5: Fayda sandbox integration ⛔ (needs NIDP sandbox access)
 ### Phase 6: admin dashboard and fraud reporting ⬜
 ### Phase 7: security, privacy, compliance ⬜
 ### Phase 8: testing and production preparation ⬜

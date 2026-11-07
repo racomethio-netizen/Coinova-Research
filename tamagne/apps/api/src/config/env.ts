@@ -16,7 +16,6 @@ const booleanString = z
   .default("false")
   .transform((v) => v === "true");
 
-const httpsUrl = z.url({ protocol: /^https$/ });
 
 const EnvSchema = z.object({
   APP_ENV: z.enum(["development", "test", "staging", "production"]).default("development"),
@@ -41,13 +40,16 @@ const EnvSchema = z.object({
   SCANNER: z.enum(["disabled", "clamav", "eicar-only"]).default("disabled"),
   CLAMAV_HOST: z.string().default("127.0.0.1"),
   CLAMAV_PORT: z.coerce.number().int().min(1).max(65535).default(3310),
+  /** OTP sends per IP per 15 minutes. Generous because mobile carriers share IPs (CGNAT); per-phone limits stay strict. */
+  OTP_SEND_LIMIT_PER_IP: z.coerce.number().int().min(5).max(10000).default(30),
   /** Accept synthetic +999 phone numbers. Never in production. */
   ALLOW_TEST_PHONE_NUMBERS: booleanString,
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
 
   // ── Fayda eSignet (OIDC). Disabled unless explicitly configured. ──
   FAYDA_MODE: z.enum(["disabled", "sandbox", "production"]).default("disabled"),
-  FAYDA_ISSUER: httpsUrl.optional(),
+  /** HTTPS issuer. Plain http is accepted only for a loopback test provider when APP_ENV=test. */
+  FAYDA_ISSUER: z.url().optional(),
   FAYDA_CLIENT_ID: z.string().min(1).optional(),
   FAYDA_REDIRECT_URI: z.url().optional(),
   /** Private JWK (JSON) for private_key_jwt client assertion. From the secrets manager only. */
@@ -55,6 +57,8 @@ const EnvSchema = z.object({
   FAYDA_SCOPES: z.string().default("openid profile"),
   FAYDA_ACR_VALUES: z.string().optional(),
   FAYDA_CLAIMS_LOCALES: z.string().default("en am"),
+  /** Userinfo claims requested (space-separated). Keep minimal: no picture, no ID numbers. */
+  FAYDA_USERINFO_CLAIMS: z.string().default("name"),
 });
 
 export type RawEnv = z.input<typeof EnvSchema>;
@@ -71,6 +75,9 @@ export type FaydaConfig =
       scopes: string[];
       acrValues: string | undefined;
       claimsLocales: string;
+      userinfoClaims: string[];
+      /** Only for APP_ENV=test with a loopback issuer. */
+      allowInsecureLoopback: boolean;
     };
 
 export interface AppConfig {
@@ -88,6 +95,7 @@ export interface AppConfig {
   storage: { driver: "disabled" | "local"; localDir: string };
   scanner: { kind: "disabled" | "clamav" | "eicar-only"; host: string; port: number };
   allowTestPhoneNumbers: boolean;
+  otpSendLimitPerIp: number;
   /** Cookies are Secure and use the __Host- prefix outside development/test. */
   secureCookies: boolean;
   trustProxyHops: number;
@@ -135,6 +143,13 @@ function faydaConfig(env: z.output<typeof EnvSchema>, issues: string[]): FaydaCo
   }
 
   const isProd = env.APP_ENV === "production";
+  const issuerUrl = new URL(env.FAYDA_ISSUER!);
+  const loopback = ["127.0.0.1", "localhost", "[::1]"].includes(issuerUrl.hostname);
+  const allowInsecureLoopback = env.APP_ENV === "test" && loopback && issuerUrl.protocol === "http:";
+  if (issuerUrl.protocol !== "https:" && !allowInsecureLoopback) issues.push("FAYDA_ISSUER must use https");
+  const userinfoClaims = env.FAYDA_USERINFO_CLAIMS.split(/\s+/).filter(Boolean);
+  const forbiddenClaims = userinfoClaims.filter((c) => /picture|photo|face|biometric|individual_id|uin|vid|fin|fan/i.test(c));
+  if (forbiddenClaims.length) issues.push(`FAYDA_USERINFO_CLAIMS must not request biometric data or ID numbers (${forbiddenClaims.join(", ")})`);
   if (isProd && env.FAYDA_MODE !== "production") {
     issues.push("APP_ENV=production must not use FAYDA_MODE=sandbox (sandbox credentials are never allowed in production)");
   }
@@ -156,6 +171,8 @@ function faydaConfig(env: z.output<typeof EnvSchema>, issues: string[]): FaydaCo
     scopes: env.FAYDA_SCOPES.split(/\s+/).filter(Boolean),
     acrValues: env.FAYDA_ACR_VALUES,
     claimsLocales: env.FAYDA_CLAIMS_LOCALES,
+    userinfoClaims,
+    allowInsecureLoopback,
   };
 }
 
@@ -230,6 +247,7 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     storage: { driver: env.STORAGE_DRIVER, localDir: env.STORAGE_LOCAL_DIR },
     scanner: { kind: env.SCANNER, host: env.CLAMAV_HOST, port: env.CLAMAV_PORT },
     allowTestPhoneNumbers: env.ALLOW_TEST_PHONE_NUMBERS,
+    otpSendLimitPerIp: env.OTP_SEND_LIMIT_PER_IP,
     secureCookies: env.APP_ENV === "production" || env.APP_ENV === "staging",
     trustProxyHops: env.TRUST_PROXY_HOPS,
     fayda,

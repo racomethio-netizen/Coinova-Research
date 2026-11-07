@@ -12,6 +12,7 @@ export const POLICY_VERSIONS = {
   BUSINESS_DOCUMENT_PROCESSING: "2026-11-draft",
   PUBLIC_PROFILE_DISPLAY: "2026-11-draft",
   MARKETING_COMMUNICATIONS: "2026-11-draft",
+  IDENTITY_DOCUMENT_REVIEW: "2026-11-draft",
 } as const;
 
 export type ConsentPurpose = keyof typeof POLICY_VERSIONS;
@@ -22,6 +23,7 @@ export const WITHDRAWABLE_PURPOSES: readonly ConsentPurpose[] = [
   "MARKETING_COMMUNICATIONS",
   "FAYDA_IDENTITY_VERIFICATION",
   "BUSINESS_DOCUMENT_PROCESSING",
+  "IDENTITY_DOCUMENT_REVIEW",
 ];
 
 /** How long each verification stays valid before it must be renewed. */

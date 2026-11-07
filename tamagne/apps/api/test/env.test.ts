@@ -115,4 +115,13 @@ describe("configuration", () => {
     expect(loadConfig(prod).storage.driver).toBe("disabled");
     expect(loadConfig({ ...prod, SCANNER: "clamav", CLAMAV_HOST: "clamav.internal" }).scanner).toEqual({ kind: "clamav", host: "clamav.internal", port: 3310 });
   });
+
+  it("Fayda: http issuer only for a loopback test provider; no biometric or ID-number claims", () => {
+    const sandbox = { ...faydaProd, FAYDA_MODE: "sandbox", FAYDA_REDIRECT_URI: "http://localhost:3000/api/v1/fayda/callback" };
+    expect(issues({ ...dev, ...sandbox, FAYDA_ISSUER: "http://127.0.0.1:9999" }).join()).toMatch(/FAYDA_ISSUER must use https/);
+    const t = loadConfig({ ...dev, APP_ENV: "test", ...sandbox, FAYDA_ISSUER: "http://127.0.0.1:9999" });
+    expect(t.fayda.enabled && t.fayda.allowInsecureLoopback).toBe(true);
+    expect(issues({ ...dev, APP_ENV: "test", ...sandbox, FAYDA_ISSUER: "http://idp.example" }).join()).toMatch(/must use https/);
+    expect(issues({ ...dev, ...sandbox, FAYDA_ISSUER: "https://esignet.example", FAYDA_USERINFO_CLAIMS: "name picture individual_id" }).join()).toMatch(/must not request biometric data or ID numbers \(picture, individual_id\)/);
+  });
 });

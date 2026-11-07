@@ -1,7 +1,8 @@
 import { base32Decode, totpAt, totpStep } from "@tamagne/core";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { Client, fakePhone, startApp, type TestHarness } from "./support.js";
+import { loadConfig } from "../src/config/env.js";
+import { Client, fakePhone, startApp, testEnv, type TestHarness } from "./support.js";
 
 let h: TestHarness;
 beforeAll(async () => {
@@ -166,8 +167,8 @@ describe("rate limiting", () => {
     expect((await c.post("/api/v1/auth/register", body)).status).toBe(429); // 4th within 15 minutes
   });
 
-  it("limits code requests per IP across phones", async () => {
-    const local = await startApp();
+  it("limits code requests per IP across phones (configurable, default 30 per 15 min)", async () => {
+    const local = await startApp({ OTP_SEND_LIMIT_PER_IP: "10" });
     try {
       const c = new Client(local);
       const results: number[] = [];
@@ -176,6 +177,7 @@ describe("rate limiting", () => {
       }
       expect(results.slice(0, 10).every((s) => s === 202)).toBe(true);
       expect(results[10]).toBe(429);
+      expect(loadConfig({ ...testEnv }).otpSendLimitPerIp).toBe(30);
     } finally {
       await local.close();
     }

@@ -187,6 +187,22 @@ enum ConsentPurpose {
   BUSINESS_DOCUMENT_PROCESSING
   PUBLIC_PROFILE_DISPLAY
   MARKETING_COMMUNICATIONS
+  IDENTITY_DOCUMENT_REVIEW
+}
+
+/// Identity documents accepted for the interim manual identity review.
+enum IdentityDocumentType {
+  FAYDA_ID_CARD
+  KEBELE_ID
+  PASSPORT
+  DRIVING_LICENSE
+}
+
+enum IdentityReviewStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+  WITHDRAWN
 }
 
 enum ConsentStatus {
@@ -345,33 +361,34 @@ model User {
   updatedAt        DateTime   @updatedAt @db.Timestamptz(6)
   deletedAt        DateTime?  @db.Timestamptz(6)
 
-  sessions             Session[]
-  mfaFactors           MfaFactor[]
-  roleAssignments      StaffRoleAssignment[] @relation("RoleHolder")
-  rolesGranted         StaffRoleAssignment[] @relation("RoleGrantor")
-  rolesRevoked         StaffRoleAssignment[] @relation("RoleRevoker")
-  sellerProfile        SellerProfile?
-  consents             ConsentRecord[]
-  oidcAuthRequests     OidcAuthRequest[]
-  uploadedDocuments    BusinessDocument[]
-  badgesRevoked        SellerBadge[]
-  verificationEvents   VerificationEvent[]
-  fraudReportsFiled    FraudReport[]         @relation("FraudReporter")
-  fraudReportsAssigned FraudReport[]         @relation("FraudAssignee")
-  appealsSubmitted     Appeal[]              @relation("AppealSubmitter")
-  appealsAssigned      Appeal[]              @relation("AppealAssignee")
-  appealsDecided       Appeal[]              @relation("AppealDecider")
-  reviewsPerformed     ReviewRecord[]        @relation("PrimaryReviewer")
-  reviewsSeconded      ReviewRecord[]        @relation("SecondReviewer")
-  auditLogs            AuditLog[]
-  subscriptions        Subscription[]
-  payments             Payment[]
-  apiClients           ApiClient[]
-  notifications        Notification[]
-  dataSubjectRequests  DataSubjectRequest[]  @relation("DsrSubject")
-  dataSubjectHandled   DataSubjectRequest[]  @relation("DsrHandler")
-  planPricesCreated    PlanPrice[]
-  qrTokensRevoked      QrToken[]
+  sessions              Session[]
+  mfaFactors            MfaFactor[]
+  roleAssignments       StaffRoleAssignment[]   @relation("RoleHolder")
+  rolesGranted          StaffRoleAssignment[]   @relation("RoleGrantor")
+  rolesRevoked          StaffRoleAssignment[]   @relation("RoleRevoker")
+  sellerProfile         SellerProfile?
+  consents              ConsentRecord[]
+  oidcAuthRequests      OidcAuthRequest[]
+  uploadedDocuments     BusinessDocument[]
+  badgesRevoked         SellerBadge[]
+  verificationEvents    VerificationEvent[]
+  fraudReportsFiled     FraudReport[]           @relation("FraudReporter")
+  fraudReportsAssigned  FraudReport[]           @relation("FraudAssignee")
+  appealsSubmitted      Appeal[]                @relation("AppealSubmitter")
+  appealsAssigned       Appeal[]                @relation("AppealAssignee")
+  appealsDecided        Appeal[]                @relation("AppealDecider")
+  reviewsPerformed      ReviewRecord[]          @relation("PrimaryReviewer")
+  reviewsSeconded       ReviewRecord[]          @relation("SecondReviewer")
+  auditLogs             AuditLog[]
+  subscriptions         Subscription[]
+  payments              Payment[]
+  apiClients            ApiClient[]
+  notifications         Notification[]
+  dataSubjectRequests   DataSubjectRequest[]    @relation("DsrSubject")
+  dataSubjectHandled    DataSubjectRequest[]    @relation("DsrHandler")
+  planPricesCreated     PlanPrice[]
+  qrTokensRevoked       QrToken[]
+  identityReviewUploads IdentityReviewRequest[]
 
   @@index([status])
   @@map("users")
@@ -398,14 +415,14 @@ model Session {
 }
 
 model MfaFactor {
-  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId      String        @db.Uuid
-  type        MfaFactorType @default(TOTP)
-  secretEnc   Bytes
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String        @db.Uuid
+  type         MfaFactorType @default(TOTP)
+  secretEnc    Bytes
   lastUsedStep BigInt?
-  confirmedAt DateTime?     @db.Timestamptz(6)
-  disabledAt  DateTime?     @db.Timestamptz(6)
-  createdAt   DateTime      @default(now()) @db.Timestamptz(6)
+  confirmedAt  DateTime?     @db.Timestamptz(6)
+  disabledAt   DateTime?     @db.Timestamptz(6)
+  createdAt    DateTime      @default(now()) @db.Timestamptz(6)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -473,7 +490,7 @@ model SellerProfile {
   updatedAt        DateTime            @updatedAt @db.Timestamptz(6)
   deletedAt        DateTime?           @db.Timestamptz(6)
 
-  user                   User                   @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
   business               Business?
   identityVerifications  IdentityVerification[]
   oidcAuthRequests       OidcAuthRequest[]
@@ -483,6 +500,7 @@ model SellerProfile {
   fraudReports           FraudReport[]
   appeals                Appeal[]
   reviewRecords          ReviewRecord[]
+  identityReviewRequests IdentityReviewRequest[]
 
   @@index([accountStatus])
   @@index([displayName])
@@ -548,18 +566,18 @@ model BusinessDocument {
 /// One row per eSignet authorization attempt. Holds what the callback needs to
 /// validate state, nonce and PKCE. Single use (consumedAt) and short-lived.
 model OidcAuthRequest {
-  id               String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId           String                 @db.Uuid
-  sellerProfileId  String                 @db.Uuid
-  environment      IntegrationEnvironment
-  stateHash        String                 @unique @db.Char(64)
-  nonceHash        String                 @db.Char(64)
-  codeVerifierEnc  Bytes
-  redirectUri      String                 @db.VarChar(512)
-  consentRecordId  String                 @db.Uuid
-  createdAt        DateTime               @default(now()) @db.Timestamptz(6)
-  expiresAt        DateTime               @db.Timestamptz(6)
-  consumedAt       DateTime?              @db.Timestamptz(6)
+  id              String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String                 @db.Uuid
+  sellerProfileId String                 @db.Uuid
+  environment     IntegrationEnvironment
+  stateHash       String                 @unique @db.Char(64)
+  nonceHash       String                 @db.Char(64)
+  codeVerifierEnc Bytes
+  redirectUri     String                 @db.VarChar(512)
+  consentRecordId String                 @db.Uuid
+  createdAt       DateTime               @default(now()) @db.Timestamptz(6)
+  expiresAt       DateTime               @db.Timestamptz(6)
+  consumedAt      DateTime?              @db.Timestamptz(6)
 
   user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   sellerProfile SellerProfile          @relation(fields: [sellerProfileId], references: [id], onDelete: Cascade)
@@ -594,8 +612,8 @@ model IdentityVerification {
   createdAt         DateTime                   @default(now()) @db.Timestamptz(6)
   updatedAt         DateTime                   @updatedAt @db.Timestamptz(6)
 
-  sellerProfile SellerProfile    @relation(fields: [sellerProfileId], references: [id], onDelete: Restrict)
-  authRequest   OidcAuthRequest? @relation(fields: [authRequestId], references: [id], onDelete: SetNull)
+  sellerProfile SellerProfile       @relation(fields: [sellerProfileId], references: [id], onDelete: Restrict)
+  authRequest   OidcAuthRequest?    @relation(fields: [authRequestId], references: [id], onDelete: SetNull)
   badges        SellerBadge[]
   events        VerificationEvent[]
 
@@ -620,6 +638,38 @@ model ConsentRecord {
 
   @@index([userId, purpose])
   @@map("consent_records")
+}
+
+/// Interim manual identity review (while Fayda production access is pending).
+/// Stores the ID document image encrypted in private storage; NO identity numbers are
+/// recorded. The image is purged shortly after the decision (see retainUntil).
+model IdentityReviewRequest {
+  id              String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sellerProfileId String               @db.Uuid
+  uploadedById    String               @db.Uuid
+  documentType    IdentityDocumentType
+  storageKey      String               @unique @db.VarChar(256)
+  mimeType        String               @db.VarChar(100)
+  sizeBytes       Int
+  sha256          String               @db.Char(64)
+  scanStatus      MalwareScanStatus    @default(PENDING)
+  scanEngine      String?              @db.VarChar(64)
+  scannedAt       DateTime?            @db.Timestamptz(6)
+  status          IdentityReviewStatus @default(SUBMITTED)
+  decisionReason  String?              @db.VarChar(2000)
+  submittedAt     DateTime             @default(now()) @db.Timestamptz(6)
+  decidedAt       DateTime?            @db.Timestamptz(6)
+  retainUntil     DateTime?            @db.Timestamptz(6)
+  purgedAt        DateTime?            @db.Timestamptz(6)
+  createdAt       DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime             @updatedAt @db.Timestamptz(6)
+
+  sellerProfile SellerProfile @relation(fields: [sellerProfileId], references: [id], onDelete: Restrict)
+  uploadedBy    User          @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@index([sellerProfileId])
+  @@index([status, submittedAt])
+  @@map("identity_review_requests")
 }
 
 // ──────────────────────── Verification state ────────────────────────
@@ -783,20 +833,20 @@ model ReviewRecord {
 
 /// Append-only, hash-chained (each row's hash covers the previous row's hash).
 model AuditLog {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  seq               BigInt    @unique @default(autoincrement())
-  occurredAt        DateTime  @default(now()) @db.Timestamptz(6)
-  actorType         ActorType
-  actorUserId       String?   @db.Uuid
-  actorApiClientId  String?   @db.Uuid
-  action            String    @db.VarChar(100)
-  targetType        String?   @db.VarChar(64)
-  targetId          String?   @db.VarChar(64)
-  requestId         String?   @db.VarChar(64)
-  ipHash            String?   @db.Char(64)
-  metadata          Json      @default("{}")
-  prevHash          String?   @db.Char(64)
-  hash              String?   @db.Char(64)
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  seq              BigInt    @unique @default(autoincrement())
+  occurredAt       DateTime  @default(now()) @db.Timestamptz(6)
+  actorType        ActorType
+  actorUserId      String?   @db.Uuid
+  actorApiClientId String?   @db.Uuid
+  action           String    @db.VarChar(100)
+  targetType       String?   @db.VarChar(64)
+  targetId         String?   @db.VarChar(64)
+  requestId        String?   @db.VarChar(64)
+  ipHash           String?   @db.Char(64)
+  metadata         Json      @default("{}")
+  prevHash         String?   @db.Char(64)
+  hash             String?   @db.Char(64)
 
   actorUser      User?      @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
   actorApiClient ApiClient? @relation(fields: [actorApiClientId], references: [id], onDelete: Restrict)
@@ -811,16 +861,16 @@ model AuditLog {
 
 /// Admin-configurable catalogue. No prices live in code.
 model Plan {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  code        String   @unique @db.VarChar(64)
-  kind        PlanKind
-  nameEn      String   @db.VarChar(120)
-  nameAm      String   @db.VarChar(120)
-  isActive    Boolean  @default(true)
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code      String   @unique @db.VarChar(64)
+  kind      PlanKind
+  nameEn    String   @db.VarChar(120)
+  nameAm    String   @db.VarChar(120)
+  isActive  Boolean  @default(true)
   /// Feature limits (e.g. API calls/month). Never used to grant verification.
-  limits      Json     @default("{}")
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+  limits    Json     @default("{}")
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
 
   prices        PlanPrice[]
   subscriptions Subscription[]

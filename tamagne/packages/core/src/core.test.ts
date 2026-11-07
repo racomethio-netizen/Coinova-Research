@@ -137,10 +137,13 @@ describe("public verification summary", () => {
   it("sandbox Fayda results never count in production", () => {
     const b = [badge({ level: "FAYDA_IDENTITY", method: "FAYDA_ESIGNET_OIDC", identityEnvironment: "SANDBOX" })];
     expect(buildPublicVerificationSummary("ACTIVE", b, { now, production: true }).faydaIdentity.status).toBe("NOT_VERIFIED");
-    expect(buildPublicVerificationSummary("ACTIVE", b, { now, production: false }).faydaIdentity.status).toBe("VERIFIED");
+    const nonProd = buildPublicVerificationSummary("ACTIVE", b, { now, production: false }).faydaIdentity;
+    expect(nonProd.status).toBe("VERIFIED");
+    expect(nonProd.testMode).toBe(true); // always labelled as a sandbox test
     const prod = [badge({ level: "FAYDA_IDENTITY", method: "FAYDA_ESIGNET_OIDC", identityEnvironment: "PRODUCTION" })];
     const s = buildPublicVerificationSummary("ACTIVE", prod, { now, production: true });
     expect(s.faydaIdentity).toEqual({ status: "VERIFIED", verifiedAt: issued.toISOString(), expiresAt: future.toISOString() });
+    expect(s.faydaIdentity.testMode).toBeUndefined();
   });
 
   it("expiry is evaluated at read time", () => {

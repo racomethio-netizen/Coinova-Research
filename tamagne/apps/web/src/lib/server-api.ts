@@ -16,6 +16,8 @@ export interface Category {
   status: PublicStatus;
   verifiedAt: string | null;
   expiresAt: string | null;
+  /** A sandbox Fayda result on a non-production deployment. */
+  testMode?: true;
 }
 export interface SellerMe {
   tamagneId: string;
@@ -137,4 +139,24 @@ export async function getMyBusiness(): Promise<MyBusiness | null> {
 export async function hasConsent(purpose: string): Promise<boolean> {
   const list = (await apiGet<{ purpose: string; status: string }[]>("/consents")).data ?? [];
   return list.some((c) => c.purpose === purpose && c.status === "GRANTED");
+}
+
+export interface FaydaStatus {
+  enabled: boolean;
+  mode: "disabled" | "sandbox" | "production";
+}
+
+export async function getFaydaStatus(): Promise<FaydaStatus> {
+  return (await apiGet<FaydaStatus>("/fayda/status")).data ?? { enabled: false, mode: "disabled" };
+}
+
+export interface ManualReview {
+  id: string;
+  documentType: "FAYDA_ID_CARD" | "KEBELE_ID" | "PASSPORT" | "DRIVING_LICENSE";
+  status: "SUBMITTED" | "APPROVED" | "REJECTED" | "WITHDRAWN";
+  decisionReason: string | null;
+}
+
+export async function getManualReview(): Promise<ManualReview | null> {
+  return (await apiGet<ManualReview | null>("/identity/manual")).data;
 }

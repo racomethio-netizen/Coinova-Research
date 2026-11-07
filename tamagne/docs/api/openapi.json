@@ -46,6 +46,41 @@
         ]
       }
     },
+    "/api/v1/fayda/start": {
+      "post": {
+        "operationId": "FaydaStatusController_start_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Record consent and get the Fayda eSignet authorization URL (state, nonce, PKCE S256)",
+        "tags": [
+          "fayda"
+        ]
+      }
+    },
+    "/api/v1/fayda/callback": {
+      "get": {
+        "operationId": "FaydaStatusController_callback_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "OIDC redirect target (browser only); redirects to the identity page with the result",
+        "tags": [
+          "fayda"
+        ]
+      }
+    },
     "/api/v1/auth/csrf": {
       "get": {
         "operationId": "AuthController_csrf_v1",
@@ -726,6 +761,151 @@
           }
         ],
         "summary": "Re-run the malware scan on a document whose scan failed",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/identity/manual": {
+      "get": {
+        "operationId": "IdentityReviewController_get_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Status of the seller's manual identity review",
+        "tags": [
+          "identity"
+        ]
+      },
+      "post": {
+        "operationId": "IdentityReviewController_submit_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "documentType",
+                  "file"
+                ],
+                "properties": {
+                  "documentType": {
+                    "type": "string",
+                    "enum": [
+                      "FAYDA_ID_CARD",
+                      "KEBELE_ID",
+                      "PASSPORT",
+                      "DRIVING_LICENSE"
+                    ]
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Submit an ID document for manual identity review (interim; never shown as Fayda)",
+        "tags": [
+          "identity"
+        ]
+      },
+      "delete": {
+        "operationId": "IdentityReviewController_withdraw_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Withdraw a pending request (the image is deleted)",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/admin/reviews/identity": {
+      "get": {
+        "operationId": "AdminIdentityReviewController_queue_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Manual identity review queue",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/identity-reviews/{id}/file": {
+      "get": {
+        "operationId": "AdminIdentityReviewController_file_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Download the ID document (audited)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/identity-reviews/{id}/decision": {
+      "post": {
+        "operationId": "AdminIdentityReviewController_decide_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Approve or reject a manual identity review (HIGH risk needs a second reviewer)",
         "tags": [
           "admin"
         ]

@@ -1,3 +1,4 @@
+import { generateKeyPairSync } from "node:crypto";
 import { defineConfig, devices } from "@playwright/test";
 
 /**
@@ -8,6 +9,11 @@ import { defineConfig, devices } from "@playwright/test";
 const key = (n: number) => Buffer.alloc(32, n).toString("base64");
 const WEB = "http://localhost:3100";
 const API = "http://127.0.0.1:4100";
+const TEST_IDP = "http://127.0.0.1:4300";
+// Throwaway client key pair for the TEST identity provider (regenerated every run).
+const { publicKey, privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+const clientPrivateJwk = JSON.stringify({ ...privateKey.export({ format: "jwk" }), alg: "RS256", kid: "e2e-client" });
+const clientPublicJwk = JSON.stringify({ ...publicKey.export({ format: "jwk" }), alg: "RS256", kid: "e2e-client" });
 
 export default defineConfig({
   testDir: "e2e",
@@ -20,6 +26,13 @@ export default defineConfig({
     { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
   webServer: [
+    {
+      // TEST identity provider (not Fayda): lets the browser run the real OIDC redirect round trip.
+      command: "npx tsx --conditions=tamagne-source ../api/scripts/test-idp-server.ts",
+      url: `${TEST_IDP}/.well-known/openid-configuration`,
+      reuseExistingServer: false,
+      env: { TEST_IDP_PORT: "4300", TEST_IDP_REDIRECT_URI: `${WEB}/api/v1/fayda/callback`, TEST_IDP_CLIENT_PUBLIC_JWK: clientPublicJwk },
+    },
     {
       command: "node ../api/dist/main.js",
       url: `${API}/api/v1/health`,
@@ -39,6 +52,12 @@ export default defineConfig({
         STORAGE_DRIVER: "local",
         STORAGE_LOCAL_DIR: "../../.tmp/e2e-storage",
         SCANNER: "eicar-only",
+        OTP_SEND_LIMIT_PER_IP: "1000",
+        FAYDA_MODE: "sandbox",
+        FAYDA_ISSUER: TEST_IDP,
+        FAYDA_CLIENT_ID: "tamagne-test-client",
+        FAYDA_REDIRECT_URI: `${WEB}/api/v1/fayda/callback`,
+        FAYDA_CLIENT_PRIVATE_KEY_JWK: clientPrivateJwk,
       },
     },
     {

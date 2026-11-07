@@ -93,6 +93,7 @@ export class ConsentsController {
       if (seller && purpose === "FAYDA_IDENTITY_VERIFICATION") {
         // Withdrawing identity consent revokes the Fayda badge; identity data deletion is scheduled (Phase 7).
         const badges = await tx.sellerBadge.findMany({ where: { sellerProfileId: seller.id, level: "FAYDA_IDENTITY", status: { in: ["ACTIVE", "PENDING", "SUSPENDED"] } } });
+        await tx.identityVerification.updateMany({ where: { sellerProfileId: seller.id, status: "VERIFIED" }, data: { status: "REVOKED", revokedAt: now } });
         for (const b of badges) {
           await tx.sellerBadge.update({ where: { id: b.id }, data: { status: "REVOKED", revokedAt: now, revocationReason: "consent withdrawn by seller" } });
           await tx.verificationEvent.create({

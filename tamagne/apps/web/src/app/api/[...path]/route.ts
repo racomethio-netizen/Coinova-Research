@@ -8,7 +8,7 @@ import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 const REQUEST_HEADERS = ["accept", "accept-language", "content-type", "cookie", "origin", "referer", "user-agent", "x-csrf-token", "x-request-id", "x-forwarded-for"];
-const RESPONSE_HEADERS = ["content-type", "cache-control", "retry-after", "x-request-id"];
+const RESPONSE_HEADERS = ["content-type", "cache-control", "retry-after", "x-request-id", "location", "content-disposition", "referrer-policy"];
 
 async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }): Promise<Response> {
   const { path } = await ctx.params;

@@ -1,6 +1,6 @@
 # TAMAGNE architecture
 
-_Status: Phase 4 (business document verification), 2026-11-07._
+_Status: Phase 5 (Fayda adapter + manual identity review), 2026-11-07._
 
 TAMAGNE ("ታማኝ", trustworthy) is an independent private platform that lets Ethiopian
 online sellers prove who they are, and lets buyers check that proof through a
@@ -178,7 +178,7 @@ activated for an `ACTIVE` seller. A Fayda badge cannot outlive its identity veri
    (with ToS and privacy consent records), a session starts, and the event is audited.
 4. `POST /api/v1/sellers` creates the profile and issues the Level 1 badge, evidenced by that consumed challenge.
 
-### 5.2 Level 2: Fayda eSignet OIDC (Phase 5)
+### 5.2 Level 2: Fayda eSignet OIDC (adapter implemented in Phase 5; not yet connected to Fayda)
 
 ```
 Seller            Web/API                                  Fayda eSignet
@@ -206,12 +206,16 @@ Any failure records `FAILED` with a short code (e.g. `invalid_signature`, `nonce
 `issuer_mismatch`, `expired`), never the token. Tokens are discarded after validation.
 See `docs/FAYDA_INTEGRATION.md`.
 
-### 5.3 Manual identity review (interim)
-Seller uploads an ID document image via the document pipeline (scan → private
-storage). A Verification Officer compares and records a `ReviewRecord`
-(`IDENTITY_MANUAL`). A `HIGH`-risk case requires a second officer. Result: an
-`IDENTITY_MANUAL_REVIEW` badge with a shorter validity. The public page never calls
-it Fayda verification. Source images are deleted per the retention schedule.
+### 5.3 Manual identity review (interim, implemented in Phase 5)
+`POST /api/v1/identity/manual` (multipart): `IDENTITY_DOCUMENT_REVIEW` consent required; one open
+request per seller (DB-enforced); same file checks as business documents; the image is stored only
+if the malware scan is clean (otherwise refused, nothing kept); encrypted at rest. **No ID number is
+recorded.** Reviewers (Super Admin / Verification Officer, MFA) see a queue, download the image
+(audited, sandboxed) and approve or reject with a reason; HIGH risk needs a second reviewer.
+Approval issues an `IDENTITY_MANUAL_REVIEW` badge (180 days), shown as "Identity reviewed manually",
+never as Fayda (DB constraint + summary rule). The image is kept 30 days after approval or 90 days
+after rejection (proposed; purge job in Phase 7); sellers can withdraw a pending request, which
+deletes the image at once. Decisions are final in the DB.
 
 ### 5.4 Level 3: business documents (implemented in Phase 4)
 

@@ -11,6 +11,8 @@ import type { AppConfig } from "./config/env.js";
 import { ConsentsController } from "./consents/consents.controller.js";
 import { PrismaService } from "./database/prisma.service.js";
 import { FaydaStatusController } from "./fayda/fayda-status.controller.js";
+import { FaydaOidcClient } from "./fayda/fayda-oidc.js";
+import { FAYDA_CLIENT, FaydaService } from "./fayda/fayda.service.js";
 import { HealthController } from "./health/health.controller.js";
 import { SellersController } from "./sellers/sellers.controller.js";
 import { SellersService } from "./sellers/sellers.service.js";
@@ -26,6 +28,8 @@ import { BusinessesController } from "./businesses/businesses.controller.js";
 import { BusinessesService } from "./businesses/businesses.service.js";
 import { ReviewController } from "./review/review.controller.js";
 import { ReviewService } from "./review/review.service.js";
+import { AdminIdentityReviewController, IdentityReviewController } from "./identity/identity-review.controller.js";
+import { IdentityReviewService } from "./identity/identity-review.service.js";
 import { ClamAvScanner, DisabledScanner, EicarOnlyScanner, MALWARE_SCANNER, type MalwareScanner } from "./scanning/scanner.js";
 import { DisabledObjectStore, EncryptedObjectStore, LocalObjectStore, OBJECT_STORE, type ObjectStore } from "./storage/storage.js";
 
@@ -49,7 +53,7 @@ function createScanner(config: AppConfig): MalwareScanner {
 @Module({})
 export class AppModule {
   static forRoot(config: AppConfig, overrides: AppOverrides = {}): DynamicModule {
-    const controllers: Type[] = [HealthController, FaydaStatusController, AuthController, MfaController, SellersController, ConsentsController, AdminController, VerifyController, SellerQrController, AdminQrController, BusinessesController, ReviewController];
+    const controllers: Type[] = [HealthController, FaydaStatusController, AuthController, MfaController, SellersController, ConsentsController, AdminController, VerifyController, SellerQrController, AdminQrController, BusinessesController, ReviewController, IdentityReviewController, AdminIdentityReviewController];
     if (config.smsProvider === "test" && config.appEnv === "test") controllers.push(TestOutboxController);
     return {
       module: AppModule,
@@ -65,7 +69,10 @@ export class AppModule {
         VerifyService,
         QrService,
         BusinessesService,
+        FaydaService,
+        { provide: FAYDA_CLIENT, useFactory: () => (config.fayda.enabled ? new FaydaOidcClient(config.fayda) : null) },
         ReviewService,
+        IdentityReviewService,
         AuthGuard,
         StaffGuard,
         RateLimiter,

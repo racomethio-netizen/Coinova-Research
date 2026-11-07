@@ -61,7 +61,7 @@ export class AuthService {
       throw new ApiError(HttpStatus.SERVICE_UNAVAILABLE, "sms_unavailable", "Phone verification is temporarily unavailable.");
     }
     const phoneKey = this.crypto.hash("phone", phone);
-    await this.limiter.consume(RULES.otpSendPerIp, meta.ipHash);
+    await this.limiter.consume({ ...RULES.otpSendPerIp, limit: this.config.otpSendLimitPerIp }, meta.ipHash);
     await this.limiter.consume(RULES.otpResendGap, phoneKey);
     await this.limiter.consume(RULES.otpSendPerPhone, phoneKey);
 

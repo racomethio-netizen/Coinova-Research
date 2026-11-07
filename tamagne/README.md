@@ -9,10 +9,10 @@ result by Tamagne ID, public profile or QR code.
 TAMAGNE is an independent private platform, not a government institution.
 Verification does not guarantee honesty, product authenticity or delivery.
 
-> **Status: Phase 4 complete.** Sellers register by phone OTP, get the Level 1 badge and a
-> revocable QR code, and can submit business documents (scanned, encrypted) for Level 3 review;
-> buyers check sellers by Tamagne ID or QR. Not yet connected: production SMS, production
-> document storage, Fayda. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status: Phase 5 done as far as possible without Fayda credentials.** Phone OTP, Level 1
+> badge and QR, Level 3 business review, a complete (but unconnected) Fayda eSignet adapter,
+> and an interim manual identity review. Not yet connected: Fayda, production SMS, production
+> document storage. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Layout
 
