@@ -5,15 +5,17 @@ import type { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule, type OpenAPIObject } from "@nestjs/swagger";
 import express from "express";
 import helmet from "helmet";
-import { AppModule } from "./app.module.js";
+import { AppModule, type AppOverrides } from "./app.module.js";
 import type { AppConfig } from "./config/env.js";
 import { ApiExceptionFilter, bodyParserErrorHandler, requestIdMiddleware } from "./http/errors.js";
+import { SessionService } from "./auth/session.service.js";
+import { csrfMiddleware } from "./security/csrf.js";
 
 /** JSON bodies are small; documents are uploaded as multipart in Phase 4 with their own limit. */
 const JSON_BODY_LIMIT = "100kb";
 
-export async function createApp(config: AppConfig): Promise<INestApplication> {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(config), {
+export async function createApp(config: AppConfig, overrides: AppOverrides = {}): Promise<INestApplication> {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(config, overrides), {
     bodyParser: false,
     logger: config.appEnv === "test" ? false : ["log", "warn", "error"],
   });
@@ -31,6 +33,8 @@ export async function createApp(config: AppConfig): Promise<INestApplication> {
   );
   app.use(express.json({ limit: JSON_BODY_LIMIT }));
   app.use(bodyParserErrorHandler);
+  // CSRF applies to every state-changing request; allowed origins are the web app's.
+  app.use(csrfMiddleware([config.publicWebUrl, ...config.corsOrigins], app.get(SessionService).csrfCookieName));
   app.enableCors({
     origin: config.corsOrigins,
     credentials: true,

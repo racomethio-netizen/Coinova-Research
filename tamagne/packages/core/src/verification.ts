@@ -122,7 +122,7 @@ export function buildPublicVerificationSummary(
     accountStatus,
     phone: categoryFor(badges, "PHONE", now, active, any),
     faydaIdentity: categoryFor(badges, "FAYDA_IDENTITY", now, active, (b) =>
-      production ? b.identityEnvironment === "PRODUCTION" : b.identityEnvironment != null,
+      production ? b.identityEnvironment === "PRODUCTION" : b.identityEnvironment !== null && b.identityEnvironment !== undefined,
     ),
     identityManualReview: categoryFor(badges, "IDENTITY_MANUAL_REVIEW", now, active, any),
     business: categoryFor(badges, "BUSINESS_DOCUMENTS", now, active, any),

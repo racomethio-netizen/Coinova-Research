@@ -45,6 +45,321 @@
           "fayda"
         ]
       }
+    },
+    "/api/v1/auth/csrf": {
+      "get": {
+        "operationId": "AuthController_csrf_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Issue a CSRF token (also set as a cookie) for state-changing requests",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "AuthController_register_v1",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Code sent if the number can be registered or signed in"
+          }
+        },
+        "summary": "Start registration: accept terms and send a verification code by SMS",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login_v1",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "summary": "Start sign-in: send a verification code by SMS (same response for unknown numbers)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/otp/verify": {
+      "post": {
+        "operationId": "AuthController_verify_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Verify the SMS code; creates the account on first registration and starts a session",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/session": {
+      "get": {
+        "operationId": "AuthController_session_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The current viewer, or null"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/mfa/totp/enroll": {
+      "post": {
+        "operationId": "MfaController_enroll_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Start TOTP enrolment; returns the secret once",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/mfa/totp/confirm": {
+      "post": {
+        "operationId": "MfaController_confirm_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Confirm enrolment with a code from the authenticator app",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/mfa/verify": {
+      "post": {
+        "operationId": "MfaController_verify_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Complete two-factor verification for this session",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/sellers": {
+      "post": {
+        "operationId": "SellersController_create_v1",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Seller profile"
+          },
+          "401": {
+            "description": "Not signed in"
+          },
+          "409": {
+            "description": "Profile already exists"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Create the signed-in user's seller profile (issues the Level 1 phone badge)",
+        "tags": [
+          "sellers"
+        ]
+      }
+    },
+    "/api/v1/sellers/me": {
+      "get": {
+        "operationId": "SellersController_me_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "The signed-in seller's profile and verification status",
+        "tags": [
+          "sellers"
+        ]
+      },
+      "patch": {
+        "operationId": "SellersController_update_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Update profile details (not verification status)",
+        "tags": [
+          "sellers"
+        ]
+      }
+    },
+    "/api/v1/consents": {
+      "get": {
+        "operationId": "ConsentsController_list_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Current consent state per purpose",
+        "tags": [
+          "consents"
+        ]
+      },
+      "post": {
+        "operationId": "ConsentsController_grant_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Grant consent for a purpose (current policy version)",
+        "tags": [
+          "consents"
+        ]
+      }
+    },
+    "/api/v1/consents/{purpose}": {
+      "delete": {
+        "operationId": "ConsentsController_withdraw_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Withdraw consent; stops the processing it covers",
+        "tags": [
+          "consents"
+        ]
+      }
+    },
+    "/api/v1/admin/me": {
+      "get": {
+        "operationId": "AdminController_me_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Staff identity and roles (requires a staff role and MFA)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/audit/verify": {
+      "get": {
+        "operationId": "AdminController_verifyAudit_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Verify the audit log hash chain",
+        "tags": [
+          "admin"
+        ]
+      }
     }
   },
   "info": {

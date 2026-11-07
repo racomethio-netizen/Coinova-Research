@@ -17,6 +17,7 @@ const prod = {
   DATABASE_URL: "postgresql://app@db.internal:5432/tamagne?sslmode=verify-full",
   CORS_ORIGINS: "https://tamagne.example",
   PUBLIC_WEB_URL: "https://tamagne.example",
+  REDIS_URL: "rediss://cache.internal:6380/0",
 };
 const faydaProd = {
   FAYDA_MODE: "production",
@@ -94,5 +95,16 @@ describe("configuration", () => {
     const secret = Buffer.alloc(16, 9).toString("base64");
     const msg = issues({ ...dev, HMAC_PEPPER: secret, FIELD_ENCRYPTION_KEYS: `1:${secret}` }).join("\n");
     expect(msg).not.toContain(secret);
+  });
+
+  it("SMS and test-number switches are confined to safe environments", () => {
+    expect(issues({ ...prod, SMS_PROVIDER: "console" }).join()).toMatch(/only allowed in development\/test/);
+    expect(issues({ ...dev, SMS_PROVIDER: "test" }).join()).toMatch(/only allowed when APP_ENV=test/);
+    expect(issues({ ...prod, ALLOW_TEST_PHONE_NUMBERS: "true" }).join()).toMatch(/ALLOW_TEST_PHONE_NUMBERS must be false/);
+    const { REDIS_URL: _omit, ...noRedis } = prod;
+    expect(issues(noRedis).join()).toMatch(/REDIS_URL is required/);
+    expect(loadConfig({ ...dev, SMS_PROVIDER: "console" }).smsProvider).toBe("console");
+    expect(loadConfig(prod).secureCookies).toBe(true);
+    expect(loadConfig(dev).secureCookies).toBe(false);
   });
 });

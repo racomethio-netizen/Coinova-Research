@@ -59,6 +59,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = "An unexpected error occurred.";
     let details: unknown;
+    let code: string | undefined;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -69,6 +70,8 @@ export class ApiExceptionFilter implements ExceptionFilter {
           const m = (body as { message?: unknown }).message;
           message = typeof m === "string" ? m : Array.isArray(m) ? "Request validation failed." : exception.message;
           details = (body as { details?: unknown }).details;
+          const c = (body as { code?: unknown }).code;
+          if (typeof c === "string") code = c;
         }
       }
     } else if (isBodyParserError(exception)) {
@@ -82,7 +85,11 @@ export class ApiExceptionFilter implements ExceptionFilter {
       this.logger.error(`${req.method} ${req.route?.path ?? "(unmatched)"} failed: ${name} [${requestId}]`);
     }
 
-    const payload: ErrorBody = { error: { code: CODE_BY_STATUS[status] ?? (status >= 500 ? "internal_error" : "error"), message, requestId } };
+    const payload: ErrorBody = {
+      error: { code: code ?? CODE_BY_STATUS[status] ?? (status >= 500 ? "internal_error" : "error"), message, requestId },
+    };
+    const retryAfter = (exception as { retryAfterSeconds?: unknown })?.retryAfterSeconds;
+    if (typeof retryAfter === "number") res.setHeader("Retry-After", String(retryAfter));
     if (details !== undefined) payload.error.details = details;
     res.status(status).json(payload);
   }

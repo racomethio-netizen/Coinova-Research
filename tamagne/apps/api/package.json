@@ -9,7 +9,9 @@
     "dev": "tsx watch --env-file-if-exists=../../.env --conditions=tamagne-source src/main.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "openapi": "tsx --conditions=tamagne-source scripts/export-openapi.ts"
+    "openapi": "tsx --conditions=tamagne-source scripts/export-openapi.ts",
+    "staff:bootstrap": "tsx --conditions=tamagne-source scripts/bootstrap-super-admin.ts",
+    "test:redis": "REDIS_TEST_URL=${REDIS_TEST_URL:-redis://127.0.0.1:6379/0} vitest run test/rate-limit.test.ts"
   },
   "dependencies": {
     "@nestjs/common": "12.2.0",
@@ -20,6 +22,7 @@
     "@tamagne/db": "0.1.0",
     "express": "5.3.0",
     "helmet": "8.3.0",
+    "ioredis": "6.0.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
     "zod": "4.6.7"

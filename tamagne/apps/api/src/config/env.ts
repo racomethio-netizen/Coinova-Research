@@ -32,6 +32,10 @@ const EnvSchema = z.object({
   /** Pepper for HMACs of identity subjects, OTP codes and IP addresses. */
   HMAC_PEPPER: base64Key32,
   OPENAPI_ENABLED: booleanString,
+  /** SMS delivery for OTP. "console" prints codes (development only); "test" keeps an in-memory outbox (APP_ENV=test only). */
+  SMS_PROVIDER: z.enum(["disabled", "console", "test"]).default("disabled"),
+  /** Accept synthetic +999 phone numbers. Never in production. */
+  ALLOW_TEST_PHONE_NUMBERS: booleanString,
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
 
   // ── Fayda eSignet (OIDC). Disabled unless explicitly configured. ──
@@ -73,6 +77,10 @@ export interface AppConfig {
   fieldEncryption: { keys: string; activeKeyId: number };
   hmacPepper: Buffer;
   openApiEnabled: boolean;
+  smsProvider: "disabled" | "console" | "test";
+  allowTestPhoneNumbers: boolean;
+  /** Cookies are Secure and use the __Host- prefix outside development/test. */
+  secureCookies: boolean;
   trustProxyHops: number;
   fayda: FaydaConfig;
 }
@@ -169,6 +177,14 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     }
     if (env.OPENAPI_ENABLED) issues.push("OPENAPI_ENABLED must be false in production (publish the exported spec instead)");
     if (corsOrigins.some((o) => o.startsWith("http://"))) issues.push("CORS_ORIGINS must be https in production");
+    if (!env.REDIS_URL) issues.push("REDIS_URL is required in production (rate limiting must be shared across instances)");
+    if (env.ALLOW_TEST_PHONE_NUMBERS) issues.push("ALLOW_TEST_PHONE_NUMBERS must be false in production");
+  }
+  if (env.SMS_PROVIDER === "console" && !["development", "test"].includes(env.APP_ENV)) {
+    issues.push("SMS_PROVIDER=console prints OTP codes and is only allowed in development/test");
+  }
+  if (env.SMS_PROVIDER === "test" && env.APP_ENV !== "test") {
+    issues.push("SMS_PROVIDER=test is only allowed when APP_ENV=test");
   }
 
   try {
@@ -191,6 +207,9 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     fieldEncryption: { keys: env.FIELD_ENCRYPTION_KEYS, activeKeyId: env.FIELD_ENCRYPTION_ACTIVE_KEY_ID },
     hmacPepper: Buffer.from(env.HMAC_PEPPER, "base64"),
     openApiEnabled: env.OPENAPI_ENABLED,
+    smsProvider: env.SMS_PROVIDER,
+    allowTestPhoneNumbers: env.ALLOW_TEST_PHONE_NUMBERS,
+    secureCookies: env.APP_ENV === "production" || env.APP_ENV === "staging",
     trustProxyHops: env.TRUST_PROXY_HOPS,
     fayda,
   };

@@ -9,9 +9,10 @@ result by Tamagne ID, public profile or QR code.
 TAMAGNE is an independent private platform, not a government institution.
 Verification does not guarantee honesty, product authenticity or delivery.
 
-> **Status: Phase 1 (foundation).** Architecture, database schema with integrity
-> rules, API and web skeletons, Docker. No user-facing features yet. Fayda
-> integration is disabled. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status: Phase 2 complete.** Sellers can register and sign in by phone OTP, create a
+> profile and receive the Level 1 (phone) badge; staff accounts have TOTP MFA. No
+> production SMS provider is connected yet, and Fayda integration is disabled.
+> See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Layout
 
@@ -40,7 +41,7 @@ Run locally:
 cp .env.example .env   # development placeholders only
 docker compose up -d postgres redis
 docker compose run --rm migrate
-npm run dev -w @tamagne/api    # http://localhost:4000/api/docs
+npm run dev -w @tamagne/api    # http://localhost:4000/api/docs; OTP codes print to this log (SMS_PROVIDER=console)
 npm run dev -w @tamagne/web    # http://localhost:3000
 ```
 

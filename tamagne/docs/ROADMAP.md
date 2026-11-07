@@ -1,85 +1,87 @@
 # TAMAGNE roadmap and status
 
-_Last updated: 2026-11-07 (session 1, Phase 1)._
+_Last updated: 2026-11-07 (session 1, Phases 1–2)._
 
 Legend: ✅ done and covered by automated tests · 🟡 done, partially verified ·
 ⛔ blocked on an external party or owner decision · ⬜ not started.
 
-## Verified this session
+## Verified (Phase 2)
 
 | Check | Result |
 |---|---|
 | `npm run typecheck` (core, db, api, web) | ✅ pass |
-| `npm test`: core unit | ✅ 16 / 16 |
-| `npm test`: API config + HTTP (supertest, real PostgreSQL) | ✅ 18 / 18 |
-| `npm test`: web dictionaries | ✅ 4 / 4 |
-| `npm run test:db`: integrity rules on PostgreSQL 16 | ✅ 31 / 31 |
-| Mutation check: dropping the badge-issuance trigger | ✅ 7 DB tests fail as expected, restored → 31 / 31 |
-| `npm run build` (core, db, api, web) | ✅ pass |
-| `npm audit` | ✅ 0 vulnerabilities (multer pinned to 2.5.0 via override for GHSA-q7qp-rjg7-q26m) |
-| Docker: API runtime, migrate and web images build | ✅ API image runs as non-root on read-only files; readiness OK |
-| `docker compose`: postgres + redis healthy → migrate job → API ready | ✅ |
-| Web at 360 px and 1280 px (Amharic) | ✅ no horizontal overflow; Ethiopic renders with self-hosted font |
-| Lint | ⬜ no ESLint config yet (Phase 2) |
-| GitHub Actions workflow `.github/workflows/tamagne-ci.yml` | 🟡 written; not yet run on GitHub |
+| `npm run lint` (typescript-eslint; Next.js rules for web) | ✅ 0 problems |
+| `npm test`: core unit | ✅ 38 / 38 (incl. RFC 6238 and RFC 7636 test vectors) |
+| `npm test`: API (config, HTTP, auth, sessions, CSRF, rate limits, sellers, consents, staff MFA) | ✅ 44 / 44 + Redis test (✅ 3 / 3 with `REDIS_TEST_URL`) |
+| `npm test`: web dictionaries (EN/AM parity, Ethiopic script) | ✅ 4 / 4 |
+| `npm run test:db`: integrity rules on PostgreSQL 16 | ✅ 31 / 31 (3 migrations) |
+| `npm run test:e2e`: Playwright, desktop + Pixel 7 | ✅ 6 / 6 |
+| `npm run build` | ✅ pass |
+| `npm audit --omit=dev` | ✅ 0 vulnerabilities (dev-only: moderate `minimatch` advisory via typescript-eslint) |
+| GitHub Actions `.github/workflows/tamagne-ci.yml` | 🟡 updated (Redis service, lint, e2e); not yet run on GitHub |
+
+Phase 1 verification (Docker images, compose stack, mutation check) is recorded in git history.
 
 ## Phase 1: repository, architecture, database ✅
 
-- ✅ `docs/ARCHITECTURE.md` (rules → enforcement map, context, data model, flows, security, privacy, environments)
-- ✅ Monorepo: `packages/core`, `packages/db`, `apps/api`, `apps/web`
-- ✅ Prisma schema: all 17 required models + Session, MfaFactor, PhoneOtpChallenge, StaffRoleAssignment, OidcAuthRequest, Plan, PlanPrice, DataSubjectRequest
-- ✅ Migrations: `20261107000000_init` (generated) and `20261107000100_integrity_rules` (CHECKs, partial unique indexes, triggers, hash-chained audit log)
-- ✅ `@tamagne/core`: Tamagne ID / QR token generation, AES-256-GCM field cipher with key rotation, HMAC, PKCE, public verification summary rules
-- ✅ API skeleton: Zod config with Fayda disabled state and production guards, health/readiness, Fayda status, error envelope, request IDs, Helmet, CORS allow-list, body limits, OpenAPI (exported to `docs/api/openapi.json`)
-- ✅ Web shell: EN/AM landing page with honest disclaimers, brand tokens, security headers
-- ✅ Docker (API runtime + migrate, web), `docker-compose.yml`, `.env.example`
-- ✅ `docs/FAYDA_INTEGRATION.md`, `docs/DEPLOYMENT.md`
+Architecture document, monorepo, Prisma schema (17 required models + supporting tables),
+integrity migration, core primitives, API and web skeletons, Docker, compose, CI.
+
+## Phase 2: authentication and seller registration ✅
+
+- ✅ Phone OTP registration and sign-in (`/auth/register`, `/auth/login`, `/auth/otp/verify`), no account enumeration, codes stored only as HMAC, 5 attempts, single use, 5-minute expiry
+- ✅ Ethiopian phone normalization (`09…`, `07…`, `+251…`), synthetic `+999` numbers only when allowed (never production)
+- ✅ Sessions: hashed opaque tokens, seller/staff lifetimes, idle timeout, server-side logout, immediate effect of suspension
+- ✅ CSRF: Origin check + double-submit token on every mutation (login CSRF included)
+- ✅ Rate limiting: Redis store (memory store in dev/tests), fail closed, `Retry-After`
+- ✅ Consent: ToS + privacy recorded at registration with policy version and locale; `GET/POST /consents`, `DELETE /consents/:purpose`; public-profile visibility follows consent; withdrawing Fayda consent revokes a Fayda badge
+- ✅ Sellers: `POST /sellers`, `GET/PATCH /sellers/me`; Level 1 badge issued with OTP evidence; duplicate profile → 409; server-controlled fields rejected; suspended sellers cannot edit
+- ✅ Staff: role guards, TOTP MFA (enrol/confirm/verify, encrypted secret, replay protection), `/admin/me`, role-specific `/admin/audit/verify` probe, first Super Admin bootstrap script
+- ✅ Audit log entries for auth, MFA, seller and consent events (no personal data in metadata, enforced)
+- ✅ SMS adapter: `disabled` (default), `console` (dev only), `test` (APP_ENV=test only). **No production SMS provider yet**
+- ✅ Web: register, sign-in, OTP, profile setup, dashboard (verification status per level, public-profile toggle, sign out), EN/AM, shadcn-style components, accessible errors, same-origin API proxy
+- ✅ ESLint
+
+### Phase 2 limitations
+- ⛔ Production SMS: Ethio telecom was named; waiting for confirmation of scope (SMS and/or hosting) and a contract/credentials. Until then production registration cannot work (SMS_PROVIDER=disabled returns 503).
+- Phone number change and account deletion flows are not built yet (Phase 7 covers deletion).
+- Staff role management UI/API (grant/revoke by a Super Admin) is Phase 6; only the bootstrap script exists.
+- Policy texts (ToS, privacy) are drafts; consent records carry version `2026-11-draft`.
+- Docker: the API runtime image was rebuilt successfully after the Phase 2 changes; the web image rebuild had not finished when this was committed (check `docker build -f apps/web/Dockerfile .`).
 
 ## Next phases
 
-### Phase 2: authentication and seller registration ⬜
-- Session module (opaque cookie, hashed store), CSRF (Origin + double-submit), Redis rate limiter
-- `POST /api/v1/auth/register`, `/auth/login`, OTP send/verify with an SMS adapter (disabled/console in dev)
-- `POST/GET/PATCH /api/v1/sellers(/me)`; Level 1 badge issuance; consent capture (ToS, privacy)
-- Staff TOTP MFA; role guards; audit log service
-- ESLint (typescript-eslint), shadcn/ui setup, web sign-up/login pages
-- Tests: registration, OTP, duplicate seller, unauthorized access, rate limiting
-
 ### Phase 3: profiles and QR verification ⬜
-- `GET /api/v1/verify/:sellerId`, `GET /api/v1/sellers/:sellerId/qr`, web `/verify/[id]`
-- QR rotation/revocation, enumeration-safe responses, public profile consent
+- `GET /api/v1/verify/:sellerId` (Tamagne ID or QR token), `GET /api/v1/sellers/:sellerId/qr`
+- Web `/verify/[id]` public page and lookup form; QR image generation; rotation and revocation
+- Enumeration-safe responses, lookup rate limits, public profile consent enforced
+- Tests: QR validation, QR revocation, public field allow-list
 
-### Phase 4: business documents ⬜
-- Object storage adapter (Ethiopia-hosted target), multipart upload, magic-byte checks, ClamAV, review queue, Level 3 badge
-
+### Phase 4: business document verification ⬜
 ### Phase 5: Fayda sandbox integration ⛔ (needs NIDP sandbox access)
-- OIDC adapter per `docs/FAYDA_INTEGRATION.md` §5; manual identity review workflow can ship before it
-
 ### Phase 6: admin dashboard and fraud reporting ⬜
-### Phase 7: security, privacy, compliance ⬜ (legal templates, DPIA, retention jobs, deletion workflow, nonce CSP)
-### Phase 8: testing and production preparation ⬜ (Playwright e2e, load tests, backup/restore drill)
+### Phase 7: security, privacy, compliance ⬜
+### Phase 8: testing and production preparation ⬜
 
 ## Blockers and owner decisions
 
 1. ⛔ Fayda: NIDP relying-party onboarding and sandbox credentials.
-2. ⛔ Ethiopian production hosting provider (DB, object storage, KMS, backups).
-3. ⛔ Legal review: retention periods, cross-border transfers, consent and Amharic copy (needs native-speaker review).
-4. ⛔ SMS gateway and payment provider selection.
-5. Repository: TAMAGNE currently lives in `tamagne/` inside the Coinova-Research repository. Moving it to its own repository is recommended before Phase 2 (the directory is self-contained).
-
-## Known limitations
-
-- API image is ~517 MB; `npm prune` keeps more than needed. Optimize in Phase 8.
-- Next.js CSP allows `'unsafe-inline'` scripts until the nonce-based CSP lands (Phase 7).
-- Amharic copy was written without native-speaker review.
+2. ⛔ Ethio telecom: confirm whether it is the SMS gateway, the production host, or both; then contract and credentials.
+3. ⛔ Legal review: retention, cross-border transfers, consent and policy texts, Amharic copy (native-speaker review).
+4. ⛔ Payment provider selection.
+5. Recommended: move `tamagne/` to its own repository.
 
 ## Commands to resume
 
 ```bash
 cd tamagne
 npm ci
-npm run db:test:up
-npm run check          # db:generate, typecheck, unit + API + DB tests
-npm run build
-npm run db:test:down   # when finished
+npm run db:test:up                     # PostgreSQL 16 on :54339 with migrations
+npm run check                          # generate, typecheck, lint, unit + API + DB tests
+npm run build && npm run test:e2e -w @tamagne/web
+REDIS_TEST_URL=redis://127.0.0.1:6379/0 npm run test:redis -w @tamagne/api   # needs a local Redis
+npm run db:test:down
 ```
+
+Local manual run: `cp .env.example .env`, start Postgres/Redis (compose), `npm run db:migrate:deploy`,
+`npm run dev -w @tamagne/api` (OTP codes appear in the API log) and `npm run dev -w @tamagne/web`.

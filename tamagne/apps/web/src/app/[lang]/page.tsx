@@ -1,39 +1,30 @@
 import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
 import { notFound } from "next/navigation";
-import { ShieldMark } from "@/components/badge-icon";
 import { getDictionary, hasLocale } from "@/i18n/dictionaries";
 
 export default async function Home({ params }: PageProps<"/[lang]">) {
   const { lang } = await params;
   if (!hasLocale(lang)) notFound();
   const t = getDictionary(lang);
-  const other = lang === "en" ? "am" : "en";
 
   return (
     <>
-      <header className="bg-navy-950 text-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4">
-          <span className="flex items-center gap-2 text-lg font-semibold tracking-wide">
-            <ShieldMark className="size-7 text-emerald-600" />
-            TAMAGNE
-          </span>
-          <Link
-            href={`/${other}`}
-            hrefLang={other}
-            lang={other}
-            aria-label={t.nav.switchLanguageLabel}
-            className="rounded-md border border-white/30 px-3 py-1.5 text-sm hover:bg-white/10"
-          >
-            {t.nav.switchLanguage}
-          </Link>
-        </div>
-      </header>
+      <SiteHeader lang={lang} t={t} />
 
       <main>
         <section className="bg-navy-950 text-white">
           <div className="mx-auto max-w-5xl px-4 pb-16 pt-10 sm:pt-16">
             <h1 className="text-3xl font-bold leading-tight sm:text-5xl">{t.hero.tagline}</h1>
             <p className="mt-5 max-w-2xl text-base text-white/85 sm:text-lg">{t.hero.lead}</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href={`/${lang}/register`} className="inline-flex min-h-12 items-center rounded-md bg-emerald-700 px-6 font-semibold hover:bg-emerald-600">
+                {t.nav.register}
+              </Link>
+              <Link href={`/${lang}/login`} className="inline-flex min-h-12 items-center rounded-md border border-white/40 px-6 font-semibold hover:bg-white/10">
+                {t.nav.signIn}
+              </Link>
+            </div>
             <p role="status" className="mt-8 inline-block rounded-lg border border-emerald-600/60 bg-navy-800 px-4 py-3 text-sm">
               <strong className="font-semibold">{t.status.heading}:</strong> {t.status.body}
             </p>

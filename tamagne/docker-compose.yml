@@ -53,6 +53,7 @@ services:
       DATABASE_URL: postgresql://tamagne:${POSTGRES_PASSWORD}@postgres:5432/tamagne
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       PORT: "4000"
+      TRUST_PROXY_HOPS: "1"
     ports: ["127.0.0.1:4000:4000"]
     read_only: true
     tmpfs: ["/tmp"]
@@ -64,6 +65,8 @@ services:
 
   web:
     build: { context: ., dockerfile: apps/web/Dockerfile }
+    environment:
+      API_INTERNAL_URL: http://api:4000
     ports: ["127.0.0.1:3000:3000"]
     read_only: true
     tmpfs: ["/tmp", "/app/apps/web/.next/cache"]

@@ -1,6 +1,6 @@
 # TAMAGNE architecture
 
-_Status: Phase 1 baseline, 2026-11-07. Owner review required before Phase 2._
+_Status: Phase 2 (authentication and seller registration), 2026-11-07._
 
 TAMAGNE ("ታማኝ", trustworthy) is an independent private platform that lets Ethiopian
 online sellers prove who they are, and lets buyers check that proof through a
@@ -71,7 +71,13 @@ tamagne/
 │   │   ├── src/http/        error envelope, request IDs, body-parser hardening
 │   │   ├── test/            config + HTTP tests (supertest)
 │   │   └── Dockerfile       runtime + migrate targets
-│   └── web/                 Next.js 16 App Router, Tailwind 4, EN/AM, self-hosted fonts
+│   │   ├── src/auth/        phone OTP, sessions, guards, staff TOTP MFA
+│   │   ├── src/security/    CSRF, rate limiting (Redis), field crypto
+│   │   ├── src/sellers/     seller profile + Level 1 badge;  src/consents/ consent records
+│   │   ├── src/audit/       audit log writer;  src/sms/ SMS adapter (disabled/console/test)
+│   │   └── scripts/         OpenAPI export, first Super Admin bootstrap
+│   └── web/                 Next.js 16 App Router, Tailwind 4, shadcn-style UI, EN/AM, self-hosted fonts
+│       └── src/app/api/[...path]  same-origin runtime proxy to the API
 ├── packages/
 │   ├── core/                framework-free rules and security primitives (IDs, crypto, verification summary)
 │   └── db/                  Prisma 7 schema, migrations, client factory, DB integrity tests
@@ -160,10 +166,17 @@ activated for an `ACTIVE` seller. A Fayda badge cannot outlive its identity veri
 
 ## 5. Verification flows
 
-### 5.1 Level 1: phone OTP (Phase 2)
-1. `POST /api/v1/auth/register` with phone. Rate limited per phone, per IP hash and globally.
-2. Create `PhoneOtpChallenge` (code HMAC, 5 min); send SMS via gateway adapter. The code is never logged or stored.
-3. Verify: constant-time compare, increment attempts, mark consumed, set `phoneVerifiedAt`, issue Level 1 badge, write `VerificationEvent` and `AuditLog`.
+### 5.1 Level 1: phone OTP (implemented in Phase 2)
+1. `POST /api/v1/auth/register` (phone, `acceptTerms`, `acceptPrivacy`, locale) or `POST /api/v1/auth/login` (phone).
+   Ethiopian numbers are normalized to E.164 (`+2519…`/`+2517…`). Rate limits (Redis): 1 per phone per 60 s,
+   3 per phone per 15 min, 10 per IP hash per 15 min.
+2. A `PhoneOtpChallenge` is stored with HMAC(pepper, challengeId, code) and a 5-minute expiry. The SMS is sent only
+   if the number can actually sign in; responses are identical either way, so the endpoint cannot be used to
+   discover which numbers are registered.
+3. `POST /api/v1/auth/otp/verify`: the attempt is counted atomically before checking (max 5), the code is compared
+   in constant time, the challenge is consumed exactly once, the account is created on first registration
+   (with ToS and privacy consent records), a session starts, and the event is audited.
+4. `POST /api/v1/sellers` creates the profile and issues the Level 1 badge, evidenced by that consumed challenge.
 
 ### 5.2 Level 2: Fayda eSignet OIDC (Phase 5)
 
@@ -224,11 +237,19 @@ The DB refuses to approve a document that is not `CLEAN`.
 
 ## 7. Security architecture
 
-**Authentication.** Opaque session cookie (`__Host-` prefix, `Secure`, `HttpOnly`,
-`SameSite=Lax`), SHA-256 stored server-side, idle and absolute timeouts, rotation on
-privilege change. Phone OTP for sellers; optional password (Argon2id). Staff accounts
-require TOTP MFA (`MfaFactor`, replay-protected by `lastUsedStep`) and a fresh MFA
-check for sensitive actions. Account lockout with backoff (`failedLoginCount`, `lockedUntil`).
+**Authentication (implemented).** Phone OTP; no passwords for now (fewer secrets to
+leak; a password option can be added later with Argon2id). Opaque 256-bit session token
+in an `HttpOnly`, `SameSite=Lax` cookie (`__Host-` prefix and `Secure` in staging and
+production); only its SHA-256 is stored. Seller sessions: 30 days absolute, 7 days idle.
+Staff sessions: 12 hours absolute, 30 minutes idle. Every sign-in issues a new token
+(no fixation). Logout revokes server-side. Suspended or deactivated users' sessions stop
+working immediately.
+
+**Staff MFA (implemented).** TOTP (RFC 6238). The secret is AES-256-GCM encrypted,
+shown once at enrolment; each time step is accepted once (`lastUsedStep`, updated
+conditionally so concurrent replays fail). Admin endpoints require a staff role **and**
+an MFA-verified session. Roles are re-read on every request, so revocation is immediate.
+The first Super Admin is created with `npm run staff:bootstrap` (only when none exists).
 
 **Authorization (RBAC, server-side only).**
 
@@ -248,14 +269,21 @@ check for sensitive actions. Account lockout with backoff (`failedLoginCount`, `
 Roles are rows in `StaffRoleAssignment` (attributable, never deleted). Payment status
 never confers verification. The DB independently requires reviewers to hold a role.
 
-**Web protections.** CSRF: `SameSite` cookies plus Origin check and a double-submit
-token on cookie-authenticated mutations. XSS: React escaping, strict CSP (nonce-based
+**Web protections.** CSRF on every state-changing request, including sign-in: the
+Origin (or Referer) must be the web app's, and the `X-CSRF-Token` header must equal the
+CSRF cookie (double-submit, rotated at sign-in); `SameSite=Lax` is a third layer. The
+browser only talks to the web origin: `/api/*` is a runtime proxy route that forwards an
+allow-list of headers to the API (the target is read at runtime, so one image works in
+every environment). XSS: React escaping, strict CSP (nonce-based
 in Phase 7), no `dangerouslySetInnerHTML`. SQL injection: Prisma parameterization;
 raw SQL only via tagged templates. Input validation with Zod at every boundary.
 Helmet headers on the API (`default-src 'none'`), 100 kB JSON limit, sanitized error envelope.
 
-**Rate limiting.** Redis sliding windows keyed by route class + IP hash + account:
-OTP send/verify, login, public lookups, fraud reports, marketplace API (per `ApiClient.rateLimitPerMinute`).
+**Rate limiting.** Redis fixed windows (atomic `INCR` + `EXPIRE NX`) keyed by rule and an
+HMAC of the phone, IP or user, never the raw value. Implemented: OTP send (per phone,
+per IP, resend gap), OTP verify (per IP), MFA verify (per user). If Redis is unreachable
+these routes fail closed (503). Production requires `REDIS_URL`; development may use an
+in-memory store. Planned: public lookups, fraud reports, marketplace API.
 
 **Secrets.** Environment variables populated by a secrets manager; config validation
 rejects dev placeholders in production and never echoes values. Separate keys and

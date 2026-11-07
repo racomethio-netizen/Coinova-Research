@@ -17,3 +17,5 @@ packages/db/src/generated/
 *.pem
 *.key
 *.jwk
+test-results/
+playwright-report/
