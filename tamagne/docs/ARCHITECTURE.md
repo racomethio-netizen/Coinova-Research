@@ -1,6 +1,6 @@
 # TAMAGNE architecture
 
-_Status: Phase 6 (admin console, fraud reports, appeals), 2026-11-08._
+_Status: Phase 7 (security, privacy, compliance), 2026-11-08._
 
 TAMAGNE ("ታማኝ", trustworthy) is an independent private platform that lets Ethiopian
 online sellers prove who they are, and lets buyers check that proof through a
@@ -347,7 +347,8 @@ CSRF cookie (double-submit, rotated at sign-in); `SameSite=Lax` is a third layer
 browser only talks to the web origin: `/api/*` is a runtime proxy route that forwards an
 allow-list of headers to the API (the target is read at runtime, so one image works in
 every environment). XSS: React escaping, strict CSP (nonce-based
-in Phase 7), no `dangerouslySetInnerHTML`. SQL injection: Prisma parameterization;
+implemented in Phase 7: per-request nonce with `'strict-dynamic'`, set in `apps/web/src/proxy.ts`; all pages
+render dynamically so every response has a fresh nonce; inline *styles* remain allowed), no `dangerouslySetInnerHTML`. SQL injection: Prisma parameterization;
 raw SQL only via tagged templates. Input validation with Zod at every boundary.
 Helmet headers on the API (`default-src 'none'`), 100 kB JSON limit, sanitized error envelope.
 
@@ -385,10 +386,18 @@ role changes, revocations, chain verification failures) go to the audit log and 
 - **Data residency.** Production personal data, especially identity data and documents, is stored and processed on infrastructure physically located in Ethiopia. Foreign-hosted managed services (e.g. Supabase, Render) are not assumed compliant and are not used for production personal data. Any cross-border transfer (including backups, logs, email/SMS vendors and error tracking) needs a documented legal basis confirmed by counsel and the supervisory authority's requirements. See `docs/DEPLOYMENT.md`.
 - **Consent.** `ConsentRecord` stores purpose, policy version, locale, timestamp and withdrawal; withdrawal stops the processing it covers (e.g. withdrawing `PUBLIC_PROFILE_DISPLAY` hides the profile; withdrawing `FAYDA_IDENTITY_VERIFICATION` revokes the Fayda badge and schedules identity data deletion).
 - **Minimization.** No FIN/FAN, no biometrics, no raw IPs; only the claims needed.
-- **Data-subject rights.** `DataSubjectRequest` (access, correction, deletion) with due dates.
-- **Deletion workflow.** `PENDING_DELETION` → grace period → scrub (phone, email, password nulled; DB-enforced for `DELETED`), purge documents from storage, keep only records legally required (audit, payments) without contact data.
-- **Proposed retention defaults** (counsel must confirm): OTP challenges 30 days; sessions 90 days after expiry; failed/abandoned OIDC requests 30 days; manual-review ID images 90 days after decision; business documents until the badge expires + 1 year; payment records per tax law; audit log 5 years.
-- **DPIA template**: Phase 7 (`docs/legal/`).
+- **Data-subject rights (implemented in Phase 7).** Access: self-service JSON export
+  (`GET /api/v1/privacy/export`). Correction: request handled by Support/Super Admin with due date
+  (`DSR_RESPONSE_DAYS`). Deletion: account locked, signed out, hidden and QR revoked at once; erased
+  by the deletion job after `DELETION_GRACE_DAYS` (support can cancel). Privacy centre at
+  `/[lang]/dashboard/privacy`; staff queue at `/[lang]/admin/privacy`.
+- **Deletion workflow (implemented).** `PENDING_DELETION` → grace period → files deleted from storage,
+  phone/email/names/business identifiers/identity data/notifications erased, badges revoked, OTP evidence
+  kept with the phone number scrubbed; consent records, audit log, reports about the seller and payments
+  kept without contact data (`docs/legal/RETENTION.md`). The phone number can register again as a new account.
+- **Retention job (implemented)** per `docs/legal/RETENTION.md`. **Proposed defaults** (counsel must confirm): OTP challenges 30 days; sessions 90 days after expiry; failed/abandoned OIDC requests 30 days; manual-review ID images 30 days after approval, 90 days after rejection; business documents until the badge expires + 1 year; payment records per tax law; audit log 5 years.
+- **Documents (Phase 7):** privacy policy and terms (public pages, drafts), DPIA pre-filled for this
+  design, retention schedule, incident response plan, security documentation (`docs/SECURITY.md`).
 
 ## 9. Environments
 

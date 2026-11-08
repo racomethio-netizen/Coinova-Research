@@ -1,21 +1,21 @@
 # TAMAGNE roadmap and status
 
-_Last updated: 2026-11-08 (session 1, Phases 1–6)._
+_Last updated: 2026-11-08 (session 1, Phases 1–7)._
 
 Legend: ✅ done and covered by automated tests · 🟡 done, partially verified ·
 ⛔ blocked on an external party or owner decision · ⬜ not started.
 
-## Verified (Phase 6)
+## Verified (Phase 7)
 
 | Check | Result |
 |---|---|
 | `npm run typecheck` (core, db, api, web) | ✅ pass |
 | `npm run lint` (typescript-eslint; Next.js rules for web) | ✅ 0 problems |
 | `npm test`: core unit | ✅ 42 / 42 (incl. RFC 6238 and RFC 7636 test vectors) |
-| `npm test`: API (auth, sessions, CSRF, rate limits, sellers, consents, MFA, verify, QR, businesses, documents, review, adapters, Fayda OIDC, manual identity, reports, appeals, admin, expiry, audit, staff, pricing, notifications) | ✅ 126 / 126 + Redis test (✅ with `REDIS_TEST_URL`) |
+| `npm test`: API (all modules incl. privacy export/correction/deletion, retention, security events) | ✅ 133 / 133 + Redis test (✅ with `REDIS_TEST_URL`) |
 | `npm test`: web dictionaries (EN/AM parity, Ethiopic script) | ✅ 4 / 4 |
-| `npm run test:db`: integrity rules on PostgreSQL 16 | ✅ 32 / 32 (6 migrations; includes the audit-chain concurrency regression test, proven to fail on the old trigger) |
-| `npm run test:e2e`: Playwright, desktop + Pixel 7 | ✅ 28 / 28 (incl. staff console: MFA enrolment, business review, report → suspension → appeal → second-reviewer reactivation) |
+| `npm run test:db`: integrity rules on PostgreSQL 16 | ✅ 32 / 32 (7 migrations; includes the audit-chain concurrency regression test, proven to fail on the old trigger) |
+| `npm run test:e2e`: Playwright, desktop + Pixel 7 | ✅ 34 / 34 (incl. nonce CSP with zero violations, privacy centre and deletion; incl. staff console: MFA enrolment, business review, report → suspension → appeal → second-reviewer reactivation) |
 | `npm run build` | ✅ pass |
 | `npm audit --omit=dev` | ✅ 0 vulnerabilities (dev-only: moderate `minimatch` advisory via typescript-eslint) |
 | GitHub Actions `.github/workflows/tamagne-ci.yml` | 🟡 updated (Redis service, lint, e2e); not yet run on GitHub |
@@ -122,9 +122,26 @@ integrity migration, core primitives, API and web skeletons, Docker, compose, CI
 - Staff phone numbers are masked in the console; there is no "reveal" flow.
 - Super Admin grants do not need a second approver (only Super Admins can grant, and they cannot grant to themselves).
 
+## Phase 7: security, privacy, compliance ✅
+
+- ✅ Right of access: self-service JSON export (reports by others excluded to protect reporters), recorded as a completed request
+- ✅ Right to correction: request → staff queue with due dates → outcome shown to the seller
+- ✅ Right to deletion: immediate lock/sign-out/hide/QR revoke; erasure job after a 14-day grace period (files deleted, contact data and names scrubbed, legal records kept without contact data); support can cancel; number re-registrable; staff cannot self-delete
+- ✅ Retention job: expired document and ID files, stale OTP challenges (badge evidence kept), sessions, Fayda requests (verified evidence kept), notifications, reporter contacts
+- ✅ Consent centre: view versions, give/withdraw withdrawable consents (required ones explained)
+- ✅ Per-request nonce CSP (`strict-dynamic`, no inline scripts), COOP/CORP, HSTS in production
+- ✅ Security events view with thresholds (MFA failures, malware, duplicate identities, role changes, document views, exports…)
+- ✅ Documents: privacy policy + terms (public pages, drafts, linked from sign-up), DPIA pre-filled, retention schedule, incident response plan, SECURITY.md control map
+- Tests: 7 new API tests (privacy, retention, security events), 3 new e2e scenarios (CSP, policy pages, privacy centre)
+
+### Phase 7 limitations / owner actions
+- ⛔ Legal review of every document; statutory periods (response deadline, breach notification, retention) to confirm; data protection authority details; Amharic legal translation.
+- Privacy page copy states 14 / 30 days; if `DELETION_GRACE_DAYS` or `DSR_RESPONSE_DAYS` change, update the copy too.
+- Inline styles still allowed by CSP; no external penetration test yet; key re-encryption job and HMAC pepper rotation are Phase 8.
+- Fraud reports about a seller survive the seller's deletion (fraud prevention); counsel to confirm.
+
 ## Next phases
 
-### Phase 7: security, privacy, compliance ⬜
 ### Phase 8: testing and production preparation ⬜
 
 ## Blockers and owner decisions

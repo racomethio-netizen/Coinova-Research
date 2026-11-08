@@ -188,6 +188,22 @@ describe("audit log viewer", () => {
   });
 });
 
+describe("security events", () => {
+  it("counts security-relevant events and flags thresholds; Security Officer / Super Admin only", async () => {
+    const sec = await staffClient(h, "SECURITY_OFFICER");
+    // Two wrong MFA codes from a fresh staff member.
+    const other = await staffClient(h, "SUPPORT_OFFICER");
+    await other.c.post("/api/v1/auth/mfa/verify", { code: "000000" });
+    await other.c.post("/api/v1/auth/mfa/verify", { code: "111111" });
+    const r = (await sec.c.get("/api/v1/admin/security/events")).body.data;
+    const mfa = r.events.find((e: { action: string }) => e.action === "mfa.failed");
+    expect(mfa.last24h).toBeGreaterThanOrEqual(2);
+    expect(typeof mfa.alert).toBe("boolean");
+    expect(r.recent.length).toBeGreaterThan(0);
+    expect((await other.c.get("/api/v1/admin/security/events")).status).toBe(403);
+  });
+});
+
 describe("staff management", () => {
   it("Super Admins grant and revoke roles; no self-changes; never the last Super Admin", async () => {
     const admin = await staffClient(h, "SUPER_ADMIN");

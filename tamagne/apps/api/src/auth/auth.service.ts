@@ -127,13 +127,16 @@ export class AuthService {
     return db.$transaction(async (tx) => {
       const consumed = await tx.phoneOtpChallenge.updateMany({ where: { id: challenge.id, consumedAt: null }, data: { consumedAt: now } });
       if (consumed.count !== 1) throw INVALID_CODE();
+      // A scrubbed challenge (account deleted) can never sign anyone in.
+      const phone = challenge.phoneE164;
+      if (!phone) throw INVALID_CODE();
 
-      let user = await tx.user.findUnique({ where: { phoneE164: challenge.phoneE164 } });
+      let user = await tx.user.findUnique({ where: { phoneE164: phone } });
       let isNew = false;
       if (!user) {
         if (challenge.purpose !== "REGISTRATION") throw INVALID_CODE();
         user = await tx.user.create({
-          data: { phoneE164: challenge.phoneE164, phoneVerifiedAt: now, status: "ACTIVE", preferredLocale: locale, lastLoginAt: now },
+          data: { phoneE164: phone, phoneVerifiedAt: now, status: "ACTIVE", preferredLocale: locale, lastLoginAt: now },
         });
         isNew = true;
         for (const purpose of ["TERMS_OF_SERVICE", "PRIVACY_POLICY"] as const) {

@@ -8,15 +8,22 @@ import { NestFactory } from "@nestjs/core";
 import { AppModule } from "../app.module.js";
 import { OperationsService } from "../admin/operations.service.js";
 import { loadConfig } from "../config/env.js";
+import { PrivacyService } from "../privacy/privacy.service.js";
 
 const job = process.argv[2];
-if (job !== "expiry") {
-  console.error("usage: run-job expiry");
+const JOBS = ["expiry", "retention", "deletions"];
+if (!job || !JOBS.includes(job)) {
+  console.error(`usage: run-job ${JOBS.join("|")}`);
   process.exit(2);
 }
 const app = await NestFactory.createApplicationContext(AppModule.forRoot(loadConfig()), { logger: ["error", "warn"] });
 try {
-  const result = await app.get(OperationsService).runExpiryJob();
+  const result =
+    job === "expiry"
+      ? await app.get(OperationsService).runExpiryJob()
+      : job === "retention"
+        ? await app.get(PrivacyService).runRetentionJob()
+        : await app.get(PrivacyService).runDeletionJob();
   process.stdout.write(`${JSON.stringify({ job, ...result })}\n`);
 } finally {
   await app.close();

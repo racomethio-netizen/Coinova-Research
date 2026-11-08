@@ -7,6 +7,8 @@ import { AppealsService } from "./appeals/appeals.service.js";
 import { NotificationsController, PublicPlansController } from "./notifications/notifications.controller.js";
 import { AdminReportsController, ReportsController } from "./reports/reports.controller.js";
 import { ReportsService } from "./reports/reports.service.js";
+import { AdminPrivacyController, PrivacyController } from "./privacy/privacy.controller.js";
+import { PrivacyService } from "./privacy/privacy.service.js";
 import { AuditService } from "./audit/audit.service.js";
 import { AuthController } from "./auth/auth.controller.js";
 import { AuthService } from "./auth/auth.service.js";
@@ -60,7 +62,7 @@ function createScanner(config: AppConfig): MalwareScanner {
 @Module({})
 export class AppModule {
   static forRoot(config: AppConfig, overrides: AppOverrides = {}): DynamicModule {
-    const controllers: Type[] = [HealthController, FaydaStatusController, AuthController, MfaController, SellersController, ConsentsController, AdminController, VerifyController, SellerQrController, AdminQrController, BusinessesController, ReviewController, IdentityReviewController, AdminIdentityReviewController, ReportsController, AdminReportsController, AppealsController, AdminAppealsController, NotificationsController, PublicPlansController];
+    const controllers: Type[] = [HealthController, FaydaStatusController, AuthController, MfaController, SellersController, ConsentsController, AdminController, VerifyController, SellerQrController, AdminQrController, BusinessesController, ReviewController, IdentityReviewController, AdminIdentityReviewController, ReportsController, AdminReportsController, AppealsController, AdminAppealsController, NotificationsController, PublicPlansController, PrivacyController, AdminPrivacyController];
     if (config.smsProvider === "test" && config.appEnv === "test") controllers.push(TestOutboxController);
     return {
       module: AppModule,
@@ -84,6 +86,7 @@ export class AppModule {
         OperationsService,
         ReportsService,
         AppealsService,
+        PrivacyService,
         AuthGuard,
         StaffGuard,
         RateLimiter,

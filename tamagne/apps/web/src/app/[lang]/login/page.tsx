@@ -15,7 +15,7 @@ export default async function Page({ params }: PageProps<"/[lang]/login">) {
         <h1 className="text-2xl font-bold">{t.auth.loginTitle}</h1>
         <p className="mt-2 text-muted">{t.auth.loginLead}</p>
         <Card className="mt-6">
-          <PhoneAuthForm mode="login" lang={lang} t={t.auth} />
+          <PhoneAuthForm mode="login" lang={lang} t={t.auth} legal={t.legal} />
         </Card>
       </main>
     </>

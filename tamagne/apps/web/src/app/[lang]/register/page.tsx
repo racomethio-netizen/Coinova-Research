@@ -15,7 +15,7 @@ export default async function Page({ params }: PageProps<"/[lang]/register">) {
         <h1 className="text-2xl font-bold">{t.auth.registerTitle}</h1>
         <p className="mt-2 text-muted">{t.auth.registerLead}</p>
         <Card className="mt-6">
-          <PhoneAuthForm mode="register" lang={lang} t={t.auth} />
+          <PhoneAuthForm mode="register" lang={lang} t={t.auth} legal={t.legal} />
         </Card>
       </main>
     </>

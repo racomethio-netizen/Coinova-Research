@@ -12,7 +12,7 @@ import { ApiRequestError, apiSend } from "@/lib/client-api";
 
 type Mode = "register" | "login";
 
-export function PhoneAuthForm({ mode, lang, t }: { mode: Mode; lang: Locale; t: Dictionary["auth"] }) {
+export function PhoneAuthForm({ mode, lang, t, legal }: { mode: Mode; lang: Locale; t: Dictionary["auth"]; legal: Dictionary["legal"] }) {
   const router = useRouter();
   const ids = { phone: useId(), phoneErr: useId(), phoneHint: useId(), code: useId(), codeErr: useId(), terms: useId(), privacy: useId(), consentErr: useId() };
   const [step, setStep] = useState<"phone" | "code">("phone");
@@ -150,7 +150,13 @@ export function PhoneAuthForm({ mode, lang, t }: { mode: Mode; lang: Locale; t: 
               <label htmlFor={c.id} className="text-sm">{c.label}</label>
             </div>
           ))}
-          <p className="text-xs text-muted">{t.draftNotice}</p>
+          <p className="text-xs text-muted">
+            <Link href={`/${lang}/terms`} target="_blank" className="font-semibold text-emerald-700 underline">{legal.readTerms}</Link>
+            {" · "}
+            <Link href={`/${lang}/privacy`} target="_blank" className="font-semibold text-emerald-700 underline">{legal.readPrivacy}</Link>
+            {" · "}
+            {t.draftNotice}
+          </p>
           <FieldError id={ids.consentErr}>{error?.field === "consent" ? error.message : null}</FieldError>
         </fieldset>
       ) : null}

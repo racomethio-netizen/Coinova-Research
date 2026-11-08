@@ -117,6 +117,11 @@ export default async function DashboardPage({ params }: PageProps<"/[lang]/dashb
                   {t.appeals.title}
                 </Link>
               </li>
+              <li>
+                <Link href={`/${lang}/dashboard/privacy`} className="font-semibold text-emerald-700 underline-offset-4 hover:underline">
+                  {t.legal.privacyCenter}
+                </Link>
+              </li>
             </ul>
           </Card>
         </div>

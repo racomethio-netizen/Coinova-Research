@@ -65,6 +65,47 @@ export class OperationsService {
     }));
   }
 
+  // ───────────── Security events ─────────────
+
+  /**
+   * Security-relevant audit actions with simple thresholds, for the Security Officer's
+   * daily review and as the basis for alerting (wire these counts into monitoring).
+   */
+  async securityEvents() {
+    const WATCH: { action: string; label: string; alertAt24h: number }[] = [
+      { action: "mfa.failed", label: "Failed staff MFA codes", alertAt24h: 10 },
+      { action: "auth.otp_failed", label: "Wrong sign-in codes", alertAt24h: 200 },
+      { action: "document.malware_detected", label: "Malware detected in uploads", alertAt24h: 1 },
+      { action: "fayda.duplicate_identity", label: "Identity already linked to another account", alertAt24h: 1 },
+      { action: "fayda.failed", label: "Failed Fayda verifications", alertAt24h: 50 },
+      { action: "audit.chain_broken", label: "Audit chain verification failures", alertAt24h: 1 },
+      { action: "staff.role_granted", label: "Staff roles granted", alertAt24h: 5 },
+      { action: "staff.role_revoked", label: "Staff roles revoked", alertAt24h: 5 },
+      { action: "seller.suspended", label: "Sellers suspended", alertAt24h: 20 },
+      { action: "document.viewed", label: "Business documents opened by staff", alertAt24h: 300 },
+      { action: "identity_document.viewed", label: "Identity documents opened by staff", alertAt24h: 100 },
+      { action: "report.contact_viewed", label: "Reporter contact details viewed", alertAt24h: 50 },
+      { action: "privacy.export", label: "Personal data exports", alertAt24h: 100 },
+    ];
+    const now = Date.now();
+    const since24 = new Date(now - DAY);
+    const since7 = new Date(now - 7 * DAY);
+    const actions = WATCH.map((w) => w.action);
+    const [c24, c7, recent] = await Promise.all([
+      this.prisma.client.auditLog.groupBy({ by: ["action"], where: { action: { in: actions }, occurredAt: { gte: since24 } }, _count: { _all: true } }),
+      this.prisma.client.auditLog.groupBy({ by: ["action"], where: { action: { in: actions }, occurredAt: { gte: since7 } }, _count: { _all: true } }),
+      this.prisma.client.auditLog.findMany({ where: { action: { in: actions }, occurredAt: { gte: since7 } }, orderBy: { seq: "desc" }, take: 30 }),
+    ]);
+    const count = (rows: { action: string; _count: { _all: number } }[], a: string) => rows.find((r) => r.action === a)?._count._all ?? 0;
+    return {
+      events: WATCH.map((w) => {
+        const last24h = count(c24, w.action);
+        return { ...w, last24h, last7d: count(c7, w.action), alert: last24h >= w.alertAt24h };
+      }),
+      recent: recent.map((r) => ({ seq: r.seq.toString(), occurredAt: r.occurredAt.toISOString(), action: r.action, actorType: r.actorType, actorUserId: r.actorUserId, targetType: r.targetType, targetId: r.targetId })),
+    };
+  }
+
   // ───────────── Expiry ─────────────
 
   async expiring(days: number) {

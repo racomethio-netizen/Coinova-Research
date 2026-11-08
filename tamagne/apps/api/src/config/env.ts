@@ -42,6 +42,10 @@ const EnvSchema = z.object({
   CLAMAV_PORT: z.coerce.number().int().min(1).max(65535).default(3310),
   /** OTP sends per IP per 15 minutes. Generous because mobile carriers share IPs (CGNAT); per-phone limits stay strict. */
   OTP_SEND_LIMIT_PER_IP: z.coerce.number().int().min(5).max(10000).default(30),
+  /** Days to answer access/correction requests (confirm the statutory period with counsel). */
+  DSR_RESPONSE_DAYS: z.coerce.number().int().min(1).max(90).default(30),
+  /** Grace period before an account deletion is carried out (support can cancel meanwhile). */
+  DELETION_GRACE_DAYS: z.coerce.number().int().min(0).max(60).default(14),
   /** Accept synthetic +999 phone numbers. Never in production. */
   ALLOW_TEST_PHONE_NUMBERS: booleanString,
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
@@ -96,6 +100,7 @@ export interface AppConfig {
   scanner: { kind: "disabled" | "clamav" | "eicar-only"; host: string; port: number };
   allowTestPhoneNumbers: boolean;
   otpSendLimitPerIp: number;
+  privacy: { dsrResponseDays: number; deletionGraceDays: number };
   /** Cookies are Secure and use the __Host- prefix outside development/test. */
   secureCookies: boolean;
   trustProxyHops: number;
@@ -248,6 +253,7 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     scanner: { kind: env.SCANNER, host: env.CLAMAV_HOST, port: env.CLAMAV_PORT },
     allowTestPhoneNumbers: env.ALLOW_TEST_PHONE_NUMBERS,
     otpSendLimitPerIp: env.OTP_SEND_LIMIT_PER_IP,
+    privacy: { dsrResponseDays: env.DSR_RESPONSE_DAYS, deletionGraceDays: env.DELETION_GRACE_DAYS },
     secureCookies: env.APP_ENV === "production" || env.APP_ENV === "staging",
     trustProxyHops: env.TRUST_PROXY_HOPS,
     fayda,

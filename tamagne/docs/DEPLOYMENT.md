@@ -47,6 +47,10 @@ console's "Verify hash chain" works.
 | Job | Command | Schedule |
 |-----|---------|----------|
 | Verification expiry + 30-day reminders | API image: `node --enable-source-maps apps/api/dist/jobs/run-job.js expiry` (dev: `npm run job -w @tamagne/api -- expiry`) | daily, e.g. 01:00 Africa/Addis_Ababa |
+| Account deletions after the grace period | `… run-job.js deletions` | daily, 01:15 |
+| Retention purge (files, OTP challenges, sessions, notifications, reporter contacts) | `… run-job.js retention` | daily, 01:30 |
+
+All jobs are idempotent and write a `job.*` audit entry; alert if a job has not run for 48 hours.
 
 ## 4. Releasing
 

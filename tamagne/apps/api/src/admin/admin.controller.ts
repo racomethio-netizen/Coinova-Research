@@ -136,6 +136,13 @@ export class AdminController {
     return { data: await this.ops.auditLog(f) };
   }
 
+  @Get("security/events")
+  @StaffOnly("SUPER_ADMIN", "SECURITY_OFFICER")
+  @ApiOperation({ summary: "Security event counts (24 h / 7 d) with alert thresholds, and recent events" })
+  async securityEvents() {
+    return { data: await this.ops.securityEvents() };
+  }
+
   @Get("audit/verify")
   @StaffOnly("SUPER_ADMIN", "SECURITY_OFFICER")
   @ApiOperation({ summary: "Verify the audit log hash chain" })

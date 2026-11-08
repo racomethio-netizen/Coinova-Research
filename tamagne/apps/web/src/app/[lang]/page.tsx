@@ -71,6 +71,10 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
         <div className="mx-auto max-w-5xl space-y-2 px-4 py-8 text-sm text-muted">
           <p>{t.footer.independence}</p>
           <p>{t.footer.privacy}</p>
+          <p className="flex gap-4">
+            <Link href={`/${lang}/privacy`} className="underline-offset-4 hover:underline">{t.legal.privacy}</Link>
+            <Link href={`/${lang}/terms`} className="underline-offset-4 hover:underline">{t.legal.terms}</Link>
+          </p>
         </div>
       </footer>
     </>

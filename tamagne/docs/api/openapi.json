@@ -576,6 +576,26 @@
         ]
       }
     },
+    "/api/v1/admin/security/events": {
+      "get": {
+        "operationId": "AdminController_securityEvents_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Security event counts (24 h / 7 d) with alert thresholds, and recent events",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/api/v1/admin/audit/verify": {
       "get": {
         "operationId": "AdminController_verifyAudit_v1",
@@ -1472,6 +1492,126 @@
         "summary": "Active plans and current prices (set by administrators; prices never affect verification)",
         "tags": [
           "plans"
+        ]
+      }
+    },
+    "/api/v1/privacy/export": {
+      "get": {
+        "operationId": "PrivacyController_export_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Download all personal data TAMAGNE holds about you (JSON)",
+        "tags": [
+          "privacy"
+        ]
+      }
+    },
+    "/api/v1/privacy/requests": {
+      "get": {
+        "operationId": "PrivacyController_mine_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Your privacy requests and their status",
+        "tags": [
+          "privacy"
+        ]
+      }
+    },
+    "/api/v1/privacy/requests/correction": {
+      "post": {
+        "operationId": "PrivacyController_correction_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Ask for personal data to be corrected",
+        "tags": [
+          "privacy"
+        ]
+      }
+    },
+    "/api/v1/privacy/deletion": {
+      "post": {
+        "operationId": "PrivacyController_deletion_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Delete your account (locked now, erased after the grace period)",
+        "tags": [
+          "privacy"
+        ]
+      }
+    },
+    "/api/v1/admin/privacy/requests": {
+      "get": {
+        "operationId": "AdminPrivacyController_list_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Open data-subject requests (oldest due first)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/privacy/requests/{id}": {
+      "patch": {
+        "operationId": "AdminPrivacyController_update_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Progress a correction request, or cancel a pending deletion (REJECTED)",
+        "tags": [
+          "admin"
         ]
       }
     }

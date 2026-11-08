@@ -18,6 +18,8 @@ export const NAV: { href: string; label: string; roles: Role[] | "any" }[] = [
   { href: "/appeals", label: "Appeals", roles: ["SUPER_ADMIN", "VERIFICATION_OFFICER", "SUPPORT_OFFICER"] },
   { href: "/sellers", label: "Sellers", roles: ["SUPER_ADMIN", "VERIFICATION_OFFICER", "SUPPORT_OFFICER", "SECURITY_OFFICER"] },
   { href: "/expiry", label: "Expiry", roles: ["SUPER_ADMIN", "VERIFICATION_OFFICER"] },
+  { href: "/privacy", label: "Privacy requests", roles: ["SUPER_ADMIN", "SUPPORT_OFFICER"] },
+  { href: "/security", label: "Security events", roles: ["SUPER_ADMIN", "SECURITY_OFFICER"] },
   { href: "/audit", label: "Audit log", roles: ["SUPER_ADMIN", "SECURITY_OFFICER"] },
   { href: "/staff", label: "Staff", roles: ["SUPER_ADMIN"] },
   { href: "/pricing", label: "Pricing", roles: ["SUPER_ADMIN", "FINANCE_OFFICER"] },

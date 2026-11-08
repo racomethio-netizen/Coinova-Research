@@ -432,7 +432,7 @@ model MfaFactor {
 
 model PhoneOtpChallenge {
   id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  phoneE164   String     @db.VarChar(16)
+  phoneE164   String?    @db.VarChar(16)
   purpose     OtpPurpose
   /// HMAC-SHA-256(pepper, challengeId || code). The code is never stored.
   codeHash    String     @db.Char(64)
@@ -1017,5 +1017,6 @@ model DataSubjectRequest {
   handledBy User? @relation("DsrHandler", fields: [handledById], references: [id], onDelete: SetNull)
 
   @@index([status, dueAt])
+  @@index([userId])
   @@map("data_subject_requests")
 }
