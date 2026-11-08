@@ -15,7 +15,7 @@ export function testDatabaseUrl(): string {
 }
 
 export function makeClient(): PrismaClient {
-  return createPrismaClient({ connectionString: testDatabaseUrl(), max: 4 });
+  return createPrismaClient({ connectionString: testDatabaseUrl(), max: 12 });
 }
 
 export const fakePhone = () => `+999${String(randomInt(0, 1e9)).padStart(9, "0")}`;

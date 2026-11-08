@@ -472,3 +472,22 @@ describe("appeals and fraud reports", () => {
     await rejects(db.fraudReport.update({ where: { id: r.id }, data: { status: "DISMISSED" } }), "fraud_resolution_complete");
   });
 });
+
+describe("audit chain under concurrency", () => {
+  it("stays intact when a transaction audits twice while another audits in between", async () => {
+    const actor = await createUser(db);
+    for (let round = 0; round < 3; round++) {
+      const slow = db.$transaction(async (tx) => {
+        await tx.auditLog.create({ data: { actorType: "USER", actorUserId: actor.id, action: "test.slow.first" } });
+        await tx.$executeRaw`select pg_sleep(0.15)`; // holds the chain lock
+        await tx.auditLog.create({ data: { actorType: "USER", actorUserId: actor.id, action: "test.slow.second" } });
+      });
+      await new Promise((r) => setTimeout(r, 50));
+      // Takes its sequence number while the slow transaction still holds the lock.
+      const fast = db.auditLog.create({ data: { actorType: "SYSTEM", action: "test.fast" } });
+      await Promise.all([slow, fast]);
+    }
+    const res = await db.$queryRaw<{ broken: bigint | null }[]>`select public.audit_log_verify_chain() as broken`;
+    expect(res[0]!.broken).toBeNull();
+  });
+});

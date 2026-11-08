@@ -11,7 +11,8 @@
     "test": "vitest run",
     "openapi": "tsx --conditions=tamagne-source scripts/export-openapi.ts",
     "staff:bootstrap": "tsx --conditions=tamagne-source scripts/bootstrap-super-admin.ts",
-    "test:redis": "REDIS_TEST_URL=${REDIS_TEST_URL:-redis://127.0.0.1:6379/0} vitest run test/rate-limit.test.ts"
+    "test:redis": "REDIS_TEST_URL=${REDIS_TEST_URL:-redis://127.0.0.1:6379/0} vitest run test/rate-limit.test.ts",
+    "job": "tsx --conditions=tamagne-source scripts/run-job.ts"
   },
   "dependencies": {
     "@nestjs/common": "12.2.0",

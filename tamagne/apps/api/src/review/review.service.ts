@@ -8,6 +8,7 @@ import { MALWARE_SCANNER, type MalwareScanner } from "../scanning/scanner.js";
 import { OBJECT_STORE, type EncryptedObjectStore } from "../storage/storage.js";
 import type { Viewer } from "../auth/session.service.js";
 import { IdentityReviewService } from "../identity/identity-review.service.js";
+import { SellersAdminService } from "../admin/sellers-admin.service.js";
 
 type Tx = Prisma.TransactionClient;
 
@@ -42,6 +43,7 @@ export class ReviewService {
     @Inject(OBJECT_STORE) private readonly store: EncryptedObjectStore,
     @Inject(MALWARE_SCANNER) private readonly scanner: MalwareScanner,
     @Inject(IdentityReviewService) private readonly identity: IdentityReviewService,
+    @Inject(SellersAdminService) private readonly sellersAdmin: SellersAdminService,
   ) {}
 
   async queue() {
@@ -214,7 +216,7 @@ export class ReviewService {
    */
   async secondReview(staff: Viewer, reviewId: string, input: { decision: "APPROVE" | "REJECT" | "REQUEST_CHANGES"; reason: string }, meta: Meta) {
     const review = await this.prisma.client.reviewRecord.findUnique({ where: { id: reviewId } });
-    if (!review || !["BUSINESS", "IDENTITY_MANUAL"].includes(review.targetType) || review.status !== "PENDING_SECOND_REVIEW") {
+    if (!review || !["BUSINESS", "IDENTITY_MANUAL", "ACCOUNT_STATUS"].includes(review.targetType) || review.status !== "PENDING_SECOND_REVIEW") {
       throw new ApiError(HttpStatus.NOT_FOUND, "not_found", "No review is waiting for a second decision.");
     }
     if (review.reviewerId === staff.userId) {
@@ -232,6 +234,11 @@ export class ReviewService {
           { action: "review.second_decision", actorType: "STAFF", actorUserId: staff.userId, targetType: "review_record", targetId: review.id, ...meta, metadata: { decision: input.decision } },
           tx,
         );
+        if (review.targetType === "ACCOUNT_STATUS") {
+          // Reactivation override: the account is reactivated only if the second reviewer agrees.
+          if (input.decision === "APPROVE") await this.sellersAdmin.applyReactivation(tx, review.targetId, staff.userId);
+          return { status: "FINAL" as const, reviewId: review.id, outcome: input.decision === "APPROVE" ? "REACTIVATE" : "REJECT" };
+        }
         const first = review.decision as "APPROVE" | "REJECT" | "REQUEST_CHANGES";
         const outcome = first === "APPROVE" && input.decision === "APPROVE" ? "APPROVE" : input.decision !== "APPROVE" ? input.decision : first;
         if (review.targetType === "IDENTITY_MANUAL") {

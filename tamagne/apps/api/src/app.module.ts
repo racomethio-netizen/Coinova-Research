@@ -1,5 +1,12 @@
 import { Module, type DynamicModule, type Type } from "@nestjs/common";
 import { AdminController } from "./admin/admin.controller.js";
+import { OperationsService } from "./admin/operations.service.js";
+import { SellersAdminService } from "./admin/sellers-admin.service.js";
+import { AdminAppealsController, AppealsController } from "./appeals/appeals.controller.js";
+import { AppealsService } from "./appeals/appeals.service.js";
+import { NotificationsController, PublicPlansController } from "./notifications/notifications.controller.js";
+import { AdminReportsController, ReportsController } from "./reports/reports.controller.js";
+import { ReportsService } from "./reports/reports.service.js";
 import { AuditService } from "./audit/audit.service.js";
 import { AuthController } from "./auth/auth.controller.js";
 import { AuthService } from "./auth/auth.service.js";
@@ -53,7 +60,7 @@ function createScanner(config: AppConfig): MalwareScanner {
 @Module({})
 export class AppModule {
   static forRoot(config: AppConfig, overrides: AppOverrides = {}): DynamicModule {
-    const controllers: Type[] = [HealthController, FaydaStatusController, AuthController, MfaController, SellersController, ConsentsController, AdminController, VerifyController, SellerQrController, AdminQrController, BusinessesController, ReviewController, IdentityReviewController, AdminIdentityReviewController];
+    const controllers: Type[] = [HealthController, FaydaStatusController, AuthController, MfaController, SellersController, ConsentsController, AdminController, VerifyController, SellerQrController, AdminQrController, BusinessesController, ReviewController, IdentityReviewController, AdminIdentityReviewController, ReportsController, AdminReportsController, AppealsController, AdminAppealsController, NotificationsController, PublicPlansController];
     if (config.smsProvider === "test" && config.appEnv === "test") controllers.push(TestOutboxController);
     return {
       module: AppModule,
@@ -73,6 +80,10 @@ export class AppModule {
         { provide: FAYDA_CLIENT, useFactory: () => (config.fayda.enabled ? new FaydaOidcClient(config.fayda) : null) },
         ReviewService,
         IdentityReviewService,
+        SellersAdminService,
+        OperationsService,
+        ReportsService,
+        AppealsService,
         AuthGuard,
         StaffGuard,
         RateLimiter,

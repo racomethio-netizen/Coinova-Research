@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Body, Controller, HttpCode, HttpStatus, Inject, Post, Req, Res } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { generateTotpSecret, totpUri, verifyTotp } from "@tamagne/core";
+import QRCode from "qrcode";
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { ApiError, clientIp, parse } from "../common/http.js";
@@ -43,7 +44,10 @@ export class MfaController {
     const secret = generateTotpSecret();
     await db.mfaFactor.create({ data: { id, userId: viewer.userId, type: "TOTP", secretEnc: new Uint8Array(this.crypto.cipher.encrypt(secret, aad(id))) } });
     await this.audit.recordSafe({ action: "mfa.enrollment_started", actorType: "STAFF", actorUserId: viewer.userId, targetType: "mfa_factor", targetId: id, requestId: String(res.locals.requestId) });
-    return { data: { secret, otpauthUri: totpUri(secret, viewer.userId.slice(0, 8)) } };
+    const otpauthUri = totpUri(secret, viewer.userId.slice(0, 8));
+    // QR rendered server-side so the secret never goes to a third-party QR service.
+    const qrSvg = await QRCode.toString(otpauthUri, { type: "svg", errorCorrectionLevel: "M", margin: 2 });
+    return { data: { secret, otpauthUri, qrSvg } };
   }
 
   @Post("totp/confirm")
