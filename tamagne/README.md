@@ -9,10 +9,10 @@ result by Tamagne ID, public profile or QR code.
 TAMAGNE is an independent private platform, not a government institution.
 Verification does not guarantee honesty, product authenticity or delivery.
 
-> **Status: Phase 5 done as far as possible without Fayda credentials.** Phone OTP, Level 1
-> badge and QR, Level 3 business review, a complete (but unconnected) Fayda eSignet adapter,
-> and an interim manual identity review. Not yet connected: Fayda, production SMS, production
-> document storage. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status: Phase 6 complete.** Phone OTP sign-up, Level 1 badge and QR, Level 3 business
+> review, a complete (unconnected) Fayda adapter, manual identity review, a staff console with
+> MFA, fraud reports, appeals, suspension and audit tools. Not yet connected: Fayda, production
+> SMS, production document storage, payments. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Layout
 

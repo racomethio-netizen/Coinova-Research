@@ -2,11 +2,12 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { PublicToggle } from "@/components/public-toggle";
 import { QrCard } from "@/components/qr-card";
+import { NotificationList, type NotificationItem } from "@/components/notifications";
 import { SiteHeader } from "@/components/site-header";
 import { StatusPill } from "@/components/status-pill";
 import { Alert, Card, CardTitle } from "@/components/ui/card";
 import { getDictionary, hasLocale } from "@/i18n/dictionaries";
-import { getMyQr, getMySeller, getViewer, type SellerMe } from "@/lib/server-api";
+import { adminGet, getMyQr, getMySeller, getViewer, type SellerMe } from "@/lib/server-api";
 
 const ORDER = ["phone", "faydaIdentity", "identityManualReview", "business", "enhancedReview"] as const;
 
@@ -20,6 +21,7 @@ export default async function DashboardPage({ params }: PageProps<"/[lang]/dashb
   const t = getDictionary(lang);
   const d = t.dashboard;
   const qr = seller.isPublic ? await getMyQr() : null;
+  const notes = await adminGet<NotificationItem[]>("/notifications");
   const fmt = new Intl.DateTimeFormat(lang === "am" ? "am-ET" : "en-GB", { dateStyle: "medium", timeZone: "Africa/Addis_Ababa" });
   const name = lang === "am" && seller.displayNameAm ? seller.displayNameAm : seller.displayName;
 
@@ -44,7 +46,12 @@ export default async function DashboardPage({ params }: PageProps<"/[lang]/dashb
           </dl>
         </div>
 
-        {seller.accountStatus === "SUSPENDED" ? <Alert tone="error">{d.suspended}</Alert> : null}
+        {seller.accountStatus === "SUSPENDED" ? (
+          <Alert tone="error">
+            {d.suspended}{" "}
+            <Link href={`/${lang}/dashboard/appeals`} className="font-semibold underline">{t.appeals.manage}</Link>
+          </Alert>
+        ) : null}
 
         <Card>
           <CardTitle>{d.title}</CardTitle>
@@ -77,6 +84,11 @@ export default async function DashboardPage({ params }: PageProps<"/[lang]/dashb
           {qr ? <div className="mt-4"><QrCard url={qr.url} svg={qr.svg} t={t.qr} /></div> : null}
         </Card>
 
+        <Card>
+          <CardTitle>{t.notifications.title}</CardTitle>
+          <NotificationList items={notes.ok ? notes.data : []} t={t.notifications} lang={lang} />
+        </Card>
+
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardTitle>{d.publicProfile}</CardTitle>
@@ -99,6 +111,11 @@ export default async function DashboardPage({ params }: PageProps<"/[lang]/dashb
                   {t.business.manage}
                 </Link>{" "}
                 ({t.business.lead})
+              </li>
+              <li>
+                <Link href={`/${lang}/dashboard/appeals`} className="font-semibold text-emerald-700 underline-offset-4 hover:underline">
+                  {t.appeals.title}
+                </Link>
               </li>
             </ul>
           </Card>

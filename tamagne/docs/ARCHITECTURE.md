@@ -1,6 +1,6 @@
 # TAMAGNE architecture
 
-_Status: Phase 5 (Fayda adapter + manual identity review), 2026-11-07._
+_Status: Phase 6 (admin console, fraud reports, appeals), 2026-11-08._
 
 TAMAGNE ("ታማኝ", trustworthy) is an independent private platform that lets Ethiopian
 online sellers prove who they are, and lets buyers check that proof through a
@@ -250,7 +250,25 @@ Ethiopia is not implemented yet** (provider decision). Scanner `disabled` | `cla
 | `eicar-only` (dev/test). The ClamAV client is tested against a protocol-accurate fake daemon, **not yet
 against a real ClamAV**.
 
-### 5.5 Expiry, suspension, revocation, appeals
+### 5.5 Expiry, suspension, revocation, appeals (implemented in Phase 6)
+
+- **Expiry:** `npm run job -w @tamagne/api -- expiry` (schedule daily) marks lapsed badges and identity
+  results `EXPIRED` with history and a notification, and sends one reminder per badge 30 days before
+  expiry. Idempotent. Staff see an expiry monitor.
+- **Suspension:** Super Admin / Support / Security Officer, reason required, immediate; buyers see
+  "Suspended" and no current verification; the reason is never public.
+- **Reactivation:** always a high-risk override: recorded as HIGH and applied only when a *different*
+  Super Admin / Security Officer approves it under Second reviews.
+- **Badge revocation:** reasoned, audited, final for that badge; revoking Level 3 marks the business suspended.
+- **Fraud reports:** `POST /api/v1/reports` is open to anyone (rate limited), returns the same answer
+  whether or not the seller exists, stores contact details encrypted and IPs only as HMACs. Investigators
+  triage → investigate → action taken / dismissed (closing needs a note). Reports never change
+  verification by themselves.
+- **Appeals:** `UPHELD` = original decision stands, `OVERTURNED` = reversed. Decided by someone who is
+  neither the submitter nor the staff member who made the appealed decision. Overturned suspensions open
+  a reactivation that still needs a second reviewer; overturned document rejections re-open the business.
+
+Earlier summary (kept for context):
 - Worker job marks `ACTIVE` badges past `expiresAt` as `EXPIRED` and notifies sellers before expiry. Public reads also evaluate expiry, so a lagging job cannot show a lapsed badge.
 - Suspending an account (Support/Security Officer, with reason) makes every badge display as suspended immediately (rule in `buildPublicVerificationSummary`).
 - Revocation requires a reason and is final for that badge row.
@@ -346,6 +364,17 @@ credentials per environment.
 **Encryption.** TLS everywhere, including to PostgreSQL (`sslmode=verify-full`
 required in production). Disk/volume encryption at rest, plus application-level
 AES-256-GCM for the most sensitive fields with a rotatable key ring.
+
+**Admin console** (`/[lang]/admin`, English only for now): every page passes a server-side gate
+(signed in → staff role → TOTP enrolled → MFA verified this session → page role) before loading data;
+navigation is filtered by role, but the API remains the authority. Staff without a seller profile land in
+the console after sign-in.
+
+**Audit chain under concurrency.** The chain trigger takes an advisory lock and only then draws the
+row's sequence number, so sequence order always equals chain order. (Fixed in migration
+`20261108000100`; earlier the number was drawn before the lock and concurrent writers could produce a
+false "broken chain".) The lock serializes audited transactions; acceptable at current scale, revisit
+with load testing (Phase 8).
 
 **Logging and monitoring.** Structured logs with request IDs; no bodies, tokens, OTPs,
 identity data or phone numbers in logs. Security events (failed logins, MFA failures,

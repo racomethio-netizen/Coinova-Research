@@ -98,7 +98,9 @@ export class AuthService {
 
   /** Verifies the code, creates the account on first registration, and starts a session. */
   async verifyCode(challengeId: string, code: string, locale: "EN" | "AM", res: Response, meta: RequestMeta) {
-    await this.limiter.consume(RULES.otpVerifyPerIp, meta.ipHash);
+    // Brute force is stopped per code (5 attempts); the per-IP cap only limits abuse volume,
+    // and scales with the send limit because carriers share IPs.
+    await this.limiter.consume({ ...RULES.otpVerifyPerIp, limit: this.config.otpSendLimitPerIp * 3 }, meta.ipHash);
     const db = this.prisma.client;
     const now = new Date();
 
@@ -159,7 +161,8 @@ export class AuthService {
         tx,
       );
       const seller = await tx.sellerProfile.findUnique({ where: { userId: user.id }, select: { id: true } });
-      return { userId: user.id, isNew, hasSellerProfile: !!seller };
+      const isStaff = (await tx.staffRoleAssignment.count({ where: { userId: user.id, revokedAt: null } })) > 0;
+      return { userId: user.id, isNew, hasSellerProfile: !!seller, isStaff };
     });
   }
 }

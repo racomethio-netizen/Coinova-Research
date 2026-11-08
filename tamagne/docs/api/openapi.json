@@ -370,7 +370,207 @@
             "tamagne_session": []
           }
         ],
-        "summary": "Staff identity and roles (requires a staff role and MFA)",
+        "summary": "Staff identity and roles",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/overview": {
+      "get": {
+        "operationId": "AdminController_overview_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Queue sizes and status counts",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/reviews/second": {
+      "get": {
+        "operationId": "AdminController_secondReviews_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Decisions waiting for a second reviewer",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/sellers": {
+      "get": {
+        "operationId": "AdminController_search_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Search sellers by Tamagne ID, phone (exact) or name",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/sellers/{tamagneId}": {
+      "get": {
+        "operationId": "AdminController_seller_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Seller detail: status, badges, business, reports, appeals, history",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/sellers/{tamagneId}/suspend": {
+      "post": {
+        "operationId": "AdminController_suspend_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Suspend a seller (reason required; immediate)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/sellers/{tamagneId}/reactivate": {
+      "post": {
+        "operationId": "AdminController_reactivate_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Request reactivation (high-risk: needs a second reviewer)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/badges/{id}/revoke": {
+      "post": {
+        "operationId": "AdminController_revokeBadge_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Revoke a verification badge (reason required)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/expiry": {
+      "get": {
+        "operationId": "AdminController_expiry_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Badges expiring within N days (default 30), including lapsed ones",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/jobs/expiry": {
+      "post": {
+        "operationId": "AdminController_runExpiry_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Run the expiry job now (it also runs on a schedule)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/audit": {
+      "get": {
+        "operationId": "AdminController_audit_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Audit log (newest first, 50 per page)",
         "tags": [
           "admin"
         ]
@@ -391,6 +591,162 @@
           }
         ],
         "summary": "Verify the audit log hash chain",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/staff": {
+      "get": {
+        "operationId": "AdminController_staff_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Live staff role grants",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "operationId": "AdminController_grant_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Grant a staff role to a registered account (not yourself)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/staff/{id}/revoke": {
+      "post": {
+        "operationId": "AdminController_revoke_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Revoke a staff role grant (not your own; never the last Super Admin)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/plans": {
+      "get": {
+        "operationId": "AdminController_plans_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Plans with current prices and price history",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "operationId": "AdminController_createPlan_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Create a plan",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/plans/{id}": {
+      "patch": {
+        "operationId": "AdminController_updatePlan_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Rename or (de)activate a plan",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/plans/{id}/prices": {
+      "post": {
+        "operationId": "AdminController_setPrice_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Set a new price (the previous one is closed, kept in history)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/revenue": {
+      "get": {
+        "operationId": "AdminController_revenue_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Revenue by month from recorded payments",
         "tags": [
           "admin"
         ]
@@ -908,6 +1264,214 @@
         "summary": "Approve or reject a manual identity review (HIGH risk needs a second reviewer)",
         "tags": [
           "admin"
+        ]
+      }
+    },
+    "/api/v1/reports": {
+      "post": {
+        "operationId": "ReportsController_submit_v1",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Report received"
+          }
+        },
+        "summary": "Report a seller (sign-in optional). Same response whether or not the seller exists.",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/admin/reports": {
+      "get": {
+        "operationId": "AdminReportsController_list_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Fraud reports (open by default)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/reports/{id}": {
+      "get": {
+        "operationId": "AdminReportsController_detail_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Report detail (viewing reporter contact is audited)",
+        "tags": [
+          "admin"
+        ]
+      },
+      "patch": {
+        "operationId": "AdminReportsController_update_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Triage, investigate, resolve or dismiss (closing needs a note)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/appeals": {
+      "post": {
+        "operationId": "AppealsController_submit_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Appeal a decision or request a data correction",
+        "tags": [
+          "appeals"
+        ]
+      }
+    },
+    "/api/v1/appeals/me": {
+      "get": {
+        "operationId": "AppealsController_mine_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "The seller's appeals and their outcomes",
+        "tags": [
+          "appeals"
+        ]
+      }
+    },
+    "/api/v1/admin/appeals": {
+      "get": {
+        "operationId": "AdminAppealsController_list_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Open appeals (oldest first)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/appeals/{id}/decision": {
+      "post": {
+        "operationId": "AdminAppealsController_decide_v1",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "Missing staff role or MFA"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "UPHELD = original decision stands; OVERTURNED = reversed (suspensions then need a second reviewer)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "operationId": "NotificationsController_list_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "The signed-in user's latest in-app notifications",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/{id}/read": {
+      "post": {
+        "operationId": "NotificationsController_read_v1",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Not signed in"
+          }
+        },
+        "security": [
+          {
+            "tamagne_session": []
+          }
+        ],
+        "summary": "Mark a notification as read",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/plans": {
+      "get": {
+        "operationId": "PublicPlansController_list_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Active plans and current prices (set by administrators; prices never affect verification)",
+        "tags": [
+          "plans"
         ]
       }
     }

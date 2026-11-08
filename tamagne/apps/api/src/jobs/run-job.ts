@@ -1,12 +1,13 @@
 /**
  * Scheduled jobs (run by cron / the platform scheduler):
- *   npm run job -w @tamagne/api -- expiry
+ *   npm run job -w @tamagne/api -- expiry   (dev)
+ *   node apps/api/dist/jobs/run-job.js expiry   (container)
  * Uses the same validated configuration as the API.
  */
 import { NestFactory } from "@nestjs/core";
-import { AppModule } from "../src/app.module.js";
-import { OperationsService } from "../src/admin/operations.service.js";
-import { loadConfig } from "../src/config/env.js";
+import { AppModule } from "../app.module.js";
+import { OperationsService } from "../admin/operations.service.js";
+import { loadConfig } from "../config/env.js";
 
 const job = process.argv[2];
 if (job !== "expiry") {
@@ -16,7 +17,7 @@ if (job !== "expiry") {
 const app = await NestFactory.createApplicationContext(AppModule.forRoot(loadConfig()), { logger: ["error", "warn"] });
 try {
   const result = await app.get(OperationsService).runExpiryJob();
-  console.log(JSON.stringify({ job, ...result }));
+  process.stdout.write(`${JSON.stringify({ job, ...result })}\n`);
 } finally {
   await app.close();
 }

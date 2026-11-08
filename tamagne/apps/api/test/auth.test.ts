@@ -29,7 +29,7 @@ describe("registration and phone OTP", () => {
 
     const verify = await c.post("/api/v1/auth/otp/verify", { challengeId: start.body.data.challengeId, code, locale: "am" });
     expect(verify.status).toBe(200);
-    expect(verify.body.data).toMatchObject({ isNew: true, hasSellerProfile: false });
+    expect(verify.body.data).toMatchObject({ isNew: true, hasSellerProfile: false, isStaff: false });
     const cookie = verify.headers["set-cookie"] as unknown as string[];
     const session = cookie.find((x) => x.startsWith("tamagne_session="))!;
     expect(session).toMatch(/HttpOnly/);

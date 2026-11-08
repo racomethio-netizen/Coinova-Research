@@ -63,8 +63,8 @@ export function PhoneAuthForm({ mode, lang, t }: { mode: Mode; lang: Locale; t: 
     setError(null);
     setBusy(true);
     try {
-      const data = await apiSend<{ hasSellerProfile: boolean }>("POST", "/auth/otp/verify", { challengeId, code: code.trim(), locale: lang });
-      router.push(`/${lang}/dashboard${data.hasSellerProfile ? "" : "/setup"}`);
+      const data = await apiSend<{ hasSellerProfile: boolean; isStaff: boolean }>("POST", "/auth/otp/verify", { challengeId, code: code.trim(), locale: lang });
+      router.push(data.isStaff ? `/${lang}/admin` : `/${lang}/dashboard${data.hasSellerProfile ? "" : "/setup"}`);
       router.refresh();
     } catch (err) {
       setError({ field: err instanceof ApiRequestError && err.code === "invalid_code" ? "code" : "form", message: message(err) });

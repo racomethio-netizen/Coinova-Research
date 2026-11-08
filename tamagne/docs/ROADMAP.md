@@ -1,21 +1,21 @@
 # TAMAGNE roadmap and status
 
-_Last updated: 2026-11-07 (session 1, Phases 1–5)._
+_Last updated: 2026-11-08 (session 1, Phases 1–6)._
 
 Legend: ✅ done and covered by automated tests · 🟡 done, partially verified ·
 ⛔ blocked on an external party or owner decision · ⬜ not started.
 
-## Verified (Phase 5)
+## Verified (Phase 6)
 
 | Check | Result |
 |---|---|
 | `npm run typecheck` (core, db, api, web) | ✅ pass |
 | `npm run lint` (typescript-eslint; Next.js rules for web) | ✅ 0 problems |
 | `npm test`: core unit | ✅ 42 / 42 (incl. RFC 6238 and RFC 7636 test vectors) |
-| `npm test`: API (auth, sessions, CSRF, rate limits, sellers, consents, MFA, verify, QR, businesses, documents, review, adapters, Fayda OIDC, manual identity review) | ✅ 113 / 113 + Redis test (✅ with `REDIS_TEST_URL`) |
+| `npm test`: API (auth, sessions, CSRF, rate limits, sellers, consents, MFA, verify, QR, businesses, documents, review, adapters, Fayda OIDC, manual identity, reports, appeals, admin, expiry, audit, staff, pricing, notifications) | ✅ 126 / 126 + Redis test (✅ with `REDIS_TEST_URL`) |
 | `npm test`: web dictionaries (EN/AM parity, Ethiopic script) | ✅ 4 / 4 |
-| `npm run test:db`: integrity rules on PostgreSQL 16 | ✅ 31 / 31 (5 migrations) |
-| `npm run test:e2e`: Playwright, desktop + Pixel 7 | ✅ 20 / 20 (incl. the Fayda redirect round trip against the TEST provider) |
+| `npm run test:db`: integrity rules on PostgreSQL 16 | ✅ 32 / 32 (6 migrations; includes the audit-chain concurrency regression test, proven to fail on the old trigger) |
+| `npm run test:e2e`: Playwright, desktop + Pixel 7 | ✅ 28 / 28 (incl. staff console: MFA enrolment, business review, report → suspension → appeal → second-reviewer reactivation) |
 | `npm run build` | ✅ pass |
 | `npm audit --omit=dev` | ✅ 0 vulnerabilities (dev-only: moderate `minimatch` advisory via typescript-eslint) |
 | GitHub Actions `.github/workflows/tamagne-ci.yml` | 🟡 updated (Redis service, lint, e2e); not yet run on GitHub |
@@ -45,7 +45,7 @@ integrity migration, core primitives, API and web skeletons, Docker, compose, CI
 ### Phase 2 limitations
 - ⛔ Production SMS: Ethio telecom was named; waiting for confirmation of scope (SMS and/or hosting) and a contract/credentials. Until then production registration cannot work (SMS_PROVIDER=disabled returns 503).
 - Phone number change and account deletion flows are not built yet (Phase 7 covers deletion).
-- Staff role management UI/API (grant/revoke by a Super Admin) is Phase 6; only the bootstrap script exists.
+- Staff role management: done in Phase 6 (bootstrap script only for the first Super Admin).
 - Policy texts (ToS, privacy) are drafts; consent records carry version `2026-11-draft`.
 - Docker: API and web images rebuilt successfully after the Phase 2 changes; the web container's `/api` proxy reached the API using an address set only at runtime.
 
@@ -101,9 +101,29 @@ integrity migration, core primitives, API and web skeletons, Docker, compose, CI
 - No reviewer UI yet (Phase 6).
 - OTP per-IP limit is now configurable (`OTP_SEND_LIMIT_PER_IP`, default 30) because of carrier-grade NAT.
 
+## Phase 6: admin dashboard and fraud reporting ✅
+
+- ✅ Staff console `/[lang]/admin`: server-side gate (role → TOTP enrolment with QR → MFA per session → page role), role-filtered navigation, overview
+- ✅ Business and manual-identity review screens (audited downloads, per-document decisions, reasons, risk), second-review screen
+- ✅ Fraud reports: public bilingual form (enumeration-safe, encrypted contact), investigator workflow with transitions and resolution notes
+- ✅ Appeals: seller page (EN/AM) and staff decisions with conflict-of-interest rule; overturned suspensions → second-reviewer reactivation; overturned document rejections re-open the business
+- ✅ Seller search (ID / phone / name) and detail (masked phone), suspension, reactivation as a high-risk override, badge revocation
+- ✅ Expiry monitor + idempotent expiry job with 30-day reminders
+- ✅ Audit log viewer with filters, paging and hash-chain verification
+- ✅ Staff management (grant/revoke; no self-changes; never the last Super Admin; sessions end with the last role)
+- ✅ Admin-configurable, versioned pricing; public plans endpoint; revenue from recorded payments
+- ✅ In-app notifications (bilingual templates) on the seller dashboard
+- Bugs found and fixed: audit chain false-break under concurrent writers (migration + regression test); review page lost its confirmation after a decision; OTP verify per-IP limit too tight for shared IPs (now 3 × the send limit)
+
+### Phase 6 limitations
+- Admin console is English only (seller and buyer pages are bilingual).
+- No payment provider, so revenue shows only recorded payments (none yet) and there is no seller subscription checkout.
+- Notifications are in-app only; SMS/email delivery waits for providers.
+- Staff phone numbers are masked in the console; there is no "reveal" flow.
+- Super Admin grants do not need a second approver (only Super Admins can grant, and they cannot grant to themselves).
+
 ## Next phases
 
-### Phase 6: admin dashboard and fraud reporting ⬜
 ### Phase 7: security, privacy, compliance ⬜
 ### Phase 8: testing and production preparation ⬜
 

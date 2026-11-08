@@ -53,9 +53,16 @@ export default async function VerifyResultPage({ params }: PageProps<"/[lang]/ve
           <p className="mt-3 text-xs text-muted">{t.footer.independence}</p>
         </Card>
 
-        <Link href={`/${lang}/verify`} className="inline-block font-semibold text-emerald-700 underline-offset-4 hover:underline">
-          {v.anotherCheck}
-        </Link>
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <Link href={`/${lang}/verify`} className="inline-block font-semibold text-emerald-700 underline-offset-4 hover:underline">
+            {v.anotherCheck}
+          </Link>
+          {outcome.kind === "found" ? (
+            <Link href={`/${lang}/report?seller=${encodeURIComponent(outcome.seller.tamagneId)}`} className="inline-block font-semibold text-red-800 underline-offset-4 hover:underline">
+              {t.report.link}
+            </Link>
+          ) : null}
+        </div>
       </main>
     </>
   );

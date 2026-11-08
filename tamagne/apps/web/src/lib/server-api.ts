@@ -9,6 +9,7 @@ export interface Viewer {
   phone: string | null;
   tamagneId: string | null;
   roles: string[];
+  mfa: { enrolled: boolean; verified: boolean } | null;
 }
 
 export type PublicStatus = "VERIFIED" | "NOT_VERIFIED" | "EXPIRED" | "REVOKED" | "SUSPENDED";
@@ -159,4 +160,16 @@ export interface ManualReview {
 
 export async function getManualReview(): Promise<ManualReview | null> {
   return (await apiGet<ManualReview | null>("/identity/manual")).data;
+}
+
+export type AdminResult<T> = { ok: true; data: T } | { ok: false; status: number; code: string; message: string };
+
+/** Server-side GET for admin pages; returns the API's error code instead of throwing. */
+export async function adminGet<T>(path: string): Promise<AdminResult<T>> {
+  const jar = await cookies();
+  const session = jar.get("__Host-tamagne_session") ?? jar.get("tamagne_session");
+  const res = await fetch(`${API}/api/v1${path}`, { headers: session ? { cookie: `${session.name}=${session.value}` } : {}, cache: "no-store" });
+  const body = (await res.json().catch(() => ({}))) as { data?: T; error?: { code: string; message: string } };
+  if (!res.ok) return { ok: false, status: res.status, code: body.error?.code ?? "error", message: body.error?.message ?? "Request failed" };
+  return { ok: true, data: body.data as T };
 }

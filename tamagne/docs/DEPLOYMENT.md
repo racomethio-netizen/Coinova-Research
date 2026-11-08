@@ -39,6 +39,15 @@ working assumption, pending legal confirmation:
 
 Run once on production: `ALTER DATABASE tamagne SET tamagne.environment = 'production';`
 
+Grant the app role `EXECUTE` on `public.audit_log_verify_chain()` (it is revoked from PUBLIC) so the
+console's "Verify hash chain" works.
+
+## Scheduled jobs
+
+| Job | Command | Schedule |
+|-----|---------|----------|
+| Verification expiry + 30-day reminders | API image: `node --enable-source-maps apps/api/dist/jobs/run-job.js expiry` (dev: `npm run job -w @tamagne/api -- expiry`) | daily, e.g. 01:00 Africa/Addis_Ababa |
+
 ## 4. Releasing
 
 ```bash
