@@ -1,5 +1,5 @@
 import { HttpStatus, Inject, Injectable } from "@nestjs/common";
-import { REQUIRED_DOCUMENT_TYPES, badgeExpiry } from "@tamagne/core";
+import { REQUIRED_DOCUMENT_TYPES, badgeExpiry, normalizeTamagneId } from "@tamagne/core";
 import type { Prisma } from "@tamagne/db";
 import { ApiError } from "../common/http.js";
 import { AuditService } from "../audit/audit.service.js";
@@ -46,10 +46,13 @@ export class ReviewService {
     @Inject(SellersAdminService) private readonly sellersAdmin: SellersAdminService,
   ) {}
 
-  async queue() {
-    const [submitted, secondReviews] = await Promise.all([
+  async queue(seller?: string) {
+    const tamagneId = seller === undefined ? undefined : normalizeTamagneId(seller);
+    if (seller !== undefined && !tamagneId) return { businesses: [], total: 0, secondReviews: [] };
+    const where = { status: "SUBMITTED" as const, ...(tamagneId ? { sellerProfile: { tamagneId } } : {}) };
+    const [submitted, total, secondReviews] = await Promise.all([
       this.prisma.client.business.findMany({
-        where: { status: "SUBMITTED" },
+        where,
         orderBy: { submittedAt: "asc" },
         take: 100,
         include: {
@@ -57,6 +60,7 @@ export class ReviewService {
           documents: { where: { purgedAt: null }, select: { scanStatus: true, reviewStatus: true } },
         },
       }),
+      this.prisma.client.business.count({ where }),
       this.prisma.client.reviewRecord.findMany({
         where: { status: "PENDING_SECOND_REVIEW", targetType: "BUSINESS" },
         orderBy: { createdAt: "asc" },
@@ -72,6 +76,8 @@ export class ReviewService {
         documents: { total: b.documents.length, unscanned: b.documents.filter((d) => d.scanStatus !== "CLEAN").length },
         awaitingSecondReview: secondReviews.some((r) => r.targetId === b.id),
       })),
+      /** All waiting submissions; `businesses` holds the oldest 100. */
+      total,
       secondReviews: secondReviews.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })),
     };
   }

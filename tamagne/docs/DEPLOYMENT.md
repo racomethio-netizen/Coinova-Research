@@ -1,8 +1,9 @@
 # Deployment and operations
 
-_Phase 1 status: container images and a local stack exist and were verified. No
-staging or production environment exists. Do not deploy, purchase services or load
-real identity data without the owner's explicit approval._
+_Phase 8 status: container images, a local stack, backups with a restore drill, observability and
+a smoke test exist and were verified ([LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md)). No staging or
+production environment exists. Do not deploy, purchase services or load real identity data
+without the owner's explicit approval._
 
 ## 1. Data residency first
 
@@ -90,6 +91,9 @@ docker build -f apps/api/Dockerfile --target runtime -t tamagne-api:<sha> .
 docker build -f apps/api/Dockerfile --target migrate -t tamagne-migrate:<sha> .
 docker build -f apps/web/Dockerfile -t tamagne-web:<sha> .
 # Behind a TLS-intercepting proxy, add: --secret id=npm_ca,src=<proxy-ca.pem>
+
+# Verify the images as a full stack before releasing (23 checks, isolated project, removed afterwards):
+TAMAGNE_TAG=<sha> bash ops/compose-smoke.sh
 
 # Deploy: run migrations as a one-off job with the owner role, then roll the API and web.
 ```

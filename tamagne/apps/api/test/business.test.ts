@@ -136,7 +136,10 @@ describe("reviewer workflow", () => {
     const officer = await staffClient(h, "VERIFICATION_OFFICER");
 
     const queue = await officer.c.get("/api/v1/admin/reviews/businesses").expect(200);
-    expect(queue.body.data.businesses.map((b: { id: string }) => b.id)).toContain(s.businessId);
+    expect(queue.body.data.total).toBeGreaterThanOrEqual(1);
+    expect(queue.body.data.businesses.length).toBeLessThanOrEqual(100);
+    const ownQueue = await officer.c.get(`/api/v1/admin/reviews/businesses?seller=${s.tamagneId}`).expect(200);
+    expect(ownQueue.body.data.businesses.map((b: { id: string }) => b.id)).toEqual([s.businessId]);
 
     const file = await officer.c.get(`/api/v1/admin/documents/${s.docId}/file`).expect(200);
     expect(file.headers["content-type"]).toBe("application/pdf");

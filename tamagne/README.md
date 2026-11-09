@@ -9,11 +9,11 @@ result by Tamagne ID, public profile or QR code.
 TAMAGNE is an independent private platform, not a government institution.
 Verification does not guarantee honesty, product authenticity or delivery.
 
-> **Status: Phase 7 complete.** Seller verification (phone, business, manual identity; Fayda
-> adapter built but unconnected), public lookup and QR, staff console with MFA, fraud reports,
-> appeals, privacy centre (export, correction, deletion), retention jobs, nonce CSP and draft legal
-> documents. Not yet connected: Fayda, production SMS, production document storage, payments.
-> See [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status: Phase 8 complete; launch is NO-GO pending external blockers.** Seller verification (phone, business,
+> manual identity; Fayda adapter built but unconnected), public lookup and QR, staff console with MFA, fraud reports,
+> appeals, privacy centre, retention and key-rotation jobs, encrypted backups with a restore drill, JSON logs and
+> metrics, load and container smoke tests. Not yet connected: Fayda, production SMS, production document storage,
+> payments, Ethiopian hosting. See [docs/LAUNCH_CHECKLIST.md](docs/LAUNCH_CHECKLIST.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Layout
 
@@ -23,7 +23,8 @@ Verification does not guarantee honesty, product authenticity or delivery.
 | `apps/web` | Next.js web app, English and Amharic |
 | `packages/db` | Prisma schema, migrations, DB integrity tests |
 | `packages/core` | Shared rules and security primitives |
-| `docs/` | [Security](docs/SECURITY.md) · [Legal drafts](docs/legal/README.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md) · [Fayda guide](docs/FAYDA_INTEGRATION.md) · [Deployment](docs/DEPLOYMENT.md) · [OpenAPI](docs/api/openapi.json) |
+| `ops/` | Backup/restore drill, load test, compose smoke test |
+| `docs/` | [Security](docs/SECURITY.md) · [Legal drafts](docs/legal/README.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md) · [Fayda guide](docs/FAYDA_INTEGRATION.md) · [Deployment](docs/DEPLOYMENT.md) · [Launch checklist](docs/LAUNCH_CHECKLIST.md) · [OpenAPI](docs/api/openapi.json) |
 
 ## Quick start
 

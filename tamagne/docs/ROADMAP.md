@@ -1,24 +1,27 @@
 # TAMAGNE roadmap and status
 
-_Last updated: 2026-11-08 (session 1, Phases 1–7)._
+_Last updated: 2026-11-09 (session 1, Phases 1–8). Launch status: **NO-GO** until the external blockers in [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md) are resolved._
 
 Legend: ✅ done and covered by automated tests · 🟡 done, partially verified ·
 ⛔ blocked on an external party or owner decision · ⬜ not started.
 
-## Verified (Phase 7)
+## Verified (Phase 8)
 
 | Check | Result |
 |---|---|
 | `npm run typecheck` (core, db, api, web) | ✅ pass |
 | `npm run lint` (typescript-eslint; Next.js rules for web) | ✅ 0 problems |
 | `npm test`: core unit | ✅ 42 / 42 (incl. RFC 6238 and RFC 7636 test vectors) |
-| `npm test`: API (all modules incl. privacy export/correction/deletion, retention, security events) | ✅ 133 / 133 + Redis test (✅ with `REDIS_TEST_URL`) |
+| `npm test`: API | ✅ 141 / 141; 3 opt-in tests skipped by default (Redis ✅ 3/3 with `REDIS_TEST_URL`, real ClamAV ✅ 2/2 with `CLAMAV_TEST_HOST`) |
 | `npm test`: web dictionaries (EN/AM parity, Ethiopic script) | ✅ 4 / 4 |
-| `npm run test:db`: integrity rules on PostgreSQL 16 | ✅ 32 / 32 (7 migrations; includes the audit-chain concurrency regression test, proven to fail on the old trigger) |
-| `npm run test:e2e`: Playwright, desktop + Pixel 7 | ✅ 34 / 34 (incl. nonce CSP with zero violations, privacy centre and deletion; incl. staff console: MFA enrolment, business review, report → suspension → appeal → second-reviewer reactivation) |
+| `npm run test:db`: integrity rules on PostgreSQL 16 | ✅ 32 / 32 (7 migrations) |
+| `npm run test:e2e`: Playwright, desktop + Pixel 7 | ✅ 34 / 34 |
 | `npm run build` | ✅ pass |
-| `npm audit --omit=dev` | ✅ 0 vulnerabilities (dev-only: moderate `minimatch` advisory via typescript-eslint) |
-| GitHub Actions `.github/workflows/tamagne-ci.yml` | 🟡 updated (Redis service, lint, e2e); not yet run on GitHub |
+| Restore drill (`npm run ops:restore-drill`) | ✅ [report](ops/restore-drill-2026-11-09.md) |
+| Load test (`npm run ops:load-test`) | ✅ [report](ops/load-test-2026-11-09.md) |
+| Compose smoke test (`bash ops/compose-smoke.sh`) | ✅ 23 / 23, [report](ops/compose-smoke-2026-11-09.md) |
+| `npm audit --omit=dev` | ✅ 0 vulnerabilities (dev-only moderate advisories: `minimatch` via typescript-eslint, `uuid` via autocannon) |
+| GitHub Actions `.github/workflows/tamagne-ci.yml` | 🟡 updated (restore drill, compose smoke, real-ClamAV job); not yet run on GitHub |
 
 Phase 1 verification (Docker images, compose stack, mutation check) is recorded in git history.
 
@@ -137,12 +140,44 @@ integrity migration, core primitives, API and web skeletons, Docker, compose, CI
 ### Phase 7 limitations / owner actions
 - ⛔ Legal review of every document; statutory periods (response deadline, breach notification, retention) to confirm; data protection authority details; Amharic legal translation.
 - Privacy page copy states 14 / 30 days; if `DELETION_GRACE_DAYS` or `DSR_RESPONSE_DAYS` change, update the copy too.
-- Inline styles still allowed by CSP; no external penetration test yet; key re-encryption job and HMAC pepper rotation are Phase 8.
+- Inline styles still allowed by CSP; no external penetration test yet. (Key re-encryption job added in Phase 8; HMAC pepper rotation remains manual.)
 - Fraud reports about a seller survive the seller's deletion (fraud prevention); counsel to confirm.
 
-## Next phases
+## Phase 8: testing and production preparation ✅
 
-### Phase 8: testing and production preparation ⬜
+- ✅ Encrypted logical backups (`ops/backup.mjs`: pg_dump streamed through AES-256-GCM, manifest with row counts) and an automated restore drill that checks rows, migrations, audit chain, triggers, tamper rejection and API readiness
+- ✅ Structured JSON logs (route templates only, digit-run masking, frame-only stack traces) and Prometheus metrics behind `METRICS_TOKEN`
+- ✅ Key rotation job (`run-job.js rekey`): re-encrypts all encrypted columns and stored documents under the active key with conditional updates and atomic object replace
+- ✅ Load test: public lookups, SSR page, concurrent audited writes; integrity checked after every run
+- ✅ Container stack smoke test (23 checks) and a real ClamAV check; API image 523 → 449 MB
+- ✅ Launch checklist with go/no-go rule ([LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md)); CI extended
+- Bugs found and fixed by this phase's testing:
+  - **Records without audit entries.** Fraud reports, appeals, Fayda start and consent, staff role
+    grants, plan changes and correction requests wrote the record and its audit entry separately, so
+    a failed audit write left an unaudited record. Found when the load test's counts disagreed. They
+    now commit in one transaction.
+  - **Retention job never audited.** Its metadata key `otpChallenges` matched the forbidden-key
+    filter and `recordSafe` swallowed the error. Found by the compose smoke test; regression test added.
+  - **Web image build broken since Phase 5.** E2e specs importing workspace packages were type-checked
+    inside the image. Tests are now excluded from the Docker context.
+  - **Business review queue hid new submissions.** It showed only the oldest 100 with no total. It now
+    returns the total, and the console can filter by Tamagne ID.
+  - **Key-rotation test collided with parallel test files.** It now runs in an isolated database.
+
+### Phase 8 limitations
+- Measurements come from one shared 4-vCPU container; repeat the restore drill and load test on production-like hardware.
+- Logical backups only; WAL archiving / PITR needs the production host.
+- freshclam could not reach the ClamAV signature servers from this environment; production needs that access or a mirror.
+- Identity-review, fraud-report and appeal queues show the oldest 100–200 items without a total (the business queue now has both); add totals/paging before volumes grow.
+- `HMAC_PEPPER` rotation is not automated (hashes are one-way; needs a planned migration).
+- Load test sends synthetic fraud reports and deletes them afterwards; their audit entries remain (append-only).
+
+## Next steps
+
+1. Owner: resolve the external blockers below (hosting, SMS, Fayda, legal).
+2. Dev, once a provider is chosen: production SMS adapter, S3-compatible storage adapter, then a staging deployment with synthetic data.
+3. Run CI on GitHub (push triggers it) and fix anything environment-specific.
+4. On staging: penetration test, restore drill and load test on real infrastructure, Amharic copy review.
 
 ## Blockers and owner decisions
 
@@ -161,6 +196,11 @@ npm run db:test:up                     # PostgreSQL 16 on :54339 with migrations
 npm run check                          # generate, typecheck, lint, unit + API + DB tests
 npm run build && npm run test:e2e -w @tamagne/web
 REDIS_TEST_URL=redis://127.0.0.1:6379/0 npm run test:redis -w @tamagne/api   # needs a local Redis
+# Phase 8 operations tooling (disposable databases only)
+SOURCE_URL=postgresql://postgres@127.0.0.1:54339/tamagne_test DRILL_ADMIN_URL=postgresql://postgres@127.0.0.1:54339/postgres \
+  BACKUP_KEY=$(openssl rand -base64 32) npm run ops:restore-drill
+DATABASE_URL=postgresql://postgres@127.0.0.1:54339/tamagne_test REDIS_URL=redis://127.0.0.1:6379/0 npm run ops:load-test
+TAMAGNE_TAG=dev bash ops/compose-smoke.sh   # needs Docker; builds images if missing
 npm run db:test:down
 ```
 

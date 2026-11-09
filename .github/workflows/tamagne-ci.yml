@@ -58,6 +58,12 @@ jobs:
       - name: Unit, database and API tests
         run: npm test && npm run test:db
       - run: npm run build
+      - name: Backup + restore drill (encrypted backup, restore, integrity, API readiness)
+        run: |
+          SOURCE_URL=$TEST_DATABASE_URL \
+          DRILL_ADMIN_URL=postgresql://postgres@127.0.0.1:54339/postgres \
+          BACKUP_KEY=$(openssl rand -base64 32) \
+          npm run ops:restore-drill
       - name: End-to-end (Playwright, desktop + mobile)
         run: |
           npx playwright install --with-deps chromium
@@ -72,3 +78,26 @@ jobs:
       - run: docker build -f apps/api/Dockerfile --target runtime -t tamagne-api:ci .
       - run: docker build -f apps/api/Dockerfile --target migrate -t tamagne-migrate:ci .
       - run: docker build -f apps/web/Dockerfile -t tamagne-web:ci .
+      - name: Full-stack smoke test (compose, staging mode)
+        run: TAMAGNE_TAG=ci bash ops/compose-smoke.sh
+
+  clamav:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    needs: test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tamagne/package-lock.json
+      - name: Start clamd (signatures are refreshed by freshclam on start)
+        run: |
+          docker run -d --name clamav -p 127.0.0.1:3310:3310 clamav/clamav:1.4
+          timeout 600 sh -c 'until docker logs clamav 2>&1 | grep -q "clamd started"; do sleep 5; done'
+      - run: npm ci
+      - run: npm run db:generate
+      - name: Scanner adapter against a real clamd
+        run: CLAMAV_TEST_HOST=127.0.0.1 npx vitest run test/adapters.test.ts
+        working-directory: tamagne/apps/api

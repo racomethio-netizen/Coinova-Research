@@ -98,7 +98,7 @@ test("a seller verifies their business and a reviewer approves it (Level 3)", as
 
   // Reviewer approves.
   const rev = await officer();
-  const queue = (await (await rev.api.get("/api/v1/admin/reviews/businesses")).json()) as { data: { businesses: { id: string; seller: { tamagneId: string } }[] } };
+  const queue = (await (await rev.api.get(`/api/v1/admin/reviews/businesses?seller=${tamagneId}`)).json()) as { data: { businesses: { id: string; seller: { tamagneId: string } }[] } };
   const item = queue.data.businesses.find((b) => b.seller.tamagneId === tamagneId)!;
   expect(item).toBeTruthy();
   const detail = (await (await rev.api.get(`/api/v1/admin/businesses/${item.id}`)).json()) as { data: { documents: { id: string }[] } };

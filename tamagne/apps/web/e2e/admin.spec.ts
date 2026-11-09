@@ -92,6 +92,8 @@ test("a verification officer reviews and approves a business in the console", as
   const p = officer.page;
   await expect(nav(p, "Staff")).toHaveCount(0); // role-based navigation
   await nav(p, "Business reviews").click();
+  await p.getByLabel("Find a submission by Tamagne ID").fill(seller.tamagneId);
+  await p.getByRole("button", { name: "Filter" }).click();
   await p.getByRole("row", { name: new RegExp(seller.tamagneId) }).getByRole("link", { name: "Review" }).click();
   await expect(p.getByRole("link", { name: "Download" })).toBeVisible();
   const dl = await p.request.get(`${WEB}${await p.getByRole("link", { name: "Download" }).getAttribute("href")}`);

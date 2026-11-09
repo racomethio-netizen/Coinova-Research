@@ -1,5 +1,5 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, ParseUUIDPipe, Post, Req, Res } from "@nestjs/common";
-import { ApiOperation, ApiProduces, ApiTags } from "@nestjs/swagger";
+import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, ParseUUIDPipe, Post, Query, Req, Res } from "@nestjs/common";
+import { ApiOperation, ApiProduces, ApiQuery, ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { clientIp, parse } from "../common/http.js";
@@ -35,9 +35,10 @@ export class ReviewController {
 
   @Get("reviews/businesses")
   @StaffOnly("SUPER_ADMIN", "VERIFICATION_OFFICER")
-  @ApiOperation({ summary: "Business verification queue (oldest first) and pending second reviews" })
-  async queue() {
-    return { data: await this.review.queue() };
+  @ApiOperation({ summary: "Business verification queue (oldest 100 first, with the total waiting) and pending second reviews" })
+  @ApiQuery({ name: "seller", required: false, description: "Only this seller's submission (Tamagne ID)" })
+  async queue(@Query("seller") seller?: string) {
+    return { data: await this.review.queue(typeof seller === "string" && seller.trim() ? seller : undefined) };
   }
 
   @Get("businesses/:id")

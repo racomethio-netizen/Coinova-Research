@@ -1025,7 +1025,15 @@
     "/api/v1/admin/reviews/businesses": {
       "get": {
         "operationId": "ReviewController_queue_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "seller",
+            "required": false,
+            "in": "query",
+            "description": "Only this seller's submission (Tamagne ID)",
+            "schema": {}
+          }
+        ],
         "responses": {
           "403": {
             "description": "Missing staff role or MFA"
@@ -1036,7 +1044,7 @@
             "tamagne_session": []
           }
         ],
-        "summary": "Business verification queue (oldest first) and pending second reviews",
+        "summary": "Business verification queue (oldest 100 first, with the total waiting) and pending second reviews",
         "tags": [
           "admin"
         ]
