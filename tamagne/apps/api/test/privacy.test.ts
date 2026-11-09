@@ -155,7 +155,10 @@ describe("retention job", () => {
     await h.db.$executeRaw`update phone_otp_challenges set "createdAt" = now() - interval '40 days', "expiresAt" = now() - interval '40 days' + interval '5 minutes' where id in (${stale.id}::uuid, ${badge.phoneOtpChallengeId!}::uuid)`;
     await h.db.notification.create({ data: { userId: s.userId, channel: "IN_APP", templateKey: "badge.expiring", locale: "EN", createdAt: new Date(Date.now() - 400 * DAY) } });
 
+    const audited = () => h.db.auditLog.count({ where: { action: "job.retention" } });
+    const auditsBefore = await audited();
     const r = await jobs.runRetentionJob();
+    expect(await audited()).toBe(auditsBefore + 1); // the job leaves an audit trail
     expect(r.businessFiles).toBeGreaterThanOrEqual(1);
     expect(fileExists(s.docKey)).toBe(false);
     expect((await h.db.businessDocument.findUniqueOrThrow({ where: { id: doc.id } })).purgedAt).not.toBeNull();

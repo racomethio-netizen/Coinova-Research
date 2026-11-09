@@ -99,3 +99,31 @@ describe("encrypted local storage", () => {
     expect(readdirSync(dir)).toEqual(["business-documents"]);
   });
 });
+
+/**
+ * Against a real clamd (opt-in): CLAMAV_TEST_HOST=127.0.0.1 [CLAMAV_TEST_PORT=3310].
+ * e.g. docker run -d -p 127.0.0.1:3310:3310 clamav/clamav:1.4
+ */
+const clamHost = process.env.CLAMAV_TEST_HOST;
+describe.skipIf(!clamHost)("real ClamAV daemon", () => {
+  const scanner = new ClamAvScanner(clamHost ?? "", Number(process.env.CLAMAV_TEST_PORT ?? 3310));
+  it("detects the EICAR test file and passes a clean PDF", async () => {
+    const eicar = Buffer.from("X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*");
+    expect(await scanner.scan(eicar)).toMatchObject({ status: "INFECTED", engine: "clamav", signature: expect.stringMatching(/eicar/i) });
+    expect(await scanner.scan(Buffer.from("%PDF-1.7\n% clean synthetic fixture\n%%EOF\n"))).toMatchObject({ status: "CLEAN", engine: "clamav" });
+  });
+  it("scans a document at the 8 MB upload limit", async () => {
+    expect((await scanner.scan(Buffer.alloc(8 * 1024 * 1024, 0x41))).status).toBe("CLEAN");
+  }, 30_000);
+});
+
+describe("object replace (key rotation)", () => {
+  it("put never overwrites; replace swaps atomically and requires an existing object", async () => {
+    const store = new LocalObjectStore(mkdtempSync(join(tmpdir(), "tamagne-replace-")));
+    await store.put("a/b", Buffer.from("one"));
+    await expect(store.put("a/b", Buffer.from("two"))).rejects.toThrow();
+    await store.replace("a/b", Buffer.from("two"));
+    expect((await store.get("a/b")).toString()).toBe("two");
+    await expect(store.replace("a/missing", Buffer.from("x"))).rejects.toThrow();
+  });
+});

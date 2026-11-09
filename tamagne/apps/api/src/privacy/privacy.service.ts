@@ -286,7 +286,7 @@ export class PrivacyService {
   /** Retention schedule (docs/legal/RETENTION.md): purges what is no longer needed. Idempotent. */
   async runRetentionJob(now = new Date()) {
     const db = this.prisma.client;
-    const result = { businessFiles: 0, identityFiles: 0, otpChallenges: 0, sessions: 0, oidcRequests: 0, notifications: 0, reporterContacts: 0 };
+    const result = { businessFiles: 0, identityFiles: 0, verificationChallenges: 0, sessions: 0, oidcRequests: 0, notifications: 0, reporterContacts: 0 };
 
     const docs = await db.businessDocument.findMany({ where: { purgedAt: null, retainUntil: { lte: now } }, select: { id: true, storageKey: true }, take: 1000 });
     for (const d of docs) {
@@ -301,7 +301,7 @@ export class PrivacyService {
       result.identityFiles++;
     }
     // OTP challenges that back a phone badge are evidence and are kept.
-    result.otpChallenges = (await db.phoneOtpChallenge.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - RETENTION.otpChallengeDays * DAY) }, badges: { none: {} } } })).count;
+    result.verificationChallenges = (await db.phoneOtpChallenge.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - RETENTION.otpChallengeDays * DAY) }, badges: { none: {} } } })).count;
     const sessionCutoff = new Date(now.getTime() - RETENTION.sessionDaysAfterEnd * DAY);
     result.sessions = (await db.session.deleteMany({ where: { OR: [{ expiresAt: { lt: sessionCutoff } }, { revokedAt: { lt: sessionCutoff } }] } })).count;
     // Authorization requests backing a VERIFIED result are evidence and are kept.

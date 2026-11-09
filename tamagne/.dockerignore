@@ -7,3 +7,10 @@
 !.env.example
 **/*.log
 docs
+# Tests and their tooling never go into images (e2e specs also import packages the web image does not install).
+**/e2e
+**/test
+**/playwright.config.ts
+**/test-results
+**/playwright-report
+ops

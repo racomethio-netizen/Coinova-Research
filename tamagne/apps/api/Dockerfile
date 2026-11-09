@@ -19,7 +19,11 @@ RUN --mount=type=secret,id=npm_ca,required=false \
 COPY packages packages
 COPY apps/api apps/api
 RUN npm run build -w @tamagne/core -w @tamagne/db -w @tamagne/api \
- && npm prune --omit=dev --workspace @tamagne/core --workspace @tamagne/db --workspace @tamagne/api --include-workspace-root
+ && npm prune --omit=dev --workspace @tamagne/core --workspace @tamagne/db --workspace @tamagne/api --include-workspace-root \
+ # PostgreSQL only: drop Prisma's query compilers for other databases and runtime source maps (~55 MB).
+ && find node_modules/@prisma/client/runtime -type f \
+      \( -name '*sqlserver*' -o -name '*cockroachdb*' -o -name '*mysql*' -o -name '*sqlite*' -o -name '*.map' \) -delete \
+ && npm cache clean --force
 
 # One-off migration job: `docker compose run --rm migrate`. Contains the Prisma CLI; the API image does not.
 FROM ${NODE_FULL_IMAGE} AS migrate
