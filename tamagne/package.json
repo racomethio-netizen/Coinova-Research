@@ -21,7 +21,9 @@
     "test:db": "npm run test:db -w @tamagne/db",
     "build": "npm run build --workspaces --if-present",
     "check": "npm run db:generate && npm run typecheck && npm run lint && npm test && npm run test:db",
-    "lint": "eslint packages apps/api && npm run lint -w @tamagne/web"
+    "lint": "eslint packages apps/api && npm run lint -w @tamagne/web",
+    "ops:backup": "node ops/backup.mjs backup --out",
+    "ops:restore-drill": "node ops/restore-drill.mjs"
   },
   "overrides": {
     "multer": "2.5.0"

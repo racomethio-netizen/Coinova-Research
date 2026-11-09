@@ -66,11 +66,34 @@ docker build -f apps/web/Dockerfile -t tamagne-web:<sha> .
 
 Migrations are forward-only; never edit an applied migration; add a new one.
 
-## 5. Backups and restore (Phase 8 deliverable)
+## 5. Backups and restore
 
-Nightly base backups + continuous WAL, encrypted, retained per policy, stored in a
-second Ethiopian location. A scheduled restore test into an isolated environment
-must pass (row counts, `audit_log_verify_chain()` returns NULL, app readiness).
+Target: nightly base backups + continuous WAL (PITR), encrypted, retained per policy, stored in a
+second Ethiopian location. That requires the production hosting provider and is **not set up**.
+
+What exists and is verified (`ops/`):
+
+- `ops/backup.mjs` — logical backup: `pg_dump -Fc` piped straight into AES-256-GCM (format
+  `TMGBK1 | iv | ciphertext | tag`), so no plaintext dump touches disk. Writes a manifest
+  (`<file>.json`: sha256, per-table row counts, migration count). Key: `BACKUP_KEY` (32 bytes,
+  base64) from the secrets manager, **different** from `FIELD_ENCRYPTION_KEYS`.
+  ```bash
+  DATABASE_URL=... BACKUP_KEY=... npm run ops:backup -- /secure/path/tamagne-<date>.tmgbk
+  DATABASE_URL=... TARGET_URL=... BACKUP_KEY=... node ops/backup.mjs restore --in <file>
+  ```
+- `ops/restore-drill.mjs` — backs up `SOURCE_URL`, restores into a scratch database whose name
+  must end in `_drill`, then checks: identical row counts in every table, all migrations present,
+  `audit_log_verify_chain()` intact, integrity triggers present, a tampered backup is rejected, and
+  the built API reaches readiness against the restored database. Writes
+  `docs/ops/restore-drill-<date>.md` and drops the scratch database.
+  ```bash
+  npm run build -w @tamagne/api
+  SOURCE_URL=... DRILL_ADMIN_URL=... BACKUP_KEY=... npm run ops:restore-drill
+  ```
+  Last run: [docs/ops/restore-drill-2026-11-09.md](ops/restore-drill-2026-11-09.md) (test database, PASSED).
+
+Run the drill at least monthly and after every schema change; alert on failure. Logical backups do
+not replace PITR: with WAL archiving configured, also rehearse a point-in-time recovery.
 
 ## 6. Local development
 
