@@ -38,8 +38,10 @@ export class AppealsService {
       throw new ApiError(HttpStatus.CONFLICT, "not_suspended", "Your account is not suspended.");
     }
     try {
-      const appeal = await this.prisma.client.appeal.create({ data: { sellerProfileId: s.id, submittedById: viewer.userId, subjectType: input.subjectType, reason: input.reason } });
-      await this.audit.record({ action: "appeal.submitted", actorType: "USER", actorUserId: viewer.userId, targetType: "appeal", targetId: appeal.id, ...meta, metadata: { subjectType: input.subjectType } });
+      await this.prisma.client.$transaction(async (tx) => {
+        const appeal = await tx.appeal.create({ data: { sellerProfileId: s.id, submittedById: viewer.userId, subjectType: input.subjectType, reason: input.reason } });
+        await this.audit.record({ action: "appeal.submitted", actorType: "USER", actorUserId: viewer.userId, targetType: "appeal", targetId: appeal.id, ...meta, metadata: { subjectType: input.subjectType } }, tx);
+      });
     } catch (e) {
       if ((e as { code?: string })?.code === "P2002") throw new ApiError(HttpStatus.CONFLICT, "appeal_open", "You already have an open appeal about this.");
       throw e;

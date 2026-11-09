@@ -82,13 +82,18 @@ export class RekeyService {
 
     // Audit metadata keys may not contain words like "name" or "secret", hence the neutral field names.
     const remaining = Object.values(fields).reduce((n, f) => n + f.failed, 0) + objects.failed;
+    const flat = <K extends string>(k: K, v: { rotated: number; current: number; failed: number }) =>
+      ({ [`${k}Rotated`]: v.rotated, [`${k}Current`]: v.current, [`${k}Failed`]: v.failed }) as Record<`${K}Rotated` | `${K}Current` | `${K}Failed`, number>;
     const result = {
-      ...Object.fromEntries(Object.entries(fields).flatMap(([k, v]) => [[`${k}Rotated`, v.rotated], [`${k}Current`, v.current], [`${k}Failed`, v.failed]])),
+      ...flat("mfaFactors", fields.mfaFactors),
+      ...flat("oidcVerifiers", fields.oidcVerifiers),
+      ...flat("identityResults", fields.identityResults),
+      ...flat("reporterContacts", fields.reporterContacts),
       objectsRotated: objects.rotated,
       objectsCurrent: objects.current,
       objectsFailed: objects.failed,
       remaining,
-    } as Record<string, number>;
+    };
     await this.audit.recordSafe({ action: "job.rekey", actorType: "SYSTEM", metadata: result });
     return result;
   }

@@ -23,15 +23,17 @@
     "check": "npm run db:generate && npm run typecheck && npm run lint && npm test && npm run test:db",
     "lint": "eslint packages apps/api && npm run lint -w @tamagne/web",
     "ops:backup": "node ops/backup.mjs backup --out",
-    "ops:restore-drill": "node ops/restore-drill.mjs"
+    "ops:restore-drill": "node ops/restore-drill.mjs",
+    "ops:load-test": "node ops/load-test.mjs"
   },
   "overrides": {
     "multer": "2.5.0"
   },
   "devDependencies": {
-    "eslint": "9.39.5",
     "@eslint/js": "9.39.5",
-    "typescript-eslint": "8.72.0",
-    "globals": "16.4.0"
+    "autocannon": "8.0.0",
+    "eslint": "9.39.5",
+    "globals": "16.4.0",
+    "typescript-eslint": "8.72.0"
   }
 }

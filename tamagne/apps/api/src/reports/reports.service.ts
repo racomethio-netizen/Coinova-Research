@@ -47,18 +47,21 @@ export class ReportsService {
     }
     if (sellerProfileId) {
       const reportId = randomUUID();
-      await this.prisma.client.fraudReport.create({
-        data: {
-          id: reportId,
-          sellerProfileId,
-          reporterUserId: viewer?.userId ?? null,
-          reporterContactEnc: input.contact ? new Uint8Array(this.crypto.cipher.encrypt(input.contact, `fraud_reports.reporterContactEnc:${reportId}`)) : null,
-          reporterIpHash: meta.ipHash,
-          category: input.category,
-          description: input.description,
-        },
+      // Report and its audit entry are written atomically: no report without an audit trail.
+      await this.prisma.client.$transaction(async (tx) => {
+        await tx.fraudReport.create({
+          data: {
+            id: reportId,
+            sellerProfileId,
+            reporterUserId: viewer?.userId ?? null,
+            reporterContactEnc: input.contact ? new Uint8Array(this.crypto.cipher.encrypt(input.contact, `fraud_reports.reporterContactEnc:${reportId}`)) : null,
+            reporterIpHash: meta.ipHash,
+            category: input.category,
+            description: input.description,
+          },
+        });
+        await this.audit.record({ action: "report.submitted", actorType: viewer ? "USER" : "SYSTEM", actorUserId: viewer?.userId ?? null, targetType: "fraud_report", targetId: reportId, ...meta, metadata: { category: input.category } }, tx);
       });
-      await this.audit.record({ action: "report.submitted", actorType: viewer ? "USER" : "SYSTEM", actorUserId: viewer?.userId ?? null, targetType: "fraud_report", targetId: reportId, ...meta, metadata: { category: input.category } });
     }
     return { received: true };
   }

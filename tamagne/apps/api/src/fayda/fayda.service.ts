@@ -61,31 +61,37 @@ export class FaydaService {
       if (!acceptConsent) {
         throw new ApiError(HttpStatus.CONFLICT, "consent_required", "Agree to Fayda identity verification first.");
       }
-      consent = await db.consentRecord.create({
-        data: { userId: viewer.userId, purpose: "FAYDA_IDENTITY_VERIFICATION", policyVersion: POLICY_VERSIONS.FAYDA_IDENTITY_VERIFICATION, locale: viewer.locale, ipHash: meta.ipHash },
+      consent = await db.$transaction(async (tx) => {
+        const c = await tx.consentRecord.create({
+          data: { userId: viewer.userId, purpose: "FAYDA_IDENTITY_VERIFICATION", policyVersion: POLICY_VERSIONS.FAYDA_IDENTITY_VERIFICATION, locale: viewer.locale, ipHash: meta.ipHash },
+        });
+        await this.audit.record({ action: "consent.granted", actorType: "USER", actorUserId: viewer.userId, targetType: "consent_record", targetId: c.id, ...meta, metadata: { purpose: "FAYDA_IDENTITY_VERIFICATION" } }, tx);
+        return c;
       });
-      await this.audit.record({ action: "consent.granted", actorType: "USER", actorUserId: viewer.userId, targetType: "consent_record", targetId: consent.id, ...meta, metadata: { purpose: "FAYDA_IDENTITY_VERIFICATION" } });
     }
 
     const state = generateOpaqueToken(32);
     const nonce = generateOpaqueToken(32);
     const verifier = generatePkceVerifier();
     const id = randomUUID();
-    await db.oidcAuthRequest.create({
-      data: {
-        id,
-        userId: viewer.userId,
-        sellerProfileId: seller.id,
-        environment: this.environment,
-        stateHash: sha256Hex(state),
-        nonceHash: sha256Hex(nonce),
-        codeVerifierEnc: new Uint8Array(this.crypto.cipher.encrypt(verifier, `oidc_auth_requests.codeVerifierEnc:${id}`)),
-        redirectUri: this.config.fayda.enabled ? this.config.fayda.redirectUri : "",
-        consentRecordId: consent.id,
-        expiresAt: new Date(Date.now() + AUTH_REQUEST_TTL_MS),
-      },
+    const consentId = consent.id;
+    await db.$transaction(async (tx) => {
+      await tx.oidcAuthRequest.create({
+        data: {
+          id,
+          userId: viewer.userId,
+          sellerProfileId: seller.id,
+          environment: this.environment,
+          stateHash: sha256Hex(state),
+          nonceHash: sha256Hex(nonce),
+          codeVerifierEnc: new Uint8Array(this.crypto.cipher.encrypt(verifier, `oidc_auth_requests.codeVerifierEnc:${id}`)),
+          redirectUri: this.config.fayda.enabled ? this.config.fayda.redirectUri : "",
+          consentRecordId: consentId,
+          expiresAt: new Date(Date.now() + AUTH_REQUEST_TTL_MS),
+        },
+      });
+      await this.audit.record({ action: "fayda.started", actorType: "USER", actorUserId: viewer.userId, targetType: "oidc_auth_request", targetId: id, ...meta, metadata: { environment: this.environment } }, tx);
     });
-    await this.audit.record({ action: "fayda.started", actorType: "USER", actorUserId: viewer.userId, targetType: "oidc_auth_request", targetId: id, ...meta, metadata: { environment: this.environment } });
     let authorizationUrl: string;
     try {
       authorizationUrl = await client.authorizationUrl({ state, nonce, codeChallenge: pkceChallengeS256(verifier), uiLocale });

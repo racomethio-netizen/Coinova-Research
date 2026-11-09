@@ -1,4 +1,7 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createFieldCipher, parseKeyRing } from "@tamagne/core";
+import pg from "pg";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { JsonLogger, accessLogMiddleware, redactLogText } from "../src/observability/logger.js";
@@ -93,8 +96,47 @@ describe("structured logs", () => {
   });
 });
 
+/**
+ * Key rotation rewrites every encrypted row, so it runs in its own database: on the shared test
+ * database it would make concurrently running test files unable to read their own rows.
+ */
+async function isolatedDatabase() {
+  const base = new URL(testEnv.DATABASE_URL);
+  const name = `tamagne_rekey_${process.pid}_${Date.now()}`;
+  const admin = new pg.Client({ connectionString: Object.assign(new URL(base), { pathname: "/postgres" }).toString() });
+  await admin.connect();
+  await admin.query(`create database ${name}`);
+  const url = Object.assign(new URL(base), { pathname: `/${name}` }).toString();
+  const c = new pg.Client({ connectionString: url });
+  await c.connect();
+  const dir = join(import.meta.dirname, "../../../packages/db/prisma/migrations");
+  for (const m of readdirSync(dir).filter((d) => /^\d/.test(d)).sort()) await c.query(readFileSync(join(dir, m, "migration.sql"), "utf8"));
+  await c.end();
+  return {
+    url,
+    async drop() {
+      await admin.query(`drop database ${name} with (force)`);
+      await admin.end();
+    },
+  };
+}
+
 describe("key rotation job", () => {
   it("re-encrypts fields and documents under the new key; the old key can then be retired", async () => {
+    const iso = await isolatedDatabase();
+    const outer = h;
+    h = await startApp({ DATABASE_URL: iso.url });
+    try {
+      await rotationScenario(iso.url);
+    } finally {
+      await h.close();
+      h = outer;
+      await iso.drop();
+    }
+  });
+});
+
+async function rotationScenario(databaseUrl: string) {
     // Data written under key 1.
     const seller = new Client(h);
     await seller.signIn(fakePhone());
@@ -118,20 +160,21 @@ describe("key rotation job", () => {
 
     // New deployment: key 2 active, key 1 still in the ring.
     const k = (n: number) => Buffer.alloc(32, n).toString("base64");
-    const rotated = await startApp({ FIELD_ENCRYPTION_KEYS: `1:${k(1)},2:${k(9)}`, FIELD_ENCRYPTION_ACTIVE_KEY_ID: "2", STORAGE_LOCAL_DIR: h.storageDir });
+    const rotated = await startApp({ FIELD_ENCRYPTION_KEYS: `1:${k(1)},2:${k(9)}`, FIELD_ENCRYPTION_ACTIVE_KEY_ID: "2", STORAGE_LOCAL_DIR: h.storageDir, DATABASE_URL: databaseUrl });
     try {
       const result = await rotated.app.get(RekeyService).runRekeyJob();
       expect(result.mfaFactorsRotated).toBeGreaterThanOrEqual(1);
       expect(result.objectsRotated).toBeGreaterThanOrEqual(1);
+      expect(result.remaining).toBe(0);
       const again = await rotated.app.get(RekeyService).runRekeyJob();
-      expect(again.mfaFactorsRotated).toBe(0); // idempotent
+      expect(again.mfaFactorsRotated + again.objectsRotated + again.reporterContactsRotated).toBe(0); // idempotent
 
       // Readable with key 2 alone.
       const onlyNew = createFieldCipher({ keys: parseKeyRing(`2:${k(9)}`), activeKeyId: 2 });
       const f = await h.db.mfaFactor.findUniqueOrThrow({ where: { id: factor.id } });
       expect(f.secretEnc[1]).toBe(2);
       expect(onlyNew.decrypt(Buffer.from(f.secretEnc), `mfa_factors.secretEnc:${factor.id}`)).toMatch(/^[A-Z2-7]+=*$/);
-      const r = await h.db.fraudReport.findFirstOrThrow({ where: { reporterContactEnc: { not: null } }, orderBy: { createdAt: "desc" } });
+      const r = await h.db.fraudReport.findFirstOrThrow({ where: { reporterContactEnc: { not: null } } });
       expect(onlyNew.decrypt(Buffer.from(r.reporterContactEnc!), `fraud_reports.reporterContactEnc:${r.id}`)).toBe("rekey@example.test");
       const store = rotated.app.get<EncryptedObjectStore>(OBJECT_STORE);
       const blob = await store.inner.get(doc.storageKey);
@@ -144,6 +187,4 @@ describe("key rotation job", () => {
     } finally {
       await rotated.close();
     }
-    expect(testEnv.FIELD_ENCRYPTION_ACTIVE_KEY_ID).toBe("1");
-  });
-});
+}

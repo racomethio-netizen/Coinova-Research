@@ -227,8 +227,10 @@ export class OperationsService {
     if (!user || user.status !== "ACTIVE") throw new ApiError(HttpStatus.NOT_FOUND, "user_not_found", "No active account with that phone number. The person must register first.");
     if (user.id === staff.userId) throw new ApiError(HttpStatus.FORBIDDEN, "self_grant", "You cannot change your own roles.");
     try {
-      const g = await this.prisma.client.staffRoleAssignment.create({ data: { userId: user.id, role: input.role, grantedById: staff.userId } });
-      await this.audit.record({ action: "staff.role_granted", actorType: "STAFF", actorUserId: staff.userId, targetType: "user", targetId: user.id, ...meta, metadata: { role: input.role, grantId: g.id } });
+      await this.prisma.client.$transaction(async (tx) => {
+        const g = await tx.staffRoleAssignment.create({ data: { userId: user.id, role: input.role, grantedById: staff.userId } });
+        await this.audit.record({ action: "staff.role_granted", actorType: "STAFF", actorUserId: staff.userId, targetType: "user", targetId: user.id, ...meta, metadata: { role: input.role, grantId: g.id } }, tx);
+      });
     } catch (e) {
       if ((e as { code?: string })?.code === "P2002") throw new ApiError(HttpStatus.CONFLICT, "already_granted", "This person already has that role.");
       throw e;
@@ -279,8 +281,10 @@ export class OperationsService {
 
   async createPlan(staff: Viewer, input: { code: string; kind: "FREE_INDIVIDUAL" | "PREMIUM_SELLER" | "BUSINESS_VERIFICATION" | "MARKETPLACE_API" | "ENTERPRISE"; nameEn: string; nameAm: string }, meta: Meta) {
     try {
-      const p = await this.prisma.client.plan.create({ data: input });
-      await this.audit.record({ action: "pricing.plan_created", actorType: "STAFF", actorUserId: staff.userId, targetType: "plan", targetId: p.id, ...meta, metadata: { slug: input.code, kind: input.kind } });
+      await this.prisma.client.$transaction(async (tx) => {
+        const p = await tx.plan.create({ data: input });
+        await this.audit.record({ action: "pricing.plan_created", actorType: "STAFF", actorUserId: staff.userId, targetType: "plan", targetId: p.id, ...meta, metadata: { slug: input.code, kind: input.kind } }, tx);
+      });
     } catch (e) {
       if ((e as { code?: string })?.code === "P2002") throw new ApiError(HttpStatus.CONFLICT, "plan_exists", "A plan with this code already exists.");
       throw e;
@@ -289,10 +293,11 @@ export class OperationsService {
   }
 
   async updatePlan(staff: Viewer, id: string, input: { nameEn?: string; nameAm?: string; isActive?: boolean }, meta: Meta) {
-    await this.prisma.client.plan.update({ where: { id }, data: input }).catch(() => {
-      throw new ApiError(HttpStatus.NOT_FOUND, "not_found", "Plan not found.");
+    await this.prisma.client.$transaction(async (tx) => {
+      const updated = await tx.plan.updateMany({ where: { id }, data: input });
+      if (updated.count === 0) throw new ApiError(HttpStatus.NOT_FOUND, "not_found", "Plan not found.");
+      await this.audit.record({ action: "pricing.plan_updated", actorType: "STAFF", actorUserId: staff.userId, targetType: "plan", targetId: id, ...meta, metadata: { changedFields: Object.keys(input) } }, tx);
     });
-    await this.audit.record({ action: "pricing.plan_updated", actorType: "STAFF", actorUserId: staff.userId, targetType: "plan", targetId: id, ...meta, metadata: { changedFields: Object.keys(input) } });
     return this.plans();
   }
 

@@ -120,10 +120,12 @@ export class PrivacyService {
   }
 
   async requestCorrection(viewer: Viewer, details: string, meta: Meta) {
-    const r = await this.prisma.client.dataSubjectRequest.create({
-      data: { userId: viewer.userId, type: "CORRECTION", details, dueAt: new Date(Date.now() + this.config.privacy.dsrResponseDays * DAY) },
+    await this.prisma.client.$transaction(async (tx) => {
+      const r = await tx.dataSubjectRequest.create({
+        data: { userId: viewer.userId, type: "CORRECTION", details, dueAt: new Date(Date.now() + this.config.privacy.dsrResponseDays * DAY) },
+      });
+      await this.audit.record({ action: "privacy.correction_requested", actorType: "USER", actorUserId: viewer.userId, targetType: "data_subject_request", targetId: r.id, ...meta }, tx);
     });
-    await this.audit.record({ action: "privacy.correction_requested", actorType: "USER", actorUserId: viewer.userId, targetType: "data_subject_request", targetId: r.id, ...meta });
     return this.mine(viewer);
   }
 
