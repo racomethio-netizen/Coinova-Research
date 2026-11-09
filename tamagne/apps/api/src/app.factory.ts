@@ -10,19 +10,24 @@ import type { AppConfig } from "./config/env.js";
 import { ApiExceptionFilter, bodyParserErrorHandler, requestIdMiddleware } from "./http/errors.js";
 import { SessionService } from "./auth/session.service.js";
 import { csrfMiddleware } from "./security/csrf.js";
+import { JsonLogger, accessLogMiddleware } from "./observability/logger.js";
+import { MetricsService } from "./observability/metrics.js";
 
 /** JSON bodies are small; documents are uploaded as multipart in Phase 4 with their own limit. */
 const JSON_BODY_LIMIT = "100kb";
 
 export async function createApp(config: AppConfig, overrides: AppOverrides = {}): Promise<INestApplication> {
+  const jsonLogger = config.logFormat === "json" ? new JsonLogger() : undefined;
   const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(config, overrides), {
     bodyParser: false,
-    logger: config.appEnv === "test" ? false : ["log", "warn", "error"],
+    logger: config.appEnv === "test" ? false : (jsonLogger ?? ["log", "warn", "error"]),
   });
 
   if (config.trustProxyHops > 0) app.set("trust proxy", config.trustProxyHops);
   app.disable("x-powered-by");
   app.use(requestIdMiddleware);
+  app.use(app.get(MetricsService).middleware());
+  if (jsonLogger && config.appEnv !== "test") app.use(accessLogMiddleware((entry) => jsonLogger.log(entry, "http")));
   app.use(
     helmet({
       // The API serves JSON only; lock everything down.

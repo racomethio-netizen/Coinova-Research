@@ -42,6 +42,12 @@ const EnvSchema = z.object({
   CLAMAV_PORT: z.coerce.number().int().min(1).max(65535).default(3310),
   /** OTP sends per IP per 15 minutes. Generous because mobile carriers share IPs (CGNAT); per-phone limits stay strict. */
   OTP_SEND_LIMIT_PER_IP: z.coerce.number().int().min(5).max(10000).default(30),
+  /** Public verification lookups per IP per minute (shared mobile IPs need headroom). */
+  VERIFY_LOOKUP_LIMIT_PER_MIN: z.coerce.number().int().min(10).max(100000).default(120),
+  /** json (one object per line, for log shipping) or text. Defaults to json outside development/test. */
+  LOG_FORMAT: z.enum(["json", "text"]).optional(),
+  /** Bearer token for GET /api/v1/metrics. Unset → the endpoint answers 404. */
+  METRICS_TOKEN: z.string().optional(),
   /** Days to answer access/correction requests (confirm the statutory period with counsel). */
   DSR_RESPONSE_DAYS: z.coerce.number().int().min(1).max(90).default(30),
   /** Grace period before an account deletion is carried out (support can cancel meanwhile). */
@@ -100,6 +106,10 @@ export interface AppConfig {
   scanner: { kind: "disabled" | "clamav" | "eicar-only"; host: string; port: number };
   allowTestPhoneNumbers: boolean;
   otpSendLimitPerIp: number;
+  verifyLookupLimitPerMin: number;
+  logFormat: "json" | "text";
+  /** Undefined → metrics endpoint disabled. */
+  metricsToken: string | undefined;
   privacy: { dsrResponseDays: number; deletionGraceDays: number };
   /** Cookies are Secure and use the __Host- prefix outside development/test. */
   secureCookies: boolean;
@@ -224,6 +234,8 @@ export function loadConfig(source: Record<string, string | undefined> = process.
   if (env.STORAGE_DRIVER !== "disabled" && env.SCANNER === "disabled" && !devOrTest) {
     issues.push("Document storage requires SCANNER=clamav outside development/test");
   }
+  const metricsToken = env.METRICS_TOKEN?.trim() || undefined;
+  if (metricsToken && metricsToken.length < 32) issues.push("METRICS_TOKEN must be at least 32 characters");
   if (env.SMS_PROVIDER === "test" && env.APP_ENV !== "test") {
     issues.push("SMS_PROVIDER=test is only allowed when APP_ENV=test");
   }
@@ -253,6 +265,9 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     scanner: { kind: env.SCANNER, host: env.CLAMAV_HOST, port: env.CLAMAV_PORT },
     allowTestPhoneNumbers: env.ALLOW_TEST_PHONE_NUMBERS,
     otpSendLimitPerIp: env.OTP_SEND_LIMIT_PER_IP,
+    verifyLookupLimitPerMin: env.VERIFY_LOOKUP_LIMIT_PER_MIN,
+    logFormat: env.LOG_FORMAT ?? (devOrTest ? "text" : "json"),
+    metricsToken,
     privacy: { dsrResponseDays: env.DSR_RESPONSE_DAYS, deletionGraceDays: env.DELETION_GRACE_DAYS },
     secureCookies: env.APP_ENV === "production" || env.APP_ENV === "staging",
     trustProxyHops: env.TRUST_PROXY_HOPS,

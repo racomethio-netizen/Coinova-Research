@@ -1,4 +1,5 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
+import { MetricsService } from "../observability/metrics.js";
 import type { Prisma } from "@tamagne/db";
 import { PrismaService } from "../database/prisma.service.js";
 
@@ -22,7 +23,10 @@ const FORBIDDEN_KEYS = /phone|email|code|token|secret|password|name|otp|jwt|clai
 @Injectable()
 export class AuditService {
   private readonly logger = new Logger("audit");
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
+  ) {}
 
   async record(entry: AuditEntry, tx?: Tx): Promise<void> {
     const metadata = entry.metadata ?? {};
@@ -49,6 +53,7 @@ export class AuditService {
     try {
       await this.record(entry);
     } catch (e) {
+      this.metrics?.auditWriteFailures.inc();
       this.logger.error(`audit write failed for ${entry.action}: ${(e as Error).name}`);
     }
   }

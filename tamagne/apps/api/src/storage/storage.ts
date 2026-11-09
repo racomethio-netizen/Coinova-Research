@@ -1,4 +1,5 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
 import { HttpStatus } from "@nestjs/common";
 import type { FieldCipher } from "@tamagne/core";
@@ -8,7 +9,10 @@ import { ApiError } from "../common/http.js";
 export interface ObjectStore {
   readonly name: string;
   readonly available: boolean;
+  /** Creates an object; fails if the key already exists. */
   put(key: string, data: Buffer): Promise<void>;
+  /** Atomically replaces an existing object (key rotation only). */
+  replace(key: string, data: Buffer): Promise<void>;
   get(key: string): Promise<Buffer>;
   delete(key: string): Promise<void>;
 }
@@ -28,6 +32,9 @@ export class DisabledObjectStore implements ObjectStore {
     throw new ApiError(HttpStatus.SERVICE_UNAVAILABLE, "storage_unavailable", "Document upload is not available yet.");
   }
   async put(): Promise<void> {
+    this.fail();
+  }
+  async replace(): Promise<void> {
     this.fail();
   }
   async get(): Promise<Buffer> {
@@ -57,6 +64,13 @@ export class LocalObjectStore implements ObjectStore {
     await mkdir(dirname(p), { recursive: true, mode: 0o700 });
     await writeFile(p, data, { mode: 0o600, flag: "wx" }); // never overwrite
   }
+  async replace(key: string, data: Buffer) {
+    const p = this.path(key);
+    await readFile(p); // must already exist
+    const tmp = `${p}.${randomUUID()}.tmp`;
+    await writeFile(tmp, data, { mode: 0o600, flag: "wx" });
+    await rename(tmp, p); // atomic on the same filesystem
+  }
   async get(key: string) {
     return readFile(this.path(key));
   }
@@ -77,6 +91,14 @@ export class EncryptedObjectStore {
   async put(key: string, data: Buffer) {
     const blob = this.cipher.encrypt(data.toString("base64"), `object:${key}`);
     await this.inner.put(key, blob);
+  }
+  /** Re-encrypts an object under the active key if needed. Returns true when it was rewritten. */
+  async reencrypt(key: string): Promise<boolean> {
+    const blob = await this.inner.get(key);
+    if (!this.cipher.needsRotation(blob)) return false;
+    const plain = this.cipher.decrypt(blob, `object:${key}`);
+    await this.inner.replace(key, this.cipher.encrypt(plain, `object:${key}`));
+    return true;
   }
   async get(key: string): Promise<Buffer> {
     const blob = await this.inner.get(key);

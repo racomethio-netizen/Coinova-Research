@@ -2,6 +2,8 @@ import { Controller, Get, Header, HttpStatus, Inject, Param, Req } from "@nestjs
 import { ApiGoneResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import { ApiError, clientIp } from "../common/http.js";
+import { APP_CONFIG } from "../config/config.module.js";
+import type { AppConfig } from "../config/env.js";
 import { CryptoService } from "../security/crypto.service.js";
 import { RULES, RateLimiter } from "../security/rate-limit.js";
 import { VerifyService } from "./verify.service.js";
@@ -16,6 +18,7 @@ export class VerifyController {
     @Inject(VerifyService) private readonly verify: VerifyService,
     @Inject(RateLimiter) private readonly limiter: RateLimiter,
     @Inject(CryptoService) private readonly crypto: CryptoService,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   @Get(":sellerId")
@@ -27,7 +30,7 @@ export class VerifyController {
   @ApiNotFoundResponse({ description: "No public seller with this ID" })
   @ApiGoneResponse({ description: "QR code has been revoked" })
   async lookup(@Param("sellerId") sellerId: string, @Req() req: Request) {
-    await this.limiter.consume(RULES.verifyPerIp, this.crypto.hash("ip", clientIp(req)));
+    await this.limiter.consume({ ...RULES.verifyPerIp, limit: this.config.verifyLookupLimitPerMin }, this.crypto.hash("ip", clientIp(req)));
     if (sellerId.length > 64) throw new ApiError(HttpStatus.NOT_FOUND, "not_found", "No public seller was found with this ID.");
     const result = await this.verify.lookup(sellerId);
     if (result.kind === "qr_revoked") {

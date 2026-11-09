@@ -1,4 +1,5 @@
-import { HttpStatus, Inject, Injectable, Logger, type OnModuleDestroy } from "@nestjs/common";
+import { HttpStatus, Inject, Injectable, Logger, Optional, type OnModuleDestroy } from "@nestjs/common";
+import { MetricsService } from "../observability/metrics.js";
 import { Redis } from "ioredis";
 import { ApiError } from "../common/http.js";
 import type { AppConfig } from "../config/env.js";
@@ -98,7 +99,10 @@ export function createRateLimitStore(config: AppConfig): RateLimitStore {
 
 @Injectable()
 export class RateLimiter implements OnModuleDestroy {
-  constructor(@Inject(RATE_LIMIT_STORE) private readonly store: RateLimitStore) {}
+  constructor(
+    @Inject(RATE_LIMIT_STORE) private readonly store: RateLimitStore,
+    @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
+  ) {}
 
   /**
    * Counts one attempt against `rule` for `subject` (an HMAC, never a raw phone/IP)
@@ -110,9 +114,13 @@ export class RateLimiter implements OnModuleDestroy {
     try {
       res = await this.store.hit(`rl:${rule.name}:${subject}`, rule.windowSeconds);
     } catch {
+      this.metrics?.rateLimitStoreErrors.inc();
       throw new ApiError(HttpStatus.SERVICE_UNAVAILABLE, "unavailable", "Service temporarily unavailable.");
     }
-    if (res.count > rule.limit) throw new RateLimitedError(res.ttlSeconds);
+    if (res.count > rule.limit) {
+      this.metrics?.rateLimited.inc({ rule: rule.name });
+      throw new RateLimitedError(res.ttlSeconds);
+    }
   }
 
   async onModuleDestroy() {
