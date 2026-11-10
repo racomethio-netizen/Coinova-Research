@@ -15,6 +15,7 @@ const LIMIT_MESSAGES: Record<string, string> = {
   alerts: "You have reached your plan's alert limit. Alerts require Pro or higher.",
   aiRequestsPerDay: "You have reached today's AI assistant limit for your plan.",
   abuseReports: "You have filed the maximum number of reports for today. Please try again tomorrow.",
+  backtestsPerDay: "You have reached today's backtest limit. Please try again tomorrow.",
 };
 
 /**
@@ -28,6 +29,10 @@ export function mapDbError(err: PgLikeError | null | undefined, context: string)
     const key = limit[1]!;
     return new ApiError("limit_reached", LIMIT_MESSAGES[key] ?? "Plan limit reached.", { limit: key, hint: err?.hint ?? undefined });
   }
+  if (/feature_required:/.test(msg)) return new ApiError("payment_required", "This feature is not included in your plan.");
+  if (/already queued or running/.test(msg)) return new ApiError("conflict", "A backtest is already queued or running. Wait for it to finish.");
+  // 22023 is raised only by our own SQL functions with user-safe messages.
+  if (err?.code === "22023") return new ApiError("validation_error", msg.slice(0, 200));
   if (/invalid_transaction:/.test(msg)) return new ApiError("validation_error", msg.replace(/^.*invalid_transaction:/, "").trim());
   switch (err?.code) {
     case "23505":

@@ -38,6 +38,7 @@ class Scheduler:
     close_delay: timedelta
     ticker_interval: timedelta
     signals: SignalRunner | None = None
+    jobs: Callable[[], int] | None = None  # e.g. one queued backtest per tick
     last_bucket: dict[tuple[int, str], datetime] = field(default_factory=dict)
     last_ticker: datetime | None = None
     last_gap_retry: datetime | None = None
@@ -81,6 +82,15 @@ class Scheduler:
 
             if self._guard(resolve, stats, task="resolve"):
                 stats["resolved"] += resolved[0]
+        if self.jobs is not None:
+            done = [0]
+
+            def run_jobs(out: list[int] = done) -> None:
+                assert self.jobs is not None
+                out[0] = self.jobs()
+
+            if self._guard(run_jobs, stats, task="jobs"):
+                stats["jobs"] = done[0]
         if self.last_ticker is None or now - self.last_ticker >= self.ticker_interval:
             for pair in self.pairs:
                 if self.blocked:

@@ -7,6 +7,8 @@ const eslintConfig = defineConfig([
   ...nextTs,
   // Override default ignores of eslint-config-next.
   globalIgnores([
+    // Python engine (its own tooling: ruff, mypy).
+    "engine/**",
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",

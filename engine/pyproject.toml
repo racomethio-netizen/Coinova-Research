@@ -26,6 +26,10 @@ dev = [
   "pip-audit>=2.7",
   "ta-lib>=0.8.2",
 ]
+research = [
+    "scikit-learn>=1.9.1",
+    "xgboost>=3.4.1",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -61,3 +65,12 @@ ignore = ["S101"]
 strict = true
 python_version = "3.12"
 files = ["src"]
+
+[[tool.mypy.overrides]]
+# scikit-learn ships no type information; its calls are confined to validation/models.py.
+module = ["sklearn.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["nexus_engine.validation.models"]
+disallow_untyped_calls = false

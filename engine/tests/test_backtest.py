@@ -5,6 +5,8 @@ from decimal import Decimal as D
 
 import numpy as np
 import pytest
+from synthetic import aggregate, random_walk
+from test_strategy import BUY_SEED, SELL_SEED
 
 from nexus_engine.backtest.baselines import buy_and_hold, random_entries
 from nexus_engine.backtest.engine import Trade, run_backtest
@@ -12,8 +14,6 @@ from nexus_engine.backtest.metrics import compute_metrics, max_drawdown
 from nexus_engine.backtest.portfolio import OpenPosition, Portfolio, RiskRules
 from nexus_engine.signals.risk import CostModel
 from nexus_engine.signals.series import CandleSeries
-from synthetic import aggregate, random_walk
-from test_strategy import BUY_SEED, SELL_SEED
 
 H = timedelta(hours=1)
 T = datetime(2026, 1, 1, tzinfo=UTC)

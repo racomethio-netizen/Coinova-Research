@@ -8,6 +8,7 @@ import os
 import sys
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
+from functools import partial
 
 import httpx
 
@@ -45,6 +46,61 @@ def _date(s: str) -> datetime:
     return datetime.fromisoformat(s).replace(tzinfo=UTC) if "T" not in s else datetime.fromisoformat(s).astimezone(UTC)
 
 
+def _research(args: argparse.Namespace, settings: Settings) -> int:
+    import json
+
+    from .backtest.engine import run_backtest
+    from .backtest.metrics import compute_metrics
+    from .signals import strategy as strat
+    from .signals.ledger import ensure_strategy
+    from .signals.series import HIGHER_TIMEFRAME
+    from .signals.service import load_candles
+    from .signals.strategy import Params
+    from .timeframes import tf_delta
+
+    start, end = _date(args.start), _date(args.end)
+    params = Params()
+    step = tf_delta(args.tf)
+    until = end + step * (params.entry_window_bars + params.horizon_bars + 2)
+    span = int((until - start) / step) + params.min_bars + 50
+    with connect(settings) as conn:
+        pair = _pick(load_pairs(conn, load_source(conn, settings.market_source).id), args.symbol)[0]
+        candles = load_candles(conn, pair.id, args.tf, until, span)
+        htf_tf = HIGHER_TIMEFRAME[args.tf]
+        htf = load_candles(conn, pair.id, htf_tf, until, int(span * step / tf_delta(htf_tf)) + 300) if htf_tf else None
+        if args.cmd == "backtest":
+            res = run_backtest(args.tf, candles, htf, start, end, params)
+            print(json.dumps(compute_metrics(res.trades, res.equity_curve, res.equity_curve[0][1], start, end), indent=2))
+            return 0
+        from .validation.dataset import build_dataset, dataset_hash
+        from .validation.registry import finish_experiment, save_validation_report, start_experiment
+        from .validation.walkforward import WalkForwardConfig, run_walk_forward
+
+        cfg = WalkForwardConfig(model=args.model)
+        strategy_id = ensure_strategy(conn, strat.KEY, strat.VERSION, strat.NAME, strat.DESCRIPTION, params)
+        exp = start_experiment(
+            conn,
+            "walk_forward",
+            strategy_id,
+            {"symbol": pair.symbol, "tf": args.tf, "start": args.start, "end": args.end, "walk_forward": cfg.__dict__, "lockbox": args.lockbox},
+            dataset_hash(candles),
+            cfg.seed,
+        )
+        try:
+            ds = build_dataset(args.tf, candles, htf, start, end, params)
+            report = run_walk_forward(ds, cfg, evaluate_lockbox=args.lockbox)
+            rid = save_validation_report(conn, exp, strategy_id, start, end, report, {"costs": params.costs.as_dict(), "params": params.as_dict()})
+            finish_experiment(conn, exp, {"samples": report["samples"], "out_of_sample": report["out_of_sample"], "approvable": report["approvable"]})
+        except Exception as e:
+            conn.rollback()
+            finish_experiment(conn, exp, None, error=type(e).__name__)
+            raise
+        print(json.dumps({"experiment": exp, "validation_report": rid, "samples": report["samples"],
+                          "out_of_sample": {k: v for k, v in report["out_of_sample"].items() if k != "reliability"},
+                          "approvable": report["approvable"]}, indent=2))  # fmt: skip
+        return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="nexus-engine")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -65,6 +121,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     ev.add_argument("--symbol", required=True)
     ev.add_argument("--tf", required=True, choices=TIMEFRAMES)
     sub.add_parser("resolve", help="resolve outcomes of open signals")
+    for name, desc in (
+        ("backtest", "backtest the strategy on stored candles (prints metrics)"),
+        ("validate", "walk-forward validation; records an experiment and a validation report"),
+    ):
+        c = sub.add_parser(name, help=desc)
+        c.add_argument("--symbol", required=True)
+        c.add_argument("--tf", required=True, choices=TIMEFRAMES)
+        c.add_argument("--start", required=True, help="YYYY-MM-DD (UTC)")
+        c.add_argument("--end", required=True, help="YYYY-MM-DD (UTC)")
+        if name == "validate":
+            c.add_argument("--model", choices=("logistic", "xgboost"), default="logistic")
+            c.add_argument("--lockbox", action="store_true", help="also evaluate the lockbox (approval time only)")
     sub.add_parser("verify-chain", help="recompute the signal hash chain and report any tampering")
     sub.add_parser("worker", help="run the scheduler forever")
     sv = sub.add_parser("serve", help="run the FastAPI app (/health, /internal/*)")
@@ -94,6 +162,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         uvicorn.run(create_app(), host=args.host, port=args.port, log_config=None)
         return 0
 
+    if args.cmd in ("backtest", "validate"):
+        return _research(args, settings)
     if args.cmd in ("evaluate", "resolve", "verify-chain"):
         from .signals.hashing import verify_chain
         from .signals.ledger import load_chain
@@ -144,6 +214,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     y, m = (y + 1, 1) if m == 12 else (y, m + 1)
             return 0
         if args.cmd == "worker":
+            from .backtest.jobs import process_one
             from .signals.service import SignalService
             from .worker import Scheduler, run_forever
 
@@ -153,6 +224,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 close_delay=timedelta(seconds=settings.ingest_close_delay_s),
                 ticker_interval=timedelta(seconds=settings.ticker_interval_s),
                 signals=SignalService(conn, settings),
+                jobs=partial(process_one, conn),
             )
             run_forever(scheduler, settings.worker_tick_s)
     return 0

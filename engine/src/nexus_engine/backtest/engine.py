@@ -9,7 +9,7 @@ use only later bars). Assumptions are returned with every result.
 from __future__ import annotations
 
 from bisect import bisect_right
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
@@ -17,7 +17,7 @@ from decimal import Decimal
 from ..marketdata.types import Candle
 from ..signals.execution import Bar, Plan, resolve, unit_basis_and_pnl
 from ..signals.series import HIGHER_TIMEFRAME, CandleSeries
-from ..signals.strategy import Params, evaluate
+from ..signals.strategy import Decision, Params, evaluate
 from ..timeframes import tf_delta
 from .portfolio import OpenPosition, Portfolio, RiskRules
 
@@ -51,6 +51,27 @@ class BacktestResult:
     assumptions: dict[str, object] = field(default_factory=dict)
 
 
+def iter_decisions(
+    tf: str, candles: Sequence[Candle], htf_candles: Sequence[Candle] | None, start: datetime, end: datetime, params: Params
+) -> Iterator[tuple[int, datetime, Decision]]:
+    """(index, as_of, decision) for each close in [start, end], with production lookback windows."""
+    own = CandleSeries.from_candles(tf, candles)
+    htf_tf = HIGHER_TIMEFRAME[tf]
+    htf = CandleSeries.from_candles(htf_tf, htf_candles) if htf_tf and htf_candles else None
+    htf_close = [t + tf_delta(htf_tf) for t in htf.open_times] if htf is not None and htf_tf else []
+    step = tf_delta(tf)
+    lookback = params.min_bars + 50  # identical to SignalService
+    for i, t in enumerate(own.open_times):
+        as_of = t + step
+        if as_of < start or as_of > end:
+            continue
+        htf_w = None
+        if htf is not None:
+            k = bisect_right(htf_close, as_of) - 1
+            htf_w = htf.window(k, lookback) if k >= 0 else None
+        yield i, as_of, evaluate(own.window(i, lookback), htf_w, as_of, params)
+
+
 def run_backtest(
     tf: str,
     candles: Sequence[Candle],
@@ -62,29 +83,15 @@ def run_backtest(
 ) -> BacktestResult:
     params = params or Params()
     rules = rules or RiskRules()
-    own = CandleSeries.from_candles(tf, candles)
-    htf_tf = HIGHER_TIMEFRAME[tf]
-    htf = CandleSeries.from_candles(htf_tf, htf_candles) if htf_tf and htf_candles else None
-    step = tf_delta(tf)
-    lookback = params.min_bars + 50  # identical to SignalService
+    lookback = params.min_bars + 50
     bars = [Bar(c.open_time, c.open, c.high, c.low, c.close) for c in sorted((c for c in candles if c.is_final), key=lambda c: c.open_time)]
-    htf_close = [t + tf_delta(htf_tf) for t in htf.open_times] if htf is not None and htf_tf else []
 
     pf = Portfolio(rules)
     pf.start(start)
     trades: list[Trade] = []
     decisions = open_at_end = 0
-    for i, t in enumerate(own.open_times):
-        as_of = t + step
-        if as_of < start or as_of > end:
-            continue
+    for i, as_of, d in iter_decisions(tf, candles, htf_candles, start, end, params):
         pf.realize_until(as_of)
-        own_w = own.window(i, lookback)
-        htf_w = None
-        if htf is not None:
-            k = bisect_right(htf_close, as_of) - 1
-            htf_w = htf.window(k, lookback) if k >= 0 else None
-        d = evaluate(own_w, htf_w, as_of, params)
         decisions += 1
         if d.decision == "HOLD" or d.proposal is None:
             continue

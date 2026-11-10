@@ -87,7 +87,8 @@ def superuser(engine_db_url: str) -> Iterator[psycopg.Connection]:
 def engine_conn(engine_db_url: str, superuser: psycopg.Connection) -> Iterator[psycopg.Connection]:
     # Fresh market-data state per test (TRUNCATE as superuser; the engine cannot delete candles).
     superuser.execute(
-        "truncate public.signal_annotations, public.signal_outcomes, public.signal_events, public.signals, "
+        "truncate public.backtest_trades, public.backtest_results, public.backtest_runs, public.validation_reports, public.experiments, "
+        "public.signal_annotations, public.signal_outcomes, public.signal_events, public.signals, "
         "public.signal_evaluations, public.model_versions, public.strategies, "
         "public.market_candles, public.candle_revisions, public.candle_gaps, public.latest_prices, "
         "public.engine_heartbeats, public.ingest_runs restart identity cascade"
