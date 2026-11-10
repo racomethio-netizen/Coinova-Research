@@ -12,12 +12,13 @@ import { AlertForm, AlertRowActions } from "./client";
 export default async function AlertsPage() {
   const viewer = await requireUserPage("/dashboard/alerts");
   const premium = hasTier(viewer, "pro");
-  const [alerts, history, portfolios, markets, telegram] = await Promise.all([
+  const [alerts, history, portfolios, markets, telegram, devices] = await Promise.all([
     listAlerts(viewer.supabase, viewer.user.id),
     getAlertHistory(viewer.supabase, viewer.user.id, 30),
     listPortfolios(viewer.supabase, viewer.user.id),
     getMarketService().getUniverseMarkets().catch(() => null),
     viewer.supabase.from("telegram_accounts").select("user_id").eq("user_id", viewer.user.id).maybeSingle(),
+    viewer.supabase.from("device_push_tokens").select("id").eq("user_id", viewer.user.id).is("revoked_at", null).limit(1),
   ]);
   const names = new Map((markets?.data ?? []).map((m) => [m.id, `${m.name}`]));
   const pnames = new Map(portfolios.map((p) => [p.id, p.name]));
@@ -40,6 +41,7 @@ export default async function AlertsPage() {
               coins={(markets?.data ?? []).map((c) => ({ id: c.id, label: `${c.name} (${c.symbol})` }))}
               portfolios={portfolios.map((p) => ({ id: p.id, label: p.name }))}
               telegramLinked={Boolean(telegram.data)}
+              pushAvailable={Boolean(devices.data?.length)}
               disabled={alerts.length >= limit}
             />
             {alerts.length >= limit ? <p className="mt-2 text-sm text-warning">You have reached your plan&apos;s alert limit.</p> : null}

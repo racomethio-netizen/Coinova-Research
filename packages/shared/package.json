@@ -1,0 +1,8 @@
+{
+  "name": "@nexus/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API contract shared by the web app and the mobile app: Zod schemas and types. No runtime dependencies besides zod and decimal.js (provided by each app).",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

@@ -62,6 +62,9 @@ const EnvSchema = z
     // Jobs
     CRON_SECRET: optionalString,
 
+    // Mobile push (optional; Expo push works without it, an access token enables enhanced security)
+    EXPO_ACCESS_TOKEN: optionalString,
+
     // NEXUS kill switches (docs/nexus/COMPLIANCE.md). Environment-only on
     // purpose: they cannot be changed from the database or the admin UI.
     SIGNALS_VISIBILITY: z.preprocess(emptyToUndefined, z.enum(["staff", "beta", "public"]).default("staff")),

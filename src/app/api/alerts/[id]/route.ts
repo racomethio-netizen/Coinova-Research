@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 const PatchSchema = z
   .object({
     threshold: z.number().finite().optional(),
-    channels: z.array(z.enum(CHANNELS)).min(1).max(3).transform((c) => [...new Set(c)]).optional(),
+    channels: z.array(z.enum(CHANNELS)).min(1).max(4).transform((c) => [...new Set(c)]).optional(),
     triggerMode: z.enum(["once", "recurring"]).optional(),
     cooldownMinutes: z.number().int().min(5).max(10_080).optional(),
     isActive: z.boolean().optional(),

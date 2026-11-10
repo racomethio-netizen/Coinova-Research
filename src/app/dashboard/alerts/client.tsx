@@ -9,11 +9,13 @@ export function AlertForm({
   coins,
   portfolios,
   telegramLinked,
+  pushAvailable = false,
   disabled,
 }: {
   coins: { id: string; label: string }[];
   portfolios: { id: string; label: string }[];
   telegramLinked: boolean;
+  pushAvailable?: boolean;
   disabled: boolean;
 }) {
   const m = useMutation();
@@ -103,6 +105,10 @@ export function AlertForm({
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={channels.includes("telegram")} onChange={() => toggle("telegram")} disabled={!telegramLinked} /> Telegram
             {!telegramLinked ? <span className="text-xs text-faint">(not linked)</span> : null}
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={channels.includes("push")} onChange={() => toggle("push")} disabled={!pushAvailable} /> Mobile push
+            {!pushAvailable ? <span className="text-xs text-faint">(enable notifications in the mobile app)</span> : null}
           </label>
         </div>
         {m.fields.channels ? <p className="text-xs text-negative">{m.fields.channels}</p> : null}

@@ -1221,3 +1221,29 @@ describe("market scanner view (NEXUS Phase 7)", () => {
     expect(await as(db, { role: "anon" }, (q) => expectError(q("select decision from public.signal_evaluations")))).toMatch(/permission denied/);
   });
 });
+
+describe("mobile push devices (NEXUS Phase 8)", () => {
+  const tok = (s: string) => `ExponentPushToken[${s.padEnd(22, "x")}]`;
+  it("users register and remove only their own devices", async () => {
+    const t = tok("alice-device");
+    await as(db, { role: "authenticated", userId: alice }, async (q) => {
+      await q("insert into public.device_push_tokens (token, platform) values ($1, 'ios')", [t]);
+      expect((await q("select user_id from public.device_push_tokens")).rows).toEqual([{ user_id: alice }]);
+    });
+    await db.query("insert into public.device_push_tokens (user_id, token, platform) values ($1, $2, 'android')", [bob, tok("bob-device")]);
+    await as(db, { role: "authenticated", userId: alice }, async (q) => {
+      expect((await q("select 1 from public.device_push_tokens where token = $1", [tok("bob-device")])).rowCount).toBe(0);
+      expect((await q("delete from public.device_push_tokens where token = $1", [tok("bob-device")])).rowCount).toBe(0);
+    });
+    const forged = await as(db, { role: "authenticated", userId: alice }, (q) => expectError(q("insert into public.device_push_tokens (user_id, token, platform) values ($1, $2, 'ios')", [bob, tok("forged")])));
+    expect(forged).toMatch(/row-level security/);
+    expect(await as(db, { role: "authenticated", userId: alice }, (q) => expectError(q("insert into public.device_push_tokens (token, platform) values ('not-a-token', 'ios')")))).toMatch(/check/);
+  });
+
+  it("alerts and deliveries accept the push channel", async () => {
+    await as(db, { role: "authenticated", userId: alice }, (q) =>
+      q("insert into public.alerts (type, coin_id, threshold, channels) values ('price_above', 'bitcoin', 1, '{in_app,push}')"),
+    );
+    expect(await as(db, { role: "authenticated", userId: alice }, (q) => expectError(q("insert into public.alerts (type, coin_id, threshold, channels) values ('price_above', 'bitcoin', 1, '{sms}')")))).toMatch(/check/);
+  });
+});

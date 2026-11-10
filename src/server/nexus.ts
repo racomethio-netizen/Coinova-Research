@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import type { PerformanceRow, ScannerRow } from "@nexus/shared";
 import { mapDbError } from "@/lib/db/errors";
 
 /**
@@ -131,4 +132,32 @@ export async function getPerformance(sb: SupabaseClient) {
   const { data, error } = await sb.from("signal_performance").select("*, market_pairs(symbol)");
   if (error) throw mapDbError(error, "performance");
   return data ?? [];
+}
+
+// ------------------------------------------------------------------ API contract mappers (packages/shared)
+
+export const PERFORMANCE_MIN_SAMPLE = 100;
+
+export function toScannerRow(r: Record<string, unknown>): ScannerRow {
+  const s = (v: unknown) => String(v);
+  return {
+    pairId: Number(r.pair_id), symbol: s(r.symbol), timeframe: r.timeframe as Timeframe, asOf: s(r.as_of),
+    close: s(r.close), ema20: s(r.ema20), ema50: s(r.ema50), ema200: s(r.ema200), rsi14: s(r.rsi14), macdHist: s(r.macd_hist),
+    atr14: s(r.atr14), volumeRatio: s(r.volume_ratio), htf: r.htf === null || r.htf === undefined ? null : s(r.htf),
+    htfTrendUp: r.htf_ema50 === null || r.htf_ema200 === null ? null : Number(r.htf_ema50) > Number(r.htf_ema200),
+  };
+}
+
+export function toPerformanceRow(r: Record<string, unknown>): PerformanceRow {
+  const n = (v: unknown) => Number(v ?? 0);
+  const entered = n(r.wins) + n(r.losses) + n(r.expired_closed);
+  const enough = entered >= PERFORMANCE_MIN_SAMPLE;
+  return {
+    pairId: n(r.pair_id), symbol: (r.market_pairs as { symbol: string } | null)?.symbol ?? String(r.pair_id), timeframe: r.timeframe as Timeframe,
+    signals: n(r.signals), closed: n(r.closed), wins: n(r.wins), losses: n(r.losses), expiredClosed: n(r.expired_closed),
+    expiredNoEntry: n(r.expired_no_entry), invalidated: n(r.invalidated), entered, insufficientSample: !enough,
+    winRate: enough ? (n(r.wins) / entered).toFixed(6) : null,
+    avgRMultiple: enough && r.avg_r_multiple !== null && r.avg_r_multiple !== undefined ? Number(r.avg_r_multiple).toFixed(4) : null,
+    firstPublishedAt: (r.first_published_at as string | null) ?? null, lastPublishedAt: (r.last_published_at as string | null) ?? null,
+  };
 }

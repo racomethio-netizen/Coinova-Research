@@ -1,4 +1,5 @@
 import "server-only";
+import { sendExpoPush } from "@/lib/notify/push";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { siteConfig } from "@/config/site";
 import { afterAttempt } from "@/lib/alerts/delivery";
@@ -233,6 +234,11 @@ export async function deliverNotifications({ db, now, log }: JobContext, batch =
       outcome = to
         ? await email.send({ to, subject: `[${siteConfig.shortName}] ${n.title}`, text: `${n.body}\n\nManage alerts: ${new URL("/dashboard/alerts", getEnv().NEXT_PUBLIC_SITE_URL)}` })
         : { ok: false, error: "no email on account", permanent: true };
+    } else if (d.channel === "push") {
+      const { data: devices } = await db.from("device_push_tokens").select("token").eq("user_id", d.user_id).is("revoked_at", null);
+      const res = await sendExpoPush((devices ?? []).map((x) => x.token as string), n.title, n.body, { accessToken: getEnv().EXPO_ACCESS_TOKEN });
+      if (res.deadTokens.length) await db.from("device_push_tokens").update({ revoked_at: now.toISOString() }).in("token", res.deadTokens);
+      outcome = res.ok ? { ok: true } : { ok: false, error: res.error ?? "push failed", permanent: res.permanent };
     } else if (d.channel === "telegram") {
       const { data: tg } = await db.from("telegram_accounts").select("chat_id").eq("user_id", d.user_id).maybeSingle();
       outcome = tg ? await sendTelegramMessage(Number(tg.chat_id), `${n.title}\n\n${n.body}`) : { ok: false, error: "Telegram not linked", permanent: true };

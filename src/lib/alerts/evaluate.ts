@@ -39,7 +39,7 @@ export const ALERT_TYPE_LABELS: Record<AlertType, string> = {
   portfolio_value_below: "Portfolio value falls below (USD)",
 };
 
-export const CHANNELS = ["in_app", "email", "telegram"] as const;
+export const CHANNELS = ["in_app", "email", "telegram", "push"] as const;
 export type Channel = (typeof CHANNELS)[number];
 
 export const AlertInputSchema = z
@@ -48,7 +48,7 @@ export const AlertInputSchema = z
     coinId: z.string().regex(/^[a-z0-9][a-z0-9-]{0,99}$/).nullable().optional(),
     portfolioId: z.uuid().nullable().optional(),
     threshold: z.number().finite(),
-    channels: z.array(z.enum(CHANNELS)).min(1).max(3).transform((c) => [...new Set(c)]),
+    channels: z.array(z.enum(CHANNELS)).min(1).max(4).transform((c) => [...new Set(c)]),
     triggerMode: z.enum(["once", "recurring"]).default("recurring"),
     cooldownMinutes: z.number().int().min(5).max(10_080).default(60),
     isActive: z.boolean().default(true),
