@@ -1,7 +1,10 @@
 # CLAUDE.md — working on CryptoScope Research
 
 Read this first in every session. Then read `docs/ROADMAP.md` for current status
-and the next tasks.
+and the next tasks. The product is being extended into **NEXUS AI**: the plan,
+architecture/ADRs, ERD, risks and compliance gates are in `docs/nexus/` (read
+`IMPLEMENTATION_PLAN.md` and `COMPLIANCE.md` before working on signals, paper
+trading, subscriptions, or anything execution-related).
 
 ## Architecture in one screen
 

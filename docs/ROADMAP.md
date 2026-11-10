@@ -1,6 +1,26 @@
 # Roadmap and status
 
-_Last updated: 2026-10-21 (session 1)._
+_Last updated: 2026-11-10 (session 2)._
+
+## NEXUS AI program (current direction)
+
+The product is being extended into **NEXUS AI** (signals, backtesting, paper
+trading, mobile). The plan, architecture, ERD, risks and compliance gates are in
+[`docs/nexus/`](nexus/README.md). **Phase 1 (architecture and documentation) is done.**
+Phase 2 (database and authentication) is next and is blocked on owner decision **D1**
+(tier model). See `docs/nexus/IMPLEMENTATION_PLAN.md` → "Owner decisions needed".
+
+Next commands for Phase 2:
+```bash
+npm ci && npm run typecheck && npm run lint && npm test
+npm run db:test:up && npm run test:db          # baseline before any migration
+# then: CI workflow (.github/workflows), tier migration (after D1), MFA, deletion/export
+```
+
+Cloud-container note (session 2): the repo pins `@playwright/test` 1.56.1
+(Chromium build 1194), but the container image ships build 1243. e2e passed (46/46)
+after linking the 1194 paths to the installed 1243 binaries. `test:integration` needs
+the PostgREST binary at `.tmp/postgrest` (docs/TESTING.md).
 
 Legend: ✅ implemented and covered by automated tests · 🟡 implemented, partially
 verified or needs a real external service · ⛔ blocked on credentials or owner
@@ -100,3 +120,8 @@ failing to render under POSIX locales; the not-found page returning HTTP 200.
 
 **Session 1:** initialized the repository and built every phase's core with tests.
 See git history on branch `claude/cryptoscope-platform`.
+
+**Session 2:** NEXUS AI Phase 1, which covers the repository assessment, implementation plan,
+target architecture with ADRs, ERD, signal-engine specification, dependency list,
+security risk register and compliance gates (`docs/nexus/`). No application code changed.
+Re-verified: typecheck, lint, unit 124/124, DB 52/52, build, e2e 46/46.
