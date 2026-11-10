@@ -33,3 +33,10 @@ export const BacktestRequestSchema = z
   .refine((v) => Date.parse(v.end) <= Date.now(), { path: ["end"], message: "The period must end in the past." });
 
 export type BacktestRequest = z.infer<typeof BacktestRequestSchema>;
+
+/** Default form period: the last 365 days, as YYYY-MM-DD (UTC). */
+export function defaultBacktestPeriod(now: Date = new Date()): { start: string; end: string } {
+  const end = now.toISOString().slice(0, 10);
+  const start = new Date(now.getTime() - 365 * 86_400_000).toISOString().slice(0, 10);
+  return { start, end };
+}
