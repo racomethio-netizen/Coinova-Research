@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { TIER_RANK, type MembershipTier } from "@/config/plans";
+import { minimumTierFor, normalizeTier, TIER_LABEL, TIER_RANK, tierHasFeature, type FeatureKey, type MembershipTier } from "@/config/plans";
 import { ApiError } from "@/lib/http/api";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -40,7 +40,7 @@ export const getViewer = cache(async (): Promise<Viewer> => {
     supabase.rpc("is_admin"),
     supabase.rpc("is_staff"),
   ]);
-  const tier = (typeof tierRes.data === "string" && tierRes.data in TIER_RANK ? tierRes.data : "free") as MembershipTier;
+  const tier = normalizeTier(tierRes.data);
   return {
     user: { id: claims.sub, email: typeof claims.email === "string" ? claims.email : null },
     tier,
@@ -52,6 +52,11 @@ export const getViewer = cache(async (): Promise<Viewer> => {
 
 export function hasTier(viewer: Pick<Viewer, "tier">, required: MembershipTier) {
   return TIER_RANK[viewer.tier] >= TIER_RANK[required];
+}
+
+/** Feature entitlement for the viewer's server-derived tier. Mirrors SQL `has_feature`. */
+export function hasFeature(viewer: Pick<Viewer, "tier">, feature: FeatureKey) {
+  return tierHasFeature(viewer.tier, feature);
 }
 
 // ---------- page guards (redirect)
@@ -85,7 +90,13 @@ export async function requireUserApi() {
 
 export async function requireTierApi(required: MembershipTier) {
   const v = await requireUserApi();
-  if (!hasTier(v, required)) throw new ApiError("payment_required", `This feature requires a ${required === "founding" ? "Founding" : "Premium"} membership.`);
+  if (!hasTier(v, required)) throw new ApiError("payment_required", `This feature requires a ${TIER_LABEL[required]} membership or higher.`);
+  return v;
+}
+
+export async function requireFeatureApi(feature: FeatureKey) {
+  const v = await requireUserApi();
+  if (!hasFeature(v, feature)) throw new ApiError("payment_required", `This feature requires a ${TIER_LABEL[minimumTierFor(feature)]} membership or higher.`);
   return v;
 }
 

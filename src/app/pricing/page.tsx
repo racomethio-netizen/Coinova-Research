@@ -27,7 +27,7 @@ const FAQ = [
   },
   {
     q: "Do you offer refunds?",
-    a: "Refund terms will be published before paid plans launch. A refunded subscription ends Premium access immediately.",
+    a: "Refund terms will be published before paid plans launch. A refunded subscription ends paid access immediately.",
   },
   {
     q: "Is this investment advice?",
@@ -85,8 +85,8 @@ export default async function PricingPage() {
               <tr>
                 <th scope="col" className="px-4 py-2.5">Feature</th>
                 <th scope="col" className="px-4 py-2.5">Free</th>
+                <th scope="col" className="px-4 py-2.5">Pro</th>
                 <th scope="col" className="px-4 py-2.5">Premium</th>
-                <th scope="col" className="px-4 py-2.5">Founding</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -94,8 +94,8 @@ export default async function PricingPage() {
                 <tr key={f.feature}>
                   <th scope="row" className="px-4 py-2.5 text-left font-normal">{f.feature}</th>
                   <td className="px-4 py-2.5"><Cell v={f.free} /></td>
+                  <td className="px-4 py-2.5"><Cell v={f.pro} /></td>
                   <td className="px-4 py-2.5"><Cell v={f.premium} /></td>
-                  <td className="px-4 py-2.5"><Cell v={f.founding} /></td>
                 </tr>
               ))}
             </tbody>

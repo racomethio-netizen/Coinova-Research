@@ -90,7 +90,7 @@ export default async function MarketsPage({ searchParams }: { searchParams: Prom
           }
           return (
             <>
-              <MarketsTable rows={result.items} query={{ ...query, page: result.page }} hrefFor={hrefFor} scores={scores} premium={hasTier(viewer, "premium")} />
+              <MarketsTable rows={result.items} query={{ ...query, page: result.page }} hrefFor={hrefFor} scores={scores} premium={hasTier(viewer, "pro")} />
               <Pagination page={result.page} totalPages={result.totalPages} hrefFor={(p) => hrefFor({ page: p })} />
               <p className="mt-4 text-xs text-faint">
                 {result.total} assets. Prices in USD. Data may be delayed; it is not suitable for trading decisions.

@@ -45,13 +45,13 @@ export async function createUser(db: Client, email = `${randomUUID()}@test.local
 export async function grantSubscription(
   db: Client,
   userId: string,
-  opts: { tier?: "premium" | "founding"; status?: string; periodEnd?: string; livemode?: boolean } = {},
+  opts: { tier?: "pro" | "premium"; status?: string; periodEnd?: string; livemode?: boolean } = {},
 ) {
   const tier = opts.tier ?? "premium";
   await db.query(
     `insert into public.subscriptions (user_id, plan_id, tier, status, provider, provider_subscription_id, livemode, current_period_start, current_period_end, last_event_at)
      values ($1, $2, $3, $4, 'test', $5, $6, now() - interval '1 day', $7, now())`,
-    [userId, tier === "premium" ? "premium_monthly" : "founding_yearly", tier, opts.status ?? "active", randomUUID(), opts.livemode ?? true, opts.periodEnd ?? new Date(Date.now() + 30 * 86_400_000).toISOString()],
+    [userId, tier === "premium" ? "premium_monthly" : "pro_monthly", tier, opts.status ?? "active", randomUUID(), opts.livemode ?? true, opts.periodEnd ?? new Date(Date.now() + 30 * 86_400_000).toISOString()],
   );
 }
 

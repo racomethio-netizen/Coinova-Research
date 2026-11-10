@@ -39,8 +39,8 @@ export const GET = authed("GET /api/portfolio", {}, async ({ viewer }) => {
   });
 });
 
-/** Create a portfolio (Premium; also enforced by a database trigger). */
-export const POST = authed("POST /api/portfolio", { tier: "premium", perMinute: 20 }, async ({ req, viewer }) => {
+/** Create a portfolio (Pro or higher; also enforced by a database trigger). */
+export const POST = authed("POST /api/portfolio", { tier: "pro", perMinute: 20 }, async ({ req, viewer }) => {
   const body = await parseJsonBody(req, PortfolioInputSchema);
   return ok(await createPortfolio(viewer.supabase, viewer.user.id, body.name), { status: 201 });
 });

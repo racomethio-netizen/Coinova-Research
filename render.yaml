@@ -40,6 +40,13 @@ services:
         sync: false
       - key: BILLING_PROVIDER
         value: none
+      # NEXUS compliance gates (docs/nexus/COMPLIANCE.md). Change only by owner-approved deploy.
+      - key: SIGNALS_VISIBILITY
+        value: staff
+      - key: PAID_SIGNALS_ENABLED
+        value: "false"
+      - key: LIVE_EXECUTION_ENABLED
+        value: "false"
 
   # Scheduled jobs call the web service's authenticated cron endpoint.
   # Each job is idempotent per time window, so overlaps and retries are safe.

@@ -5,7 +5,7 @@ import { addTransaction } from "@/server/portfolio";
 
 export const dynamic = "force-dynamic";
 
-export const POST = authed("POST /api/portfolio/transactions", { tier: "premium", perMinute: 60 }, async ({ req, viewer }) => {
+export const POST = authed("POST /api/portfolio/transactions", { tier: "pro", perMinute: 60 }, async ({ req, viewer }) => {
   const input = await parseJsonBody(req, TransactionInputSchema);
   return ok(await addTransaction(viewer.supabase, viewer.user.id, input), { status: 201 });
 });

@@ -5,8 +5,8 @@ import { listPortfolios, listTransactions } from "@/server/portfolio";
 
 export const dynamic = "force-dynamic";
 
-/** CSV export of the user's own transactions (Premium). */
-export const GET = authed("GET /api/portfolio/export", { tier: "premium", perMinute: 10 }, async ({ viewer }) => {
+/** CSV export of the user's own transactions (Pro or higher). */
+export const GET = authed("GET /api/portfolio/export", { tier: "pro", perMinute: 10 }, async ({ viewer }) => {
   const [portfolios, txs] = await Promise.all([listPortfolios(viewer.supabase, viewer.user.id), listTransactions(viewer.supabase, viewer.user.id)]);
   const names = new Map(portfolios.map((p) => [p.id, p.name]));
   const markets = await getMarketService().getUniverseMarkets().catch(() => null);

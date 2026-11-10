@@ -1,5 +1,5 @@
 import { Badge, Button, Card, CardBody, CardHeader, Notice, PageHeader } from "@/components/ui";
-import { formatPrice, getPaidPlan, PAID_PLANS, TIER_LIMITS } from "@/config/plans";
+import { formatPrice, getPaidPlan, PAID_PLANS, TIER_LABEL, TIER_LIMITS } from "@/config/plans";
 import { requireUserPage } from "@/lib/auth/session";
 import { getEnv } from "@/lib/env";
 import { fmtDate } from "@/lib/format";
@@ -44,7 +44,7 @@ export default async function MembershipPage({ searchParams }: { searchParams: P
         <CardHeader title="Current plan" />
         <CardBody className="space-y-3 text-sm">
           <p>
-            <Badge tone={viewer.tier === "free" ? "neutral" : "accent"}>{viewer.tier === "free" ? "Free" : viewer.tier === "premium" ? "Premium" : "Founding"}</Badge>
+            <Badge tone={viewer.tier === "free" ? "neutral" : "accent"}>{TIER_LABEL[viewer.tier]}</Badge>
           </p>
           <p className="text-muted">
             Limits: {limits.watchlists} watchlists · {limits.watchlistItems} coins per list · {limits.portfolios} portfolios · {limits.alerts} alerts · {limits.aiRequestsPerDay} AI requests/day

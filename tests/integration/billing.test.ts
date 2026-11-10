@@ -34,7 +34,7 @@ describe("billing webhook processing (real database)", () => {
 
   it("rejects invalid signatures without touching data", async () => {
     const uid = await newUser(db);
-    const signed = sim.buildSignedEvent({ type: "subscription.activated", userId: uid, planId: "founding_yearly", providerSubscriptionId: `sub-${uid}` });
+    const signed = sim.buildSignedEvent({ type: "subscription.activated", userId: uid, planId: "pro_yearly", providerSubscriptionId: `sub-${uid}` });
     await expect(processBillingWebhook(sim, signed.body, new Headers({ [DEV_SIGNATURE_HEADER]: signDevPayload("wrong-secret-wrong-secret-wrong-secret", signed.body) }), serviceClient())).rejects.toBeInstanceOf(ApiError);
     await expect(processBillingWebhook(sim, signed.body, new Headers(), serviceClient())).rejects.toBeInstanceOf(ApiError);
     expect(await tier(uid)).toBe("free");
@@ -77,7 +77,7 @@ describe("billing webhook processing (real database)", () => {
   it("refuses a second checkout while a subscription is open, and cancels at period end", async () => {
     const uid = await newUser(db);
     await send(sim.buildSignedEvent({ type: "subscription.activated", userId: uid, planId: "premium_monthly", providerSubscriptionId: `sub-${uid}`, occurredAt: new Date(Date.now() - 5_000) }));
-    await expect(startCheckout(userClient(uid), { id: uid, email: null }, "founding_yearly")).rejects.toMatchObject({ code: "conflict" });
+    await expect(startCheckout(userClient(uid), { id: uid, email: null }, "pro_yearly")).rejects.toMatchObject({ code: "conflict" });
     expect((await requestCancellation(userClient(uid), uid)).status).toBe("scheduled");
     const { rows } = await db.query("select status, cancel_at_period_end from public.subscriptions where user_id = $1", [uid]);
     expect(rows[0]).toEqual({ status: "active", cancel_at_period_end: true });

@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { getPaidPlan } from "@/config/plans";
+import { getPaidPlan, normalizeTier } from "@/config/plans";
 import { SCORE_CATEGORIES } from "@/config/scoring";
 import { mapDbError } from "@/lib/db/errors";
 import { ApiError } from "@/lib/http/api";
@@ -31,7 +31,7 @@ export const ArticleInputSchema = z.object({
   summary: z.string().trim().min(10).max(600),
   category: z.enum(ARTICLE_CATEGORIES),
   tags: z.array(z.string().trim().min(1).max(40)).max(12).default([]),
-  accessLevel: z.enum(["free", "premium", "founding"]),
+  accessLevel: z.enum(["free", "pro", "premium"]),
   authorName: z.string().trim().min(1).max(80),
   relatedCoinIds: z.array(z.string().regex(/^[a-z0-9][a-z0-9-]{0,99}$/)).max(20).default([]),
   dataSources: z.array(SourceSchema).max(30).default([]),
@@ -212,8 +212,11 @@ export async function getAdminOverview(sb: SupabaseClient) {
     if (!plan) return sum;
     return sum + (plan.interval === "month" ? plan.priceCents : plan.priceCents / 12);
   }, 0);
-  const byTier = { premium: 0, founding: 0 };
-  for (const s of live) byTier[s.tier as "premium" | "founding"]++;
+  const byTier = { pro: 0, premium: 0 };
+  for (const s of live) {
+    const t = normalizeTier(s.tier);
+    if (t !== "free") byTier[t]++;
+  }
   const deliveryCounts: Record<string, Record<string, number>> = {};
   for (const d of deliveries.data ?? []) {
     deliveryCounts[d.channel] ??= {};

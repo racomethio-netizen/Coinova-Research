@@ -96,7 +96,7 @@ export async function getVisibleScores(viewer: Viewer): Promise<Map<string, Stor
   const svc = getMarketService();
   const markets = await svc.getUniverseMarkets().catch(() => null);
   if (!markets) return out;
-  const premium = hasTier(viewer, "premium");
+  const premium = hasTier(viewer, "pro");
   const sample = new Set(sampleCoinIds(svc.source, svc.universeIds));
   for (const coin of markets.data) {
     if (UNSCORED_COIN_IDS.has(coin.id)) continue;
@@ -110,7 +110,7 @@ export async function getVisibleScores(viewer: Viewer): Promise<Map<string, Stor
 export async function getScoreForCoin(viewer: Viewer, coinId: string): Promise<ScoreAccess> {
   if (UNSCORED_COIN_IDS.has(coinId)) return { kind: "unscored", reason: "Stablecoins are not scored: the methodology is designed for assets with variable prices." };
   const svc = getMarketService();
-  const premium = hasTier(viewer, "premium");
+  const premium = hasTier(viewer, "pro");
   const isSample = sampleCoinIds(svc.source, svc.universeIds).includes(coinId);
 
   if (viewer.supabase) {
@@ -141,7 +141,7 @@ export interface ScoreHistoryPoint {
 }
 
 export async function getScoreHistory(viewer: Viewer, coinId: string, limit = 60): Promise<ScoreHistoryPoint[] | null> {
-  if (!viewer.supabase || !hasTier(viewer, "premium")) return null;
+  if (!viewer.supabase || !hasTier(viewer, "pro")) return null;
   const { data, error } = await viewer.supabase
     .from("research_score_snapshots")
     .select("calculated_at, overall_score, status, methodology_version")

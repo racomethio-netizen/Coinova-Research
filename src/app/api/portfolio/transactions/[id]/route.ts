@@ -12,7 +12,7 @@ const txId = (v: string) => {
   return r.data;
 };
 
-export const PATCH = authed<{ id: string }>("PATCH /api/portfolio/transactions/[id]", { tier: "premium", perMinute: 60 }, async ({ req, viewer, params }) => {
+export const PATCH = authed<{ id: string }>("PATCH /api/portfolio/transactions/[id]", { tier: "pro", perMinute: 60 }, async ({ req, viewer, params }) => {
   const patch = await parseJsonBody(req, TransactionPatchSchema);
   return ok(await updateTransaction(viewer.supabase, viewer.user.id, txId(params.id), patch));
 });

@@ -10,8 +10,8 @@ export const GET = authed("GET /api/alerts", {}, async ({ viewer }) => {
   return ok({ alerts, history });
 });
 
-/** Alerts require Premium (also enforced by a database trigger via tier limits). */
-export const POST = authed("POST /api/alerts", { tier: "premium", perMinute: 30 }, async ({ req, viewer }) => {
+/** Alerts require Pro or higher (also enforced by a database trigger via tier limits). */
+export const POST = authed("POST /api/alerts", { tier: "pro", perMinute: 30 }, async ({ req, viewer }) => {
   const input = await parseJsonBody(req, AlertInputSchema);
   return ok(await createAlert(viewer.supabase, viewer.user.id, input), { status: 201 });
 });

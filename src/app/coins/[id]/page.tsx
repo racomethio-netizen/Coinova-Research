@@ -1,3 +1,4 @@
+import { TIER_LABEL } from "@/config/plans";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -74,7 +75,7 @@ export default async function CoinPage({ params }: { params: Promise<{ id: strin
 
   const supply = computeSupplyMetrics(coin, supplyHistory);
   const unlockSummary = unlocks.status === "ok" ? summarizeUnlocks(unlocks.events, coin, new Date().toISOString(), 180) : null;
-  const premium = hasTier(viewer, "premium");
+  const premium = hasTier(viewer, "pro");
 
   return (
     <Container className="space-y-6 py-8">
@@ -182,7 +183,7 @@ export default async function CoinPage({ params }: { params: Promise<{ id: strin
             <p className="text-sm text-muted">
               {unlockSummary.events.length} recorded unlock event(s) in the next 180 days.{" "}
               <Link href="/pricing" className="text-accent underline">
-                Upgrade to Premium
+                Upgrade to Pro
               </Link>{" "}
               for dates, amounts, and supply impact.
             </p>
@@ -271,7 +272,7 @@ export default async function CoinPage({ params }: { params: Promise<{ id: strin
                       {a.title}
                     </Link>
                     <p className="text-xs text-faint">
-                      {fmtDate(a.publishedAt)} {a.accessLevel !== "free" ? "· Premium" : ""}
+                      {fmtDate(a.publishedAt)} {a.accessLevel !== "free" ? `· ${TIER_LABEL[a.accessLevel]}` : ""}
                     </p>
                   </li>
                 ))}

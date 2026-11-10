@@ -1,5 +1,5 @@
 import "server-only";
-import { PAID_PLANS, TIER_LIMITS } from "@/config/plans";
+import { PAID_PLANS, PLAN_FEATURES, RETIRED_PLAN_IDS, TIER_LIMITS, type MembershipTier } from "@/config/plans";
 import { requireServiceClient } from "@/lib/supabase/server";
 import { deliverNotifications, evaluateAlerts } from "./alerts";
 import { refreshFundamentals, refreshHistory, refreshMarkets } from "./market";
@@ -34,7 +34,15 @@ async function syncPlans({ db }: JobContext) {
   ];
   const { error } = await db.from("membership_plans").upsert(rows, { onConflict: "id" });
   if (error) throw new Error(error.message);
-  return { plans: rows.length };
+  const retired = await db.from("membership_plans").update({ is_active: false }).in("id", [...RETIRED_PLAN_IDS]);
+  if (retired.error) throw new Error(retired.error.message);
+
+  const features = (Object.keys(PLAN_FEATURES) as MembershipTier[]).flatMap((tier) =>
+    Object.entries(PLAN_FEATURES[tier]).map(([feature_key, enabled]) => ({ tier, feature_key, enabled })),
+  );
+  const feat = await db.from("plan_features").upsert(features, { onConflict: "tier,feature_key" });
+  if (feat.error) throw new Error(feat.error.message);
+  return { plans: rows.length, retiredPlans: RETIRED_PLAN_IDS.length, features: features.length };
 }
 
 async function cleanup({ db }: JobContext) {

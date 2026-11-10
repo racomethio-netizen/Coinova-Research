@@ -1,3 +1,4 @@
+import { TIER_LABEL } from "@/config/plans";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { logoutAction } from "@/app/(auth)/actions";
@@ -30,7 +31,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             {viewer.user.email}
           </p>
           <div className="mt-2 flex items-center gap-2">
-            <Badge tone={viewer.tier === "free" ? "neutral" : "accent"}>{viewer.tier === "free" ? "Free" : viewer.tier === "premium" ? "Premium" : "Founding"}</Badge>
+            <Badge tone={viewer.tier === "free" ? "neutral" : "accent"}>{TIER_LABEL[viewer.tier]}</Badge>
             {viewer.isAdmin ? <Badge tone="warning">Admin</Badge> : viewer.isStaff ? <Badge tone="warning">Editor</Badge> : null}
           </div>
         </div>

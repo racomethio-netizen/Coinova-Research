@@ -35,7 +35,7 @@ test.describe("public site", () => {
     await page.goto("/coins/mock-aurora");
     await expect(page.getByText(/Methodology v1\.0\.0/)).toBeVisible();
     await page.goto("/coins/mock-zephyr");
-    await expect(page.getByText("Research score available with Premium")).toBeVisible();
+    await expect(page.getByText("Research score available with Pro")).toBeVisible();
   });
 
   test("chart period switch loads history through the API", async ({ page }) => {

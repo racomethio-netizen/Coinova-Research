@@ -1,5 +1,6 @@
 import type { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { PAID_PLANS, PLAN_FEATURES, TIER_LIMITS } from "@/config/plans";
 import { as, connect, createUser, expectError, grantSubscription, seedCoin } from "./helpers";
 
 let db: Client;
@@ -94,13 +95,13 @@ describe("membership cannot be self-granted", () => {
     const ins = await as(db, { role: "authenticated", userId: carol }, (q) =>
       expectError(
         q(
-          "insert into public.subscriptions (user_id, plan_id, tier, status, provider, provider_subscription_id, livemode, current_period_end, last_event_at) values ($1,'founding_yearly','founding','active','x','y',true, now() + interval '1 year', now())",
+          "insert into public.subscriptions (user_id, plan_id, tier, status, provider, provider_subscription_id, livemode, current_period_end, last_event_at) values ($1,'premium_yearly','premium','active','x','y',true, now() + interval '1 year', now())",
           [carol],
         ),
       ),
     );
     expect(ins).toMatch(/permission denied/);
-    const upd = await as(db, { role: "authenticated", userId: alice }, (q) => expectError(q("update public.subscriptions set tier = 'founding'")));
+    const upd = await as(db, { role: "authenticated", userId: alice }, (q) => expectError(q("update public.subscriptions set tier = 'premium'")));
     expect(upd).toMatch(/permission denied/);
   });
 
@@ -478,5 +479,123 @@ describe("operations", () => {
   it("retention cleanup runs", async () => {
     const { rows } = await db.query("select public.run_retention_cleanup() r");
     expect(rows[0].r).toHaveProperty("market_snapshots");
+  });
+});
+
+describe("NEXUS tiers: free < pro < premium, founding retired", () => {
+  let pro: string;
+  const tierOf = async (uid: string) => (await as(db, { role: "authenticated", userId: uid }, (q) => q("select public.current_membership_tier() t"))).rows[0].t;
+
+  beforeAll(async () => {
+    pro = await createUser(db);
+    await grantSubscription(db, pro, { tier: "pro" });
+  });
+
+  it("membership_plans match src/config/plans.ts", async () => {
+    const { rows } = await db.query("select id, tier, price_cents, billing_interval, limits, is_active from public.membership_plans where tier <> 'free' order by sort_order");
+    const active = rows.filter((r) => r.is_active);
+    expect(active.map((r) => r.id)).toEqual(PAID_PLANS.filter((p) => p.isActive).map((p) => p.id));
+    for (const plan of PAID_PLANS) {
+      const row = rows.find((r) => r.id === plan.id)!;
+      expect({ tier: row.tier, price: row.price_cents, interval: row.billing_interval, limits: row.limits }).toEqual({
+        tier: plan.tier,
+        price: plan.priceCents,
+        interval: plan.interval,
+        limits: TIER_LIMITS[plan.tier],
+      });
+    }
+    expect(rows.find((r) => r.id === "founding_yearly")?.is_active).toBe(false);
+  });
+
+  it("pro subscribers report the pro tier", async () => {
+    expect(await tierOf(pro)).toBe("pro");
+  });
+
+  it("pro limits come from the pro plans", async () => {
+    await as(db, { role: "authenticated", userId: pro }, async (q) => {
+      await q("insert into public.portfolios (name) values ('P1')");
+      await q("insert into public.portfolios (name) values ('P2')");
+      expect(await expectError(q("insert into public.portfolios (name) values ('P3')"))).toMatch(/limit_reached:portfolios/);
+    });
+  });
+
+  it("pro reads pro and free article bodies but not premium bodies", async () => {
+    const mk = async (slug: string, access: string) => {
+      const id = (
+        await db.query(
+          "insert into public.research_articles (slug, title, summary, category, access_level, status, author_name, published_at) values ($1, $1, 'A summary of the article.', 'market', $2, 'published', 'Staff', now() - interval '1 hour') returning id",
+          [slug, access],
+        )
+      ).rows[0].id;
+      await db.query("insert into public.research_article_bodies (article_id, body_markdown) values ($1, 'body')", [id]);
+      return id as string;
+    };
+    const proArticle = await mk("pro-tier-one", "pro");
+    const premiumArticle = await mk("premium-tier-two", "premium");
+    const visible = async (uid: string) =>
+      (await as(db, { role: "authenticated", userId: uid }, (q) => q("select article_id from public.research_article_bodies where article_id = any($1)", [[proArticle, premiumArticle]]))).rows.map((r) => r.article_id);
+    expect(await visible(pro)).toEqual([proArticle]);
+    expect((await visible(alice)).sort()).toEqual([proArticle, premiumArticle].sort());
+    expect(await visible(carol)).toEqual([]);
+  });
+
+  it("new founding subscriptions and articles are rejected, even for the service role", async () => {
+    const u = await createUser(db);
+    const msg = await expectError(
+      db.query(
+        "insert into public.subscriptions (user_id, plan_id, tier, status, provider, provider_subscription_id, livemode, current_period_end, last_event_at) values ($1,'founding_yearly','founding','active','x',$2,true, now() + interval '1 year', now())",
+        [u, `legacy-${u}`],
+      ),
+    );
+    expect(msg).toMatch(/founding tier is retired/);
+    const art = await expectError(
+      db.query("insert into public.research_articles (slug, title, summary, category, access_level, author_name) values ('legacy-f', 'Title', 'Summary text here', 'market', 'founding', 'Staff')"),
+    );
+    expect(art).toMatch(/research_articles_access_level_current/);
+  });
+
+  it("a legacy founding subscription is reported as premium", async () => {
+    const u = await createUser(db);
+    await db.query("alter table public.subscriptions disable trigger subscriptions_reject_retired_tier");
+    try {
+      await db.query(
+        "insert into public.subscriptions (user_id, plan_id, tier, status, provider, provider_subscription_id, livemode, current_period_start, current_period_end, last_event_at) values ($1,'founding_yearly','founding','active','x',$2,true, now() - interval '1 day', now() + interval '1 year', now())",
+        [u, `legacy-${u}`],
+      );
+    } finally {
+      await db.query("alter table public.subscriptions enable trigger subscriptions_reject_retired_tier");
+    }
+    expect(await tierOf(u)).toBe("premium");
+    // Legacy rows can still receive lifecycle updates.
+    await db.query("update public.subscriptions set cancel_at_period_end = true where user_id = $1", [u]);
+  });
+});
+
+describe("feature entitlements (plan_features / has_feature)", () => {
+  it("plan_features match PLAN_FEATURES in src/config/plans.ts", async () => {
+    const { rows } = await db.query("select tier, feature_key, enabled from public.plan_features");
+    const fromDb: Record<string, Record<string, boolean>> = {};
+    for (const r of rows) (fromDb[r.tier] ??= {})[r.feature_key] = r.enabled;
+    expect(fromDb).toEqual(PLAN_FEATURES);
+  });
+
+  it("has_feature follows the caller's tier", async () => {
+    const pro = await createUser(db);
+    await grantSubscription(db, pro, { tier: "pro" });
+    const check = async (actor: Parameters<typeof as>[1], key: string) => (await as(db, actor, (q) => q("select public.has_feature($1) v", [key]))).rows[0].v;
+    expect(await check({ role: "anon" }, "charts.basic")).toBe(true);
+    expect(await check({ role: "anon" }, "signals.history")).toBe(false);
+    expect(await check({ role: "authenticated", userId: carol }, "signals.history")).toBe(false);
+    expect(await check({ role: "authenticated", userId: pro }, "signals.history")).toBe(true);
+    expect(await check({ role: "authenticated", userId: pro }, "backtesting")).toBe(false);
+    expect(await check({ role: "authenticated", userId: alice }, "backtesting")).toBe(true);
+    expect(await check({ role: "authenticated", userId: alice }, "no.such_feature")).toBe(false);
+  });
+
+  it("users cannot change plan_features or query other users' features", async () => {
+    const msg = await as(db, { role: "authenticated", userId: carol }, (q) => expectError(q("update public.plan_features set enabled = true")));
+    expect(msg).toMatch(/permission denied/);
+    const fn = await as(db, { role: "authenticated", userId: carol }, (q) => expectError(q("select public.has_feature_for($1, 'backtesting')", [alice])));
+    expect(fn).toMatch(/permission denied/);
   });
 });

@@ -24,9 +24,9 @@ const aid = (v: string) => {
 
 export const PATCH = authed<{ id: string }>("PATCH /api/alerts/[id]", { perMinute: 60 }, async ({ req, viewer, params }) => {
   const patch = await parseJsonBody(req, PatchSchema);
-  // Re-enabling or editing alerts requires an active Premium tier; disabling is always allowed.
+  // Re-enabling or editing alerts requires an active Pro (or higher) tier; disabling is always allowed.
   if (!(Object.keys(patch).length === 1 && patch.isActive === false) && viewer.tier === "free") {
-    throw new ApiError("payment_required", "Editing alerts requires a Premium membership.");
+    throw new ApiError("payment_required", "Editing alerts requires a Pro membership or higher.");
   }
   return ok(await updateAlert(viewer.supabase, viewer.user.id, aid(params.id), patch));
 });

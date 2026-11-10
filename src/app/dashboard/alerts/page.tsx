@@ -11,7 +11,7 @@ import { AlertForm, AlertRowActions } from "./client";
 
 export default async function AlertsPage() {
   const viewer = await requireUserPage("/dashboard/alerts");
-  const premium = hasTier(viewer, "premium");
+  const premium = hasTier(viewer, "pro");
   const [alerts, history, portfolios, markets, telegram] = await Promise.all([
     listAlerts(viewer.supabase, viewer.user.id),
     getAlertHistory(viewer.supabase, viewer.user.id, 30),
@@ -31,7 +31,7 @@ export default async function AlertsPage() {
         Each alert fires once when its condition becomes true and re-arms after it stops being true, subject to its cooldown.
       </Notice>
       {!premium ? (
-        <EmptyState title="Alerts require Premium" description="Upgrade to create price, change, score, unlock, and portfolio alerts." action={<ButtonLink href="/pricing">View plans</ButtonLink>} />
+        <EmptyState title="Alerts require Pro or higher" description="Upgrade to create price, change, score, unlock, and portfolio alerts." action={<ButtonLink href="/pricing">View plans</ButtonLink>} />
       ) : (
         <Card>
           <CardHeader title="New alert" />

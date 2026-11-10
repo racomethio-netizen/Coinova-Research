@@ -95,8 +95,8 @@ export function ArticleEditor({ initial }: { initial: ArticleFormValues }) {
         <Field id="access" label="Access level">
           <select id="access" value={v.accessLevel} onChange={set("accessLevel")} className={inputClass}>
             <option value="free">Free</option>
+            <option value="pro">Pro</option>
             <option value="premium">Premium</option>
-            <option value="founding">Founding</option>
           </select>
         </Field>
         <Field id="author" label="Author name"><input id="author" value={v.authorName} onChange={set("authorName")} className={inputClass} /></Field>

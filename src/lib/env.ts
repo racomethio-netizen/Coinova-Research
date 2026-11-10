@@ -12,6 +12,8 @@ import { z } from "zod";
 const emptyToUndefined = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : v);
 const optionalString = z.preprocess(emptyToUndefined, z.string().min(1).optional());
 const optionalUrl = z.preprocess(emptyToUndefined, z.url().optional());
+const flag = (def: "true" | "false") =>
+  z.preprocess(emptyToUndefined, z.enum(["true", "false"]).default(def)).transform((v) => v === "true");
 const intWithDefault = (def: number, min = 0, max = Number.MAX_SAFE_INTEGER) =>
   z.preprocess(emptyToUndefined, z.coerce.number().int().min(min).max(max).default(def));
 
@@ -59,6 +61,12 @@ const EnvSchema = z
 
     // Jobs
     CRON_SECRET: optionalString,
+
+    // NEXUS kill switches (docs/nexus/COMPLIANCE.md). Environment-only on
+    // purpose: they cannot be changed from the database or the admin UI.
+    SIGNALS_VISIBILITY: z.preprocess(emptyToUndefined, z.enum(["staff", "beta", "public"]).default("staff")),
+    PAID_SIGNALS_ENABLED: flag("false"),
+    LIVE_EXECUTION_ENABLED: flag("false"),
   })
   .superRefine((env, ctx) => {
     const prod = env.APP_ENV === "production";
@@ -88,6 +96,12 @@ const EnvSchema = z
     }
     if (env.CRON_SECRET && env.CRON_SECRET.length < 32) {
       ctx.addIssue({ code: "custom", path: ["CRON_SECRET"], message: "Must be at least 32 characters." });
+    }
+    if (env.LIVE_EXECUTION_ENABLED) {
+      ctx.addIssue({ code: "custom", path: ["LIVE_EXECUTION_ENABLED"], message: "Live execution is not implemented and must stay false until the activation checklist in docs/nexus/COMPLIANCE.md is complete." });
+    }
+    if (env.PAID_SIGNALS_ENABLED && env.SIGNALS_VISIBILITY !== "public") {
+      ctx.addIssue({ code: "custom", path: ["PAID_SIGNALS_ENABLED"], message: "Paid signals require SIGNALS_VISIBILITY=public (and legal approval)." });
     }
     if (prod && (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !env.SUPABASE_SERVICE_ROLE_KEY)) {
       ctx.addIssue({ code: "custom", path: ["SUPABASE_URL"], message: "Supabase configuration is required when APP_ENV=production." });
@@ -126,6 +140,17 @@ export function resetEnvCache(): void {
 
 export function isSupabaseConfigured(env: ServerEnv = getEnv()): boolean {
   return Boolean(env.SUPABASE_URL && env.SUPABASE_ANON_KEY);
+}
+
+export interface NexusGates {
+  signalsVisibility: "staff" | "beta" | "public";
+  paidSignalsEnabled: boolean;
+  liveExecutionEnabled: false;
+}
+
+/** Compliance gates, read only from the validated environment. */
+export function getNexusGates(env: ServerEnv = getEnv()): NexusGates {
+  return { signalsVisibility: env.SIGNALS_VISIBILITY, paidSignalsEnabled: env.PAID_SIGNALS_ENABLED, liveExecutionEnabled: false };
 }
 
 export function isProduction(env: ServerEnv = getEnv()): boolean {

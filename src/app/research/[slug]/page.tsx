@@ -1,3 +1,4 @@
+import { TIER_LABEL } from "@/config/plans";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -37,7 +38,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       ) : null}
       <div className="mb-3 flex flex-wrap gap-2">
         <Badge>{CATEGORY_NAMES[a.category]}</Badge>
-        {a.accessLevel !== "free" ? <Badge tone="accent">{a.accessLevel === "founding" ? "Founding" : "Premium"}</Badge> : null}
+        {a.accessLevel !== "free" ? <Badge tone="accent">{TIER_LABEL[a.accessLevel]}</Badge> : null}
         {a.isAiAssisted ? <Badge tone="warning">AI-assisted draft, reviewed by staff</Badge> : null}
       </div>
       <h1 className="text-3xl font-semibold tracking-tight">{a.title}</h1>
@@ -62,7 +63,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         <Markdown source={a.body} />
       ) : (
         <div className="rounded-lg border border-line bg-elevated px-6 py-10 text-center">
-          <p className="font-medium">This is {a.accessLevel === "founding" ? "Founding Member" : "Premium"} research.</p>
+          <p className="font-medium">This is {TIER_LABEL[a.accessLevel]} research.</p>
           <p className="mt-2 text-sm text-muted">
             {viewer.user ? "Upgrade your membership to read the full article." : "Sign in or create an account, then upgrade to read the full article."}
           </p>

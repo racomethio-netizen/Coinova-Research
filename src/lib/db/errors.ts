@@ -9,10 +9,10 @@ interface PgLikeError {
 }
 
 const LIMIT_MESSAGES: Record<string, string> = {
-  portfolios: "Your plan does not allow more portfolios. Portfolios require Premium.",
+  portfolios: "Your plan does not allow more portfolios. Portfolios require Pro or higher.",
   watchlists: "You have reached your plan's watchlist limit.",
   watchlistItems: "This watchlist has reached your plan's coin limit.",
-  alerts: "You have reached your plan's alert limit. Alerts require Premium.",
+  alerts: "You have reached your plan's alert limit. Alerts require Pro or higher.",
   aiRequestsPerDay: "You have reached today's AI assistant limit for your plan.",
 };
 

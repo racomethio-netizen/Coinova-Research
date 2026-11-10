@@ -73,7 +73,7 @@ export default async function HomePage() {
                 Top assets
               </h2>
               <p className="text-sm text-muted">
-                {hasTier(viewer, "premium") ? "Research scores for all covered assets." : "Sample research scores are shown for a few assets. Premium unlocks all."}
+                {hasTier(viewer, "pro") ? "Research scores for all covered assets." : "Sample research scores are shown for a few assets. Pro unlocks all."}
               </p>
             </div>
             <Link href="/markets" className="text-sm text-accent hover:underline">
@@ -81,7 +81,7 @@ export default async function HomePage() {
             </Link>
           </div>
           {markets ? (
-            <MarketsTable rows={top} query={query} hrefFor={() => "/markets"} scores={scores} premium={hasTier(viewer, "premium")} />
+            <MarketsTable rows={top} query={query} hrefFor={() => "/markets"} scores={scores} premium={hasTier(viewer, "pro")} />
           ) : (
             <ProviderUnavailable />
           )}
@@ -138,8 +138,8 @@ export default async function HomePage() {
         </section>
 
         <section className="rounded-lg border border-line bg-elevated px-6 py-10 text-center">
-          <h2 className="text-xl font-semibold">Go deeper with Premium</h2>
-          <p className="mx-auto mt-2 max-w-xl text-muted">Full research scores and history, premium articles, portfolios with P&amp;L, configurable alerts, and CSV export.</p>
+          <h2 className="text-xl font-semibold">Go deeper with Pro and Premium</h2>
+          <p className="mx-auto mt-2 max-w-xl text-muted">Pro: full research scores and history, portfolios with P&amp;L, configurable alerts, and CSV export. Premium adds Premium research and higher limits.</p>
           <ButtonLink href="/pricing" className="mt-6">
             See membership plans
           </ButtonLink>

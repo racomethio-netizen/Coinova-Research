@@ -1,24 +1,40 @@
 /**
  * Membership plan catalog — the single source of truth for plan definitions,
- * display prices, and per-tier limits.
+ * display prices, per-tier limits, and per-tier feature entitlements.
  *
  * PRICES ARE ILLUSTRATIVE and must be reviewed before launch. When a real
  * billing provider is configured, the provider's price records are the
  * authority for what is charged; `providerPriceIds` maps each plan to them.
  *
- * The database table `membership_plans` mirrors this file (seeded by migration
- * 0003 and kept in sync by `npm run job -- sync-plans`) so that Row Level
- * Security policies and limit triggers can read tier limits.
+ * The database tables `membership_plans` and `plan_features` mirror this file
+ * (seeded by migrations and kept in sync by `npm run job -- sync-plans`) so
+ * that Row Level Security policies and limit triggers can read them.
+ *
+ * Tiers: free < pro < premium. The legacy "founding" tier is retired; any
+ * legacy row is treated as premium (see `normalizeTier` and the SQL function
+ * `membership_tier_for`).
  */
 
-export type MembershipTier = "free" | "premium" | "founding";
+export type MembershipTier = "free" | "pro" | "premium";
 export type BillingInterval = "month" | "year";
 
 export const TIER_RANK: Record<MembershipTier, number> = {
   free: 0,
-  premium: 1,
-  founding: 2,
+  pro: 1,
+  premium: 2,
 };
+
+export const TIER_LABEL: Record<MembershipTier, string> = {
+  free: "Free",
+  pro: "Pro",
+  premium: "Premium",
+};
+
+/** Map any tier string from storage to a current tier. Unknown values grant nothing. */
+export function normalizeTier(value: unknown): MembershipTier {
+  if (value === "founding") return "premium";
+  return typeof value === "string" && Object.prototype.hasOwnProperty.call(TIER_RANK, value) ? (value as MembershipTier) : "free";
+}
 
 export interface TierLimits {
   watchlists: number;
@@ -40,6 +56,14 @@ export const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     notificationsPerHour: 0,
     aiRequestsPerDay: 3,
   },
+  pro: {
+    watchlists: 5,
+    watchlistItems: 50,
+    portfolios: 2,
+    alerts: 25,
+    notificationsPerHour: 10,
+    aiRequestsPerDay: 20,
+  },
   premium: {
     watchlists: 10,
     watchlistItems: 100,
@@ -48,18 +72,56 @@ export const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     notificationsPerHour: 20,
     aiRequestsPerDay: 50,
   },
-  founding: {
-    watchlists: 25,
-    watchlistItems: 250,
-    portfolios: 20,
-    alerts: 200,
-    notificationsPerHour: 60,
-    aiRequestsPerDay: 150,
-  },
 };
 
+/**
+ * Feature entitlements (NEXUS). Checked server-side with `hasFeature()` and in
+ * SQL with `public.has_feature(key)`. A feature listed here is an *entitlement*,
+ * not a claim that it is built; features behind legal gates (signals) also
+ * require their gate (docs/nexus/COMPLIANCE.md).
+ */
+export const FEATURE_KEYS = [
+  "charts.basic",
+  "analytics.advanced",
+  "signals.history",
+  "signals.alerts",
+  "performance.reports",
+  "models.analytics",
+  "backtesting",
+  "strategies.custom",
+  "research.advanced_tools",
+] as const;
+export type FeatureKey = (typeof FEATURE_KEYS)[number];
+
+const FEATURE_MIN_TIER: Record<FeatureKey, MembershipTier> = {
+  "charts.basic": "free",
+  "analytics.advanced": "pro",
+  "signals.history": "pro",
+  "signals.alerts": "pro",
+  "performance.reports": "pro",
+  "models.analytics": "premium",
+  backtesting: "premium",
+  "strategies.custom": "premium",
+  "research.advanced_tools": "premium",
+};
+
+export const PLAN_FEATURES: Record<MembershipTier, Record<FeatureKey, boolean>> = Object.fromEntries(
+  (Object.keys(TIER_RANK) as MembershipTier[]).map((tier) => [
+    tier,
+    Object.fromEntries(FEATURE_KEYS.map((k) => [k, TIER_RANK[tier] >= TIER_RANK[FEATURE_MIN_TIER[k]]])),
+  ]),
+) as Record<MembershipTier, Record<FeatureKey, boolean>>;
+
+export function tierHasFeature(tier: MembershipTier, feature: FeatureKey): boolean {
+  return PLAN_FEATURES[tier][feature];
+}
+
+export function minimumTierFor(feature: FeatureKey): MembershipTier {
+  return FEATURE_MIN_TIER[feature];
+}
+
 export interface PaidPlan {
-  id: "premium_monthly" | "premium_yearly" | "founding_yearly";
+  id: "pro_monthly" | "pro_yearly" | "premium_monthly" | "premium_yearly";
   tier: Exclude<MembershipTier, "free">;
   name: string;
   interval: BillingInterval;
@@ -74,13 +136,35 @@ export interface PaidPlan {
 
 export const PAID_PLANS: readonly PaidPlan[] = [
   {
+    id: "pro_monthly",
+    tier: "pro",
+    name: "Pro — Monthly",
+    interval: "month",
+    priceCents: 900,
+    currency: "USD",
+    description: "All research scores, portfolios, alerts, and exports.",
+    providerPriceIds: {},
+    isActive: true,
+  },
+  {
+    id: "pro_yearly",
+    tier: "pro",
+    name: "Pro — Yearly",
+    interval: "year",
+    priceCents: 7900,
+    currency: "USD",
+    description: "Everything in Pro, billed annually.",
+    providerPriceIds: {},
+    isActive: true,
+  },
+  {
     id: "premium_monthly",
     tier: "premium",
     name: "Premium — Monthly",
     interval: "month",
     priceCents: 1900,
     currency: "USD",
-    description: "Full research access, portfolios, alerts, and exports.",
+    description: "Everything in Pro with higher limits and all Premium research.",
     providerPriceIds: {},
     isActive: true,
   },
@@ -95,21 +179,13 @@ export const PAID_PLANS: readonly PaidPlan[] = [
     providerPriceIds: {},
     isActive: true,
   },
-  {
-    id: "founding_yearly",
-    tier: "founding",
-    name: "Founding Member — Yearly",
-    interval: "year",
-    priceCents: 30000,
-    currency: "USD",
-    description:
-      "All Premium features with higher limits, additional research features, and priority support.",
-    providerPriceIds: {},
-    isActive: true,
-  },
 ] as const;
 
+/** Plans that existed before and must stay inactive (sync-plans deactivates them). */
+export const RETIRED_PLAN_IDS = ["founding_yearly"] as const;
+
 export type PaidPlanId = PaidPlan["id"];
+export const PAID_PLAN_IDS = PAID_PLANS.map((p) => p.id) as [PaidPlanId, ...PaidPlanId[]];
 
 export function getPaidPlan(id: string): PaidPlan | undefined {
   return PAID_PLANS.find((p) => p.id === id && p.isActive);
@@ -119,20 +195,18 @@ export function getPaidPlan(id: string): PaidPlan | undefined {
 export const FEATURE_MATRIX: ReadonlyArray<{
   feature: string;
   free: string | boolean;
+  pro: string | boolean;
   premium: string | boolean;
-  founding: string | boolean;
 }> = [
-  { feature: "Public market pages and charts", free: true, premium: true, founding: true },
-  { feature: "Research articles", free: "Free articles", premium: "All Premium articles", founding: "All articles" },
-  { feature: "Research scores", free: "Sample coins", premium: "All covered coins", founding: "All covered coins" },
-  { feature: "Score history and breakdown", free: false, premium: true, founding: true },
-  { feature: "Watchlists", free: `${TIER_LIMITS.free.watchlists} list, ${TIER_LIMITS.free.watchlistItems} coins`, premium: `${TIER_LIMITS.premium.watchlists} lists`, founding: `${TIER_LIMITS.founding.watchlists} lists` },
-  { feature: "Portfolios", free: false, premium: `Up to ${TIER_LIMITS.premium.portfolios}`, founding: `Up to ${TIER_LIMITS.founding.portfolios}` },
-  { feature: "Transaction CSV export", free: false, premium: true, founding: true },
-  { feature: "Configurable alerts", free: false, premium: `Up to ${TIER_LIMITS.premium.alerts}`, founding: `Up to ${TIER_LIMITS.founding.alerts}` },
-  { feature: "AI research assistant (daily requests)", free: String(TIER_LIMITS.free.aiRequestsPerDay), premium: String(TIER_LIMITS.premium.aiRequestsPerDay), founding: String(TIER_LIMITS.founding.aiRequestsPerDay) },
-  { feature: "Priority support", free: false, premium: false, founding: true },
-  { feature: "Research Q&A events (when scheduled)", free: false, premium: false, founding: true },
+  { feature: "Public market pages and charts", free: true, pro: true, premium: true },
+  { feature: "Research articles", free: "Free articles", pro: "Free and Pro articles", premium: "All articles" },
+  { feature: "Research scores", free: "Sample coins", pro: "All covered coins", premium: "All covered coins" },
+  { feature: "Score history and breakdown", free: false, pro: true, premium: true },
+  { feature: "Watchlists", free: `${TIER_LIMITS.free.watchlists} list, ${TIER_LIMITS.free.watchlistItems} coins`, pro: `${TIER_LIMITS.pro.watchlists} lists`, premium: `${TIER_LIMITS.premium.watchlists} lists` },
+  { feature: "Portfolios", free: false, pro: `Up to ${TIER_LIMITS.pro.portfolios}`, premium: `Up to ${TIER_LIMITS.premium.portfolios}` },
+  { feature: "Transaction CSV export", free: false, pro: true, premium: true },
+  { feature: "Configurable alerts", free: false, pro: `Up to ${TIER_LIMITS.pro.alerts}`, premium: `Up to ${TIER_LIMITS.premium.alerts}` },
+  { feature: "AI research assistant (daily requests)", free: String(TIER_LIMITS.free.aiRequestsPerDay), pro: String(TIER_LIMITS.pro.aiRequestsPerDay), premium: String(TIER_LIMITS.premium.aiRequestsPerDay) },
 ];
 
 export function formatPrice(priceCents: number, currency = "USD"): string {

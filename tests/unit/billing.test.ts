@@ -49,7 +49,7 @@ describe("webhook signature verification", () => {
     const { body, signature } = sim.buildSignedEvent({ type: "subscription.activated", userId: USER, planId: "premium_monthly", providerSubscriptionId: "sub_1" });
     await expect(sim.parseWebhook(body, new Headers())).rejects.toBeInstanceOf(WebhookVerificationError);
     await expect(sim.parseWebhook(body, new Headers({ [DEV_SIGNATURE_HEADER]: "garbage" }))).rejects.toBeInstanceOf(WebhookVerificationError);
-    await expect(sim.parseWebhook(body.replace("premium_monthly", "founding_yearly"), new Headers({ [DEV_SIGNATURE_HEADER]: signature }))).rejects.toThrow(/mismatch/);
+    await expect(sim.parseWebhook(body.replace("premium_monthly", "pro_yearly"), new Headers({ [DEV_SIGNATURE_HEADER]: signature }))).rejects.toThrow(/mismatch/);
     const other = signDevPayload("b".repeat(40), body);
     await expect(sim.parseWebhook(body, new Headers({ [DEV_SIGNATURE_HEADER]: other }))).rejects.toThrow(/mismatch/);
   });
@@ -124,9 +124,10 @@ describe("resolveTier", () => {
     expect(resolveTier([], opts("2026-10-15T00:00:00Z"))).toBe("free");
     const subs = [
       { tier: "premium" as const, status: "active" as const, currentPeriodEnd: "2026-11-01T00:00:00Z", livemode: true },
-      { tier: "founding" as const, status: "active" as const, currentPeriodEnd: "2027-10-01T00:00:00Z", livemode: true },
+      { tier: "pro" as const, status: "active" as const, currentPeriodEnd: "2027-10-01T00:00:00Z", livemode: true },
     ];
-    expect(resolveTier(subs, opts("2026-10-15T00:00:00Z", true))).toBe("founding");
+    expect(resolveTier(subs, opts("2026-10-15T00:00:00Z", true))).toBe("premium");
+    expect(resolveTier([subs[1]!], opts("2026-10-15T00:00:00Z", true))).toBe("pro");
   });
 
   it("expired subscriptions grant free", () => {

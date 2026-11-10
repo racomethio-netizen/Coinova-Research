@@ -24,10 +24,10 @@ export function ScoreBadge({ score, status }: { score: number | null; status?: s
 }
 
 export function ScoreLocked({ compact = false }: { compact?: boolean }) {
-  if (compact) return <span className="text-xs text-faint">Premium</span>;
+  if (compact) return <span className="text-xs text-faint">Pro</span>;
   return (
     <div className="rounded-md border border-dashed border-line-strong px-4 py-6 text-center text-sm">
-      <p className="font-medium">Research score available with Premium</p>
+      <p className="font-medium">Research score available with Pro</p>
       <p className="mt-1 text-muted">Free members can view scores for a small set of sample coins.</p>
       <Link href="/pricing" className={buttonClass("primary", "sm", "mt-3")}>
         View plans

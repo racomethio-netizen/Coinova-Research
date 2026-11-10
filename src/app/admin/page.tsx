@@ -21,7 +21,7 @@ export default async function AdminOverviewPage() {
       <PageHeader title="Admin overview" description="Operational status, subscribers, and recent activity." />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card><CardBody><dl><Stat label="Registered users" value={fmtNumber(o.users)} /></dl></CardBody></Card>
-        <Card><CardBody><dl><Stat label="Live subscribers" value={fmtNumber(o.subscribers.live)} sub={`${o.subscribers.byTier.premium} premium · ${o.subscribers.byTier.founding} founding`} /></dl></CardBody></Card>
+        <Card><CardBody><dl><Stat label="Live subscribers" value={fmtNumber(o.subscribers.live)} sub={`${o.subscribers.byTier.pro} pro · ${o.subscribers.byTier.premium} premium`} /></dl></CardBody></Card>
         <Card><CardBody><dl><Stat label="Est. MRR (live)" value={formatPrice(o.mrrCents)} sub="Plan prices × live subscriptions; yearly ÷ 12" /></dl></CardBody></Card>
         <Card><CardBody><dl><Stat label="Past due / canceling" value={`${o.subscribers.pastDue} / ${o.subscribers.cancelingAtPeriodEnd}`} sub={o.subscribers.test ? `${o.subscribers.test} test-mode subscriptions excluded` : undefined} /></dl></CardBody></Card>
       </div>

@@ -22,7 +22,7 @@ function Pnl({ value, pct }: { value: number | null; pct?: number | null }) {
 
 export default async function PortfolioPage() {
   const viewer = await requireUserPage("/dashboard/portfolio");
-  const premium = hasTier(viewer, "premium");
+  const premium = hasTier(viewer, "pro");
   const overview = await getPortfolioOverview(viewer.supabase, viewer.user.id);
   const svc = getMarketService();
   const coinOptions = (await svc.getUniverseMarkets().catch(() => null))?.data.map((c) => ({ id: c.id, label: `${c.name} (${c.symbol})` })) ?? [];
@@ -44,8 +44,8 @@ export default async function PortfolioPage() {
       {overview.pricing ? <FreshnessBadge source={overview.pricing.source} fetchedAt={overview.pricing.fetchedAt} stale={overview.pricing.stale} /> : <Notice tone="warning">Current prices are unavailable; market values and unrealized P&amp;L cannot be shown.</Notice>}
 
       {!premium ? (
-        <Notice tone="accent" title="Portfolios are a Premium feature">
-          {portfolios.length > 0 ? "Your existing portfolios remain visible, but adding transactions requires an active Premium membership. " : null}
+        <Notice tone="accent" title="Portfolios require Pro or higher">
+          {portfolios.length > 0 ? "Your existing portfolios remain visible, but adding transactions requires an active Pro or Premium membership. " : null}
           <Link href="/pricing" className="text-accent underline">
             View plans
           </Link>
@@ -56,7 +56,7 @@ export default async function PortfolioPage() {
         premium ? (
           <EmptyState title="No portfolios yet" description="Create a portfolio, then record purchases, sales, and transfers." action={<NewPortfolioForm />} />
         ) : (
-          <EmptyState title="No portfolios" description="Upgrade to Premium to track portfolios with profit and loss." action={<ButtonLink href="/pricing">Upgrade</ButtonLink>} />
+          <EmptyState title="No portfolios" description="Upgrade to Pro to track portfolios with profit and loss." action={<ButtonLink href="/pricing">Upgrade</ButtonLink>} />
         )
       ) : null}
 

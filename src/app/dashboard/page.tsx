@@ -25,7 +25,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const totalValue = overview?.portfolios.reduce((s, p) => s + (p.summary ? Number(p.summary.totalMarketValue.toString()) : 0), 0) ?? 0;
   const watched = [...new Set(watchlists.flatMap((w) => w.coinIds))].slice(0, 8);
   const marketById = new Map((markets?.data ?? []).map((m) => [m.id, m]));
-  const premium = hasTier(viewer, "premium");
+  const premium = hasTier(viewer, "pro");
 
   return (
     <div className="space-y-6">
@@ -34,7 +34,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       {sp.error === "forbidden" ? <Notice tone="negative">You do not have access to that area.</Notice> : null}
       {!premium ? (
         <Notice tone="accent" title="You are on the Free plan">
-          Portfolios, alerts, full research scores, and premium articles are available with Premium.{" "}
+          Portfolios, alerts, and full research scores are available with Pro. Premium adds Premium research and higher limits.{" "}
           <Link href="/pricing" className="text-accent underline">
             Compare plans
           </Link>
@@ -111,7 +111,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </CardBody>
         </Card>
       </div>
-      {!premium ? <ButtonLink href="/pricing">Upgrade to Premium</ButtonLink> : null}
+      {!premium ? <ButtonLink href="/pricing">View plans</ButtonLink> : null}
     </div>
   );
 }
