@@ -11,6 +11,8 @@ export const dynamic = "force-dynamic";
 
 const LINKS = [
   { href: "/dashboard", label: "Overview" },
+  { href: "/dashboard/paper", label: "Paper trading" },
+  { href: "/dashboard/backtests", label: "Backtests" },
   { href: "/dashboard/portfolio", label: "Portfolio" },
   { href: "/dashboard/watchlist", label: "Watchlists" },
   { href: "/dashboard/alerts", label: "Alerts" },

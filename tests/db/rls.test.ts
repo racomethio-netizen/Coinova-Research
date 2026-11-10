@@ -1203,3 +1203,21 @@ describe("paper trading (NEXUS Phase 6)", () => {
     expect((await db.query("select 1 from public.paper_fills where account_id = $1", [acct])).rowCount).toBe(0);
   });
 });
+
+describe("market scanner view (NEXUS Phase 7)", () => {
+  it("shows indicator values to anyone but never decisions, reasons, or levels", async () => {
+    const pairId = (await db.query("select id from public.market_pairs where symbol = 'ETHUSDT'")).rows[0].id;
+    const sid = (await db.query("select id from public.strategies where key = 'trend_pullback' limit 1")).rows[0].id;
+    await db.query(
+      `insert into public.signal_evaluations (pair_id, timeframe, strategy_id, as_of, decision, reason_codes, features)
+       values ($1, '4h', $2, now() - interval '4 hours', 'BUY', '{htf_trend_up}', $3)`,
+      [pairId, sid, JSON.stringify({ close: "2000", ema20: "1990", ema50: "1950", ema200: "1800", rsi14: "48.2", macd_hist: "1.5", atr14: "30", volume_ratio: "1.2", htf: "1d", htf_ema50: "1900", htf_ema200: "1700", nearest_support: "1950", net_rr: "2.1" })],
+    );
+    const r = await as(db, { role: "anon" }, (q) => q("select * from public.market_scanner where pair_id = $1 and timeframe = '4h'", [pairId]));
+    expect(r.rowCount).toBe(1);
+    const row = r.rows[0];
+    expect(row).toMatchObject({ symbol: "ETHUSDT", rsi14: "48.2", ema200: "1800" });
+    for (const k of ["decision", "reason_codes", "features", "nearest_support", "net_rr", "strategy_id"]) expect(row).not.toHaveProperty(k);
+    expect(await as(db, { role: "anon" }, (q) => expectError(q("select decision from public.signal_evaluations")))).toMatch(/permission denied/);
+  });
+});

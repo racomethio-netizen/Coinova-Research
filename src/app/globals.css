@@ -5,23 +5,24 @@
  * Colors chosen for WCAG AA contrast on their backgrounds.
  */
 :root {
-  --bg: #0b0f14;
-  --bg-elevated: #111821;
-  --bg-subtle: #16202b;
-  --border: #233040;
-  --border-strong: #31435a;
-  --fg: #e6edf3;
-  --fg-muted: #9fb0c3;
-  --fg-subtle: #7a8ca1;
-  --accent: #4da3ff;
-  --accent-fg: #06121f;
-  --accent-soft: rgba(77, 163, 255, 0.12);
-  --positive: #3ccf91;
-  --negative: #ff6b6b;
+  /* Institutional navy (dark default). All text tokens meet WCAG AA on --bg and --bg-elevated. */
+  --bg: #07101e;
+  --bg-elevated: #0c1829;
+  --bg-subtle: #112137;
+  --border: #1c3050;
+  --border-strong: #2a4670;
+  --fg: #e8eef7;
+  --fg-muted: #a6b6cc;
+  --fg-subtle: #8195b1;
+  --accent: #5aaaff;
+  --accent-fg: #04101f;
+  --accent-soft: rgba(90, 170, 255, 0.13);
+  --positive: #3fd197;
+  --negative: #ff7070;
   --warning: #f2c14e;
   --warning-soft: rgba(242, 193, 78, 0.12);
-  --danger-soft: rgba(255, 107, 107, 0.12);
-  --positive-soft: rgba(60, 207, 145, 0.12);
+  --danger-soft: rgba(255, 112, 112, 0.12);
+  --positive-soft: rgba(63, 209, 151, 0.12);
   --focus: #8cc6ff;
   color-scheme: dark;
 }
