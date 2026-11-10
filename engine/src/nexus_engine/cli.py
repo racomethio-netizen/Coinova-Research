@@ -61,6 +61,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     ar.add_argument("--tf", required=True, choices=TIMEFRAMES)
     ar.add_argument("--from-month", required=True, help="YYYY-MM")
     ar.add_argument("--to-month", required=True, help="YYYY-MM")
+    ev = sub.add_parser("evaluate", help="evaluate the latest closed candle for one pair/timeframe")
+    ev.add_argument("--symbol", required=True)
+    ev.add_argument("--tf", required=True, choices=TIMEFRAMES)
+    sub.add_parser("resolve", help="resolve outcomes of open signals")
+    sub.add_parser("verify-chain", help="recompute the signal hash chain and report any tampering")
     sub.add_parser("worker", help="run the scheduler forever")
     sv = sub.add_parser("serve", help="run the FastAPI app (/health, /internal/*)")
     sv.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
@@ -88,6 +93,27 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         uvicorn.run(create_app(), host=args.host, port=args.port, log_config=None)
         return 0
+
+    if args.cmd in ("evaluate", "resolve", "verify-chain"):
+        from .signals.hashing import verify_chain
+        from .signals.ledger import load_chain
+        from .signals.service import SignalService
+
+        with connect(settings) as conn:
+            if args.cmd == "verify-chain":
+                problems = verify_chain(load_chain(conn))
+                for p in problems:
+                    print(p)
+                print("chain intact" if not problems else f"{len(problems)} problem(s)")
+                return 0 if not problems else 1
+            svc = SignalService(conn, settings)
+            if args.cmd == "resolve":
+                print(f"resolved {svc.resolve_open()}")
+                return 0
+            pairs = load_pairs(conn, load_source(conn, settings.market_source).id)
+            d = svc.evaluate(_pick(pairs, args.symbol)[0], args.tf)
+            print("already evaluated" if d is None else f"{d.decision} {', '.join(d.reasons)}")
+            return 0
 
     client = build_client(settings)
     with connect(settings) as conn:
@@ -118,6 +144,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     y, m = (y + 1, 1) if m == 12 else (y, m + 1)
             return 0
         if args.cmd == "worker":
+            from .signals.service import SignalService
             from .worker import Scheduler, run_forever
 
             scheduler = Scheduler(
@@ -125,6 +152,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 pairs=pairs,
                 close_delay=timedelta(seconds=settings.ingest_close_delay_s),
                 ticker_interval=timedelta(seconds=settings.ticker_interval_s),
+                signals=SignalService(conn, settings),
             )
             run_forever(scheduler, settings.worker_tick_s)
     return 0

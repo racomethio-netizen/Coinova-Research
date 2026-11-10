@@ -15,7 +15,7 @@ from decimal import Decimal
 
 import numpy as np
 
-from ..timeframes import tf_delta
+from ..timeframes import floor_to, tf_delta
 from . import indicators as ta
 from .levels import levels_at, nearest_above, nearest_below
 from .risk import CostModel, net_reward_risk, q_price, q_ratio
@@ -122,6 +122,8 @@ def evaluate(own: CandleSeries, htf: CandleSeries | None, as_of: datetime, p: Pa
         hs = htf.closed_by(as_of)
         if len(hs) < p.ema_slow + 10 or not hs.contiguous_tail(p.ema_slow + 10):
             return Decision("HOLD", as_of, ("htf_insufficient_history",), {})
+        if hs.open_times[-1] + tf_delta(htf_tf) != floor_to(as_of, htf_tf):
+            return Decision("HOLD", as_of, ("htf_stale",), {})
         t_e50, t_e200 = float(ta.ema(hs.close, p.ema_mid)[-1]), float(ta.ema(hs.close, p.ema_slow)[-1])
 
     features = {

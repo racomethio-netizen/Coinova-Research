@@ -38,6 +38,18 @@ class FakeIngestor:
         self.calls.append(("heartbeat", component))
 
 
+class FakeSignals:
+    def __init__(self, ing: FakeIngestor) -> None:
+        self.ing = ing
+
+    def evaluate(self, pair: Pair, tf: str, as_of: datetime | None = None) -> None:
+        self.ing.calls.append(("evaluate", pair.symbol, tf))
+
+    def resolve_open(self) -> int:
+        self.ing.calls.append(("resolve",))
+        return 0
+
+
 PAIRS = [Pair(1, "BTCUSDT", ("15m", "1h")), Pair(2, "ETHUSDT", ("15m",))]
 
 
@@ -84,3 +96,17 @@ def test_block_stops_all_source_traffic_but_keeps_heartbeats() -> None:
     assert s.blocked == "HTTP 451 from source"
     assert len([c for c in ing.calls if c[0] != "heartbeat"]) == n
     assert ing.calls[-1] == ("heartbeat", "marketdata.worker")
+
+
+def test_evaluates_only_after_all_due_timeframes_are_ingested_and_skips_failures() -> None:
+    ing = FakeIngestor({"BTCUSDT:1h": SourceUnavailableError("down")})
+    s = sched(ing)
+    s.signals = FakeSignals(ing)
+    s.tick(datetime(2026, 1, 1, 1, 0, 30, tzinfo=UTC))
+    seq = [c for c in ing.calls if c[0] in ("ingest", "evaluate", "resolve")]
+    last_ingest = max(i for i, c in enumerate(seq) if c[0] == "ingest")
+    first_eval = min(i for i, c in enumerate(seq) if c[0] == "evaluate")
+    assert last_ingest < first_eval
+    assert ("evaluate", "BTCUSDT", "1h") not in seq  # its ingestion failed
+    assert ("evaluate", "BTCUSDT", "15m") in seq and ("evaluate", "ETHUSDT", "15m") in seq
+    assert seq[-1] == ("resolve",)

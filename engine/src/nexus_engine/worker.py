@@ -13,6 +13,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from functools import partial
+from typing import Protocol
 
 from .logs import log
 from .marketdata.ingest import Ingestor, Pair
@@ -24,12 +25,19 @@ logger = logging.getLogger("nexus.worker")
 GAP_RETRY_INTERVAL = timedelta(minutes=10)
 
 
+class SignalRunner(Protocol):
+    def evaluate(self, pair: Pair, tf: str, as_of: datetime | None = None) -> object: ...
+
+    def resolve_open(self) -> int: ...
+
+
 @dataclass
 class Scheduler:
     ingestor: Ingestor
     pairs: list[Pair]
     close_delay: timedelta
     ticker_interval: timedelta
+    signals: SignalRunner | None = None
     last_bucket: dict[tuple[int, str], datetime] = field(default_factory=dict)
     last_ticker: datetime | None = None
     last_gap_retry: datetime | None = None
@@ -48,16 +56,31 @@ class Scheduler:
         return due
 
     def tick(self, now: datetime) -> dict[str, int]:
-        stats = {"ingested": 0, "prices": 0, "gaps_filled": 0, "errors": 0}
+        stats = {"ingested": 0, "evaluated": 0, "resolved": 0, "prices": 0, "gaps_filled": 0, "errors": 0}
         if self.blocked:
             self._heartbeat(now, stats)
             return stats
+        ingested: list[tuple[Pair, str]] = []
         for pair, tf in self.due_ingestions(now):
             if self.blocked:
                 break
             if self._guard(partial(self.ingestor.ingest_incremental, pair, tf), stats, pair=pair.symbol, timeframe=tf):
                 self.last_bucket[(pair.id, tf)] = floor_to(now, tf)
                 stats["ingested"] += 1
+                ingested.append((pair, tf))
+        if self.signals is not None:
+            # Evaluate only after every due timeframe is ingested, so higher-timeframe data is current.
+            for pair, tf in ingested:
+                if self._guard(partial(self.signals.evaluate, pair, tf, floor_to(now, tf)), stats, pair=pair.symbol, timeframe=tf, task="evaluate"):
+                    stats["evaluated"] += 1
+            resolved = [0]
+
+            def resolve(out: list[int] = resolved) -> None:
+                assert self.signals is not None
+                out[0] = self.signals.resolve_open()
+
+            if self._guard(resolve, stats, task="resolve"):
+                stats["resolved"] += resolved[0]
         if self.last_ticker is None or now - self.last_ticker >= self.ticker_interval:
             for pair in self.pairs:
                 if self.blocked:
