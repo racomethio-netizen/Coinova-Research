@@ -73,7 +73,7 @@ def test_indicators_are_causal(seed: int, k: int) -> None:
 
 
 def test_swing_points_are_known_only_after_confirmation() -> None:
-    _, h, lo, c, _ = ohlcv(200, 7)
+    _, h, lo, _, _ = ohlcv(200, 7)
     highs, lows = swing_points(h, lo, 3)
     assert highs and lows
     for t in (50, 100, 150):

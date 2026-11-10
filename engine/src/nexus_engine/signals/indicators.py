@@ -76,7 +76,7 @@ def rsi(close: object, n: int = 14) -> Arr:
         out = 100.0 - 100.0 / (1.0 + rs)
     out = np.where((avg_l == 0) & ~np.isnan(avg_g), 100.0, out)
     out = np.where((avg_l == 0) & (avg_g == 0), 50.0, out)
-    out[: n] = np.nan
+    out[:n] = np.nan
     return out
 
 
