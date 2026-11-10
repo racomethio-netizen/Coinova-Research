@@ -157,4 +157,20 @@ describe("alert evaluation and delivery", () => {
     const cleanup = await runNamedJob("cleanup");
     expect(["succeeded", "skipped"]).toContain(cleanup.status);
   });
+
+  it("check-health alerts admins through PostgREST and delivers in the same run", async () => {
+    const admin = await newUser(db);
+    await db.query("insert into public.user_roles (user_id, role) values ($1, 'admin') on conflict do nothing", [admin]);
+    await db.query("delete from public.engine_heartbeats where component = 'marketdata.worker'"); // => critical engine.heartbeat
+    const r = await runNamedJob("check-health");
+    if (r.status !== "succeeded") throw new Error(`check-health ${r.status}`);
+    const summary = r.summary as { issues: number; critical: number; notified: number };
+    expect(summary.critical).toBeGreaterThan(0);
+    const { rows } = await db.query(
+      "select d.channel, d.status from public.notifications n join public.notification_deliveries d on d.notification_id = n.id where n.user_id = $1 and n.data->>'check' = 'engine.heartbeat' order by d.channel",
+      [admin],
+    );
+    expect(rows.map((x) => x.channel)).toEqual(["email", "in_app"]);
+    expect(rows[0].status).not.toBe("pending"); // delivered (or skipped without an email provider) by the same run
+  });
 });

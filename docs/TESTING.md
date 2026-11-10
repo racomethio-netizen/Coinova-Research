@@ -47,7 +47,9 @@ sign-up and sign-in are verified manually (below).
 `.github/workflows/ci.yml` runs on every push and pull request: typecheck, lint,
 unit, production `npm audit`; DB/RLS and integration tests against a
 `postgres:16` service with PostgREST downloaded in the job; build + Playwright e2e;
-and a gitleaks secret scan.
+an engine job (ruff, mypy, pytest with DB tests that must not skip, a pg_dump →
+restore drill, pip-audit, Docker build); a mobile job; and a gitleaks secret scan.
+It also runs weekly, so new advisories fail CI without a commit.
 
 ## Manual checks (need a real Supabase project)
 
@@ -69,6 +71,14 @@ and a gitleaks secret scan.
 
 `MarketDataService` makes at most one bulk provider call per cache window per
 instance. The `markets` and `history` APIs serve from cache, and integration
-tests confirm jobs are idempotent. Before launch, load-test `/api/markets` and
-`/markets` (for example `npx autocannon -c 50 -d 30 http://localhost:3000/api/markets`)
-on the target instance size, and check slow queries in Supabase's query performance view.
+tests confirm jobs are idempotent. `scripts/load-test.ts` (no dependencies) runs
+GET load with pass/fail thresholds; it refuses non-local targets without `--allow-remote`.
+Commands, the local baseline and the pre-launch run on the target instance size are in
+docs/nexus/RUNBOOKS.md "Load test". Also check slow queries in Supabase's query performance view.
+
+## Backups and restore drill
+
+`scripts/restore-drill.sh <source-url>` dumps a database, restores it into a scratch
+database on the local test cluster, compares row counts and verifies the signal hash chain
+(see docs/nexus/RUNBOOKS.md). Engine tests cover the ledger export, tamper detection,
+continuity between exports and the restore round trip (`engine/tests/test_ledger_export_db.py`).

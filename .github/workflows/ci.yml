@@ -7,6 +7,9 @@ on:
   push:
     branches: ["**"]
   pull_request:
+  # Weekly run so newly published advisories (npm audit, pip-audit) fail CI even without commits.
+  schedule:
+    - cron: "17 5 * * 1"
 
 permissions:
   contents: read
@@ -117,6 +120,14 @@ jobs:
       - name: Tests (unit + DB; DB tests must not be skipped)
         shell: bash  # explicit shell => -eo pipefail, so a pytest failure is not masked by tee
         run: uv run pytest -rs -p no:warnings | tee pytest.log && ! grep -q "SKIPPED" pytest.log
+      - name: Restore drill (pg_dump -> scratch DB -> row counts + hash chain)
+        shell: bash
+        working-directory: .
+        run: |
+          command -v pg_dump >/dev/null || (sudo apt-get update -q && sudo apt-get install -y -q postgresql-client)
+          pg_dump --version
+          (cd engine && uv run pytest -q -p no:warnings tests/test_ledger_export_db.py::test_export_verify_and_restore)
+          scripts/restore-drill.sh "${TEST_DATABASE_URL%/*}/nexus_engine_test"
       - run: uv run pip-audit --skip-editable
       - run: docker build -t nexus-engine:ci .
 

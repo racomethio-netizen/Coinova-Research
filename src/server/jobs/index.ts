@@ -51,6 +51,20 @@ async function cleanup({ db }: JobContext) {
   return data as Record<string, unknown>;
 }
 
+/**
+ * Watchdog (docs/nexus/RUNBOOKS.md): turns `ops_health()` problems into admin alerts, then
+ * delivers them itself so email still goes out when the engine (which normally triggers
+ * `deliver-notifications`) is the thing that is down. Runs on its own Render cron.
+ */
+async function checkHealth(ctx: JobContext) {
+  const { data, error } = await ctx.db.rpc("raise_ops_alerts");
+  if (error) throw new Error(error.message);
+  const summary = data as { issues: number; critical: number; notified: number };
+  if (summary.critical > 0) ctx.log.error("ops_health_critical", { issues: summary.issues, critical: summary.critical });
+  const delivered = summary.notified > 0 ? await deliverNotifications(ctx) : null;
+  return { ...summary, delivered };
+}
+
 export const JOBS: Record<string, JobDef> = {
   "refresh-markets": { bucketMinutes: 5, lockSeconds: 240, run: refreshMarkets },
   "evaluate-alerts": { bucketMinutes: 5, lockSeconds: 240, run: evaluateAlerts },
@@ -60,6 +74,7 @@ export const JOBS: Record<string, JobDef> = {
   "refresh-fundamentals": { bucketMinutes: 60, lockSeconds: 1800, run: (c) => refreshFundamentals(c) },
   cleanup: { bucketMinutes: 1440, lockSeconds: 600, run: cleanup },
   "sync-plans": { bucketMinutes: 1, lockSeconds: 60, run: syncPlans },
+  "check-health": { bucketMinutes: 5, lockSeconds: 110, run: checkHealth },
 };
 
 export type JobName = keyof typeof JOBS;

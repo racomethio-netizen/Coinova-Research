@@ -1341,3 +1341,92 @@ describe("entitlement matrix enforced in SQL (NEXUS Phase 9)", () => {
     });
   });
 });
+
+describe("operations health and admin alerts (NEXUS Phase 10)", () => {
+  const NOW = "2030-01-01T12:30:00Z";
+  const keys = async (now = NOW) =>
+    (await as(db, { role: "service_role" }, (q) => q("select check_key, severity from public.ops_health($1)", [now]))).rows.map((r) => `${r.check_key}:${r.severity}`);
+  const beat = (component: string, ago: string, details: object) =>
+    db.query(
+      `insert into public.engine_heartbeats (component, last_seen, details) values ($1, $2::timestamptz - $3::interval, $4)
+       on conflict (component) do update set last_seen = excluded.last_seen, details = excluded.details`,
+      [component, NOW, ago, JSON.stringify(details)],
+    );
+
+  beforeAll(async () => {
+    await db.query("delete from public.engine_heartbeats");
+  });
+
+  it("is readable by the service role and staff only", async () => {
+    expect(await as(db, { role: "anon" }, (q) => expectError(q("select * from public.ops_health()")))).toMatch(/permission denied|forbidden/);
+    expect(await as(db, { role: "authenticated", userId: carol }, (q) => expectError(q("select * from public.ops_health()")))).toMatch(/forbidden/);
+    const staff = await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => q("select count(*)::int n from public.ops_health()"));
+    expect(staff.rows[0].n).toBeGreaterThan(0);
+    expect(await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => expectError(q("select public.raise_ops_alerts()")))).toMatch(/permission denied/);
+  });
+
+  it("reports a missing or stale engine, a blocked source, cron failures and ledger problems", async () => {
+    let k = await keys();
+    expect(k).toEqual(expect.arrayContaining(["engine.heartbeat:critical", "webcron.heartbeat:warning", "ledger.export:warning"]));
+    expect(k.some((x) => x.startsWith("marketdata.stale:"))).toBe(true); // no candles in 2030
+
+    await beat("marketdata.worker", "10 seconds", { blocked: null });
+    await beat("web.cron", "10 seconds", { entries: { markets: { consecutive_failures: 0 }, hourly: { consecutive_failures: 3, last_status: "failed:compute-scores:500" } } });
+    await beat("ledger.export", "2 hours", { intact: true });
+    k = await keys();
+    expect(k).not.toContain("engine.heartbeat:critical");
+    expect(k).not.toContain("webcron.heartbeat:warning");
+    expect(k.filter((x) => x.startsWith("ledger."))).toEqual([]);
+    expect(k).toContain("webcron.failing:warning");
+
+    await beat("marketdata.worker", "4 minutes", { blocked: "HTTP 451" });
+    await beat("ledger.export", "27 hours", { intact: false });
+    k = await keys();
+    expect(k).toEqual(expect.arrayContaining(["engine.heartbeat:critical", "marketdata.blocked:critical", "ledger.export:warning", "ledger.integrity:critical"]));
+  });
+
+  it("flags a high background-job failure rate in the last hour", async () => {
+    for (let i = 0; i < 3; i++) {
+      await db.query(
+        "insert into public.background_jobs (job_name, idempotency_key, status, started_at, locked_until) values ('compute-scores', $1, 'failed', $2::timestamptz - interval '10 minutes', $2)",
+        [`ops-test-${i}-${randomUUID()}`, NOW],
+      );
+    }
+    expect(await keys()).toContain("jobs.failing:warning");
+    expect(await keys("2030-01-01T15:00:00Z")).not.toContain("jobs.failing:warning");
+  });
+
+  it("alerts each admin once per check and hour, by in-app and email", async () => {
+    // Committed (not the rolling-back `as` helper), so the hourly dedupe sees earlier alerts.
+    const raise = async (now: string) => {
+      await db.query("begin");
+      try {
+        await db.query("set local role service_role");
+        await db.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
+        const r = (await db.query("select public.raise_ops_alerts($1) r", [now])).rows[0].r;
+        await db.query("commit");
+        return r;
+      } catch (e) {
+        await db.query("rollback");
+        throw e;
+      }
+    };
+    const first = await raise(NOW);
+    expect(first.issues).toBeGreaterThan(0);
+    expect(first.critical).toBeGreaterThan(0);
+    const admins = (await db.query("select count(distinct user_id)::int n from public.user_roles where role = 'admin'")).rows[0].n;
+    expect(first.notified).toBe(first.issues * admins);
+    expect(new Set(await keys()).size).toBe((await keys()).length); // one row per check
+    expect((await raise(NOW)).notified).toBe(0); // same check, same hour: deduplicated
+    expect((await raise("2030-01-01T13:05:00Z")).notified).toBeGreaterThan(0);
+
+    const mine = await db.query(
+      "select n.title, array_agg(d.channel order by d.channel) channels from public.notifications n join public.notification_deliveries d on d.notification_id = n.id where n.user_id = $1 and n.data->>'check' = 'ledger.integrity' group by n.id, n.title",
+      [admin],
+    );
+    expect(mine.rows[0].title).toBe("[CRITICAL] Operations: ledger.integrity");
+    expect(mine.rows[0].channels).toEqual(["email", "in_app"]);
+    const others = await db.query("select count(*)::int n from public.notifications where user_id = $1 and kind = 'system' and data ? 'check'", [carol]);
+    expect(others.rows[0].n).toBe(0);
+  });
+});

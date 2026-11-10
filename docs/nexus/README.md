@@ -18,6 +18,9 @@ the target system and how we get there.
 | [MARKET_DATA_SOURCES.md](MARKET_DATA_SOURCES.md) | Terms and availability review of candidate data sources (decision D5) |
 | [MOBILE.md](MOBILE.md) | Mobile app architecture, decisions (D7), store-policy checklist (G-7), building |
 | [COMPLIANCE.md](COMPLIANCE.md) | Legal gates, kill switches, and the claims policy (no guaranteed accuracy, no fabricated stats) |
+| [SECURITY_REVIEW.md](SECURITY_REVIEW.md) | Phase 10 review of every risk in SECURITY_RISKS.md, with evidence and open items |
+| [RUNBOOKS.md](RUNBOOKS.md) | Alerts and what to do, kill switches, backups and restore drill, secret rotation, load test |
+| [GO_LIVE.md](GO_LIVE.md) | Staged go-live checklist covering every gate (all steps need owner approval) |
 
 ## Status
 
@@ -32,7 +35,7 @@ the target system and how we get there.
 | 7. Web dashboard | ✅ Done (the brand name waits on D2) |
 | 8. Mobile application | ✅ Done (no store release yet; see MOBILE.md) |
 | 9. Subscription architecture | 🟡 Entitlements enforced and tested. The payment provider adapter waits on D9 |
-| 10. Testing and deployment | ⬜ Not started. See IMPLEMENTATION_PLAN.md |
+| 10. Testing and deployment | 🟡 Built and tested locally and in CI. Staging and production need owner approval (GO_LIVE.md) |
 
 No NEXUS feature is described as implemented unless the code exists and its tests pass.
 The capabilities CryptoScope already has are listed, with their verification

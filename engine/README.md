@@ -19,4 +19,11 @@ uv run nexus-engine check      # validate configuration
 uv run nexus-engine ingest     # one incremental ingestion pass
 uv run nexus-engine worker     # long-running scheduler
 uv run nexus-engine serve      # FastAPI: /health and token-protected /internal/*
+uv run nexus-engine ledger-export --out DIR          # JSONL + manifest (SHA-256, chain head)
+uv run nexus-engine ledger-verify DIR [--previous M]  # files, hashes, chain, continuity
+uv run nexus-engine ledger-restore-drill DIR          # round trip through temp tables
 ```
+
+The worker also runs the nightly ledger export (`LEDGER_EXPORT_DIR`, `LEDGER_EXPORT_HOUR_UTC`,
+`LEDGER_EXPORT_KEEP`) and calls the web app's cron endpoints (`WEB_CRON_URL` + `CRON_SECRET`),
+each schedule entry in its own thread. Operations: `docs/nexus/RUNBOOKS.md`.

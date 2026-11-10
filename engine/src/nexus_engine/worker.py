@@ -11,13 +11,14 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from functools import partial
 from typing import Protocol
 
 from .logs import log
 from .marketdata.ingest import Ingestor, Pair
 from .marketdata.types import MarketDataError, SourceBlockedError
+from .ops.webcron import WebCron
 from .timeframes import floor_to
 
 logger = logging.getLogger("nexus.worker")
@@ -40,6 +41,10 @@ class Scheduler:
     signals: SignalRunner | None = None
     jobs: Callable[[], int] | None = None  # e.g. one queued backtest per tick
     paper: Callable[[], object] | None = None  # paper-trading fills and protections, every tick
+    nightly: Callable[[], object] | None = None  # ledger export, once per UTC day at/after nightly_hour
+    nightly_hour: int = 2
+    webcron: WebCron | None = None  # web app cron endpoints, each entry in its own thread
+    last_nightly: date | None = None
     last_bucket: dict[tuple[int, str], datetime] = field(default_factory=dict)
     last_ticker: datetime | None = None
     last_gap_retry: datetime | None = None
@@ -59,6 +64,13 @@ class Scheduler:
 
     def tick(self, now: datetime) -> dict[str, int]:
         stats = {"ingested": 0, "evaluated": 0, "resolved": 0, "prices": 0, "gaps_filled": 0, "errors": 0}
+        if self.webcron is not None:
+            self._guard(partial(self.webcron.tick, now), stats, task="webcron")
+        if self.nightly is not None and now.hour >= self.nightly_hour and self.last_nightly != now.date():
+            # Independent of the market source, so it also runs while ingestion is blocked.
+            # Attempted once per day; a failure shows up as a stale `ledger.export` heartbeat.
+            self.last_nightly = now.date()
+            self._guard(self.nightly, stats, task="nightly")
         if self.blocked:
             self._heartbeat(now, stats)
             return stats
@@ -139,6 +151,8 @@ class Scheduler:
 
     def _heartbeat(self, now: datetime, stats: dict[str, int]) -> None:
         try:
+            if self.webcron is not None:
+                self.ingestor.heartbeat("web.cron", {"last_tick": now.isoformat(), "entries": self.webcron.status()})
             self.ingestor.heartbeat(
                 "marketdata.worker",
                 {"source": self.ingestor.source.key, "blocked": self.blocked, "last_tick": now.isoformat(), **stats},

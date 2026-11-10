@@ -163,7 +163,14 @@ quotas per tier. Pricing driven by `plans.ts` and gates. Payment provider adapte
 (signature-verified webhooks only, existing rules). Mobile purchase approach per D7.
 Tests: entitlement matrix tests (every feature × tier, at API and RLS level) and webhook tests.
 
-## Phase 10: Testing and deployment
+## Phase 10: Testing and deployment 🟡
+_Session 2: everything that can be built and verified without deploying is done:
+nightly ledger export + verification + restore drill (also in CI), engine-driven web cron
+(Render crons consolidated) with an independent watchdog, ops health checks with admin
+alerts, load-test script and local baseline, dependency audit (+ Dependabot for the engine
+and its image, weekly CI), security review (SECURITY_REVIEW.md), runbooks and a staged
+go-live checklist (RUNBOOKS.md, GO_LIVE.md). **Not done (owner approval needed)**: staging
+on Render/Supabase, the load test on the target instance, backups/PITR, off-site export storage._
 Complete CI (integration, e2e, engine, mobile). Security review against
 SECURITY_RISKS.md. Dependency audit. Load test on the target instance size.
 Backups + nightly ledger export + restore drill. Staging on Render (web + engine),

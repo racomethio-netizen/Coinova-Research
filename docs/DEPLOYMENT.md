@@ -39,24 +39,31 @@ for ingestion, and optionally `nexus-engine serve` for `/health`. Before the fir
    `DATABASE_URL` to that role through the Supabase pooler. Never use the service-role key.
 2. Record the market-data terms review (gate G-4, docs/nexus/MARKET_DATA_SOURCES.md).
    **Production ingestion refuses** sources without `terms_reviewed_at`.
-3. Environment: `APP_ENV`, `DATABASE_URL`, optionally `ENGINE_INTERNAL_TOKEN` (32+ chars),
-   plus the same gate values as the web app (`SIGNALS_VISIBILITY=staff`,
-   `PAID_SIGNALS_ENABLED=false`, `LIVE_EXECUTION_ENABLED=false`).
+3. Environment: `APP_ENV`, `DATABASE_URL`, `WEB_CRON_URL` (the web service URL, https) and
+   `CRON_SECRET` (same value as the web service), `LEDGER_EXPORT_DIR` (a persistent disk),
+   optionally `ENGINE_INTERNAL_TOKEN` (32+ chars), plus the same gate values as the web app
+   (`SIGNALS_VISIBILITY=staff`, `PAID_SIGNALS_ENABLED=false`, `LIVE_EXECUTION_ENABLED=false`).
+   `render.yaml` declares it as a background **worker** (no public port).
 4. Seed history: `nexus-engine archive-backfill --symbol BTCUSDT --tf 1h --from-month 2023-01 --to-month 2026-10`
    (repeat per pair and timeframe). Then `nexus-engine ingest` once, then start the worker.
 5. Pick a hosting region where the market-data host does not return HTTP 451.
 
 ## 3. Scheduled jobs
 
-Jobs run inside the web service and are triggered by authenticated HTTP calls,
-so cron services need only `APP_URL` and `CRON_SECRET`.
+Jobs run inside the web service and are triggered by authenticated HTTP calls.
+Since Phase 10 the **engine worker** makes these calls on the schedule below
+(`engine/src/nexus_engine/ops/webcron.py`), replacing four Render cron services. Only the
+watchdog stays a Render cron (`nexus-watchdog`, every 5 min → `check-health`), on purpose:
+it must keep running when the engine is down. If the engine cannot run yet (before D5),
+the same `curl` calls can be scheduled as Render cron services (RUNBOOKS.md "Running a web job by hand").
 
 | Job | Schedule | Purpose |
 |---|---|---|
 | `refresh-markets` then `evaluate-alerts` | every 5 min | snapshots and alert evaluation |
 | `deliver-notifications` | every minute | email/Telegram delivery with retries |
 | `refresh-history`, `refresh-fundamentals`, `compute-scores` | hourly | rotating history/fundamentals batches, then scores |
-| `cleanup` | daily | retention policy |
+| `cleanup` | daily (03:23 UTC) | retention policy |
+| `check-health` | every 5 min (watchdog cron) | alerts admins about stale heartbeats, ingestion, failing jobs, ledger exports |
 | `sync-plans` | after changing `src/config/plans.ts` | mirror limits into the DB |
 
 Each job is idempotent per time window (`background_jobs.idempotency_key`), so
@@ -93,7 +100,9 @@ overlapping or retried triggers are safe. Monitor them in `/admin`.
 - [ ] `require_livemode_subscriptions = true`; `BILLING_PROVIDER` is not `dev_simulator`
 - [ ] Supabase Auth redirect URLs, email confirmation, and custom SMTP are configured
 - [ ] Admin granted through the CLI only; a second test account cannot reach `/admin`
-- [ ] Cron jobs running; recent `succeeded` runs visible in `/admin`
+- [ ] Cron jobs running; recent `succeeded` runs visible in `/admin`; `/admin/health` shows **All checks pass**
+- [ ] Nightly ledger export present and verified; off-site copy in place (docs/nexus/RUNBOOKS.md)
+- [ ] docs/nexus/GO_LIVE.md completed for the stage being launched
 - [ ] Legal: terms, privacy policy, risk disclosures, refund policy, and the operator entity in `src/config/site.ts`
 - [ ] Prices in `src/config/plans.ts` reviewed; provider price IDs configured
 - [ ] Backups/PITR enabled on Supabase; restore procedure tested on staging
@@ -107,4 +116,4 @@ overlapping or retried triggers are safe. Monitor them in `/admin`.
   reverts the change, test it on staging, then apply. For data loss, use Supabase
   point-in-time recovery (plan-dependent). Never reset production.
 - **Feature-level:** toggle `feature_flags` in `/admin` (AI, Telegram, signups,
-  maintenance banner), or pause cron services.
+  maintenance banner), or pause cron services (or suspend the `nexus-engine` worker, which runs the web jobs).

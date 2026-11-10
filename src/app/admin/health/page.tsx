@@ -10,7 +10,8 @@ export default async function AdminHealthPage() {
   const viewer = await requireStaffPage();
   const sb = viewer.supabase;
   const pairs = await listPairs(sb);
-  const [beats, gaps, runs, experiments, queue] = await Promise.all([
+  const [checks, beats, gaps, runs, experiments, queue] = await Promise.all([
+    sb.rpc("ops_health"),
     sb.from("engine_heartbeats").select("*").order("component"),
     sb.from("candle_gaps").select("pair_id, timeframe, gap_start, gap_end, status, attempts").neq("status", "backfilled").order("gap_start", { ascending: false }).limit(20),
     sb.from("ingest_runs").select("id, kind, status, pair_id, timeframe, candles_upserted, candles_rejected, revisions_detected, started_at").order("started_at", { ascending: false }).limit(20),
@@ -33,6 +34,24 @@ export default async function AdminHealthPage() {
         <Badge tone="accent">SIGNALS_VISIBILITY={gates.signalsVisibility}</Badge><Badge>PAID_SIGNALS_ENABLED={String(gates.paidSignalsEnabled)}</Badge><Badge tone="positive">LIVE_EXECUTION_ENABLED=false</Badge>
         <Badge>Backtests queued/running: {queue.data?.length ?? 0}</Badge>
       </CardBody></Card>
+      <Card>
+        <CardHeader title="Operations checks" description="The same checks the watchdog runs every 5 minutes; admins get an alert per check and hour. Steps for each are in docs/nexus/RUNBOOKS.md." />
+        <CardBody>
+          {checks.error ? (
+            <p className="text-sm text-negative">Checks could not be loaded.</p>
+          ) : checks.data?.length ? (
+            <ul className="space-y-1 text-sm">
+              {(checks.data as { check_key: string; severity: string; detail: string }[]).map((c) => (
+                <li key={c.check_key}>
+                  <Badge tone={c.severity === "critical" ? "negative" : "warning"}>{c.severity}</Badge> <span className="font-mono text-xs">{c.check_key}</span> {c.detail}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-positive">All checks pass.</p>
+          )}
+        </CardBody>
+      </Card>
       <Card>
         <CardHeader title="Heartbeats" />
         <CardBody>{beats.data?.length ? <ul className="text-sm">{beats.data.map((b) => <li key={b.component}>{b.component}: {fmtRelative(b.last_seen)} <span className="font-mono text-xs text-faint">{JSON.stringify(b.details)}</span></li>)}</ul> : <p className="text-sm text-negative">No engine heartbeat recorded. The worker is not running.</p>}</CardBody>

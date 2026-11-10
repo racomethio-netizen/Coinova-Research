@@ -38,6 +38,15 @@ class Settings(BaseSettings):
     ticker_interval_s: int = Field(default=15, ge=5, le=3600)
     worker_tick_s: float = Field(default=5.0, ge=0.5, le=300)
 
+    # Web cron consolidation: the worker calls APP_URL/api/cron/* (both set, or neither).
+    web_cron_url: str | None = None
+    cron_secret: SecretStr | None = None
+
+    # Nightly ledger export (R-02/R-17). Unset = disabled. Copy exports off-site (docs/nexus/RUNBOOKS.md).
+    ledger_export_dir: str | None = None
+    ledger_export_hour_utc: int = Field(default=2, ge=0, le=23)
+    ledger_export_keep: int = Field(default=30, ge=1, le=3650)
+
     # Compliance gates (docs/nexus/COMPLIANCE.md). Strings, exactly like the web app.
     signals_visibility: Literal["staff", "beta", "public"] = "staff"
     paid_signals_enabled: Literal["true", "false"] = "false"
@@ -56,6 +65,12 @@ class Settings(BaseSettings):
             url: str = getattr(self, name)
             if self.app_env in ("staging", "production") and not url.startswith("https://"):
                 issues.append(f"{name.upper()}: must use https outside development/test")
+        if (self.web_cron_url is None) != (self.cron_secret is None):
+            issues.append("WEB_CRON_URL and CRON_SECRET: set both to enable web cron calls, or neither")
+        if self.cron_secret is not None and len(self.cron_secret.get_secret_value()) < 32:
+            issues.append("CRON_SECRET: must be at least 32 characters")
+        if self.web_cron_url is not None and self.app_env in ("staging", "production") and not self.web_cron_url.startswith("https://"):
+            issues.append("WEB_CRON_URL: must use https outside development/test")
         if self.app_env == "production" and self.database_url is None:
             issues.append("DATABASE_URL: required in production")
         if issues:

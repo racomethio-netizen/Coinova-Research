@@ -21,22 +21,23 @@ HASHED_FIELDS = (
 )  # fmt: skip
 
 
-def _norm(v: Any) -> Any:
+def normalize(v: Any) -> Any:
+    """Canonical JSON form of a stored value (also used by the ledger export)."""
     if isinstance(v, datetime):
         return v.astimezone(UTC).isoformat(timespec="microseconds")
     if isinstance(v, Decimal):
         return str(v)
     if isinstance(v, list | tuple):
-        return [_norm(x) for x in v]
+        return [normalize(x) for x in v]
     if isinstance(v, dict):
-        return {str(k): _norm(x) for k, x in v.items()}
+        return {str(k): normalize(x) for k, x in v.items()}
     if v is None or isinstance(v, str | int | bool):
         return v
     return str(v)  # UUIDs
 
 
 def canonical(payload: Mapping[str, Any]) -> bytes:
-    data = {k: _norm(payload[k]) for k in HASHED_FIELDS}
+    data = {k: normalize(payload[k]) for k in HASHED_FIELDS}
     return json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
 
 

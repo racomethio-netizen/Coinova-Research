@@ -110,3 +110,35 @@ def test_evaluates_only_after_all_due_timeframes_are_ingested_and_skips_failures
     assert ("evaluate", "BTCUSDT", "1h") not in seq  # its ingestion failed
     assert ("evaluate", "BTCUSDT", "15m") in seq and ("evaluate", "ETHUSDT", "15m") in seq
     assert seq[-1] == ("resolve",)
+
+
+def test_nightly_runs_once_per_day_after_its_hour_even_while_blocked() -> None:
+    ing = FakeIngestor()
+    runs: list[int] = []
+    s = sched(ing)
+    s.nightly, s.nightly_hour = (lambda: runs.append(1)), 2
+    day = datetime(2026, 11, 10, tzinfo=UTC)
+    s.tick(day + timedelta(hours=1, minutes=59))
+    assert runs == []
+    s.blocked = "418 from source"
+    s.tick(day + timedelta(hours=2))
+    s.tick(day + timedelta(hours=5))
+    assert runs == [1]
+    s.tick(day + timedelta(days=1, hours=2))
+    assert runs == [1, 1]
+
+
+def test_a_failing_nightly_is_not_retried_every_tick() -> None:
+    ing = FakeIngestor()
+    calls: list[int] = []
+
+    def boom() -> None:
+        calls.append(1)
+        raise RuntimeError("disk full")
+
+    s = sched(ing)
+    s.nightly = boom
+    t = datetime(2026, 11, 10, 3, tzinfo=UTC)
+    assert s.tick(t)["errors"] == 1
+    s.tick(t + timedelta(seconds=5))
+    assert calls == [1]

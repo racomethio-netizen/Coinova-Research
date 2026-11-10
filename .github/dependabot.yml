@@ -22,3 +22,16 @@ updates:
     groups:
       expo-minor-and-patch:
         update-types: ["minor", "patch"]
+  # Engine (Python, uv lockfile) and its Docker base image (R-14).
+  - package-ecosystem: uv
+    directory: /engine
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      engine-minor-and-patch:
+        update-types: ["minor", "patch"]
+  - package-ecosystem: docker
+    directory: /engine
+    schedule:
+      interval: weekly

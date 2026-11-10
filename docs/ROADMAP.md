@@ -7,12 +7,26 @@ _Last updated: 2026-11-10 (session 2)._
 The product is being extended into **NEXUS AI** (signals, backtesting, paper
 trading, mobile). The plan, architecture, ERD, risks and compliance gates are in
 [`docs/nexus/`](nexus/README.md). **Phases 1, 2, 4, 6, 7 and 8 are done; Phases 3 and 5 are built and
-tested on synthetic data** (🟡); Phase 9 entitlements are done, and its payment adapter waits on D9. Its exit criteria (≥3-year backfill, 24 h live run)
+tested on synthetic data** (🟡); Phase 9 entitlements are done, and its payment adapter waits on D9. Phase 10 (ops readiness)
+is built and tested; deployment itself waits on owner approval (docs/nexus/GO_LIVE.md). Its exit criteria (≥3-year backfill, 24 h live run)
 are blocked on:
 1. **Owner decision D5:** approve the data source + hosting region
    (docs/nexus/MARKET_DATA_SOURCES.md) and record the terms review (gate G-4).
 2. **Network access** to `data-api.binance.vision` and `data.binance.vision` in the cloud
    environment. Both are currently refused by the proxy.
+
+### Phase 10 (session 2): what was built
+- Engine: nightly ledger export (JSONL + manifest, SHA-256, chain head) with continuity
+  check against the previous export, `ledger-export|verify|restore-drill` commands, and a
+  web-cron caller that replaces the four Render cron services.
+- `scripts/restore-drill.sh` (pg_dump → scratch DB → row counts + chain), also run in CI.
+- Migration 0019: `ops_health()` + `raise_ops_alerts()`; `check-health` job on an
+  independent Render cron (watchdog); checks shown on `/admin/health`.
+- `scripts/load-test.ts` with thresholds; local baseline recorded in RUNBOOKS.md.
+- Dependabot for the engine (uv) and its Docker image; weekly CI run.
+- Docs: SECURITY_REVIEW.md, RUNBOOKS.md, GO_LIVE.md; DEPLOYMENT.md updated.
+- Not done (owner approval): staging deploy, load test on the target instance, Supabase
+  backups/PITR plan, off-site storage for ledger exports.
 
 ### Phase 9 (session 2): what was built
 - Migration 0018 enforces every plan feature: scanner advanced indicators (Pro), model
@@ -106,7 +120,9 @@ DATABASE_URL='postgres://postgres@127.0.0.1:54329/nexus_engine_test?options=-c%2
   uv run nexus-engine archive-backfill --symbol BTCUSDT --tf 1h --from-month 2023-01 --to-month 2026-10
 # once data exists: uv run nexus-engine validate --symbol BTCUSDT --tf 1h --start 2023-01-01 --end 2026-06-30
 # Phase 9 remainder: implement the BillingProvider adapter after D9 and run tests/support/billing-conformance.ts against it
-# Phase 10: testing and deployment (needs owner approval for any deploy)
+# Phase 10 remainder (owner approval): follow docs/nexus/GO_LIVE.md stage A (staging), then
+scripts/restore-drill.sh '<staging url>'
+npx tsx scripts/load-test.ts --base https://<staging> --allow-remote --duration 60 --concurrency 20
 ```
 
 Cloud-container note (session 2): the repo pins `@playwright/test` 1.56.1
@@ -134,6 +150,7 @@ decision · ⬜ not started.
 | Mobile: typecheck / `npm test` / `bundle:check` | ✅ clean / 9 / 9 / iOS + Android bundles |
 | `npm run test:e2e` after Phase 7 | ✅ 56 / 56 |
 | After Phase 9: unit / DB / integration / e2e | ✅ 164 / 111 / 29 / 56 |
+| After Phase 10: unit / DB / integration / e2e / engine / mobile | ✅ 165 / 115 / 30 / 56 / 125 / 9; restore drill ✅; load test (local) ✅ |
 | `npm audit --omit=dev` | ✅ 0 vulnerabilities (after the next/zod upgrade) |
 | `npm run test:integration` | ✅ passed in GitHub Actions (not runnable in this container: executing the downloaded PostgREST binary was not permitted) |
 | GitHub Actions CI (run #3) | ✅ all 4 jobs green: checks + audit, DB + integration, build + e2e (ubuntu-24.04), gitleaks |
@@ -237,3 +254,5 @@ Phase 6 followed (paper trading: schema, engine fills, API).
 Phase 7 followed (web dashboard: public NEXUS pages, paper/backtest dashboards, admin).
 Phase 8 followed (mobile app, shared API contract, push channel).
 Phase 9 followed (entitlements enforced in SQL/API, conformance suite). The payment adapter waits on D9.
+Phase 10 followed (ledger export + restore drill, cron consolidation, watchdog alerts, load test,
+security review, runbooks, go-live checklist). Deployment waits on owner approval.

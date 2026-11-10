@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import sys
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from functools import partial
+from pathlib import Path
 
 import httpx
+import psycopg
 
 from .config import ConfigError, Settings, get_settings
 from .db import connect
@@ -134,6 +137,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             c.add_argument("--model", choices=("logistic", "xgboost"), default="logistic")
             c.add_argument("--lockbox", action="store_true", help="also evaluate the lockbox (approval time only)")
     sub.add_parser("verify-chain", help="recompute the signal hash chain and report any tampering")
+    le = sub.add_parser("ledger-export", help="export the signal ledger (JSONL + manifest) and verify it")
+    le.add_argument("--out", required=True, help="directory that holds ledger-<timestamp>/ exports")
+    lv = sub.add_parser("ledger-verify", help="verify an export (files, hashes, chain, continuity)")
+    lv.add_argument("export_dir")
+    lv.add_argument("--previous", help="manifest.json (or export dir) of the previous export, for continuity")
+    lr = sub.add_parser("ledger-restore-drill", help="restore an export into temporary tables and re-verify the chain")
+    lr.add_argument("export_dir")
     sub.add_parser("worker", help="run the scheduler forever")
     sv = sub.add_parser("serve", help="run the FastAPI app (/health, /internal/*)")
     sv.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
@@ -164,6 +174,27 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.cmd in ("backtest", "validate"):
         return _research(args, settings)
+    if args.cmd == "ledger-verify":
+        from .ops.ledger import load_manifest, verify_export
+
+        previous = load_manifest(Path(args.previous)) if args.previous else None
+        problems = verify_export(Path(args.export_dir), previous)
+        for p in problems:
+            print(p)
+        print("export verified" if not problems else f"{len(problems)} problem(s)")
+        return 0 if not problems else 1
+    if args.cmd in ("ledger-export", "ledger-restore-drill"):
+        from .ops.ledger import export_ledger, restore_drill
+
+        with connect(settings) as conn:
+            if args.cmd == "ledger-export":
+                out, manifest = export_ledger(conn, Path(args.out))
+                chain = manifest["chain"]
+                print(json.dumps({"export": str(out), **{k: chain[k] for k in ("length", "head_seq", "head_hash", "intact")}}))
+                return 0 if chain["intact"] else 1
+            result = restore_drill(conn, Path(args.export_dir))
+            print(json.dumps(result, indent=2))
+            return 0 if result["ok"] else 1
     if args.cmd in ("evaluate", "resolve", "verify-chain"):
         from .signals.hashing import verify_chain
         from .signals.ledger import load_chain
@@ -215,9 +246,24 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.cmd == "worker":
             from .backtest.jobs import process_one
+            from .ops.ledger import run_nightly
+            from .ops.webcron import WebCron
             from .paper.processor import PaperProcessor
             from .signals.service import SignalService
             from .worker import Scheduler, run_forever
+
+            def nightly() -> None:
+                assert settings.ledger_export_dir is not None
+                if conn.info.transaction_status != psycopg.pq.TransactionStatus.IDLE:
+                    conn.rollback()  # start of a tick: nothing pending is worth keeping
+                summary = run_nightly(conn, Path(settings.ledger_export_dir), settings.ledger_export_keep)
+                ingestor.heartbeat("ledger.export", summary)
+                level = logging.INFO if summary["intact"] else logging.ERROR
+                log(logger, level, "ledger_export", **{k: summary[k] for k in ("export", "chain_length", "intact")})
+
+            webcron = None
+            if settings.web_cron_url and settings.cron_secret:
+                webcron = WebCron(settings.web_cron_url, settings.cron_secret.get_secret_value())
 
             scheduler = Scheduler(
                 ingestor=ingestor,
@@ -227,6 +273,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 signals=SignalService(conn, settings),
                 jobs=partial(process_one, conn),
                 paper=PaperProcessor(conn).process,
+                nightly=nightly if settings.ledger_export_dir else None,
+                nightly_hour=settings.ledger_export_hour_utc,
+                webcron=webcron,
             )
             run_forever(scheduler, settings.worker_tick_s)
     return 0
