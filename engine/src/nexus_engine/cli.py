@@ -215,6 +215,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.cmd == "worker":
             from .backtest.jobs import process_one
+            from .paper.processor import PaperProcessor
             from .signals.service import SignalService
             from .worker import Scheduler, run_forever
 
@@ -225,6 +226,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 ticker_interval=timedelta(seconds=settings.ticker_interval_s),
                 signals=SignalService(conn, settings),
                 jobs=partial(process_one, conn),
+                paper=PaperProcessor(conn).process,
             )
             run_forever(scheduler, settings.worker_tick_s)
     return 0

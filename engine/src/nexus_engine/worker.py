@@ -39,6 +39,7 @@ class Scheduler:
     ticker_interval: timedelta
     signals: SignalRunner | None = None
     jobs: Callable[[], int] | None = None  # e.g. one queued backtest per tick
+    paper: Callable[[], object] | None = None  # paper-trading fills and protections, every tick
     last_bucket: dict[tuple[int, str], datetime] = field(default_factory=dict)
     last_ticker: datetime | None = None
     last_gap_retry: datetime | None = None
@@ -98,6 +99,8 @@ class Scheduler:
                 if self._guard(partial(self.ingestor.update_price, pair), stats, pair=pair.symbol, task="price"):
                     stats["prices"] += 1
             self.last_ticker = now
+        if self.paper is not None and not self.blocked:
+            self._guard(self.paper, stats, task="paper")
         if self.last_gap_retry is None or now - self.last_gap_retry >= GAP_RETRY_INTERVAL:
             for pair in self.pairs:
                 for tf in pair.timeframes:
