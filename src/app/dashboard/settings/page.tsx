@@ -1,4 +1,4 @@
-import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui";
+import { ButtonLink, Card, CardBody, CardHeader, PageHeader } from "@/components/ui";
 import { requireUserPage } from "@/lib/auth/session";
 import { fmtDate } from "@/lib/format";
 import { isTelegramConfigured } from "@/lib/notify/telegram";
@@ -25,6 +25,12 @@ export default async function SettingsPage() {
               marketingEmails: profile?.marketing_emails ?? false,
             }}
           />
+        </CardBody>
+      </Card>
+      <Card>
+        <CardHeader title="Security" description="Two-factor authentication with an authenticator app. Required for staff and administrator access." />
+        <CardBody>
+          <ButtonLink href="/dashboard/settings/security" variant="secondary" size="sm">Manage two-factor authentication</ButtonLink>
         </CardBody>
       </Card>
       <Card>

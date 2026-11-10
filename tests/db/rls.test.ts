@@ -78,14 +78,14 @@ describe("role escalation", () => {
   it("is_admin reflects the database role, not client claims", async () => {
     const r1 = await as(db, { role: "authenticated", userId: alice }, (q) => q("select public.is_admin() as a"));
     expect(r1.rows[0].a).toBe(false);
-    const r2 = await as(db, { role: "authenticated", userId: admin }, (q) => q("select public.is_admin() as a"));
+    const r2 = await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => q("select public.is_admin() as a"));
     expect(r2.rows[0].a).toBe(true);
   });
 
   it("users can only see their own role rows; admins see all", async () => {
     const mine = await as(db, { role: "authenticated", userId: alice }, (q) => q("select * from public.user_roles"));
     expect(mine.rowCount).toBe(0);
-    const all = await as(db, { role: "authenticated", userId: admin }, (q) => q("select * from public.user_roles"));
+    const all = await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => q("select * from public.user_roles"));
     expect(all.rowCount).toBeGreaterThanOrEqual(1);
   });
 });
@@ -325,7 +325,7 @@ describe("premium research content", () => {
   it("drafts are invisible to non-staff, visible to staff", async () => {
     const anon = await as(db, { role: "anon" }, (q) => q("select id from public.research_articles where id = $1", [draftArticle]));
     expect(anon.rowCount).toBe(0);
-    expect(await bodies({ role: "authenticated", userId: admin })).toContain(draftArticle);
+    expect(await bodies({ role: "authenticated", userId: admin, aal: "aal2" })).toContain(draftArticle);
   });
 
   it("premium article metadata (teaser) is public", async () => {
@@ -374,7 +374,7 @@ describe("research scores", () => {
   it("only admins can publish scoring configs", async () => {
     const msg = await as(db, { role: "authenticated", userId: alice }, (q) => expectError(q("select public.publish_scoring_config('1.0.0', '{}', null)")));
     expect(msg).toMatch(/forbidden/);
-    const ok = await as(db, { role: "authenticated", userId: admin }, (q) => q("select public.publish_scoring_config('1.0.1', '{}', 'test') v"));
+    const ok = await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => q("select public.publish_scoring_config('1.0.1', '{}', 'test') v"));
     expect(ok.rows[0].v).toBeGreaterThan(0);
   });
 
@@ -417,7 +417,7 @@ describe("operations", () => {
   });
 
   it("staff can append audit entries only as themselves", async () => {
-    const msg = await as(db, { role: "authenticated", userId: admin }, (q) => expectError(q("insert into public.admin_audit_logs (actor_id, action) values ($1, 'forged')", [alice])));
+    const msg = await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => expectError(q("insert into public.admin_audit_logs (actor_id, action) values ($1, 'forged')", [alice])));
     expect(msg).toMatch(/row-level security/);
   });
 
@@ -425,7 +425,7 @@ describe("operations", () => {
     await db.query("insert into public.billing_events (provider, provider_event_id, event_type, occurred_at, livemode, payload) values ('t','e1','x',now(),false,'{}')");
     const user = await as(db, { role: "authenticated", userId: alice }, (q) => q("select * from public.billing_events"));
     expect(user.rowCount).toBe(0);
-    const adm = await as(db, { role: "authenticated", userId: admin }, (q) => q("select * from public.billing_events"));
+    const adm = await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => q("select * from public.billing_events"));
     expect(adm.rowCount).toBeGreaterThanOrEqual(1);
   });
 
@@ -466,7 +466,7 @@ describe("operations", () => {
 
   it("clients cannot call service-only functions", async () => {
     for (const sql of ["select public.acquire_job('x-y', 'k', 1)", "select public.run_retention_cleanup()", "select * from public.claim_due_deliveries(1, 1)"]) {
-      const msg = await as(db, { role: "authenticated", userId: admin }, (q) => expectError(q(sql)));
+      const msg = await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => expectError(q(sql)));
       expect(msg).toMatch(/permission denied/);
     }
   });
@@ -597,5 +597,47 @@ describe("feature entitlements (plan_features / has_feature)", () => {
     expect(msg).toMatch(/permission denied/);
     const fn = await as(db, { role: "authenticated", userId: carol }, (q) => expectError(q("select public.has_feature_for($1, 'backtesting')", [alice])));
     expect(fn).toMatch(/permission denied/);
+  });
+});
+
+describe("admin MFA (aal2) enforcement", () => {
+  let editor: string;
+  beforeAll(async () => {
+    editor = await createUser(db);
+    await db.query("insert into public.user_roles (user_id, role) values ($1, 'editor')", [editor]);
+  });
+
+  it("admins and editors without an MFA-verified session have no privileges", async () => {
+    for (const uid of [admin, editor]) {
+      const r = await as(db, { role: "authenticated", userId: uid, aal: "aal1" }, (q) => q("select public.is_admin() a, public.is_staff() s"));
+      expect(r.rows[0]).toEqual({ a: false, s: false });
+    }
+    const audit = await as(db, { role: "authenticated", userId: admin }, (q) => q("select 1 from public.admin_audit_logs"));
+    expect(audit.rowCount).toBe(0);
+    const subs = await as(db, { role: "authenticated", userId: admin }, (q) => q("select 1 from public.subscriptions where user_id <> $1", [admin]));
+    expect(subs.rowCount).toBe(0);
+    const write = await as(db, { role: "authenticated", userId: editor }, (q) =>
+      expectError(q("insert into public.research_articles (slug, title, summary, category, author_name) values ('mfa-test', 'Title', 'Summary text here', 'market', 'Ed')")),
+    );
+    expect(write).toMatch(/row-level security/);
+  });
+
+  it("an aal2 session restores exactly the role's privileges", async () => {
+    const a = await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => q("select public.is_admin() a, public.is_staff() s"));
+    expect(a.rows[0]).toEqual({ a: true, s: true });
+    const e = await as(db, { role: "authenticated", userId: editor, aal: "aal2" }, (q) => q("select public.is_admin() a, public.is_staff() s"));
+    expect(e.rows[0]).toEqual({ a: false, s: true });
+    const subs = await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => q("select 1 from public.subscriptions where user_id <> $1", [admin]));
+    expect(subs.rowCount).toBeGreaterThan(0);
+  });
+
+  it("an aal2 claim grants nothing to users without a role", async () => {
+    const r = await as(db, { role: "authenticated", userId: carol, aal: "aal2" }, (q) => q("select public.is_admin() a, public.is_staff() s"));
+    expect(r.rows[0]).toEqual({ a: false, s: false });
+  });
+
+  it("privileged users can still see their own role (to be sent to MFA enrollment)", async () => {
+    const r = await as(db, { role: "authenticated", userId: editor }, (q) => q("select role from public.user_roles"));
+    expect(r.rows).toEqual([{ role: "editor" }]);
   });
 });

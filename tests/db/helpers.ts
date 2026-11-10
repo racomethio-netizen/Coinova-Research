@@ -13,13 +13,14 @@ export async function connect(): Promise<Client> {
   return c;
 }
 
-export type Actor = { role: "anon" } | { role: "authenticated"; userId: string } | { role: "service_role" };
+/** `aal` defaults to "aal1" (password only); privileged roles require "aal2" (MFA). */
+export type Actor = { role: "anon" } | { role: "authenticated"; userId: string; aal?: "aal1" | "aal2" } | { role: "service_role" };
 
 export async function as<T>(db: Client, actor: Actor, fn: (q: Client["query"]) => Promise<T>): Promise<T> {
   await db.query("begin");
   try {
     await db.query(`set local role ${actor.role}`);
-    const claims = actor.role === "authenticated" ? { sub: actor.userId, role: "authenticated" } : { role: actor.role };
+    const claims = actor.role === "authenticated" ? { sub: actor.userId, role: "authenticated", aal: actor.aal ?? "aal1" } : { role: actor.role };
     await db.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify(claims)]);
     return await fn(db.query.bind(db) as Client["query"]);
   } finally {

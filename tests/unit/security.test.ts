@@ -174,3 +174,14 @@ describe("timestamp normalization", () => {
     expect(toUtcIso("garbage")).toBeNull();
   });
 });
+
+describe("admin MFA state", () => {
+  it("requires aal2 only for privileged roles", async () => {
+    const { mfaState } = await import("@/lib/auth/mfa");
+    expect(mfaState([], "aal1")).toEqual({ privileged: false, mfaRequired: false });
+    expect(mfaState(["admin"], "aal1")).toEqual({ privileged: true, mfaRequired: true });
+    expect(mfaState(["editor"], undefined)).toEqual({ privileged: true, mfaRequired: true });
+    expect(mfaState(["admin"], "aal2")).toEqual({ privileged: true, mfaRequired: false });
+    expect(mfaState(["viewer"], "aal1").mfaRequired).toBe(false);
+  });
+});

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { minimumTierFor, normalizeTier, TIER_LABEL, TIER_RANK, tierHasFeature, type FeatureKey, type MembershipTier } from "@/config/plans";
 import { ApiError } from "@/lib/http/api";
+import { mfaState } from "./mfa";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /**
@@ -22,30 +23,37 @@ export interface SessionUser {
 export interface Viewer {
   user: SessionUser | null;
   tier: MembershipTier;
+  /** True only in an MFA-verified (aal2) session; see migration 0009. */
   isAdmin: boolean;
   isStaff: boolean;
+  /** The user holds an admin/editor role but this session is not MFA-verified. */
+  mfaRequired: boolean;
   supabase: SupabaseClient | null;
 }
 
+
 export const getViewer = cache(async (): Promise<Viewer> => {
   const supabase = await createSupabaseServerClient();
-  if (!supabase) return { user: null, tier: "free", isAdmin: false, isStaff: false, supabase: null };
+  if (!supabase) return { user: null, tier: "free", isAdmin: false, isStaff: false, mfaRequired: false, supabase: null };
 
   const { data, error } = await supabase.auth.getClaims();
   const claims = error ? null : data?.claims;
-  if (!claims?.sub) return { user: null, tier: "free", isAdmin: false, isStaff: false, supabase };
+  if (!claims?.sub) return { user: null, tier: "free", isAdmin: false, isStaff: false, mfaRequired: false, supabase };
 
-  const [tierRes, adminRes, staffRes] = await Promise.all([
+  const [tierRes, adminRes, staffRes, rolesRes] = await Promise.all([
     supabase.rpc("current_membership_tier"),
     supabase.rpc("is_admin"),
     supabase.rpc("is_staff"),
+    supabase.from("user_roles").select("role"),
   ]);
+  const roles = (rolesRes.data ?? []).map((r: { role: string }) => r.role);
   const tier = normalizeTier(tierRes.data);
   return {
     user: { id: claims.sub, email: typeof claims.email === "string" ? claims.email : null },
     tier,
     isAdmin: adminRes.data === true,
     isStaff: staffRes.data === true,
+    mfaRequired: mfaState(roles, claims.aal).mfaRequired,
     supabase,
   };
 });
@@ -67,14 +75,18 @@ export async function requireUserPage(next = "/dashboard") {
   return v as Viewer & { user: SessionUser; supabase: SupabaseClient };
 }
 
+export const MFA_PAGE = "/dashboard/settings/security";
+
 export async function requireStaffPage() {
   const v = await requireUserPage("/admin");
+  if (!v.isStaff && v.mfaRequired) redirect(`${MFA_PAGE}?next=/admin`);
   if (!v.isStaff) redirect("/dashboard?error=forbidden");
   return v;
 }
 
 export async function requireAdminPage() {
   const v = await requireUserPage("/admin");
+  if (!v.isAdmin && v.mfaRequired) redirect(`${MFA_PAGE}?next=/admin`);
   if (!v.isAdmin) redirect("/dashboard?error=forbidden");
   return v;
 }
@@ -102,12 +114,14 @@ export async function requireFeatureApi(feature: FeatureKey) {
 
 export async function requireAdminApi() {
   const v = await requireUserApi();
+  if (!v.isAdmin && v.mfaRequired) throw new ApiError("forbidden", "Two-factor verification is required for administrator access.");
   if (!v.isAdmin) throw new ApiError("forbidden", "Administrator access required.");
   return v;
 }
 
 export async function requireStaffApi() {
   const v = await requireUserApi();
+  if (!v.isStaff && v.mfaRequired) throw new ApiError("forbidden", "Two-factor verification is required for staff access.");
   if (!v.isStaff) throw new ApiError("forbidden", "Staff access required.");
   return v;
 }
