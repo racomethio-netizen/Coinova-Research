@@ -185,3 +185,23 @@ describe("admin MFA state", () => {
     expect(mfaState(["viewer"], "aal1").mfaRequired).toBe(false);
   });
 });
+
+describe("bearer token parsing (mobile API auth)", () => {
+  it("accepts a well-formed bearer JWT and ignores absent headers", async () => {
+    const { parseBearer } = await import("@/lib/auth/bearer");
+    expect(parseBearer(null)).toBeNull();
+    expect(parseBearer("")).toBeNull();
+    expect(parseBearer("Bearer aaa.bbb.ccc")).toBe("aaa.bbb.ccc");
+    expect(parseBearer("bearer aaa.bbb-_.ccc")).toBe("aaa.bbb-_.ccc");
+    // Other schemes (e.g. Basic auth in front of a staging site) are not ours to judge.
+    expect(parseBearer("Basic dXNlcjpwYXNz")).toBeNull();
+    expect(parseBearer("Token aaa.bbb.ccc")).toBeNull();
+  });
+
+  it("rejects malformed or oversized values instead of treating them as anonymous", async () => {
+    const { parseBearer } = await import("@/lib/auth/bearer");
+    for (const v of ["Bearer", "Bearer ", "Bearer not-a-jwt", "Bearer a.b.c extra", "Bearer a.b", `Bearer ${"a".repeat(9000)}.b.c`]) {
+      expect(parseBearer(v)).toBe("invalid");
+    }
+  });
+});

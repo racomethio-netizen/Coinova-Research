@@ -1,4 +1,5 @@
 import { TIER_LABEL } from "@/config/plans";
+import { ReportButton } from "@/components/report-button";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -97,6 +98,11 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         </section>
       ) : null}
       <p className="mt-8 text-xs leading-relaxed text-faint">{siteConfig.disclaimer}</p>
+      {viewer.user ? (
+        <div className="mt-4">
+          <ReportButton targetType="article" targetId={a.slug} />
+        </div>
+      ) : null}
     </Container>
   );
 }

@@ -14,6 +14,7 @@ const LIMIT_MESSAGES: Record<string, string> = {
   watchlistItems: "This watchlist has reached your plan's coin limit.",
   alerts: "You have reached your plan's alert limit. Alerts require Pro or higher.",
   aiRequestsPerDay: "You have reached today's AI assistant limit for your plan.",
+  abuseReports: "You have filed the maximum number of reports for today. Please try again tomorrow.",
 };
 
 /**

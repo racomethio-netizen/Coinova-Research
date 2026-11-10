@@ -22,7 +22,7 @@ export default async function setup() {
   const admin = new Client({ connectionString: adminUrl() });
   await admin.connect();
   await admin.query(`drop database if exists ${TEST_DB_NAME} with (force)`);
-  for (const role of ["anon", "authenticated", "service_role"]) {
+  for (const role of ["anon", "authenticated", "service_role", "nexus_engine"]) {
     // Roles are cluster-wide; drop leftovers from a previous run.
     const exists = await admin.query("select 1 from pg_roles where rolname = $1", [role]);
     if (exists.rowCount) {

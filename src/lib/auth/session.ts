@@ -5,7 +5,9 @@ import { cache } from "react";
 import { minimumTierFor, normalizeTier, TIER_LABEL, TIER_RANK, tierHasFeature, type FeatureKey, type MembershipTier } from "@/config/plans";
 import { ApiError } from "@/lib/http/api";
 import { mfaState } from "./mfa";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseBearerClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { headers } from "next/headers";
+import { parseBearer } from "./bearer";
 
 /**
  * Data Access Layer for identity and authorization.
@@ -29,16 +31,24 @@ export interface Viewer {
   /** The user holds an admin/editor role but this session is not MFA-verified. */
   mfaRequired: boolean;
   supabase: SupabaseClient | null;
+  /** How the request authenticated: session cookie (web) or bearer token (mobile). */
+  authMethod: "cookie" | "bearer";
 }
 
 
 export const getViewer = cache(async (): Promise<Viewer> => {
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) return { user: null, tier: "free", isAdmin: false, isStaff: false, mfaRequired: false, supabase: null };
+  const bearer = parseBearer((await headers()).get("authorization"));
+  if (bearer === "invalid") throw new ApiError("unauthorized", "Malformed Authorization header.");
+  const authMethod = bearer ? "bearer" : "cookie";
+  const supabase = bearer ? createSupabaseBearerClient(bearer) : await createSupabaseServerClient();
+  const anonymous = { user: null, tier: "free", isAdmin: false, isStaff: false, mfaRequired: false, authMethod } as const;
+  if (!supabase) return { ...anonymous, supabase: null };
 
-  const { data, error } = await supabase.auth.getClaims();
+  const { data, error } = bearer ? await supabase.auth.getClaims(bearer) : await supabase.auth.getClaims();
   const claims = error ? null : data?.claims;
-  if (!claims?.sub) return { user: null, tier: "free", isAdmin: false, isStaff: false, mfaRequired: false, supabase };
+  // An explicit but unverifiable token is an error, not an anonymous request.
+  if (bearer && !claims?.sub) throw new ApiError("unauthorized", "Invalid or expired access token.");
+  if (!claims?.sub) return { ...anonymous, supabase };
 
   const [tierRes, adminRes, staffRes, rolesRes] = await Promise.all([
     supabase.rpc("current_membership_tier"),
@@ -55,6 +65,7 @@ export const getViewer = cache(async (): Promise<Viewer> => {
     isStaff: staffRes.data === true,
     mfaRequired: mfaState(roles, claims.aal).mfaRequired,
     supabase,
+    authMethod,
   };
 });
 

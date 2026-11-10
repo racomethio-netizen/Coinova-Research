@@ -28,6 +28,19 @@ export async function createSupabaseServerClient(): Promise<SupabaseClient | nul
   });
 }
 
+/**
+ * Per-request client authenticated by an explicit access token (mobile apps).
+ * Queries run as that user under RLS, exactly like the cookie client.
+ */
+export function createSupabaseBearerClient(accessToken: string): SupabaseClient | null {
+  const env = getEnv();
+  if (!isSupabaseConfigured(env)) return null;
+  return createClient(env.SUPABASE_URL!, env.SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+  });
+}
+
 let serviceClient: SupabaseClient | null | undefined;
 
 /**

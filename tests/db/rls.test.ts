@@ -689,3 +689,66 @@ describe("account lifecycle: export and deletion", () => {
     expect(await expectError(db.query("delete from public.admin_audit_logs where id = $1", [id]))).toMatch(/append-only/);
   });
 });
+
+describe("nexus_engine role (least privilege)", () => {
+  it("exists without login and has no table privileges yet", async () => {
+    const r = await db.query("select rolcanlogin, rolsuper, rolbypassrls from pg_roles where rolname = 'nexus_engine'");
+    expect(r.rows).toEqual([{ rolcanlogin: false, rolsuper: false, rolbypassrls: false }]);
+    for (const sql of ["select 1 from public.profiles", "select 1 from public.subscriptions", "insert into public.cryptocurrencies (id, symbol, name) values ('x', 'X', 'x')"]) {
+      await db.query("begin");
+      try {
+        await db.query("set local role nexus_engine");
+        expect(await expectError(db.query(sql))).toMatch(/permission denied/);
+      } finally {
+        await db.query("rollback");
+      }
+    }
+  });
+});
+
+describe("abuse reports", () => {
+  it("users file reports with content only; status fields cannot be forged", async () => {
+    const r = await as(db, { role: "authenticated", userId: carol }, (q) =>
+      q("insert into public.abuse_reports (target_type, target_id, reason, details) values ('article', 'free-one', 'misleading', 'Numbers look wrong') returning reporter_id, status"),
+    );
+    expect(r.rows[0]).toEqual({ reporter_id: carol, status: "open" });
+    const forgedStatus = await as(db, { role: "authenticated", userId: carol }, (q) => expectError(q("insert into public.abuse_reports (target_type, reason, status) values ('other', 'spam', 'resolved')")));
+    expect(forgedStatus).toMatch(/permission denied/);
+    const forgedReporter = await as(db, { role: "authenticated", userId: carol }, (q) => expectError(q("insert into public.abuse_reports (reporter_id, target_type, reason) values ($1, 'other', 'spam')", [bob])));
+    expect(forgedReporter).toMatch(/permission denied/);
+  });
+
+  it("users see only their own reports and cannot change them", async () => {
+    const id = (await db.query("insert into public.abuse_reports (reporter_id, target_type, reason) values ($1, 'other', 'spam') returning id", [bob])).rows[0].id;
+    await as(db, { role: "authenticated", userId: carol }, async (q) => {
+      expect((await q("select 1 from public.abuse_reports where id = $1", [id])).rowCount).toBe(0);
+    });
+    await as(db, { role: "authenticated", userId: bob }, async (q) => {
+      expect((await q("select 1 from public.abuse_reports where id = $1", [id])).rowCount).toBe(1);
+      expect((await q("update public.abuse_reports set status = 'dismissed', handled_by = $2, handled_at = now() where id = $1", [id, bob])).rowCount).toBe(0);
+      expect(await expectError(q("delete from public.abuse_reports where id = $1", [id]))).toMatch(/permission denied/);
+    });
+  });
+
+  it("only MFA-verified admins handle reports, as themselves", async () => {
+    const id = (await db.query("insert into public.abuse_reports (reporter_id, target_type, reason) values ($1, 'other', 'spam') returning id", [bob])).rows[0].id;
+    const aal1 = await as(db, { role: "authenticated", userId: admin }, (q) => q("update public.abuse_reports set status = 'resolved', handled_by = $2, handled_at = now() where id = $1", [id, admin]));
+    expect(aal1.rowCount).toBe(0);
+    const impersonate = await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) =>
+      expectError(q("update public.abuse_reports set status = 'resolved', handled_by = $2, handled_at = now() where id = $1", [id, bob])),
+    );
+    expect(impersonate).toMatch(/row-level security/);
+    const ok = await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) =>
+      q("update public.abuse_reports set status = 'resolved', handled_by = $2, handled_at = now(), resolution_note = 'Removed' where id = $1", [id, admin]),
+    );
+    expect(ok.rowCount).toBe(1);
+  });
+
+  it("limits reports per user per day", async () => {
+    const u = await createUser(db);
+    await as(db, { role: "authenticated", userId: u }, async (q) => {
+      for (let i = 0; i < 20; i++) await q("insert into public.abuse_reports (target_type, reason) values ('other', 'spam')");
+      expect(await expectError(q("insert into public.abuse_reports (target_type, reason) values ('other', 'spam')"))).toMatch(/limit_reached:abuseReports/);
+    });
+  });
+});
