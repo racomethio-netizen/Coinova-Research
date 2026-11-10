@@ -641,3 +641,51 @@ describe("admin MFA (aal2) enforcement", () => {
     expect(r.rows).toEqual([{ role: "editor" }]);
   });
 });
+
+describe("account lifecycle: export and deletion", () => {
+  it("export_my_data returns only the caller's own data", async () => {
+    const r = await as(db, { role: "authenticated", userId: alice }, (q) => q("select public.export_my_data() d"));
+    const d = r.rows[0].d;
+    expect(d.user_id).toBe(alice);
+    expect(d.profile.id).toBe(alice);
+    expect(d.portfolios.map((p: { user_id: string }) => p.user_id)).toEqual([alice]);
+    expect(d.subscriptions.every((s: { user_id: string }) => s.user_id === alice)).toBe(true);
+    const json = JSON.stringify(d);
+    expect(json).not.toContain(bob);
+    expect(json).not.toContain(bobTx);
+  });
+
+  it("anon cannot export", async () => {
+    const msg = await as(db, { role: "anon" }, (q) => expectError(q("select public.export_my_data()")));
+    expect(msg).toMatch(/permission denied|unauthorized/);
+  });
+
+  it("deleting an account removes personal data, keeps pseudonymized payments, and audits the deletion", async () => {
+    const u = await createUser(db);
+    await db.query("insert into public.user_roles (user_id, role) values ($1, 'editor')", [u]);
+    await db.query("insert into public.admin_audit_logs (actor_id, action) values ($1, 'article.publish')", [u]);
+    const ev = (
+      await db.query("insert into public.billing_events (provider, provider_event_id, event_type, occurred_at, livemode, user_id, payload) values ('test', $1, 'x', now(), true, $2, '{}') returning id", [`ev-${u}`, u])
+    ).rows[0].id;
+    await db.query("insert into public.billing_payments (user_id, billing_event_id, amount_cents, currency, kind, livemode, occurred_at) values ($1, $2, 900, 'USD', 'payment', true, now())", [u, ev]);
+    const before = (await db.query("select max(id) m from public.admin_audit_logs")).rows[0].m;
+
+    await db.query("delete from auth.users where id = $1", [u]);
+
+    expect((await db.query("select 1 from public.profiles where id = $1", [u])).rowCount).toBe(0);
+    expect((await db.query("select 1 from public.user_roles where user_id = $1", [u])).rowCount).toBe(0);
+    const pay = await db.query("select user_id, amount_cents from public.billing_payments where billing_event_id = $1", [ev]);
+    expect(pay.rows).toEqual([{ user_id: null, amount_cents: 900 }]);
+    const authored = await db.query("select actor_id from public.admin_audit_logs where action = 'article.publish' and id <= $1 order by id desc limit 1", [before]);
+    expect(authored.rows[0].actor_id).toBeNull();
+    const audit = await db.query("select actor_id, action, target_id, details from public.admin_audit_logs where id > $1 and action = 'account.deleted'", [before]);
+    expect(audit.rows).toEqual([{ actor_id: null, action: "account.deleted", target_id: null, details: { retained_payment_records: 1 } }]);
+  });
+
+  it("the audit log stays append-only apart from actor pseudonymization", async () => {
+    const id = (await db.query("insert into public.admin_audit_logs (actor_id, action) values ($1, 'test.entry') returning id", [admin])).rows[0].id;
+    expect(await expectError(db.query("update public.admin_audit_logs set action = 'changed' where id = $1", [id]))).toMatch(/append-only/);
+    expect(await expectError(db.query("update public.admin_audit_logs set actor_id = null, details = '{\"x\":1}' where id = $1", [id]))).toMatch(/append-only/);
+    expect(await expectError(db.query("delete from public.admin_audit_logs where id = $1", [id]))).toMatch(/append-only/);
+  });
+});

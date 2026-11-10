@@ -1,4 +1,4 @@
-import { ButtonLink, Card, CardBody, CardHeader, PageHeader } from "@/components/ui";
+import { buttonClass, ButtonLink, Card, CardBody, CardHeader, PageHeader } from "@/components/ui";
 import { requireUserPage } from "@/lib/auth/session";
 import { fmtDate } from "@/lib/format";
 import { isTelegramConfigured } from "@/lib/notify/telegram";
@@ -48,8 +48,19 @@ export default async function SettingsPage() {
           {isTelegramConfigured() ? <TelegramLink linked={Boolean(telegram)} /> : null}
         </CardBody>
       </Card>
+      <Card>
+        <CardHeader title="Your data" description="Download everything stored about your account as a JSON file: profile, membership and payment history, portfolios, watchlists, alerts, notifications, and AI usage metadata." />
+        <CardBody>
+          <a href="/api/account/export" download className={buttonClass("secondary", "sm")}>
+            Download my data
+          </a>
+        </CardBody>
+      </Card>
       <Card className="border-negative/40">
-        <CardHeader title="Delete account" description="Permanently deletes your account, portfolios, watchlists, alerts, and notifications." />
+        <CardHeader
+          title="Delete account"
+          description="Permanently deletes your account, portfolios, watchlists, alerts, and notifications. Payment records are kept without your account details, as required for financial record-keeping. Download your data first if you want a copy."
+        />
         <CardBody>
           <DeleteAccountForm />
         </CardBody>
