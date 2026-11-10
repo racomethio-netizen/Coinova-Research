@@ -53,6 +53,11 @@ class CandleSeries:
                 break
         return CandleSeries(self.tf, self.open_times[:k], self.open[:k], self.high[:k], self.low[:k], self.close[:k], self.volume[:k])
 
+    def window(self, end_index: int, bars: int) -> CandleSeries:
+        """The `bars` candles ending at `end_index` (inclusive), as array views."""
+        s = slice(max(0, end_index - bars + 1), end_index + 1)
+        return CandleSeries(self.tf, self.open_times[s], self.open[s], self.high[s], self.low[s], self.close[s], self.volume[s])
+
     def contiguous_tail(self, bars: int) -> bool:
         if len(self) < bars:
             return False

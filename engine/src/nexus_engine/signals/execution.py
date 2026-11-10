@@ -70,6 +70,16 @@ class Resolution:
     closed_at: datetime | None = None
 
 
+def unit_basis_and_pnl(direction: str, entry: Decimal, exit_: Decimal, costs: CostModel) -> tuple[Decimal, Decimal]:
+    """Capital per unit at entry (incl. costs) and net P&L per unit (incl. costs on both sides)."""
+    one, f, s = Decimal(1), costs.fee_rate, costs.slippage_rate
+    if direction == "BUY":
+        basis = entry * (one + s) * (one + f)
+        return basis, exit_ * (one - s) * (one - f) - basis
+    basis = entry * (one - s) * (one - f)
+    return basis, basis - exit_ * (one + s) * (one + f)
+
+
 def trade_result(direction: str, entry: Decimal, exit_: Decimal, stop: Decimal, costs: CostModel) -> tuple[Decimal, Decimal]:
     """(net return, R multiple) per unit after fees and slippage on both sides."""
     one, f, s = Decimal(1), costs.fee_rate, costs.slippage_rate
