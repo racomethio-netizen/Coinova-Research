@@ -1026,3 +1026,86 @@ describe("signal ledger (NEXUS Phase 4)", () => {
     expect((await as(db, { role: "authenticated", userId: proUser }, (q) => q("select 1 from public.signal_evaluations"))).rowCount).toBe(0);
   });
 });
+
+describe("validation and backtests (NEXUS Phase 5)", () => {
+  let strategyId: number;
+  let pairId: number;
+  let premiumUser: string;
+  let proUser: string;
+  const hash = "a".repeat(64);
+
+  beforeAll(async () => {
+    strategyId = (await db.query("select id from public.strategies where key = 'trend_pullback' and version = '1.0.0'")).rows[0].id;
+    pairId = (await db.query("select id from public.market_pairs where symbol = 'ETHUSDT'")).rows[0].id;
+    premiumUser = await createUser(db);
+    await grantSubscription(db, premiumUser, { tier: "premium" });
+    proUser = await createUser(db);
+    await grantSubscription(db, proUser, { tier: "pro" });
+  });
+
+  const experiment = async () =>
+    (await db.query("insert into public.experiments (kind, strategy_id, config, dataset_hash, engine_version, seed) values ('walk_forward', $1, '{}', $2, '0.1.0', 7) returning id", [strategyId, hash])).rows[0].id as string;
+  const report = async (exp: string, lockbox: string | null) =>
+    (
+      await db.query(
+        "insert into public.validation_reports (experiment_id, strategy_id, period_start, period_end, n_trades, folds, metrics, baselines, assumptions, lockbox) values ($1, $2, now() - interval '1 year', now(), 0, '[]', '{}', '{}', '{}', $3) returning id",
+        [exp, strategyId, lockbox],
+      )
+    ).rows[0].id as string;
+
+  it("experiments finish exactly once and their inputs never change", async () => {
+    const id = await experiment();
+    expect(await expectError(db.query("update public.experiments set seed = 8 where id = $1", [id]))).toMatch(/inputs are immutable/);
+    await db.query("update public.experiments set status = 'failed', error = 'boom', finished_at = now() where id = $1", [id]);
+    expect(await expectError(db.query("update public.experiments set status = 'succeeded' where id = $1", [id]))).toMatch(/finished experiments are immutable/);
+    expect(await expectError(db.query("delete from public.experiments where id = $1", [id]))).toMatch(/never deleted/);
+  });
+
+  it("validation reports are insert-only", async () => {
+    const r = await report(await experiment(), null);
+    expect(await expectError(db.query("update public.validation_reports set n_trades = 5 where id = $1", [r]))).toMatch(/insert-only/);
+  });
+
+  it("a model can only be approved with a validation report that has a lockbox result", async () => {
+    const noLockbox = await report(await experiment(), null);
+    const withLockbox = await report(await experiment(), '{"net_return":"0"}');
+    const mk = async (v: string, rep: string | null) =>
+      (await db.query("insert into public.model_versions (strategy_id, version, model_type, artifact_sha256, status, validation_report_id) values ($1, $2, 'logistic', $3, 'shadow', $4) returning id", [strategyId, v, hash, rep])).rows[0].id;
+    const approve = "update public.model_versions set status = 'approved', approved_at = now() where id = $1";
+    expect(await expectError(db.query(approve, [await mk("1.0.1", null)]))).toMatch(/validation report with a lockbox/);
+    expect(await expectError(db.query(approve, [await mk("1.0.2", noLockbox)]))).toMatch(/validation report with a lockbox/);
+    const ok = await mk("1.0.3", withLockbox);
+    await db.query(approve, [ok]);
+    expect(await expectError(db.query("update public.model_versions set validation_report_id = $2 where id = $1", [ok, noLockbox]))).toMatch(/immutable/);
+  });
+
+  it("only Premium users can request backtests, within bounds and quota", async () => {
+    const req = (start = "now() - interval '90 days'", end = "now() - interval '1 day'") =>
+      `select public.request_backtest(${pairId}, '1h', ${start}, ${end}, '{"min_net_rr": 2}')`;
+    expect(await as(db, { role: "authenticated", userId: proUser }, (q) => expectError(q(req())))).toMatch(/feature_required:backtesting/);
+    expect(await as(db, { role: "anon" }, (q) => expectError(q(req())))).toMatch(/permission denied/);
+    expect(await as(db, { role: "authenticated", userId: premiumUser }, (q) => expectError(q(req("now() - interval '6 years'"))))).toMatch(/check constraint/);
+    expect(await as(db, { role: "authenticated", userId: premiumUser }, (q) => expectError(q(req("now() - interval '2 days'", "now() + interval '1 day'"))))).toMatch(/must end in the past/);
+    const id = (await as(db, { role: "authenticated", userId: premiumUser }, (q) => q(req()))).rows[0].request_backtest;
+    expect(id).toBeTruthy();
+  });
+
+  it("backtest runs and results are private to their owner (and staff)", async () => {
+    const run = (await db.query("insert into public.backtest_runs (requested_by, pair_id, timeframe, period_start, period_end, status) values ($1, $2, '1h', now() - interval '30 days', now() - interval '1 day', 'succeeded') returning id", [premiumUser, pairId])).rows[0].id;
+    await db.query("insert into public.backtest_results (run_id, metrics, equity_curve, baselines, assumptions) values ($1, '{}', '[]', '{}', '{}')", [run]);
+    const sees = async (uid: string, aal?: "aal2") => (await as(db, { role: "authenticated", userId: uid, aal }, (q) => q("select 1 from public.backtest_results where run_id = $1", [run]))).rowCount;
+    expect(await sees(premiumUser)).toBe(1);
+    expect(await sees(proUser)).toBe(0);
+    expect(await sees(admin, "aal2")).toBe(1);
+    expect(await as(db, { role: "authenticated", userId: premiumUser }, (q) => expectError(q("update public.backtest_runs set status = 'queued' where id = $1", [run])))).toMatch(/permission denied/);
+  });
+
+  it("signal_performance aggregates only signals the viewer can see", async () => {
+    const total = async (actor: Parameters<typeof as>[1]) =>
+      Number((await as(db, actor, (q) => q("select coalesce(sum(signals), 0) n from public.signal_performance"))).rows[0].n);
+    const staffTotal = await total({ role: "authenticated", userId: admin, aal: "aal2" });
+    expect(staffTotal).toBeGreaterThan(0);
+    expect(await total({ role: "anon" })).toBeLessThan(staffTotal);
+    expect(await total({ role: "authenticated", userId: carol })).toBe(await total({ role: "anon" }));
+  });
+});
