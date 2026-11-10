@@ -15,6 +15,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin/coins", label: "Coins & unlocks", admin: false },
     { href: "/admin/scoring", label: "Scoring", admin: true },
     { href: "/admin/users", label: "Users", admin: true },
+    { href: "/admin/signals", label: "Signals", admin: false },
+    { href: "/admin/models", label: "Models", admin: false },
+    { href: "/admin/market", label: "Market data", admin: false },
+    { href: "/admin/health", label: "Health", admin: false },
+    { href: "/admin/reports", label: "Reports", admin: false },
   ].filter((l) => !l.admin || viewer.isAdmin);
   return (
     <Container className="py-8">

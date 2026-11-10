@@ -206,6 +206,9 @@ export const FEATURE_MATRIX: ReadonlyArray<{
   { feature: "Portfolios", free: false, pro: `Up to ${TIER_LIMITS.pro.portfolios}`, premium: `Up to ${TIER_LIMITS.premium.portfolios}` },
   { feature: "Transaction CSV export", free: false, pro: true, premium: true },
   { feature: "Configurable alerts", free: false, pro: `Up to ${TIER_LIMITS.pro.alerts}`, premium: `Up to ${TIER_LIMITS.premium.alerts}` },
+  { feature: "Market scanner and candlestick charts", free: true, pro: true, premium: true },
+  { feature: "Paper trading (virtual funds)", free: true, pro: true, premium: true },
+  { feature: "Strategy backtesting (bounded custom parameters)", free: false, pro: false, premium: "Up to 10 per day" },
   { feature: "AI research assistant (daily requests)", free: String(TIER_LIMITS.free.aiRequestsPerDay), pro: String(TIER_LIMITS.pro.aiRequestsPerDay), premium: String(TIER_LIMITS.premium.aiRequestsPerDay) },
 ];
 

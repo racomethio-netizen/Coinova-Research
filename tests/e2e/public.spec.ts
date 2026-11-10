@@ -49,7 +49,7 @@ test.describe("public site", () => {
   test("pages render without client-side errors (including the chart)", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
-    for (const path of ["/", "/markets", "/coins/mock-aurora", "/pricing", "/login"]) {
+    for (const path of ["/", "/markets", "/coins/mock-aurora", "/pricing", "/login", "/scanner", "/signals", "/performance"]) {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
     }
@@ -85,7 +85,7 @@ test.describe("public site", () => {
   });
 
   test("no horizontal overflow on key pages", async ({ page }) => {
-    for (const path of ["/", "/markets", "/coins/mock-aurora", "/pricing"]) {
+    for (const path of ["/", "/markets", "/coins/mock-aurora", "/pricing", "/scanner", "/signals", "/performance", "/charts/BTCUSDT"]) {
       await page.goto(path);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(overflow, `overflow on ${path}`).toBeLessThanOrEqual(1);
@@ -180,3 +180,38 @@ test.describe("API", () => {
     expect(h["x-powered-by"]).toBeUndefined();
   });
 });
+
+test.describe("NEXUS pages", () => {
+  test("scanner, signals and performance render honestly without a database", async ({ page }) => {
+    for (const [path, heading] of [["/scanner", "Market scanner"], ["/signals", "Signals"], ["/performance", "Performance"]] as const) {
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
+      await expect(page.getByText(/is not available/).first()).toBeVisible(); // explicit state, never placeholder data
+      await expect(page.getByText(/Not financial advice/)).toBeVisible();
+    }
+  });
+
+  test("signals explain shadow mode instead of showing an empty track record", async ({ page }) => {
+    await page.goto("/signals");
+    await expect(page.getByText("Signals are in internal review")).toBeVisible();
+  });
+
+  test("pricing does not market signals while paid signals are disabled", async ({ page }) => {
+    await page.goto("/pricing");
+    await expect(page.getByText("Paper trading (virtual funds)")).toBeVisible();
+    await expect(page.getByText("Live research signals and full history")).toHaveCount(0);
+  });
+
+  test("paper trading and backtests require sign-in", async ({ page }) => {
+    for (const path of ["/dashboard/paper", "/dashboard/backtests"]) {
+      await page.goto(path);
+      await expect(page).toHaveURL(/\/login/);
+    }
+  });
+
+  test("candles API validates input", async ({ request }) => {
+    const bad = await request.get("/api/candles?pairId=abc&tf=5m");
+    expect(bad.status()).toBe(422);
+  });
+});
+

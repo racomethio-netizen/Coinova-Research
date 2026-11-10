@@ -137,6 +137,20 @@ export default async function HomePage() {
           </Card>
         </section>
 
+        <section aria-labelledby="tools" className="grid gap-4 sm:grid-cols-3">
+          <h2 id="tools" className="sr-only">Research tools</h2>
+          {[
+            { href: "/scanner", title: "Market scanner", body: "Trend, momentum, volatility and volume states per pair and timeframe, from exchange candles." },
+            { href: "/performance", title: "Transparent track record", body: "Every published signal is kept, wins and losses alike, and results include fees and slippage." },
+            { href: "/dashboard/paper", title: "Paper trading", body: "Practice with a virtual balance. No real money and no exchange connection." },
+          ].map((t) => (
+            <Link key={t.href} href={t.href} className="rounded-lg border border-line bg-elevated p-5 hover:border-line-strong">
+              <h3 className="font-semibold">{t.title}</h3>
+              <p className="mt-2 text-sm text-muted">{t.body}</p>
+            </Link>
+          ))}
+        </section>
+
         <section className="rounded-lg border border-line bg-elevated px-6 py-10 text-center">
           <h2 className="text-xl font-semibold">Go deeper with Pro and Premium</h2>
           <p className="mx-auto mt-2 max-w-xl text-muted">Pro: full research scores and history, portfolios with P&amp;L, configurable alerts, and CSV export. Premium adds Premium research and higher limits.</p>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Badge, ButtonLink, Card, CardBody, Container, PageHeader } from "@/components/ui";
 import { FEATURE_MATRIX, formatPrice, PAID_PLANS } from "@/config/plans";
+import { getNexusGates } from "@/lib/env";
 import { getViewer } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Pricing", description: "Membership plans, features, and subscription terms." };
@@ -33,6 +34,12 @@ const FAQ = [
     q: "Is this investment advice?",
     a: "No. Our research and scores are informational and educational. They are not recommendations to buy or sell any asset, and past performance does not predict future results.",
   },
+];
+
+/** Shown only once paid signals are approved and enabled (gate G-2, docs/nexus/COMPLIANCE.md). */
+const SIGNAL_ROWS = [
+  { feature: "Live research signals and full history", free: "Closed signals after 7 days", pro: true, premium: true },
+  { feature: "Signal alerts and performance reports", free: false, pro: true, premium: true },
 ];
 
 export default async function PricingPage() {
@@ -90,7 +97,7 @@ export default async function PricingPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {FEATURE_MATRIX.map((f) => (
+              {[...FEATURE_MATRIX, ...(getNexusGates().paidSignalsEnabled ? SIGNAL_ROWS : [])].map((f) => (
                 <tr key={f.feature}>
                   <th scope="row" className="px-4 py-2.5 text-left font-normal">{f.feature}</th>
                   <td className="px-4 py-2.5"><Cell v={f.free} /></td>
