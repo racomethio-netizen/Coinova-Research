@@ -6,13 +6,25 @@ _Last updated: 2026-11-10 (session 2)._
 
 The product is being extended into **NEXUS AI** (signals, backtesting, paper
 trading, mobile). The plan, architecture, ERD, risks and compliance gates are in
-[`docs/nexus/`](nexus/README.md). **Phases 1, 2 and 4 are done; Phase 3 is built and
+[`docs/nexus/`](nexus/README.md). **Phases 1, 2 and 4 are done; Phases 3 and 5 are built and
 tested on synthetic data** (🟡). Its exit criteria (≥3-year backfill, 24 h live run)
 are blocked on:
 1. **Owner decision D5:** approve the data source + hosting region
    (docs/nexus/MARKET_DATA_SOURCES.md) and record the terms review (gate G-4).
 2. **Network access** to `data-api.binance.vision` and `data.binance.vision` in the cloud
    environment. Both are currently refused by the proxy.
+
+### Phase 5 (session 2): what was built
+- **Backtester** on the production decision window and the shared execution model,
+  with portfolio risk rules, metrics with bootstrap CIs, and a minimum-sample flag.
+  Baselines: buy-and-hold and random entries.
+- **Walk-forward validation:** purged/embargoed expanding folds, calibration slice,
+  lockbox, logistic + XGBoost (research dependency group), Brier/ECE/AUC, model vs
+  rules-only. **Experiment registry** with git SHA, lockfile hash, dataset hash and seed.
+- **Premium backtests:** `request_backtest()` (quota/bounds), engine job runner,
+  `POST/GET /api/backtests`. `signal_performance` view.
+- **Not done (needs real data):** the validation report for `trend_pullback` and any
+  model approval. No performance numbers exist or are claimed.
 
 ### Phase 4 (session 2): what was built
 - **Indicators** in NumPy (EMA, RSI, MACD, ATR, Bollinger, volume ratio, confirmed
@@ -48,7 +60,7 @@ are blocked on:
 - CI workflow, Dependabot, gitleaks. **Security upgrade:** next 16.3.8 → 16.4.3
   (critical advisories incl. RCE) and zod 4.6.5 → 4.6.7.
 
-Next commands (Phase 3 completion, then Phase 5):
+Next commands (Phase 3 completion + Phase 5 validation report, then Phase 6):
 ```bash
 npm ci && npm run typecheck && npm run lint && npm test
 npm run db:test:up && npm run test:db
@@ -56,7 +68,8 @@ cd engine && uv sync && uv run pytest && uv run ruff check . && uv run mypy
 # after D5 + network access (local DB, dev only):
 DATABASE_URL='postgres://postgres@127.0.0.1:54329/nexus_engine_test?options=-c%20role%3Dnexus_engine' \
   uv run nexus-engine archive-backfill --symbol BTCUSDT --tf 1h --from-month 2023-01 --to-month 2026-10
-# Phase 5: backtester on signals/execution.py, walk-forward validation, experiments + validation_reports tables
+# once data exists: uv run nexus-engine validate --symbol BTCUSDT --tf 1h --start 2023-01-01 --end 2026-06-30
+# Phase 6: paper trading (IMPLEMENTATION_PLAN.md)
 ```
 
 Cloud-container note (session 2): the repo pins `@playwright/test` 1.56.1
@@ -78,8 +91,9 @@ decision · ⬜ not started.
 | `npm run build` | ✅ pass (Next.js 16.4.3) |
 | `npm run test:e2e` | ✅ 46 / 46 |
 | `npm run test:db` after Phase 3 | ✅ 82 / 82 |
-| Engine: `uv run pytest` / ruff / mypy --strict / pip-audit | ✅ 87 / 87 after Phase 4 (14 DB tests as `nexus_engine`) / clean / clean / 0 known vulnerabilities |
-| `npm run test:db` after Phase 4 | ✅ 90 / 90 |
+| Engine: `uv run pytest` / ruff / mypy --strict / pip-audit | ✅ 100 / 100 after Phase 5 (17 DB tests as `nexus_engine`) / clean / clean / 0 known vulnerabilities |
+| `npm run test:db` after Phase 5 | ✅ 96 / 96 |
+| `npm test` after Phase 5 | ✅ 140 / 140 |
 | `npm audit --omit=dev` | ✅ 0 vulnerabilities (after the next/zod upgrade) |
 | `npm run test:integration` | ✅ passed in GitHub Actions (not runnable in this container: executing the downloaded PostgREST binary was not permitted) |
 | GitHub Actions CI (run #3) | ✅ all 4 jobs green: checks + audit, DB + integration, build + e2e (ubuntu-24.04), gitleaks |
@@ -178,3 +192,4 @@ CI, and the next/zod security upgrade (see "Phase 2 (session 2)" above).
 Phase 3 was then built in the same session (engine + market-data schema). Its live
 exit criteria wait on D5 and network access (see the top of this file).
 Phase 4 followed in the same session (indicators, strategy, signal ledger, resolver).
+Phase 5 followed (backtester, walk-forward validation, Premium backtest queue). Its real validation report awaits data.

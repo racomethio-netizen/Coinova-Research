@@ -17,6 +17,7 @@ PostgreSQL on Supabase. Migrations in `supabase/migrations/` (apply in filename 
 | `20261110000500_engine_role_abuse_reports.sql` | `nexus_engine` role (NOLOGIN, no grants yet); `abuse_reports` with a daily cap |
 | `20261110000600_market_data.sql` | market_sources (terms-review gate), market_pairs, market_candles (unique, validated, immutable finals), candle_revisions, candle_gaps, ingest_runs, latest_prices, engine_heartbeats, engine_jobs; exact `nexus_engine` grants |
 | `20261110000700_signal_ledger.sql` | strategies (immutable versions), model_versions (lifecycle), beta_testers, signal_evaluations (every decision; old HOLD prunable), signals (insert-only, hash chain, DB-time publication), signal_events, signal_outcomes, signal_annotations; visibility by gate + tier |
+| `20261110000800_validation_backtests.sql` | experiments (inputs immutable, finished once), validation_reports (insert-only; approval requires one with a lockbox), backtest_runs/results/trades + `request_backtest()` (Premium, quota, bounds), `signal_performance` view (security invoker) |
 
 `supabase/seed.sql` is **development-only** (it lets simulator subscriptions grant
 access and adds labeled sample articles). Never run it in production.

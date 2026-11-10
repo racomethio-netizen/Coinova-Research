@@ -221,6 +221,20 @@ are immutable.
   10 minutes of the candle close. Otherwise (e.g. catch-up after downtime) it is
   recorded as HOLD `publication_too_late`.
 
+### As implemented in Phase 5
+- `backtest/engine.py` uses the production lookback window and the shared execution
+  model. Equity is **realized** (positions count when closed). Sizing is
+  fixed-fractional 1% risk, capped at 25% notional. One position per direction, at
+  most 3 open. Daily loss limit 3%; drawdown halt 15%.
+- Metrics: Sharpe uses daily realized equity, annualized ×√365, risk-free 0. Bootstrap
+  95% CIs use 1,000 seeded resamples. Fewer than 100 trades → `insufficient_sample`.
+- Validation candidates are rule-passing setups **before** the reward/risk gate. Labels
+  come from the execution model. Splits are expanding walk-forward with purging, a
+  chronological calibration slice, and a 20% lockbox evaluated only with `--lockbox`.
+- A model is `approvable` only if its lockbox result has a sufficient sample and beats
+  rules-only out of sample. The database also refuses approval without a report that
+  has a lockbox result.
+
 ## 8. Signal performance tracking
 
 - Outcome resolver: the same execution module as the backtester, applied to candles

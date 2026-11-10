@@ -92,7 +92,14 @@ Signals run with `SIGNALS_VISIBILITY=staff` and `confidence = null` ("not calibr
 until Phase 5 approves a model.
 **Exit:** signals and outcomes accumulate in shadow mode, and all immutability and leakage tests pass.
 
-## Phase 5: Backtesting and performance tracking
+## Phase 5: Backtesting and performance tracking 🟡
+_Session 2: items 1–4, 6 and 7 are built and tested (backtester, metrics, walk-forward
+with purge/embargo/lockbox, logistic + XGBoost with calibration, experiment registry,
+Premium backtest queue + API, `signal_performance` view). **Item 5 is blocked**: the
+validation report for `trend_pullback` needs real history (decision D5 + network access).
+No model is approved and no performance figure exists yet. Run
+`nexus-engine validate --symbol BTCUSDT --tf 1h --start … --end …` once data is ingested.
+Model artifacts (upload with SHA-256) arrive with the first model worth registering._
 1. Backtest engine (fees, slippage, sizing, intrabar rules, equity/drawdown, comparison).
 2. Metrics module with bootstrap CIs and the minimum-sample rule.
 3. Walk-forward with purge/embargo, calibration, baselines, lockbox, experiment
