@@ -80,8 +80,17 @@ export interface SignalSummary {
   outcome: { outcome: string; netReturn: string | null; rMultiple: string | null; closedAt: string } | null;
 }
 
+// Decimal columns are cast to text in PostgREST: plain `numeric` arrives as a JSON number
+// (a float in JavaScript), which would break exact decimal handling (CLAUDE.md rule 7).
 const SIGNAL_COLUMNS =
-  "id, pair_id, timeframe, direction, as_of, published_at, entry_low, entry_high, stop_loss, take_profits, risk_reward, confidence_band, visibility, market_pairs(symbol), signal_outcomes(outcome, net_return, r_multiple, closed_at)";
+  "id, pair_id, timeframe, direction, as_of, published_at, entry_low::text, entry_high::text, stop_loss::text, take_profits::text, risk_reward::text, confidence_band, visibility, market_pairs(symbol), signal_outcomes(outcome, net_return::text, r_multiple::text, closed_at)";
+
+/** Parse a Postgres array literal of decimals, e.g. "{104.00000000,106.00000000}". */
+export function parseDecimalArray(v: unknown): string[] {
+  if (Array.isArray(v)) return v.map(String);
+  const m = /^\{(.*)\}$/.exec(String(v ?? ""));
+  return m && m[1] ? m[1].split(",").map((x) => x.trim()) : [];
+}
 
 type SignalRow = Record<string, unknown> & { market_pairs: { symbol: string } | null; signal_outcomes: unknown };
 
@@ -91,7 +100,7 @@ function toSummary(r: SignalRow): SignalSummary {
     id: String(r.id), pairId: Number(r.pair_id), symbol: r.market_pairs?.symbol ?? "—", timeframe: r.timeframe as Timeframe,
     direction: r.direction as "BUY" | "SELL", asOf: String(r.as_of), publishedAt: String(r.published_at),
     entryLow: String(r.entry_low), entryHigh: String(r.entry_high), stopLoss: String(r.stop_loss),
-    takeProfits: (r.take_profits as unknown[]).map(String), riskReward: String(r.risk_reward), confidenceBand: String(r.confidence_band),
+    takeProfits: parseDecimalArray(r.take_profits), riskReward: String(r.risk_reward), confidenceBand: String(r.confidence_band),
     visibility: String(r.visibility),
     outcome: o ? { outcome: String(o.outcome), netReturn: o.net_return, rMultiple: o.r_multiple, closedAt: String(o.closed_at) } : null,
   };

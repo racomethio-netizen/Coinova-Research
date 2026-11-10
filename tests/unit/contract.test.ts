@@ -33,3 +33,13 @@ describe("API contract (packages/shared)", () => {
     expect(SignalSummarySchema.safeParse({ ...ok, visibility: "everyone" }).success).toBe(false);
   });
 });
+
+describe("decimal arrays from PostgREST text casts", () => {
+  it("parses Postgres array literals exactly", async () => {
+    const { parseDecimalArray } = await import("@/server/nexus");
+    expect(parseDecimalArray("{104.00000000,106.12345678}")).toEqual(["104.00000000", "106.12345678"]);
+    expect(parseDecimalArray(["1.5"])).toEqual(["1.5"]);
+    expect(parseDecimalArray("{}")).toEqual([]);
+    expect(parseDecimalArray(null)).toEqual([]);
+  });
+});

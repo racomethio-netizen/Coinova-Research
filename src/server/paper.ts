@@ -7,18 +7,18 @@ import { valueAccount } from "@/lib/paper/summary";
 export async function getPaperSummary(supabase: SupabaseClient, userId: string) {
   const { data: account, error } = await supabase
     .from("paper_accounts")
-    .select("id, name, quote_asset, starting_balance, cash_balance, created_at")
+    .select("id, name, quote_asset, starting_balance::text, cash_balance::text, created_at") // decimals as text, not JSON floats
     .eq("user_id", userId)
     .eq("status", "active")
     .maybeSingle();
   if (error) throw mapDbError(error, "paper account");
   if (!account) return { virtual: true as const, account: null };
   const [positions, orders, fills, snapshots, prices, pairs] = await Promise.all([
-    supabase.from("paper_positions").select("pair_id, quantity, cost_basis, realized_pnl, stop_loss, take_profit").eq("account_id", account.id),
+    supabase.from("paper_positions").select("pair_id, quantity::text, cost_basis::text, realized_pnl::text, stop_loss::text, take_profit::text").eq("account_id", account.id),
     supabase.from("paper_orders").select("*").eq("account_id", account.id).order("created_at", { ascending: false }).limit(50),
     supabase.from("paper_fills").select("*").eq("account_id", account.id).order("created_at", { ascending: false }).limit(50),
     supabase.from("paper_equity_snapshots").select("taken_at, equity, cash").eq("account_id", account.id).order("taken_at").limit(24 * 30),
-    supabase.from("latest_prices").select("pair_id, price, fetched_at"),
+    supabase.from("latest_prices").select("pair_id, price::text, fetched_at"),
     supabase.from("market_pairs").select("id, symbol"),
   ]);
   for (const r of [positions, orders, fills, snapshots, prices, pairs]) if (r.error) throw mapDbError(r.error, "paper summary");

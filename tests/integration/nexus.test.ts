@@ -53,7 +53,7 @@ describe("NEXUS read models match the shared API contract", () => {
     const list = await listSignals(userClient(pro));
     const mine = list.find((s) => s.id === signalId);
     expect(mine).toBeDefined();
-    expect(SignalSummarySchema.parse(mine)).toMatchObject({ direction: "BUY", takeProfits: ["104.00000000", "106.00000000"], outcome: null });
+    expect(SignalSummarySchema.parse(mine)).toMatchObject({ direction: "BUY", entryLow: "99.50000000", takeProfits: ["104.00000000", "106.00000000"], riskReward: "1.8000", outcome: null });
     const detail = await getSignal(userClient(pro), signalId);
     expect(SignalDetailSchema.parse(detail).events).toHaveLength(1);
   });
@@ -76,5 +76,6 @@ describe("NEXUS read models match the shared API contract", () => {
     expect(error).toBeNull();
     const s = PaperSummarySchema.parse(await getPaperSummary(c, pro));
     expect(s.account?.cash).toBe("2500.00000000");
+    expect(s.account?.starting_balance).toBe("2500.00000000"); // exact decimal text, not a JSON float
   });
 });
