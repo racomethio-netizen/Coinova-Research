@@ -50,7 +50,8 @@ decision · ⬜ not started.
 | `npm run build` | ✅ pass (Next.js 16.4.3) |
 | `npm run test:e2e` | ✅ 46 / 46 |
 | `npm audit --omit=dev` | ✅ 0 vulnerabilities (after the next/zod upgrade) |
-| `npm run test:integration` | ⚠️ not run in this container (running the downloaded PostgREST binary was not permitted); runs in CI |
+| `npm run test:integration` | ✅ passed in GitHub Actions (not runnable in this container: executing the downloaded PostgREST binary was not permitted) |
+| GitHub Actions CI (run #3) | ✅ all 4 jobs green: checks + audit, DB + integration, build + e2e (ubuntu-24.04), gitleaks |
 
 Session 1 results (before NEXUS): unit 124, DB 52, integration 25/25, e2e 46.
 
