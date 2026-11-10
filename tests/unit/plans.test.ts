@@ -41,7 +41,6 @@ describe("feature entitlements", () => {
   });
 
   it("match the NEXUS plan definitions", () => {
-    expect(PLAN_FEATURES.free["charts.basic"]).toBe(true);
     expect(PLAN_FEATURES.free["signals.history"]).toBe(false);
     expect(PLAN_FEATURES.pro["signals.alerts"]).toBe(true);
     expect(PLAN_FEATURES.pro["performance.reports"]).toBe(true);

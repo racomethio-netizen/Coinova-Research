@@ -45,6 +45,8 @@ export interface TierLimits {
   notificationsPerHour: number;
   /** Max AI assistant requests per user per UTC day. */
   aiRequestsPerDay: number;
+  /** Max backtests queued per user per rolling day (Premium feature). */
+  backtestsPerDay: number;
 }
 
 export const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
@@ -55,6 +57,7 @@ export const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     alerts: 0,
     notificationsPerHour: 0,
     aiRequestsPerDay: 3,
+    backtestsPerDay: 0,
   },
   pro: {
     watchlists: 5,
@@ -63,6 +66,7 @@ export const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     alerts: 25,
     notificationsPerHour: 10,
     aiRequestsPerDay: 20,
+    backtestsPerDay: 0,
   },
   premium: {
     watchlists: 10,
@@ -71,6 +75,7 @@ export const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     alerts: 50,
     notificationsPerHour: 20,
     aiRequestsPerDay: 50,
+    backtestsPerDay: 10,
   },
 };
 
@@ -81,7 +86,6 @@ export const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
  * require their gate (docs/nexus/COMPLIANCE.md).
  */
 export const FEATURE_KEYS = [
-  "charts.basic",
   "analytics.advanced",
   "signals.history",
   "signals.alerts",
@@ -89,12 +93,20 @@ export const FEATURE_KEYS = [
   "models.analytics",
   "backtesting",
   "strategies.custom",
-  "research.advanced_tools",
 ] as const;
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
 
+/**
+ * Where each feature is enforced (checked by tests/unit/entitlements.test.ts):
+ *   analytics.advanced  SQL view market_scanner (advanced indicators) — migration 0018
+ *   signals.history     SQL can_view_signal (live + full history) — migration 0013
+ *   signals.alerts      SQL notify_signal_subscribers (opt-in signal notifications) — 0018
+ *   performance.reports API /api/performance/export (CSV of the signal ledger)
+ *   models.analytics    RLS on validation_reports — 0018
+ *   backtesting         SQL request_backtest + API /api/backtests — 0014/0018
+ *   strategies.custom   SQL request_backtest (custom parameters) — 0018
+ */
 const FEATURE_MIN_TIER: Record<FeatureKey, MembershipTier> = {
-  "charts.basic": "free",
   "analytics.advanced": "pro",
   "signals.history": "pro",
   "signals.alerts": "pro",
@@ -102,7 +114,6 @@ const FEATURE_MIN_TIER: Record<FeatureKey, MembershipTier> = {
   "models.analytics": "premium",
   backtesting: "premium",
   "strategies.custom": "premium",
-  "research.advanced_tools": "premium",
 };
 
 export const PLAN_FEATURES: Record<MembershipTier, Record<FeatureKey, boolean>> = Object.fromEntries(
@@ -208,7 +219,10 @@ export const FEATURE_MATRIX: ReadonlyArray<{
   { feature: "Configurable alerts", free: false, pro: `Up to ${TIER_LIMITS.pro.alerts}`, premium: `Up to ${TIER_LIMITS.premium.alerts}` },
   { feature: "Market scanner and candlestick charts", free: true, pro: true, premium: true },
   { feature: "Paper trading (virtual funds)", free: true, pro: true, premium: true },
-  { feature: "Strategy backtesting (bounded custom parameters)", free: false, pro: false, premium: "Up to 10 per day" },
+  { feature: "Advanced scanner indicators (MACD, ATR, volume, higher-timeframe trend)", free: false, pro: true, premium: true },
+  { feature: "Strategy backtesting", free: false, pro: false, premium: `Up to ${TIER_LIMITS.premium.backtestsPerDay} per day` },
+  { feature: "Custom backtest parameters (bounded)", free: false, pro: false, premium: true },
+  { feature: "Model analytics (validation reports of approved models)", free: false, pro: false, premium: true },
   { feature: "AI research assistant (daily requests)", free: String(TIER_LIMITS.free.aiRequestsPerDay), pro: String(TIER_LIMITS.pro.aiRequestsPerDay), premium: String(TIER_LIMITS.premium.aiRequestsPerDay) },
 ];
 

@@ -17,6 +17,10 @@ function rsiLabel(rsi: number) {
   return rsi >= 70 ? "Overbought (≥70)" : rsi <= 30 ? "Oversold (≤30)" : "Neutral";
 }
 
+function Locked() {
+  return <Link href="/pricing" className="text-xs text-faint underline" title="Advanced indicators are included in Pro">Pro</Link>;
+}
+
 export default async function ScannerPage() {
   const { supabase } = await getViewer();
   const [rows, pairs] = supabase ? await Promise.all([getScanner(supabase), listPairs(supabase)]).catch(() => [null, null] as const) : [null, null];
@@ -44,6 +48,7 @@ export default async function ScannerPage() {
             <tbody className="divide-y divide-line">
               {rows.map((r) => {
                 const t = trend(Number(r.close), Number(r.ema200));
+                const locked = r.macd_hist === null;
                 const htfUp = Number(r.htf_ema50) > Number(r.htf_ema200);
                 return (
                   <tr key={`${r.pair_id}-${r.timeframe}`}>
@@ -53,11 +58,11 @@ export default async function ScannerPage() {
                     <td className="px-3 py-2">{r.timeframe}</td>
                     <td className="px-3 py-2"><Price v={r.close} /></td>
                     <td className="px-3 py-2"><Badge tone={t.tone}>{t.label}</Badge></td>
-                    <td className="px-3 py-2"><Badge tone={htfUp ? "positive" : "negative"}>{r.htf} {htfUp ? "EMA50 > EMA200" : "EMA50 < EMA200"}</Badge></td>
+                    <td className="px-3 py-2">{locked ? <Locked /> : <Badge tone={htfUp ? "positive" : "negative"}>{r.htf} {htfUp ? "EMA50 > EMA200" : "EMA50 < EMA200"}</Badge>}</td>
                     <td className="px-3 py-2 tabular-nums">{Number(r.rsi14).toFixed(1)} <span className="text-xs text-faint">{rsiLabel(Number(r.rsi14))}</span></td>
-                    <td className="px-3 py-2 tabular-nums">{Number(r.macd_hist).toPrecision(4)}</td>
-                    <td className="px-3 py-2"><Price v={r.atr14} /></td>
-                    <td className="px-3 py-2 tabular-nums">{Number(r.volume_ratio).toFixed(2)}</td>
+                    <td className="px-3 py-2 tabular-nums">{locked ? <Locked /> : Number(r.macd_hist).toPrecision(4)}</td>
+                    <td className="px-3 py-2">{locked ? <Locked /> : <Price v={r.atr14} />}</td>
+                    <td className="px-3 py-2 tabular-nums">{locked ? <Locked /> : Number(r.volume_ratio).toFixed(2)}</td>
                     <td className="px-3 py-2 text-xs text-muted">{fmtDate(r.as_of, { time: true })}</td>
                   </tr>
                 );

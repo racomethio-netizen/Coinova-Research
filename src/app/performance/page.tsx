@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { NotConfigured, RiskDisclosure } from "@/components/nexus/bits";
 import { Badge, Card, CardBody, CardHeader, Container, EmptyState, Notice, PageHeader } from "@/components/ui";
-import { getViewer } from "@/lib/auth/session";
+import { getViewer, hasFeature } from "@/lib/auth/session";
 import { fmtDate } from "@/lib/format";
 import { getPerformance } from "@/server/nexus";
 
@@ -21,6 +21,9 @@ export default async function PerformancePage() {
         Results are never cherry-picked: losses, expirations and invalidations all count, and published signals cannot be edited or deleted. Below {MIN_SAMPLE} entered trades a group is marked
         <strong> insufficient sample</strong> and no win rate is shown. Backtests are hypothetical and are shown only on your own backtest pages, never mixed with these results.
       </Notice>
+      {hasFeature(viewer, "performance.reports") ? (
+        <p className="mt-3 text-sm"><a className="text-accent underline" href="/api/performance/export">Download the full signal ledger (CSV)</a> — every signal you can see, with outcomes.</p>
+      ) : null}
       {!viewer.supabase || rows === null ? (
         <div className="mt-4"><NotConfigured what="Performance data" /></div>
       ) : rows.length === 0 ? (

@@ -22,10 +22,11 @@ export default function Scanner() {
             <T style={{ fontWeight: "700" }}>{r.symbol} · {r.timeframe}</T>
             <Badge label={above ? "Above EMA200" : "Below EMA200"} tone={above ? "positive" : "negative"} />
             {r.htfTrendUp !== null ? <Badge label={`${r.htf} ${r.htfTrendUp ? "EMA50 > EMA200" : "EMA50 < EMA200"}`} tone={r.htfTrendUp ? "positive" : "negative"} /> : null}
+            {r.macdHist === null ? <T tone="faint" style={{ fontSize: 12 }}>Advanced indicators are included in Pro.</T> : null}
             <Row label="Close" value={fmtDecimal(r.close)} />
             <Row label="RSI(14)" value={Number(r.rsi14).toFixed(1)} />
             <Row label="ATR(14)" value={fmtDecimal(r.atr14)} />
-            <Row label="Volume × avg" value={Number(r.volumeRatio).toFixed(2)} />
+            <Row label="Volume × avg" value={r.volumeRatio === null ? "—" : Number(r.volumeRatio).toFixed(2)} />
             <Row label="As of" value={fmtDateTime(r.asOf)} />
           </Card>
         );

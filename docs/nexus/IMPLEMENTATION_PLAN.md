@@ -153,7 +153,11 @@ dashboard, scanner, signal detail, performance, paper trading, notifications (pu
 tokens), settings. Chart approach decided (DEPENDENCIES.md). Store policy review (G-7, D7).
 Tests: type checks, unit tests, API contract tests against shared schemas, internal EAS builds.
 
-## Phase 9: Subscription architecture
+## Phase 9: Subscription architecture 🟡
+_Session 2: entitlements are done and tested. Every feature in `plans.ts` is enforced
+in SQL or the API (migration 0018), with entitlement-matrix tests at unit and RLS level.
+Backtest quotas are per tier. A provider conformance suite exists for webhooks. **Blocked**:
+the real payment adapter needs D9; mobile stays without purchase UI (D7)._
 Feature entitlements enforced across API and RLS for all NEXUS features. Backtest
 quotas per tier. Pricing driven by `plans.ts` and gates. Payment provider adapter after D9
 (signature-verified webhooks only, existing rules). Mobile purchase approach per D7.

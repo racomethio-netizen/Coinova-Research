@@ -32,9 +32,10 @@ export const ScannerRowSchema = z.object({
   ema50: dec,
   ema200: dec,
   rsi14: dec,
-  macdHist: dec,
-  atr14: dec,
-  volumeRatio: dec,
+  /** Advanced indicators are null without the analytics.advanced entitlement (Pro+). */
+  macdHist: dec.nullable(),
+  atr14: dec.nullable(),
+  volumeRatio: dec.nullable(),
   htf: z.string().nullable(),
   htfTrendUp: z.boolean().nullable(),
 });

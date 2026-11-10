@@ -584,7 +584,7 @@ describe("feature entitlements (plan_features / has_feature)", () => {
     const pro = await createUser(db);
     await grantSubscription(db, pro, { tier: "pro" });
     const check = async (actor: Parameters<typeof as>[1], key: string) => (await as(db, actor, (q) => q("select public.has_feature($1) v", [key]))).rows[0].v;
-    expect(await check({ role: "anon" }, "charts.basic")).toBe(true);
+    expect(await check({ role: "anon" }, "charts.basic")).toBe(false); // removed in 0018 (not a real entitlement)
     expect(await check({ role: "anon" }, "signals.history")).toBe(false);
     expect(await check({ role: "authenticated", userId: carol }, "signals.history")).toBe(false);
     expect(await check({ role: "authenticated", userId: pro }, "signals.history")).toBe(true);
@@ -1245,5 +1245,99 @@ describe("mobile push devices (NEXUS Phase 8)", () => {
       q("insert into public.alerts (type, coin_id, threshold, channels) values ('price_above', 'bitcoin', 1, '{in_app,push}')"),
     );
     expect(await as(db, { role: "authenticated", userId: alice }, (q) => expectError(q("insert into public.alerts (type, coin_id, threshold, channels) values ('price_above', 'bitcoin', 1, '{sms}')")))).toMatch(/check/);
+  });
+});
+
+describe("entitlement matrix enforced in SQL (NEXUS Phase 9)", () => {
+  let freeU: string;
+  let proU: string;
+  let premU: string;
+  let ethId: number;
+  let sid: number;
+  beforeAll(async () => {
+    freeU = await createUser(db);
+    proU = await createUser(db);
+    premU = await createUser(db);
+    await grantSubscription(db, proU, { tier: "pro" });
+    await grantSubscription(db, premU, { tier: "premium" });
+    ethId = (await db.query("select id from public.market_pairs where symbol = 'ETHUSDT'")).rows[0].id;
+    sid = (await db.query("select id from public.strategies where key = 'trend_pullback' limit 1")).rows[0].id;
+  });
+  const u = (id: string) => ({ role: "authenticated" as const, userId: id });
+
+  it("has_feature matches the plan catalog for every feature and tier", async () => {
+    for (const [uid, tier] of [[freeU, "free"], [proU, "pro"], [premU, "premium"]] as const) {
+      const rows = (await as(db, u(uid), (q) => q("select feature_key, public.has_feature(feature_key) v from public.plan_features where tier = $1", [tier]))).rows;
+      expect(rows.length).toBe(Object.keys(PLAN_FEATURES[tier]).length);
+      for (const r of rows) expect(r.v, `${tier} ${r.feature_key}`).toBe(PLAN_FEATURES[tier][r.feature_key as keyof (typeof PLAN_FEATURES)["free"]]);
+    }
+  });
+
+  it("analytics.advanced: the scanner hides advanced indicators below Pro", async () => {
+    const row = async (actor: Parameters<typeof as>[1]) => (await as(db, actor, (q) => q("select macd_hist, atr14, rsi14 from public.market_scanner where pair_id = $1 and timeframe = '4h'", [ethId]))).rows[0];
+    expect(await row({ role: "anon" })).toEqual({ macd_hist: null, atr14: null, rsi14: "48.2" });
+    expect(await row(u(freeU))).toMatchObject({ macd_hist: null });
+    expect(await row(u(proU))).toMatchObject({ macd_hist: "1.5", atr14: "30" });
+  });
+
+  it("models.analytics: validation reports of approved models need Premium", async () => {
+    const exp = (await db.query("insert into public.experiments (kind, strategy_id, config, dataset_hash, engine_version, seed) values ('walk_forward', $1, '{}', $2, '0.1.0', 1) returning id", [sid, "d".repeat(64)])).rows[0].id;
+    const rep = (await db.query("insert into public.validation_reports (experiment_id, strategy_id, period_start, period_end, n_trades, folds, metrics, baselines, assumptions, lockbox) values ($1, $2, now() - interval '1 year', now(), 0, '[]', '{}', '{}', '{}', '{\"ok\":true}') returning id", [exp, sid])).rows[0].id;
+    await db.query("insert into public.model_versions (strategy_id, version, model_type, artifact_sha256, status, validation_report_id, approved_at) values ($1, '9.0.0', 'logistic', $2, 'approved', $3, now())", [sid, "e".repeat(64), rep]);
+    const sees = async (uid: string) => (await as(db, u(uid), (q) => q("select 1 from public.validation_reports where id = $1", [rep]))).rowCount;
+    expect(await sees(freeU)).toBe(0);
+    expect(await sees(proU)).toBe(0);
+    expect(await sees(premU)).toBe(1);
+  });
+
+  it("strategies.custom and the per-tier backtest quota are enforced in request_backtest", async () => {
+    const req = (params: string) => `select public.request_backtest(${ethId}, '1h', now() - interval '30 days', now() - interval '1 day', '${params}') id`;
+    await db.query("update public.plan_features set enabled = false where tier = 'premium' and feature_key = 'strategies.custom'");
+    try {
+      expect(await as(db, u(premU), (q) => expectError(q(req('{"min_net_rr":2}'))))).toMatch(/feature_required:strategies.custom/);
+      expect((await as(db, u(premU), (q) => q(req("{}")))).rows[0].id).toBeTruthy();
+    } finally {
+      await db.query("update public.plan_features set enabled = true where tier = 'premium' and feature_key = 'strategies.custom'");
+    }
+    await db.query("update public.membership_plans set limits = limits || '{\"backtestsPerDay\":0}' where tier = 'premium'");
+    try {
+      expect(await as(db, u(premU), (q) => expectError(q(req("{}"))))).toMatch(/limit_reached:backtestsPerDay/);
+    } finally {
+      await db.query("update public.membership_plans set limits = limits || '{\"backtestsPerDay\":10}' where tier = 'premium'");
+    }
+  });
+
+  it("signals.alerts: only opted-in users whose plan includes it are notified, and only for public signals", async () => {
+    for (const uid of [freeU, proU]) await db.query("update public.profiles set signal_notifications = true where id = $1", [uid]);
+    const optedOutPro = await createUser(db);
+    await grantSubscription(db, optedOutPro, { tier: "pro" });
+    await db.query("insert into public.device_push_tokens (user_id, token, platform) values ($1, 'ExponentPushToken[proPushDevice00000000000]', 'ios')", [proU]);
+    const publish = async (visibility: string) => {
+      const ev = (await db.query("insert into public.signal_evaluations (pair_id, timeframe, strategy_id, as_of, decision) values ($1, '15m', $2, now() - make_interval(mins => (random() * 100000)::int), 'BUY') returning id", [ethId, sid])).rows[0].id;
+      const prev = (await db.query("select content_hash from public.signals order by seq desc limit 1")).rows[0]?.content_hash ?? null;
+      const id = randomUUID();
+      await db.query(
+        `insert into public.signals (id, evaluation_id, pair_id, timeframe, strategy_id, direction, as_of, published_at, entry_low, entry_high, stop_loss, take_profits,
+          risk_reward, confidence_band, entry_expires_at, horizon_bars, assumptions, explanation, visibility, prev_hash, content_hash)
+         values ($1, $2, $3, '15m', $4, 'BUY', now() - interval '15 minutes', now(), 2000, 2005, 1950, '{2100}', 1.9, 'not_calibrated', now() + interval '2 hours', 24, '{}', '{}', $5, $6, encode(sha256(convert_to($7, 'UTF8')), 'hex'))`,
+        [id, ev, ethId, sid, visibility, prev, id],
+      );
+      return id;
+    };
+    const publicSig = await publish("public");
+    const staffSig = await publish("staff");
+    const notified = async (signalId: string) => (await db.query("select user_id from public.notifications where kind = 'signal' and data->>'signalId' = $1", [signalId])).rows.map((r) => r.user_id);
+    expect(await notified(publicSig)).toEqual([proU]);
+    expect(await notified(staffSig)).toEqual([]);
+    const channels = (await db.query("select d.channel, d.status from public.notification_deliveries d join public.notifications n on n.id = d.notification_id where n.data->>'signalId' = $1 order by d.channel", [publicSig])).rows;
+    expect(channels).toEqual([{ channel: "in_app", status: "sent" }, { channel: "push", status: "pending" }]);
+    const own = await as(db, u(proU), (q) => q("select title from public.notifications where kind = 'signal'"));
+    expect(own.rows[0].title).toBe("BUY ETHUSDT · 15m");
+  });
+
+  it("users can opt in to signal notifications but cannot change other profile fields", async () => {
+    await as(db, u(freeU), async (q) => {
+      expect((await q("update public.profiles set signal_notifications = false where id = $1", [freeU])).rowCount).toBe(1);
+    });
   });
 });

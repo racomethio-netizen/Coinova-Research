@@ -21,6 +21,7 @@ const ProfileSchema = z.object({
   }, "Unknown time zone."),
   emailNotifications: z.literal("on").optional(),
   marketingEmails: z.literal("on").optional(),
+  signalNotifications: z.literal("on").optional(),
 });
 
 export async function updateProfileAction(_prev: FormState, form: FormData): Promise<FormState> {
@@ -34,6 +35,8 @@ export async function updateProfileAction(_prev: FormState, form: FormData): Pro
       timezone: parsed.data.timezone,
       email_notifications: parsed.data.emailNotifications === "on",
       marketing_emails: parsed.data.marketingEmails === "on",
+      // Delivery also requires the signals.alerts entitlement (checked in SQL at publish time).
+      signal_notifications: parsed.data.signalNotifications === "on",
     })
     .eq("id", viewer.user.id);
   if (error) return { ok: false, message: "Could not save your settings." };

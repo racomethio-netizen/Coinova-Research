@@ -21,6 +21,7 @@ PostgreSQL on Supabase. Migrations in `supabase/migrations/` (apply in filename 
 | `20261110000900_paper_trading.sql` | paper_accounts (one active, archived on reset), paper_positions, paper_orders, paper_fills (insert-only), paper_equity_snapshots; user functions open/reset/place/cancel/set_paper_protection with validation and rate limits; `export_my_paper_data()` |
 | `20261110001000_market_scanner.sql` | `market_scanner` view: latest indicator values per pair/timeframe (no decisions, reasons or levels) |
 | `20261110001100_push_devices.sql` | `device_push_tokens` (own-only), `push` channel for alerts and deliveries |
+| `20261110001200_entitlements.sql` | Entitlements enforced in SQL: scanner advanced columns (`analytics.advanced`), `models.analytics` RLS on validation reports, `strategies.custom` + per-tier `backtestsPerDay` in `request_backtest`, opt-in signal notifications (`signals.alerts`); removes `charts.basic` and `research.advanced_tools` |
 
 `supabase/seed.sql` is **development-only** (it lets simulator subscriptions grant
 access and adds labeled sample articles). Never run it in production.

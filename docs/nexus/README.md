@@ -31,7 +31,8 @@ the target system and how we get there.
 | 6. Paper trading | ✅ Done (virtual, long-only). Fills need live prices from Phase 3 |
 | 7. Web dashboard | ✅ Done (the brand name waits on D2) |
 | 8. Mobile application | ✅ Done (no store release yet; see MOBILE.md) |
-| 9–10 | ⬜ Not started. See IMPLEMENTATION_PLAN.md |
+| 9. Subscription architecture | 🟡 Entitlements enforced and tested. The payment provider adapter waits on D9 |
+| 10. Testing and deployment | ⬜ Not started. See IMPLEMENTATION_PLAN.md |
 
 No NEXUS feature is described as implemented unless the code exists and its tests pass.
 The capabilities CryptoScope already has are listed, with their verification

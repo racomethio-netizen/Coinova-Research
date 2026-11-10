@@ -7,12 +7,22 @@ _Last updated: 2026-11-10 (session 2)._
 The product is being extended into **NEXUS AI** (signals, backtesting, paper
 trading, mobile). The plan, architecture, ERD, risks and compliance gates are in
 [`docs/nexus/`](nexus/README.md). **Phases 1, 2, 4, 6, 7 and 8 are done; Phases 3 and 5 are built and
-tested on synthetic data** (🟡). Its exit criteria (≥3-year backfill, 24 h live run)
+tested on synthetic data** (🟡); Phase 9 entitlements are done, and its payment adapter waits on D9. Its exit criteria (≥3-year backfill, 24 h live run)
 are blocked on:
 1. **Owner decision D5:** approve the data source + hosting region
    (docs/nexus/MARKET_DATA_SOURCES.md) and record the terms review (gate G-4).
 2. **Network access** to `data-api.binance.vision` and `data.binance.vision` in the cloud
    environment. Both are currently refused by the proxy.
+
+### Phase 9 (session 2): what was built
+- Migration 0018 enforces every plan feature: scanner advanced indicators (Pro), model
+  analytics RLS (Premium), custom backtest parameters (Premium), per-tier `backtestsPerDay`,
+  opt-in signal notifications for public signals (Pro). Removed `charts.basic` and
+  `research.advanced_tools` (not real entitlements).
+- `GET /api/performance/export` (CSV, `performance.reports`); signal-notification opt-in in
+  settings; locked advanced columns on web and mobile scanner.
+- Tests: entitlement matrix (unit + RLS), billing provider conformance suite.
+- Not done: real payment adapter (**D9**). Mobile purchase stays off (D7).
 
 ### Phase 8 (session 2): what was built
 - `mobile/` Expo app (SDK 58): SecureStore sessions, a bearer-token API client validated
@@ -95,7 +105,8 @@ cd engine && uv sync && uv run pytest && uv run ruff check . && uv run mypy
 DATABASE_URL='postgres://postgres@127.0.0.1:54329/nexus_engine_test?options=-c%20role%3Dnexus_engine' \
   uv run nexus-engine archive-backfill --symbol BTCUSDT --tf 1h --from-month 2023-01 --to-month 2026-10
 # once data exists: uv run nexus-engine validate --symbol BTCUSDT --tf 1h --start 2023-01-01 --end 2026-06-30
-# Phase 9: subscriptions (entitlements across API/RLS, payment provider after D9, mobile purchase approach)
+# Phase 9 remainder: implement the BillingProvider adapter after D9 and run tests/support/billing-conformance.ts against it
+# Phase 10: testing and deployment (needs owner approval for any deploy)
 ```
 
 Cloud-container note (session 2): the repo pins `@playwright/test` 1.56.1
@@ -122,6 +133,7 @@ decision · ⬜ not started.
 | `npm test` after Phase 8 | ✅ 154 / 154 |
 | Mobile: typecheck / `npm test` / `bundle:check` | ✅ clean / 9 / 9 / iOS + Android bundles |
 | `npm run test:e2e` after Phase 7 | ✅ 56 / 56 |
+| After Phase 9: unit / DB / integration / e2e | ✅ 164 / 111 / 29 / 56 |
 | `npm audit --omit=dev` | ✅ 0 vulnerabilities (after the next/zod upgrade) |
 | `npm run test:integration` | ✅ passed in GitHub Actions (not runnable in this container: executing the downloaded PostgREST binary was not permitted) |
 | GitHub Actions CI (run #3) | ✅ all 4 jobs green: checks + audit, DB + integration, build + e2e (ubuntu-24.04), gitleaks |
@@ -224,3 +236,4 @@ Phase 5 followed (backtester, walk-forward validation, Premium backtest queue). 
 Phase 6 followed (paper trading: schema, engine fills, API).
 Phase 7 followed (web dashboard: public NEXUS pages, paper/backtest dashboards, admin).
 Phase 8 followed (mobile app, shared API contract, push channel).
+Phase 9 followed (entitlements enforced in SQL/API, conformance suite). The payment adapter waits on D9.

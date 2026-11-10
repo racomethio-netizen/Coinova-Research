@@ -6,7 +6,13 @@ import { api } from "@/lib/client/api";
 import { useMutation } from "@/lib/client/use-mutation";
 import { deleteAccountAction, updateProfileAction } from "./actions";
 
-export function ProfileForm({ initial }: { initial: { displayName: string; timezone: string; emailNotifications: boolean; marketingEmails: boolean } }) {
+export function ProfileForm({
+  initial,
+  signalAlertsIncluded = false,
+}: {
+  initial: { displayName: string; timezone: string; emailNotifications: boolean; marketingEmails: boolean; signalNotifications?: boolean };
+  signalAlertsIncluded?: boolean;
+}) {
   const [state, action, pending] = useActionState(updateProfileAction, {});
   return (
     <form action={action} className="grid max-w-xl gap-4">
@@ -22,6 +28,10 @@ export function ProfileForm({ initial }: { initial: { displayName: string; timez
       </label>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" name="marketingEmails" defaultChecked={initial.marketingEmails} /> Product news and research digests
+      </label>
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" name="signalNotifications" defaultChecked={initial.signalNotifications} disabled={!signalAlertsIncluded} /> Notify me when a new signal is published
+        {!signalAlertsIncluded ? <span className="text-xs text-faint">(Pro and Premium)</span> : null}
       </label>
       <div>
         <Button type="submit" disabled={pending}>

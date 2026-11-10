@@ -149,11 +149,12 @@ export const PERFORMANCE_MIN_SAMPLE = 100;
 
 export function toScannerRow(r: Record<string, unknown>): ScannerRow {
   const s = (v: unknown) => String(v);
+  const n = (v: unknown) => (v === null || v === undefined ? null : String(v));
   return {
     pairId: Number(r.pair_id), symbol: s(r.symbol), timeframe: r.timeframe as Timeframe, asOf: s(r.as_of),
-    close: s(r.close), ema20: s(r.ema20), ema50: s(r.ema50), ema200: s(r.ema200), rsi14: s(r.rsi14), macdHist: s(r.macd_hist),
-    atr14: s(r.atr14), volumeRatio: s(r.volume_ratio), htf: r.htf === null || r.htf === undefined ? null : s(r.htf),
-    htfTrendUp: r.htf_ema50 === null || r.htf_ema200 === null ? null : Number(r.htf_ema50) > Number(r.htf_ema200),
+    close: s(r.close), ema20: s(r.ema20), ema50: s(r.ema50), ema200: s(r.ema200), rsi14: s(r.rsi14), macdHist: n(r.macd_hist),
+    atr14: n(r.atr14), volumeRatio: n(r.volume_ratio), htf: r.htf === null || r.htf === undefined ? null : s(r.htf),
+    htfTrendUp: r.htf_ema50 === null || r.htf_ema50 === undefined || r.htf_ema200 === null || r.htf_ema200 === undefined ? null : Number(r.htf_ema50) > Number(r.htf_ema200),
   };
 }
 

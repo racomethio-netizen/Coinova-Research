@@ -1,5 +1,5 @@
 import { buttonClass, ButtonLink, Card, CardBody, CardHeader, PageHeader } from "@/components/ui";
-import { requireUserPage } from "@/lib/auth/session";
+import { hasFeature, requireUserPage } from "@/lib/auth/session";
 import { fmtDate } from "@/lib/format";
 import { isTelegramConfigured } from "@/lib/notify/telegram";
 import { DeleteAccountForm, ProfileForm, TelegramLink } from "./client";
@@ -7,7 +7,7 @@ import { DeleteAccountForm, ProfileForm, TelegramLink } from "./client";
 export default async function SettingsPage() {
   const viewer = await requireUserPage("/dashboard/settings");
   const [{ data: profile }, { data: telegram }] = await Promise.all([
-    viewer.supabase.from("profiles").select("display_name, timezone, email_notifications, marketing_emails").eq("id", viewer.user.id).maybeSingle(),
+    viewer.supabase.from("profiles").select("display_name, timezone, email_notifications, marketing_emails, signal_notifications").eq("id", viewer.user.id).maybeSingle(),
     viewer.supabase.from("telegram_accounts").select("username, linked_at").eq("user_id", viewer.user.id).maybeSingle(),
   ]);
 
@@ -23,7 +23,9 @@ export default async function SettingsPage() {
               timezone: profile?.timezone ?? "UTC",
               emailNotifications: profile?.email_notifications ?? true,
               marketingEmails: profile?.marketing_emails ?? false,
+              signalNotifications: profile?.signal_notifications ?? false,
             }}
+            signalAlertsIncluded={hasFeature(viewer, "signals.alerts")}
           />
         </CardBody>
       </Card>

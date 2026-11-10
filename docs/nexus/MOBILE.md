@@ -31,7 +31,7 @@ conflicts with the web app.
 ## Decisions
 | Decision | Choice | Why |
 |---|---|---|
-| D7 Monetization | **No purchase UI or purchase links in the app**; it only shows the current plan | Offering subscriptions in-app can require store billing. Links to external purchase are restricted (anti-steering). Revisit with Phase 9 (e.g. store IAP via a billing provider) |
+| D7 Monetization | **No purchase UI or purchase links in the app**; it only shows the current plan | Offering subscriptions in-app can require store billing. Links to external purchase are restricted (anti-steering). Reviewed in Phase 9: unchanged. Upgrades happen on the web; locked features say "included in Pro" without a link. Store IAP needs D9 and a G-7 review |
 | Charts | "Open chart" opens the web chart in an in-app browser | Lightweight Charts targets the DOM. This keeps v1 small; a native chart can come later |
 | Sign-up / password reset | Opened on the website | Consent, terms and email confirmation already live there |
 | Account deletion | **In the app** (`DELETE /api/account`) | App Store guideline 5.1.1(v) requires in-app deletion for apps with accounts |
