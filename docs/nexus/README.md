@@ -27,7 +27,8 @@ the target system and how we get there.
 | 3. Market-data ingestion | 🟡 Built and tested on synthetic data. Live ingestion blocked on D5 + network access |
 | 4. Technical analysis and signal engine | ✅ Done (rules-only, shadow mode). Runs live once Phase 3 has data |
 | 5. Backtesting and performance tracking | 🟡 Built and tested on synthetic data. The real validation report needs Phase 3 data |
-| 6–10 | ⬜ Not started. See IMPLEMENTATION_PLAN.md |
+| 6. Paper trading | ✅ Done (virtual, long-only). Fills need live prices from Phase 3 |
+| 7–10 | ⬜ Not started. See IMPLEMENTATION_PLAN.md |
 
 No NEXUS feature is described as implemented unless the code exists and its tests pass.
 The capabilities CryptoScope already has are listed, with their verification

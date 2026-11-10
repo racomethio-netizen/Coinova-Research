@@ -16,6 +16,8 @@ const LIMIT_MESSAGES: Record<string, string> = {
   aiRequestsPerDay: "You have reached today's AI assistant limit for your plan.",
   abuseReports: "You have filed the maximum number of reports for today. Please try again tomorrow.",
   backtestsPerDay: "You have reached today's backtest limit. Please try again tomorrow.",
+  paperOrders: "Too many paper orders. Please slow down.",
+  paperOpenOrders: "You have too many open paper orders. Cancel some first.",
 };
 
 /**

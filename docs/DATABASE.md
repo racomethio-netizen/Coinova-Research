@@ -18,6 +18,7 @@ PostgreSQL on Supabase. Migrations in `supabase/migrations/` (apply in filename 
 | `20261110000600_market_data.sql` | market_sources (terms-review gate), market_pairs, market_candles (unique, validated, immutable finals), candle_revisions, candle_gaps, ingest_runs, latest_prices, engine_heartbeats, engine_jobs; exact `nexus_engine` grants |
 | `20261110000700_signal_ledger.sql` | strategies (immutable versions), model_versions (lifecycle), beta_testers, signal_evaluations (every decision; old HOLD prunable), signals (insert-only, hash chain, DB-time publication), signal_events, signal_outcomes, signal_annotations; visibility by gate + tier |
 | `20261110000800_validation_backtests.sql` | experiments (inputs immutable, finished once), validation_reports (insert-only; approval requires one with a lockbox), backtest_runs/results/trades + `request_backtest()` (Premium, quota, bounds), `signal_performance` view (security invoker) |
+| `20261110000900_paper_trading.sql` | paper_accounts (one active, archived on reset), paper_positions, paper_orders, paper_fills (insert-only), paper_equity_snapshots; user functions open/reset/place/cancel/set_paper_protection with validation and rate limits; `export_my_paper_data()` |
 
 `supabase/seed.sql` is **development-only** (it lets simulator subscriptions grant
 access and adds labeled sample articles). Never run it in production.

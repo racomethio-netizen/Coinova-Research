@@ -254,6 +254,21 @@ are immutable.
 - Positions, realized and unrealized P/L (decimal), trade history and an equity curve.
 - No connection to any exchange account. No transfers. No custody (COMPLIANCE.md).
 
+### As implemented in Phase 6
+- Users act only through SQL functions (`open/reset_paper_account`, `place_paper_order`,
+  `cancel_paper_order`, `set_paper_protection`). Limits: 30 orders per minute, 1,000 per
+  day, 50 open orders.
+- Fill rules:
+  - Market orders fill at the latest price ± slippage. Limit orders fill only when
+    marketable and never worse than the limit.
+  - A 0.1% fee applies to every fill.
+  - Only prices fetched within 60 s are used. Market orders expire after 5 minutes,
+    limit orders after 30 days.
+- SL/TP is attached to the position and triggers a full market sell. Positions use
+  average cost; realized P/L is net of fees.
+- Equity snapshots are taken hourly and never value a position with a stale price.
+- Reset archives the account (pending orders are cancelled) and opens a new one.
+
 ## 10. Future automated execution (disabled)
 
 - `ExecutionAdapter` interface with a single implementation, `DisabledExecutionAdapter`,

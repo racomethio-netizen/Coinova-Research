@@ -11,9 +11,11 @@ export const dynamic = "force-dynamic";
  * the user may already read.
  */
 export const GET = authed("GET /api/account/export", { perMinute: 3 }, async ({ viewer }) => {
-  const { data, error } = await viewer.supabase.rpc("export_my_data");
-  if (error) throw mapDbError(error, "account export");
-  if (!data) throw new ApiError("internal_error", "Export failed.");
+  const [main, paper] = await Promise.all([viewer.supabase.rpc("export_my_data"), viewer.supabase.rpc("export_my_paper_data")]);
+  if (main.error) throw mapDbError(main.error, "account export");
+  if (paper.error) throw mapDbError(paper.error, "account export (paper)");
+  if (!main.data) throw new ApiError("internal_error", "Export failed.");
+  const data = { ...(main.data as Record<string, unknown>), paper_trading: paper.data };
   logger.info("account_exported");
   const date = new Date().toISOString().slice(0, 10);
   return new Response(JSON.stringify(data, null, 2), {

@@ -6,13 +6,20 @@ _Last updated: 2026-11-10 (session 2)._
 
 The product is being extended into **NEXUS AI** (signals, backtesting, paper
 trading, mobile). The plan, architecture, ERD, risks and compliance gates are in
-[`docs/nexus/`](nexus/README.md). **Phases 1, 2 and 4 are done; Phases 3 and 5 are built and
+[`docs/nexus/`](nexus/README.md). **Phases 1, 2, 4 and 6 are done; Phases 3 and 5 are built and
 tested on synthetic data** (🟡). Its exit criteria (≥3-year backfill, 24 h live run)
 are blocked on:
 1. **Owner decision D5:** approve the data source + hosting region
    (docs/nexus/MARKET_DATA_SOURCES.md) and record the terms review (gate G-4).
 2. **Network access** to `data-api.binance.vision` and `data.binance.vision` in the cloud
    environment. Both are currently refused by the proxy.
+
+### Phase 6 (session 2): what was built
+- **Paper trading** (virtual USDT, long-only): SQL functions for accounts and orders
+  (validated, rate-limited), engine fills with fees/slippage and fresh prices only,
+  SL/TP, expiry, hourly equity snapshots. `/api/paper` (summary, valued in decimal),
+  `/api/paper/account`, `/api/paper/orders`, `/api/paper/positions/[pairId]`.
+  Paper data is included in the account export.
 
 ### Phase 5 (session 2): what was built
 - **Backtester** on the production decision window and the shared execution model,
@@ -60,7 +67,7 @@ are blocked on:
 - CI workflow, Dependabot, gitleaks. **Security upgrade:** next 16.3.8 → 16.4.3
   (critical advisories incl. RCE) and zod 4.6.5 → 4.6.7.
 
-Next commands (Phase 3 completion + Phase 5 validation report, then Phase 6):
+Next commands (Phase 3 completion + Phase 5 validation report, then Phase 7):
 ```bash
 npm ci && npm run typecheck && npm run lint && npm test
 npm run db:test:up && npm run test:db
@@ -69,7 +76,7 @@ cd engine && uv sync && uv run pytest && uv run ruff check . && uv run mypy
 DATABASE_URL='postgres://postgres@127.0.0.1:54329/nexus_engine_test?options=-c%20role%3Dnexus_engine' \
   uv run nexus-engine archive-backfill --symbol BTCUSDT --tf 1h --from-month 2023-01 --to-month 2026-10
 # once data exists: uv run nexus-engine validate --symbol BTCUSDT --tf 1h --start 2023-01-01 --end 2026-06-30
-# Phase 6: paper trading (IMPLEMENTATION_PLAN.md)
+# Phase 7: web dashboard (navy design, signal/performance/paper/backtest pages, admin)
 ```
 
 Cloud-container note (session 2): the repo pins `@playwright/test` 1.56.1
@@ -91,9 +98,9 @@ decision · ⬜ not started.
 | `npm run build` | ✅ pass (Next.js 16.4.3) |
 | `npm run test:e2e` | ✅ 46 / 46 |
 | `npm run test:db` after Phase 3 | ✅ 82 / 82 |
-| Engine: `uv run pytest` / ruff / mypy --strict / pip-audit | ✅ 100 / 100 after Phase 5 (17 DB tests as `nexus_engine`) / clean / clean / 0 known vulnerabilities |
-| `npm run test:db` after Phase 5 | ✅ 96 / 96 |
-| `npm test` after Phase 5 | ✅ 140 / 140 |
+| Engine: `uv run pytest` / ruff / mypy --strict / pip-audit | ✅ 112 / 112 after Phase 6 (23 DB tests as `nexus_engine`) / clean / clean / 0 known vulnerabilities |
+| `npm run test:db` after Phase 6 | ✅ 102 / 102 |
+| `npm test` after Phase 6 | ✅ 145 / 145 |
 | `npm audit --omit=dev` | ✅ 0 vulnerabilities (after the next/zod upgrade) |
 | `npm run test:integration` | ✅ passed in GitHub Actions (not runnable in this container: executing the downloaded PostgREST binary was not permitted) |
 | GitHub Actions CI (run #3) | ✅ all 4 jobs green: checks + audit, DB + integration, build + e2e (ubuntu-24.04), gitleaks |
@@ -193,3 +200,4 @@ Phase 3 was then built in the same session (engine + market-data schema). Its li
 exit criteria wait on D5 and network access (see the top of this file).
 Phase 4 followed in the same session (indicators, strategy, signal ledger, resolver).
 Phase 5 followed (backtester, walk-forward validation, Premium backtest queue). Its real validation report awaits data.
+Phase 6 followed (paper trading: schema, engine fills, API).

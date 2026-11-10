@@ -116,7 +116,10 @@ and metric unit tests.
 **Exit:** a reproducible validation report exists, and the performance views match the
 resolver output on fixtures.
 
-## Phase 6: Paper trading
+## Phase 6: Paper trading ✅
+_Session 2: done as specified, long-only (D4). Available to every signed-in user (no tier
+gate; revisit in Phase 9). Fills need fresh prices, so they happen once Phase 3
+ingestion runs. The UI is Phase 7; the API is `/api/paper/*`._
 Migrations (`paper_accounts`, `paper_orders`, `paper_fills`, `paper_positions`) and SQL
 order-placement functions (validation, per-user rate limits). Engine fill loop with
 price staleness checks. SL/TP monitoring. Decimal P/L. Next.js API routes. Account reset (archive).
