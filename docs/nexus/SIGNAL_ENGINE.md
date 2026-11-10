@@ -209,6 +209,18 @@ are immutable.
 - User-defined ("custom") strategies are **parameter sets of built-in strategies**
   validated against a JSON schema. **Arbitrary user code is never executed.**
 
+### As implemented in Phase 4 (resolver 1.0.0, `engine/src/nexus_engine/signals/execution.py`)
+- **Single exit:** the outcome is decided by the first of stop, TP1 or horizon.
+  TP2/TP3 are shown for information and do not change the recorded outcome.
+- Bars used are those opening at or after `published_at`. The bar in progress at
+  publication is excluded. On the entry bar only the stop is checked.
+- A gap through the stop before entry gives `invalidated`. No touch within the entry
+  window gives `expired_no_entry`.
+- Missing candles pause resolution until they are backfilled.
+- **Publication lag:** a BUY/SELL is published only if the database time is within
+  10 minutes of the candle close. Otherwise (e.g. catch-up after downtime) it is
+  recorded as HOLD `publication_too_late`.
+
 ## 8. Signal performance tracking
 
 - Outcome resolver: the same execution module as the backtester, applied to candles

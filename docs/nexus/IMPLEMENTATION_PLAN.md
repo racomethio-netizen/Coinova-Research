@@ -73,7 +73,11 @@ Network: the cloud environment needs the data-source hosts allowed (requested wh
 **Exit:** a backfill of ≥ 3 years for both pairs and all timeframes, with gaps reported
 honestly, plus a live incremental ingest running locally for 24 h without errors.
 
-## Phase 4: Technical analysis and signal engine
+## Phase 4: Technical analysis and signal engine ✅
+_Session 2: done. Model registry tables are in place (`strategies`, `model_versions`).
+`experiments` and `validation_reports` move to Phase 5, where they are first written.
+Model SHAP contributions arrive with the first model (Phase 5). Signals run in
+shadow (`SIGNALS_VISIBILITY=staff`) with confidence "not calibrated"._
 1. Indicators + golden tests (TA-Lib test-only), support/resistance with confirmation time.
 2. Feature builder and truncation-invariance test harness.
 3. Strategy `trend_pullback_v1` (rules only), multi-timeframe confirmation, risk gates, HOLD reasons.

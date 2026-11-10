@@ -6,13 +6,26 @@ _Last updated: 2026-11-10 (session 2)._
 
 The product is being extended into **NEXUS AI** (signals, backtesting, paper
 trading, mobile). The plan, architecture, ERD, risks and compliance gates are in
-[`docs/nexus/`](nexus/README.md). **Phases 1 and 2 are done. Phase 3 is built and
+[`docs/nexus/`](nexus/README.md). **Phases 1, 2 and 4 are done; Phase 3 is built and
 tested on synthetic data** (🟡). Its exit criteria (≥3-year backfill, 24 h live run)
 are blocked on:
 1. **Owner decision D5:** approve the data source + hosting region
    (docs/nexus/MARKET_DATA_SOURCES.md) and record the terms review (gate G-4).
 2. **Network access** to `data-api.binance.vision` and `data.binance.vision` in the cloud
    environment. Both are currently refused by the proxy.
+
+### Phase 4 (session 2): what was built
+- **Indicators** in NumPy (EMA, RSI, MACD, ATR, Bollinger, volume ratio, confirmed
+  swing levels), matching TA-Lib, and provably causal.
+- **Strategy `trend_pullback` 1.0.0** (rules only): multi-timeframe confirmation, ATR and
+  level-based entries, stops and targets, net reward/risk ≥ 1.5 after fees and slippage,
+  HOLD with reason codes otherwise. Confidence is "not calibrated" (no model yet).
+- **Signal ledger** (migration 0013): insert-only signals/events/outcomes/annotations,
+  hash chain, DB-time publication, visibility by gate G-1 + tier (D3), model lifecycle,
+  beta testers.
+- **Execution model + outcome resolver** (conservative, shared with future
+  backtests/paper trading). Worker: ingest → evaluate → resolve. CLI `verify-chain`.
+- Signals stay staff-only (shadow) until legal review and Phase 5 validation.
 
 ### Phase 3 (session 2): what was built
 - `engine/` Python service (uv, pydantic-settings, psycopg as `nexus_engine`, httpx,
@@ -35,7 +48,7 @@ are blocked on:
 - CI workflow, Dependabot, gitleaks. **Security upgrade:** next 16.3.8 → 16.4.3
   (critical advisories incl. RCE) and zod 4.6.5 → 4.6.7.
 
-Next commands (Phase 3 completion, then Phase 4):
+Next commands (Phase 3 completion, then Phase 5):
 ```bash
 npm ci && npm run typecheck && npm run lint && npm test
 npm run db:test:up && npm run test:db
@@ -43,7 +56,7 @@ cd engine && uv sync && uv run pytest && uv run ruff check . && uv run mypy
 # after D5 + network access (local DB, dev only):
 DATABASE_URL='postgres://postgres@127.0.0.1:54329/nexus_engine_test?options=-c%20role%3Dnexus_engine' \
   uv run nexus-engine archive-backfill --symbol BTCUSDT --tf 1h --from-month 2023-01 --to-month 2026-10
-# Phase 4: indicators + golden tests, strategy trend_pullback_v1, signal tables (IMPLEMENTATION_PLAN.md)
+# Phase 5: backtester on signals/execution.py, walk-forward validation, experiments + validation_reports tables
 ```
 
 Cloud-container note (session 2): the repo pins `@playwright/test` 1.56.1
@@ -65,7 +78,8 @@ decision · ⬜ not started.
 | `npm run build` | ✅ pass (Next.js 16.4.3) |
 | `npm run test:e2e` | ✅ 46 / 46 |
 | `npm run test:db` after Phase 3 | ✅ 82 / 82 |
-| Engine: `uv run pytest` / ruff / mypy --strict / pip-audit | ✅ 58 / 58 (8 DB tests as `nexus_engine`) / clean / clean / 0 known vulnerabilities |
+| Engine: `uv run pytest` / ruff / mypy --strict / pip-audit | ✅ 87 / 87 after Phase 4 (14 DB tests as `nexus_engine`) / clean / clean / 0 known vulnerabilities |
+| `npm run test:db` after Phase 4 | ✅ 90 / 90 |
 | `npm audit --omit=dev` | ✅ 0 vulnerabilities (after the next/zod upgrade) |
 | `npm run test:integration` | ✅ passed in GitHub Actions (not runnable in this container: executing the downloaded PostgREST binary was not permitted) |
 | GitHub Actions CI (run #3) | ✅ all 4 jobs green: checks + audit, DB + integration, build + e2e (ubuntu-24.04), gitleaks |
@@ -163,3 +177,4 @@ switches, admin MFA, export/deletion, bearer auth, engine role, abuse reports,
 CI, and the next/zod security upgrade (see "Phase 2 (session 2)" above).
 Phase 3 was then built in the same session (engine + market-data schema). Its live
 exit criteria wait on D5 and network access (see the top of this file).
+Phase 4 followed in the same session (indicators, strategy, signal ledger, resolver).
