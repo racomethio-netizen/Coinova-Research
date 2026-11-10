@@ -71,7 +71,9 @@ jobs:
 
   build-e2e:
     name: Build and end-to-end tests
-    runs-on: ubuntu-latest
+    # Pinned: @playwright/test 1.56.1 cannot install browsers on ubuntu-latest
+    # (26.04). Move back to ubuntu-latest when Playwright is upgraded.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
