@@ -6,15 +6,29 @@ _Last updated: 2026-11-10 (session 2)._
 
 The product is being extended into **NEXUS AI** (signals, backtesting, paper
 trading, mobile). The plan, architecture, ERD, risks and compliance gates are in
-[`docs/nexus/`](nexus/README.md). **Phase 1 (architecture and documentation) is done.**
-Phase 2 (database and authentication) is next and is blocked on owner decision **D1**
-(tier model). See `docs/nexus/IMPLEMENTATION_PLAN.md` → "Owner decisions needed".
+[`docs/nexus/`](nexus/README.md). **Phases 1 and 2 are done.** Phase 3
+(market-data ingestion, Python engine scaffold) is next. It needs owner decision
+**D5** (hosting region + primary data source, after the exchange ToS review) and
+network access to the data-source hosts in the cloud environment.
 
-Next commands for Phase 2:
+### Phase 2 (session 2): what changed
+- Tiers **free < pro < premium** (D1). `founding` retired. Existing paid features
+  start at Pro. `plan_features` + `has_feature()` for NEXUS feature entitlements.
+- Kill switches `SIGNALS_VISIBILITY` / `PAID_SIGNALS_ENABLED` / `LIVE_EXECUTION_ENABLED`,
+  validated at server start.
+- **Admin/staff privileges require MFA (aal2)**, with a TOTP security page.
+- Data export (`/api/account/export`) and deletion retention + audit. Fixed the bug
+  where an account that had written an audit entry could not be deleted.
+- Bearer-token API auth for mobile, `nexus_engine` DB role, abuse reports.
+- CI workflow, Dependabot, gitleaks. **Security upgrade:** next 16.3.8 → 16.4.3
+  (critical advisories incl. RCE) and zod 4.6.5 → 4.6.7.
+
+Next commands for Phase 3:
 ```bash
 npm ci && npm run typecheck && npm run lint && npm test
-npm run db:test:up && npm run test:db          # baseline before any migration
-# then: CI workflow (.github/workflows), tier migration (after D1), MFA, deletion/export
+npm run db:test:up && npm run test:db
+# then: engine/ scaffold (uv, FastAPI /health, worker), market tables migration,
+# public kline adapter against recorded fixtures (docs/nexus/IMPLEMENTATION_PLAN.md §Phase 3)
 ```
 
 Cloud-container note (session 2): the repo pins `@playwright/test` 1.56.1
@@ -26,18 +40,19 @@ Legend: ✅ implemented and covered by automated tests · 🟡 implemented, part
 verified or needs a real external service · ⛔ blocked on credentials or owner
 decision · ⬜ not started.
 
-## Verified in this session
+## Verified in session 2 (after Phase 2)
 
 | Check | Result |
 |---|---|
-| `npm run typecheck` | ✅ pass |
-| `npm run lint` | ✅ pass (0 problems) |
-| `npm test` (unit) | ✅ 124 / 124 |
-| `npm run test:db` (RLS on real PostgreSQL 16) | ✅ 52 / 52, plus a mutation check proving the suite catches a broken policy |
-| `npm run test:integration` (supabase-js → PostgREST 12 → Postgres) | ✅ 25 / 25 |
-| `npm run build` | ✅ pass (Next.js 16.3.8) |
-| `npm run test:e2e` (Playwright, desktop + mobile) | ✅ 46 / 46 |
-| `npm audit --omit=dev` | ✅ 0 vulnerabilities (dev-only `braces` advisory via eslint-config-next remains) |
+| `npm run typecheck`, `npm run lint` | ✅ pass |
+| `npm test` (unit) | ✅ 137 / 137 |
+| `npm run test:db` (RLS on PostgreSQL 16) | ✅ 74 / 74 |
+| `npm run build` | ✅ pass (Next.js 16.4.3) |
+| `npm run test:e2e` | ✅ 46 / 46 |
+| `npm audit --omit=dev` | ✅ 0 vulnerabilities (after the next/zod upgrade) |
+| `npm run test:integration` | ⚠️ not run in this container (running the downloaded PostgREST binary was not permitted); runs in CI |
+
+Session 1 results (before NEXUS): unit 124, DB 52, integration 25/25, e2e 46.
 
 Bugs found and fixed by these suites: Postgres timestamp offsets rejected by the
 scoring schema; bulk upsert sending NULL for missing keys; watchlist re-add hitting
@@ -112,7 +127,7 @@ failing to render under POSIX locales; the not-found page returning HTTP 200.
    history and fix any universe IDs CoinGecko didn't return.
 4. `npm run admin:grant -- <your-email>`; publish a first article; enable
    `BILLING_PROVIDER=dev_simulator` on staging and walk the lifecycle in TESTING.md.
-5. Add a GitHub Actions workflow running typecheck, lint, unit, DB, integration, build, and e2e.
+5. ✅ Done in session 2: `.github/workflows/ci.yml` (check the first runs on GitHub).
 6. Implement the portfolio value chart and score-history chart; wire the remaining feature flags.
 7. Decide on a payment provider and implement its `BillingProvider` adapter with tests.
 
@@ -125,3 +140,6 @@ See git history on branch `claude/cryptoscope-platform`.
 target architecture with ADRs, ERD, signal-engine specification, dependency list,
 security risk register and compliance gates (`docs/nexus/`). No application code changed.
 Re-verified: typecheck, lint, unit 124/124, DB 52/52, build, e2e 46/46.
+NEXUS Phase 2 was done in the same session: tiers, feature entitlements, kill
+switches, admin MFA, export/deletion, bearer auth, engine role, abuse reports,
+CI, and the next/zod security upgrade (see "Phase 2 (session 2)" above).

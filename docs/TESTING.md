@@ -40,12 +40,27 @@ sign-up and sign-in are verified manually (below).
 - The mock market provider is deterministic for a given clock (`MockMarketDataProvider(now)`).
 - `supabase/seed.sql` holds development-only sample articles for manual testing.
 
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every push and pull request: typecheck, lint,
+unit, production `npm audit`; DB/RLS and integration tests against a
+`postgres:16` service with PostgREST downloaded in the job; build + Playwright e2e;
+and a gitleaks secret scan.
+
 ## Manual checks (need a real Supabase project)
 
 1. Register → receive the confirmation email → click the link → land on the dashboard.
 2. Sign out, sign in, and request a password reset → reset via the email link.
 3. With the simulator enabled on a dev database: upgrade → portfolio, alerts, and premium articles unlock; cancel, refund, and expiry behave as documented.
-4. `npm run admin:grant -- you@example.com` → `/admin` accessible; a second normal account cannot reach it.
+4. `npm run admin:grant -- you@example.com` → visiting `/admin` redirects to
+   **Settings → Security**. Enroll TOTP (scan the QR code, enter a code) → `/admin` is
+   accessible. Sign out and back in → `/admin` asks for a code again. A second normal
+   account cannot reach `/admin` even with MFA.
+6. Settings → **Download my data** returns a JSON file with only your own rows.
+   **Delete account** → payment rows remain with an empty user and an
+   `account.deleted` audit entry appears.
+7. Mobile/bearer: `curl -H "Authorization: Bearer <access token>" <site>/api/membership`
+   returns your membership. A garbage token returns 401.
 5. Run each cron job once (`npm run job -- refresh-markets`, etc.) and check `/admin` job history.
 
 ## Performance checks

@@ -60,7 +60,13 @@ overlapping or retried triggers are safe. Monitor them in `/admin`.
    then `compute-scores` (`APP_URL=… CRON_SECRET=… npm run job -- <name>`).
 2. Create your account on the site, then grant admin:
    `SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… npm run admin:grant -- you@example.com`.
-3. Publish initial research from `/admin/research`.
+   In Supabase → Authentication, make sure **TOTP MFA is enabled**. Admin and editor
+   powers only work after the user enrolls an authenticator under
+   Settings → Security and verifies a code in the session.
+3. Run `sync-plans` after every change to `src/config/plans.ts` (plans and `plan_features`).
+4. Compliance gates stay at their safe defaults (`SIGNALS_VISIBILITY=staff`,
+   `PAID_SIGNALS_ENABLED=false`, `LIVE_EXECUTION_ENABLED=false`); see docs/nexus/COMPLIANCE.md.
+5. Publish initial research from `/admin/research`.
 
 ## Production checklist
 

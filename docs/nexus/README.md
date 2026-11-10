@@ -22,7 +22,8 @@ the target system and how we get there.
 | Phase | State |
 |---|---|
 | 1. Architecture and documentation | ✅ Done (this folder) |
-| 2–10 | ⬜ Not started. See IMPLEMENTATION_PLAN.md |
+| 2. Database and authentication | ✅ Done. See ROADMAP.md (session 2) |
+| 3–10 | ⬜ Not started. See IMPLEMENTATION_PLAN.md |
 
 No NEXUS feature is described as implemented unless the code exists and its tests pass.
 The capabilities CryptoScope already has are listed, with their verification

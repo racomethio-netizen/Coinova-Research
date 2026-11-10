@@ -24,6 +24,31 @@
 - Tier limits (portfolios, watchlists, items, alerts, AI requests) are enforced by
   database triggers and functions, so clients cannot bypass them with the public anon key.
 - Never trust client-supplied user IDs, tiers, roles, prices, ownership, or payment status.
+- **Admin MFA (migration 0009):** `is_admin()` / `is_staff()` are true only in an
+  MFA-verified session (`aal = 'aal2'` in the Supabase JWT). Every admin/staff
+  policy and function therefore requires TOTP verification. Privileged users without
+  aal2 are sent to `/dashboard/settings/security` (page guards) or get
+  "Two-factor verification is required" (API guards).
+- **Feature entitlements:** `plan_features` + `has_feature(key)` in SQL, mirrored by
+  `hasFeature()` / `requireFeatureApi()` / `authed({ feature })` in TypeScript.
+- **Compliance kill switches** (`SIGNALS_VISIBILITY`, `PAID_SIGNALS_ENABLED`,
+  `LIVE_EXECUTION_ENABLED`) are environment-only and validated when the server starts
+  (`src/instrumentation.ts`). `LIVE_EXECUTION_ENABLED=true` prevents startup.
+- **Bearer tokens (mobile):** `Authorization: Bearer <access token>` is verified with
+  `getClaims(token)`. On that path cookies are ignored and the CSRF origin check is
+  skipped, because a cross-site page cannot attach that header without CORS, and
+  none is offered. Malformed Bearer headers get 401. Other schemes, such as Basic
+  auth in front of staging, are ignored.
+- **Engine role:** `nexus_engine` is NOLOGIN with no table privileges until later
+  phases grant specific tables. Its password is set out of band, never in the repository.
+
+## Account data rights
+
+- Export: `GET /api/account/export` returns `export_my_data()`, a SECURITY INVOKER
+  function, so RLS bounds it to rows the user can already read.
+- Deletion (Settings): user content cascades. Payment records are kept with
+  `user_id` set to NULL as financial records. Audit entries the user wrote keep
+  `actor_id` NULL. A trigger records `account.deleted` with no identifying data.
 
 ## Web protections
 
@@ -76,10 +101,13 @@
 
 ## Dependency and secret scanning
 
-- `npm audit --omit=dev` reported 0 production vulnerabilities at the time of writing.
-  The `npm audit` dev-only finding (`braces` via `eslint-config-next`) is a
-  build-time linter dependency and is not shipped.
-- Recommended: enable GitHub secret scanning and Dependabot on the repository.
+- CI (`.github/workflows/ci.yml`) runs `npm audit --omit=dev --audit-level=high`
+  and a gitleaks scan (`.gitleaks.toml`) on every push. Dependabot opens weekly
+  update PRs for npm and GitHub Actions (`.github/dependabot.yml`).
+- 2026-11-10: the audit found critical advisories in next 16.3.8 (including RCE)
+  and a high one in zod 4.6.5. Both were upgraded (next 16.4.3, zod 4.6.7), giving
+  0 production vulnerabilities.
+- Also recommended: enable GitHub secret scanning push protection.
 
 ## Incident response basics
 

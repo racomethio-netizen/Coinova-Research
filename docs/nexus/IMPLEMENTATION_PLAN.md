@@ -24,7 +24,10 @@ Deliverables: this folder (assessment, plan, architecture + ADRs, ERD, signal
 engine spec, dependencies, security risks, compliance), plus ROADMAP and CLAUDE.md pointers.
 Code changes: none.
 
-## Phase 2: Database and authentication
+## Phase 2: Database and authentication ✅
+_Done in session 2 with D1 as recommended (pro added, founding retired). Existing
+paid features (all scores, portfolios, alerts, export) start at Pro. Next.js was
+upgraded to 16.4.3 and zod to 4.6.7 for security advisories found by the new audit step._
 1. **CI baseline:** a GitHub Actions workflow running typecheck, lint, unit, DB (Postgres
    service) and build. Integration and e2e are added once the runner can fetch PostgREST and Chromium.
    Add Dependabot and gitleaks.

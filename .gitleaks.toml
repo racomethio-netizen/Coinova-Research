@@ -1,0 +1,14 @@
+# gitleaks configuration: default rules plus an allowlist for test-only
+# fixtures that are deliberately public (local test JWT secret, placeholders).
+title = "nexus gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test-only fixtures and documented placeholders"
+paths = [
+  '''tests/integration/jwt\.ts''',
+  '''vitest\.integration\.config\.mts''',
+  '''\.env\.example''',
+]

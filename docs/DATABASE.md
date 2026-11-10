@@ -10,6 +10,11 @@ PostgreSQL on Supabase. Migrations in `supabase/migrations/` (apply in filename 
 | `…000400_user_features.sql` | portfolios, portfolio_transactions, watchlists, watchlist_items, alerts, alert_evaluations, notifications, notification_deliveries, telegram_accounts, telegram_link_tokens, tier-limit triggers |
 | `…000500_operations.sql` | ai_usage_records + `reserve_ai_request`, background_jobs + `acquire_job`, `run_retention_cleanup` |
 | `…000600_fundamentals.sql` | cached developer metrics and refresh timestamps on cryptocurrencies |
+| `20261110000100_tier_pro_enum.sql` | adds the `pro` tier (alone, so the enum value is committed before use) |
+| `20261110000200_nexus_tiers_features.sql` | tiers free < pro < premium; `founding` retired (insert-blocking triggers, legacy rows report premium); pro plans; `plan_features` + `has_feature()` / `has_feature_for()` |
+| `20261110000300_admin_mfa.sql` | `is_aal2()`; `is_admin()` / `is_staff()` require an MFA-verified session |
+| `20261110000400_account_lifecycle.sql` | `export_my_data()`; payments retained pseudonymized on deletion; deletion audit trigger; audit log allows only actor pseudonymization |
+| `20261110000500_engine_role_abuse_reports.sql` | `nexus_engine` role (NOLOGIN, no grants yet); `abuse_reports` with a daily cap |
 
 `supabase/seed.sql` is **development-only** (it lets simulator subscriptions grant
 access and adds labeled sample articles). Never run it in production.
@@ -39,7 +44,11 @@ access and adds labeled sample articles). Never run it in production.
 | user_roles | — | read own, **no writes** | admins read | full |
 | notifications | — | read own; update `read_at` only | — | full |
 | telegram_link_tokens | — | — | — | full |
-| admin_audit_logs | — | — | staff read; append own | append only (immutable trigger) |
+| admin_audit_logs | — | — | staff read; append own | append only (immutable trigger; only `actor_id` → NULL on account deletion) |
+| plan_features | read | read | — | full (sync-plans) |
+| abuse_reports | — | create (content columns only, 20/day); read own | staff read; MFA admins handle as themselves | full |
+
+"staff/admin" always means an **MFA-verified (aal2) session** since migration 0009.
 
 The entitlement source of truth is `current_membership_tier()`. A subscription
 grants access if `active`/`trialing` before period end, or `past_due` within the
