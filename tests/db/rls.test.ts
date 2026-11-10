@@ -1109,3 +1109,97 @@ describe("validation and backtests (NEXUS Phase 5)", () => {
     expect(await total({ role: "authenticated", userId: carol })).toBe(await total({ role: "anon" }));
   });
 });
+
+describe("paper trading (NEXUS Phase 6)", () => {
+  let trader: string;
+  let other: string;
+  let btc: number;
+  const u = (uid: string) => ({ role: "authenticated" as const, userId: uid });
+  const order = (q: Client["query"], side: string, type: string, qty: string, extra = "null, null, null") =>
+    q(`select public.place_paper_order($1, '${side}', '${type}', ${qty}, ${extra}) id`, [btc]);
+
+  beforeAll(async () => {
+    trader = await createUser(db);
+    other = await createUser(db);
+    btc = (await db.query("select id from public.market_pairs where symbol = 'BTCUSDT'")).rows[0].id;
+    await db.query("insert into public.latest_prices (pair_id, price, source_time) values ($1, 100, now()) on conflict (pair_id) do update set price = 100, fetched_at = now()", [btc]);
+  });
+
+  it("users open one active virtual account; direct writes are impossible", async () => {
+    const id = (await as(db, u(trader), (q) => q("select public.open_paper_account(10000) id"))).rows[0].id;
+    expect(id).toBeTruthy(); // `as` rolls back, so create the account for the remaining tests directly
+    await db.query("insert into public.paper_accounts (user_id, starting_balance, cash_balance) values ($1, 10000, 10000)", [trader]);
+    expect(await as(db, u(trader), (q) => expectError(q("select public.open_paper_account(5000)")))).toMatch(/already exists/);
+    for (const sql of [
+      "update public.paper_accounts set cash_balance = 1e9",
+      "insert into public.paper_accounts (user_id, starting_balance, cash_balance) values (auth.uid(), 100, 1e9)",
+      "insert into public.paper_fills (account_id, user_id, pair_id, side, reason, price, quantity, fee, price_source_time) select id, user_id, 1, 'buy', 'market', 1, 1, 0, now() from public.paper_accounts",
+    ]) {
+      expect(await as(db, u(trader), (q) => expectError(q(sql)))).toMatch(/permission denied/);
+    }
+  });
+
+  it("orders are validated: limits need prices, protection must bracket the entry, sells need a position", async () => {
+    const ok = await as(db, u(trader), (q) => order(q, "buy", "market", "0.5", "null, 95, 120"));
+    expect(ok.rows[0].id).toBeTruthy();
+    const bad: [string, RegExp][] = [
+      ["select public.place_paper_order($1, 'buy', 'limit', 1)", /limit orders need a limit price/],
+      ["select public.place_paper_order($1, 'buy', 'market', 1, 100)", /must not have one/],
+      ["select public.place_paper_order($1, 'buy', 'market', 1, null, 105, 120)", /stop loss must be below/],
+      ["select public.place_paper_order($1, 'buy', 'limit', 1, 90, 85, 89)", /take profit above/],
+      ["select public.place_paper_order($1, 'sell', 'market', 1)", /not enough quantity/],
+      ["select public.place_paper_order($1, 'sell', 'market', 1, null, 90, null)", /apply to buy orders/],
+      ["select public.place_paper_order($1, 'buy', 'market', -1)", /invalid quantity/],
+      ["select public.place_paper_order(999999, 'buy', 'market', 1)", /unknown pair/],
+    ];
+    for (const [sql, re] of bad) {
+      expect(await as(db, u(trader), (q) => expectError(sql.includes("999999") ? q(sql) : q(sql, [btc])))).toMatch(re);
+    }
+    expect(await as(db, u(other), (q) => expectError(order(q, "buy", "market", "1")))).toMatch(/open a paper account first/);
+  });
+
+  it("users see and cancel only their own orders", async () => {
+    await db.query("insert into public.paper_accounts (user_id, starting_balance, cash_balance) values ($1, 1000, 1000)", [other]);
+    const mine = await as(db, u(trader), async (q) => {
+      const id = (await order(q, "buy", "limit", "1", "90, null, null")).rows[0].id;
+      expect((await q("select public.cancel_paper_order($1) c", [id])).rows[0].c).toBe(true);
+      expect((await q("select public.cancel_paper_order($1) c", [id])).rows[0].c).toBe(false); // already closed
+      return id;
+    });
+    expect(mine).toBeTruthy();
+    const theirs = (await db.query("insert into public.paper_orders (account_id, user_id, pair_id, side, order_type, quantity, expires_at) select id, user_id, $1, 'buy', 'market', 1, now() + interval '5 minutes' from public.paper_accounts where user_id = $2 returning id", [btc, other])).rows[0].id;
+    await as(db, u(trader), async (q) => {
+      expect((await q("select public.cancel_paper_order($1) c", [theirs])).rows[0].c).toBe(false);
+      expect((await q("select 1 from public.paper_orders where id = $1", [theirs])).rowCount).toBe(0);
+    });
+  });
+
+  it("order flood control is exact", async () => {
+    const msg = await as(db, u(trader), async (q) => {
+      for (let i = 0; i < 30; i++) await order(q, "buy", "limit", "0.01", "50, null, null");
+      return expectError(order(q, "buy", "limit", "0.01", "50, null, null"));
+    });
+    expect(msg).toMatch(/limit_reached:paperOrders/);
+  });
+
+  it("reset archives the account (orders cancelled, history kept) and opens a new one", async () => {
+    await as(db, u(trader), async (q) => {
+      await order(q, "buy", "limit", "1", "90, null, null");
+      const newId = (await q("select public.reset_paper_account(2500) id")).rows[0].id;
+      const accts = (await q("select id, status, starting_balance from public.paper_accounts order by created_at")).rows;
+      expect(accts.map((a) => a.status)).toEqual(["archived", "active"]);
+      expect(accts[1]).toMatchObject({ id: newId, starting_balance: "2500.00000000" });
+      expect((await q("select count(*)::int n from public.paper_orders where status = 'pending'")).rows[0].n).toBe(0);
+    });
+  });
+
+  it("fills are insert-only but go away with a deleted user", async () => {
+    const u2 = await createUser(db);
+    const acct = (await db.query("insert into public.paper_accounts (user_id, starting_balance, cash_balance) values ($1, 1000, 900) returning id", [u2])).rows[0].id;
+    await db.query("insert into public.paper_fills (account_id, user_id, pair_id, side, reason, price, quantity, fee, price_source_time) values ($1, $2, $3, 'buy', 'market', 100, 1, 0.1, now())", [acct, u2, btc]);
+    expect(await expectError(db.query("update public.paper_fills set price = 1 where account_id = $1", [acct]))).toMatch(/insert-only/);
+    expect(await expectError(db.query("delete from public.paper_fills where account_id = $1", [acct]))).toMatch(/insert-only/);
+    await db.query("delete from auth.users where id = $1", [u2]);
+    expect((await db.query("select 1 from public.paper_fills where account_id = $1", [acct])).rowCount).toBe(0);
+  });
+});
