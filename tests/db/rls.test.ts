@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PAID_PLANS, PLAN_FEATURES, TIER_LIMITS } from "@/config/plans";
@@ -862,5 +863,166 @@ describe("market data (NEXUS Phase 3)", () => {
     expect((await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => q(review, [admin]))).rowCount).toBe(1);
     const forge = await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => expectError(q("update public.market_sources set base_url = 'https://evil.example' where key = 'binance_spot'")));
     expect(forge).toMatch(/permission denied/);
+  });
+});
+
+describe("signal ledger (NEXUS Phase 4)", () => {
+  let pairId: number;
+  let strategyId: number;
+  let proUser: string;
+  let betaUser: string;
+  let lastHash: string | null = null;
+  let n = 0;
+  const hex = (i: number) => i.toString(16).padStart(64, "0");
+
+  async function evaluation(decision = "BUY", createdAt?: string) {
+    n++;
+    const r = await db.query(
+      "insert into public.signal_evaluations (pair_id, timeframe, strategy_id, as_of, decision, created_at) values ($1, '1h', $2, now() - make_interval(hours => $3), $4, coalesce($5::timestamptz, now())) returning id",
+      [pairId, strategyId, n, decision, createdAt ?? null],
+    );
+    return r.rows[0].id as string;
+  }
+
+  /** Publish via the real trigger path (published_at = now(), chained). */
+  async function publish(visibility: string, opts: { backdateDays?: number } = {}) {
+    const ev = await evaluation();
+    const id = randomUUID();
+    const hash = hex(++n);
+    const insert = (publishedAt: string) =>
+      db.query(
+        `insert into public.signals (id, evaluation_id, pair_id, timeframe, strategy_id, direction, as_of, published_at, entry_low, entry_high, stop_loss, take_profits,
+          risk_reward, confidence_band, entry_expires_at, horizon_bars, assumptions, explanation, visibility, prev_hash, content_hash)
+         values ($1, $2, $3, '1h', $4, 'BUY', ${publishedAt} - interval '1 hour', ${publishedAt}, 100, 101, 95, '{110,115}', 1.8, 'not_calibrated',
+          ${publishedAt} + interval '6 hours', 24, '{}', '{}', $5, $6, $7)`,
+        [id, ev, pairId, strategyId, visibility, lastHash, hash],
+      );
+    if (opts.backdateDays) {
+      await db.query("alter table public.signals disable trigger signals_chain_guard");
+      try {
+        await insert(`(now() - interval '${opts.backdateDays} days')`);
+      } finally {
+        await db.query("alter table public.signals enable trigger signals_chain_guard");
+      }
+    } else {
+      await insert("now()");
+    }
+    lastHash = hash;
+    return id;
+  }
+
+  async function close(id: string) {
+    await db.query("insert into public.signal_outcomes (signal_id, outcome, entry_price, exit_price, net_return, r_multiple, closed_at, resolver_version) values ($1, 'loss', 100.5, 95, -0.0567, -1.0, now(), '1.0.0')", [id]);
+  }
+
+  const visible = async (actor: Parameters<typeof as>[1], ids: string[]) =>
+    (await as(db, actor, (q) => q("select id from public.signals where id = any($1)", [ids]))).rows.map((r) => r.id).sort();
+
+  beforeAll(async () => {
+    pairId = (await db.query("select id from public.market_pairs where symbol = 'BTCUSDT'")).rows[0].id;
+    strategyId = (await db.query("insert into public.strategies (key, version, name, description, params) values ('trend_pullback', '1.0.0', 'Trend pullback', 'Rules only', '{}') returning id")).rows[0].id;
+    proUser = await createUser(db);
+    await grantSubscription(db, proUser, { tier: "pro" });
+    betaUser = await createUser(db);
+    await db.query("insert into public.beta_testers (user_id) values ($1)", [betaUser]);
+  });
+
+  it("signals, events, outcomes, annotations and strategies are insert-only, even for the superuser", async () => {
+    const id = await publish("public");
+    await close(id);
+    await db.query("insert into public.signal_events (signal_id, event_type, occurred_at, price) values ($1, 'entered', now(), 100.5)", [id]);
+    await db.query("insert into public.signal_annotations (signal_id, kind, body) values ($1, 'note', 'test note')", [id]);
+    for (const sql of [
+      "update public.signals set stop_loss = 90 where id = $1",
+      "delete from public.signals where id = $1",
+      "update public.signal_outcomes set outcome = 'win' where signal_id = $1",
+      "delete from public.signal_outcomes where signal_id = $1",
+      "update public.signal_events set price = 1 where signal_id = $1",
+      "delete from public.signal_annotations where signal_id = $1",
+    ]) {
+      expect(await expectError(db.query(sql, [id]))).toMatch(/insert-only/);
+    }
+    expect(await expectError(db.query("update public.strategies set params = '{\"x\":1}'"))).toMatch(/insert-only/);
+  });
+
+  it("published_at cannot be backdated and the hash chain must link", async () => {
+    const ev = await evaluation();
+    const base = `insert into public.signals (id, evaluation_id, pair_id, timeframe, strategy_id, direction, as_of, published_at, entry_low, entry_high, stop_loss, take_profits,
+      risk_reward, confidence_band, entry_expires_at, horizon_bars, assumptions, explanation, visibility, prev_hash, content_hash)
+      values ($1, $2, $3, '1h', $4, 'BUY', now() - interval '2 hours', %PUB%, 100, 101, 95, '{110}', 1.8, 'not_calibrated', now() + interval '6 hours', 24, '{}', '{}', 'staff', $5, $6)`;
+    const backdated = await expectError(db.query(base.replace("%PUB%", "now() - interval '1 hour'"), [randomUUID(), ev, pairId, strategyId, lastHash, hex(++n)]));
+    expect(backdated).toMatch(/transaction time/);
+    const broken = await expectError(db.query(base.replace("%PUB%", "now()"), [randomUUID(), ev, pairId, strategyId, hex(999_999), hex(++n)]));
+    expect(broken).toMatch(/hash chain mismatch/);
+  });
+
+  it("level ordering is enforced (BUY: stop < entry < target)", async () => {
+    const ev = await evaluation();
+    const msg = await expectError(
+      db.query(
+        `insert into public.signals (id, evaluation_id, pair_id, timeframe, strategy_id, direction, as_of, published_at, entry_low, entry_high, stop_loss, take_profits,
+          risk_reward, confidence_band, entry_expires_at, horizon_bars, assumptions, explanation, visibility, prev_hash, content_hash)
+         values ($1, $2, $3, '1h', $4, 'BUY', now() - interval '1 hour', now(), 100, 101, 102, '{110}', 1.8, 'not_calibrated', now() + interval '6 hours', 24, '{}', '{}', 'staff', $5, $6)`,
+        [randomUUID(), ev, pairId, strategyId, lastHash, hex(++n)],
+      ),
+    );
+    expect(msg).toMatch(/check constraint/);
+  });
+
+  it("visibility follows the gate and tiers (D3)", async () => {
+    const staffSig = await publish("staff");
+    const betaSig = await publish("beta");
+    const liveSig = await publish("public");
+    const oldClosed = await publish("public", { backdateDays: 10 });
+    await close(oldClosed);
+    const recentClosed = await publish("public");
+    await close(recentClosed);
+    const all = [staffSig, betaSig, liveSig, oldClosed, recentClosed];
+
+    expect(await visible({ role: "authenticated", userId: admin, aal: "aal2" }, all)).toEqual([...all].sort());
+    expect(await visible({ role: "authenticated", userId: admin }, all)).toEqual([oldClosed]); // no MFA: like a free user
+    expect(await visible({ role: "authenticated", userId: proUser }, all)).toEqual([liveSig, oldClosed, recentClosed].sort());
+    expect(await visible({ role: "authenticated", userId: betaUser }, all)).toEqual([betaSig, oldClosed].sort());
+    expect(await visible({ role: "authenticated", userId: carol }, all)).toEqual([oldClosed]);
+    expect(await visible({ role: "anon" }, all)).toEqual([oldClosed]);
+  });
+
+  it("events and outcomes are visible exactly when their signal is", async () => {
+    const live = await publish("public");
+    await close(live);
+    const outcomes = async (actor: Parameters<typeof as>[1]) => (await as(db, actor, (q) => q("select 1 from public.signal_outcomes where signal_id = $1", [live]))).rowCount;
+    expect(await outcomes({ role: "authenticated", userId: proUser })).toBe(1);
+    expect(await outcomes({ role: "authenticated", userId: carol })).toBe(0);
+  });
+
+  it("only MFA admins annotate, as themselves; nobody else writes to the ledger", async () => {
+    const id = await publish("public");
+    const ann = "insert into public.signal_annotations (signal_id, kind, body) values ($1, 'correction', 'Entry range was mislabeled in the UI')";
+    expect(await as(db, { role: "authenticated", userId: admin }, (q) => expectError(q(ann, [id])))).toMatch(/row-level security/);
+    expect((await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => q(ann + " returning author_id", [id]))).rows[0].author_id).toBe(admin);
+    for (const actor of [{ role: "authenticated" as const, userId: proUser }, { role: "anon" as const }]) {
+      expect(await as(db, actor, (q) => expectError(q("insert into public.signal_outcomes (signal_id, outcome, closed_at, resolver_version) values ($1, 'expired_no_entry', now(), '1.0.0')", [id])))).toMatch(/permission denied/);
+    }
+  });
+
+  it("model versions follow the lifecycle and approvals are MFA-admin only", async () => {
+    const mv = (await db.query("insert into public.model_versions (strategy_id, version, model_type) values ($1, '0.1.0', 'logistic') returning id", [strategyId])).rows[0].id;
+    expect(await expectError(db.query("update public.model_versions set status = 'approved', approved_at = now() where id = $1", [mv]))).toMatch(/invalid model status transition/);
+    await db.query("update public.model_versions set status = 'shadow' where id = $1", [mv]);
+    expect(await expectError(db.query("update public.model_versions set status = 'approved', approved_at = now() where id = $1", [mv]))).toMatch(/artifact checksum/);
+    expect(await expectError(db.query("update public.model_versions set model_type = 'xgboost' where id = $1", [mv]))).toMatch(/immutable/);
+    const approve = "update public.model_versions set status = 'retired', retired_at = now() where id = $1";
+    expect((await as(db, { role: "authenticated", userId: proUser }, (q) => q(approve, [mv]))).rowCount).toBe(0);
+    expect((await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => q(approve, [mv]))).rowCount).toBe(1);
+  });
+
+  it("HOLD evaluations older than a year may be pruned; BUY/SELL evaluations never", async () => {
+    const oldHold = await evaluation("HOLD", new Date(Date.now() - 400 * 86_400_000).toISOString());
+    const recentHold = await evaluation("HOLD");
+    const oldBuy = await evaluation("BUY", new Date(Date.now() - 400 * 86_400_000).toISOString());
+    await db.query("delete from public.signal_evaluations where id = $1", [oldHold]);
+    expect(await expectError(db.query("delete from public.signal_evaluations where id = $1", [recentHold]))).toMatch(/insert-only/);
+    expect(await expectError(db.query("delete from public.signal_evaluations where id = $1", [oldBuy]))).toMatch(/insert-only/);
+    expect((await as(db, { role: "authenticated", userId: proUser }, (q) => q("select 1 from public.signal_evaluations"))).rowCount).toBe(0);
   });
 });
