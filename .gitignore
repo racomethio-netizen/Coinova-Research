@@ -32,3 +32,11 @@ next-env.d.ts
 # local supabase
 /supabase/.temp/
 /supabase/.branches/
+
+# Python engine
+engine/.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
