@@ -6,10 +6,22 @@ _Last updated: 2026-11-10 (session 2)._
 
 The product is being extended into **NEXUS AI** (signals, backtesting, paper
 trading, mobile). The plan, architecture, ERD, risks and compliance gates are in
-[`docs/nexus/`](nexus/README.md). **Phases 1 and 2 are done.** Phase 3
-(market-data ingestion, Python engine scaffold) is next. It needs owner decision
-**D5** (hosting region + primary data source, after the exchange ToS review) and
-network access to the data-source hosts in the cloud environment.
+[`docs/nexus/`](nexus/README.md). **Phases 1 and 2 are done. Phase 3 is built and
+tested on synthetic data** (🟡). Its exit criteria (≥3-year backfill, 24 h live run)
+are blocked on:
+1. **Owner decision D5:** approve the data source + hosting region
+   (docs/nexus/MARKET_DATA_SOURCES.md) and record the terms review (gate G-4).
+2. **Network access** to `data-api.binance.vision` and `data.binance.vision` in the cloud
+   environment. Both are currently refused by the proxy.
+
+### Phase 3 (session 2): what was built
+- `engine/` Python service (uv, pydantic-settings, psycopg as `nexus_engine`, httpx,
+  FastAPI): Binance public adapter (GET-only allow-list, no keys, rate limiter,
+  backoff, stop on 418/451), validation, gap tracking, immutable finals with revision
+  records, checksum-verified archive import, worker scheduler, `/health`, CLI, Dockerfile.
+- Migration 0012: market sources/pairs/candles/gaps/revisions/runs/prices/heartbeats/jobs.
+- Gate G-4 enforced: production refuses sources without a recorded terms review.
+- 58 engine tests (8 against real Postgres) + 8 new RLS tests; CI engine job.
 
 ### Phase 2 (session 2): what changed
 - Tiers **free < pro < premium** (D1). `founding` retired. Existing paid features
@@ -23,12 +35,15 @@ network access to the data-source hosts in the cloud environment.
 - CI workflow, Dependabot, gitleaks. **Security upgrade:** next 16.3.8 → 16.4.3
   (critical advisories incl. RCE) and zod 4.6.5 → 4.6.7.
 
-Next commands for Phase 3:
+Next commands (Phase 3 completion, then Phase 4):
 ```bash
 npm ci && npm run typecheck && npm run lint && npm test
 npm run db:test:up && npm run test:db
-# then: engine/ scaffold (uv, FastAPI /health, worker), market tables migration,
-# public kline adapter against recorded fixtures (docs/nexus/IMPLEMENTATION_PLAN.md §Phase 3)
+cd engine && uv sync && uv run pytest && uv run ruff check . && uv run mypy
+# after D5 + network access (local DB, dev only):
+DATABASE_URL='postgres://postgres@127.0.0.1:54329/nexus_engine_test?options=-c%20role%3Dnexus_engine' \
+  uv run nexus-engine archive-backfill --symbol BTCUSDT --tf 1h --from-month 2023-01 --to-month 2026-10
+# Phase 4: indicators + golden tests, strategy trend_pullback_v1, signal tables (IMPLEMENTATION_PLAN.md)
 ```
 
 Cloud-container note (session 2): the repo pins `@playwright/test` 1.56.1
@@ -49,6 +64,8 @@ decision · ⬜ not started.
 | `npm run test:db` (RLS on PostgreSQL 16) | ✅ 74 / 74 |
 | `npm run build` | ✅ pass (Next.js 16.4.3) |
 | `npm run test:e2e` | ✅ 46 / 46 |
+| `npm run test:db` after Phase 3 | ✅ 82 / 82 |
+| Engine: `uv run pytest` / ruff / mypy --strict / pip-audit | ✅ 58 / 58 (8 DB tests as `nexus_engine`) / clean / clean / 0 known vulnerabilities |
 | `npm audit --omit=dev` | ✅ 0 vulnerabilities (after the next/zod upgrade) |
 | `npm run test:integration` | ✅ passed in GitHub Actions (not runnable in this container: executing the downloaded PostgREST binary was not permitted) |
 | GitHub Actions CI (run #3) | ✅ all 4 jobs green: checks + audit, DB + integration, build + e2e (ubuntu-24.04), gitleaks |
@@ -144,3 +161,5 @@ Re-verified: typecheck, lint, unit 124/124, DB 52/52, build, e2e 46/46.
 NEXUS Phase 2 was done in the same session: tiers, feature entitlements, kill
 switches, admin MFA, export/deletion, bearer auth, engine role, abuse reports,
 CI, and the next/zod security upgrade (see "Phase 2 (session 2)" above).
+Phase 3 was then built in the same session (engine + market-data schema). Its live
+exit criteria wait on D5 and network access (see the top of this file).

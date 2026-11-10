@@ -51,7 +51,12 @@ env gates. Integration tests for deletion and export. Note: MFA and auth flows n
 real GoTrue. Use the Supabase CLI local stack (Docker) or keep them as manual checks, documented.
 **Exit:** all existing suites are green plus the new tests, and CI is green on the branch.
 
-## Phase 3: Market-data ingestion
+## Phase 3: Market-data ingestion 🟡
+_Session 2: items 1–5 are built and tested (engine, migration 0012, Binance public
+adapter, validation, gaps, archive import, scheduler, gate G-4). The engine scheduler
+does not call `/api/cron/*` yet (item 6). **Exit criteria not yet met**: the ≥3-year
+backfill and the 24 h live run need decision D5 and network access to the source
+hosts, which this cloud environment currently blocks._
 1. `engine/` scaffold: uv project, pydantic-settings config, psycopg pool, FastAPI
    `/health`, worker loop, structured logging with redaction, Dockerfile, pytest/ruff/mypy, CI job.
 2. Migrations: `market_sources`, `market_pairs`, `market_candles`, `candle_gaps`,

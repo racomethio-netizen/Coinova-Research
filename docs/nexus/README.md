@@ -15,6 +15,7 @@ the target system and how we get there.
 | [SIGNAL_ENGINE.md](SIGNAL_ENGINE.md) | Design specification for market data, indicators, signals, risk, validation, backtesting, paper trading |
 | [DEPENDENCIES.md](DEPENDENCIES.md) | Current and planned dependencies, why each exists, and what we deliberately do not use |
 | [SECURITY_RISKS.md](SECURITY_RISKS.md) | Threat model and risk register with mitigations and owning phase |
+| [MARKET_DATA_SOURCES.md](MARKET_DATA_SOURCES.md) | Terms and availability review of candidate data sources (decision D5) |
 | [COMPLIANCE.md](COMPLIANCE.md) | Legal gates, kill switches, and the claims policy (no guaranteed accuracy, no fabricated stats) |
 
 ## Status
@@ -23,7 +24,8 @@ the target system and how we get there.
 |---|---|
 | 1. Architecture and documentation | ✅ Done (this folder) |
 | 2. Database and authentication | ✅ Done. See ROADMAP.md (session 2) |
-| 3–10 | ⬜ Not started. See IMPLEMENTATION_PLAN.md |
+| 3. Market-data ingestion | 🟡 Built and tested on synthetic data. Live ingestion blocked on D5 + network access |
+| 4–10 | ⬜ Not started. See IMPLEMENTATION_PLAN.md |
 
 No NEXUS feature is described as implemented unless the code exists and its tests pass.
 The capabilities CryptoScope already has are listed, with their verification

@@ -29,6 +29,23 @@ Use `render.yaml` as a starting blueprint, or create the service manually:
 - Startup fails fast if the environment is invalid (for example the mock provider
   in production). Read the error in the deploy logs.
 
+## 2b. NEXUS engine (market data), not deployed yet
+
+The engine (`engine/`, Docker image `engine/Dockerfile`) runs `nexus-engine worker`
+for ingestion, and optionally `nexus-engine serve` for `/health`. Before the first run:
+
+1. Give the least-privilege role a login, out of band and never in the repo:
+   `alter role nexus_engine with login password '<generated>';`. Then set
+   `DATABASE_URL` to that role through the Supabase pooler. Never use the service-role key.
+2. Record the market-data terms review (gate G-4, docs/nexus/MARKET_DATA_SOURCES.md).
+   **Production ingestion refuses** sources without `terms_reviewed_at`.
+3. Environment: `APP_ENV`, `DATABASE_URL`, optionally `ENGINE_INTERNAL_TOKEN` (32+ chars),
+   plus the same gate values as the web app (`SIGNALS_VISIBILITY=staff`,
+   `PAID_SIGNALS_ENABLED=false`, `LIVE_EXECUTION_ENABLED=false`).
+4. Seed history: `nexus-engine archive-backfill --symbol BTCUSDT --tf 1h --from-month 2023-01 --to-month 2026-10`
+   (repeat per pair and timeframe). Then `nexus-engine ingest` once, then start the worker.
+5. Pick a hosting region where the market-data host does not return HTTP 451.
+
 ## 3. Scheduled jobs
 
 Jobs run inside the web service and are triggered by authenticated HTTP calls,

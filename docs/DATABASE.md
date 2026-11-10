@@ -15,6 +15,7 @@ PostgreSQL on Supabase. Migrations in `supabase/migrations/` (apply in filename 
 | `20261110000300_admin_mfa.sql` | `is_aal2()`; `is_admin()` / `is_staff()` require an MFA-verified session |
 | `20261110000400_account_lifecycle.sql` | `export_my_data()`; payments retained pseudonymized on deletion; deletion audit trigger; audit log allows only actor pseudonymization |
 | `20261110000500_engine_role_abuse_reports.sql` | `nexus_engine` role (NOLOGIN, no grants yet); `abuse_reports` with a daily cap |
+| `20261110000600_market_data.sql` | market_sources (terms-review gate), market_pairs, market_candles (unique, validated, immutable finals), candle_revisions, candle_gaps, ingest_runs, latest_prices, engine_heartbeats, engine_jobs; exact `nexus_engine` grants |
 
 `supabase/seed.sql` is **development-only** (it lets simulator subscriptions grant
 access and adds labeled sample articles). Never run it in production.
