@@ -126,7 +126,14 @@ price staleness checks. SL/TP monitoring. Decimal P/L. Next.js API routes. Accou
 Tests: RLS isolation, fill math, staleness rejection, SL/TP, rate limits.
 **Exit:** an end-to-end paper trade (place → fill → SL/TP → realized P/L) passes in integration tests.
 
-## Phase 7: Web dashboard
+## Phase 7: Web dashboard ✅
+_Session 2: done, except the **brand change**, which waits on D2 (trademark search) and
+is a one-line change in `src/config/site.ts`. Built: navy tokens (WCAG AA), scanner,
+candlestick charts with EMA/volume/signal markers, signals list and detail,
+performance (forward only, sample rules), paper trading, backtests, and admin screens
+(signals annotate, models, market data and terms review, health, abuse reports). The
+pricing gate is G-2. Plans and notification management stay config-driven (`plans.ts` +
+`sync-plans`; existing notification settings)._
 Navy institutional design tokens, brand change (after D2), and pages: landing,
 login/register (restyle), dashboard, market scanner, signal details (chart with
 markers, explanation, outcome, annotations), performance dashboard (forward vs
