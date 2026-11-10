@@ -45,6 +45,7 @@ count_all() {
   done
 }
 
+echo "pg_dump $(pg_dump --version | awk '{print $3}'), target server $(psql "$ADMIN" -qAtc 'show server_version')"
 echo "1/4 dump source"
 started=$(date +%s)
 pg_dump --format=custom --no-owner --no-privileges --schema=public --file="$DUMP" "$SOURCE"
@@ -58,8 +59,10 @@ psql "$TARGET" -qAt -v ON_ERROR_STOP=1 -f "$ROOT/tests/db/supabase-shim.sql" >/d
 psql "$SOURCE" -qAtc "copy (select id from auth.users) to stdout" | psql "$TARGET" -qAtc "copy auth.users (id) from stdin"
 errors="$(mktemp)"
 pg_restore --no-owner --no-privileges --dbname="$TARGET" "$DUMP" 2>"$errors" || true
-# `public` exists in every new database, so that one error is expected; anything else fails the drill.
-if grep -E '^pg_restore: error' "$errors" | grep -vq 'schema "public" already exists'; then
+# Expected and harmless: `public` exists in every new database, and a newer pg_restore than the
+# server emits `SET transaction_timeout` (PostgreSQL 17+). Any other error fails the drill.
+EXPECTED='schema "public" already exists|unrecognized configuration parameter "transaction_timeout"'
+if grep -E '^pg_restore: error' "$errors" | grep -Evq "$EXPECTED"; then
   grep -E 'error|Command was' "$errors" | head -20 >&2
   echo "Restore drill FAILED: pg_restore reported errors" >&2
   exit 1
