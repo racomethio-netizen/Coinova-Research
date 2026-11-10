@@ -752,3 +752,115 @@ describe("abuse reports", () => {
     });
   });
 });
+
+describe("market data (NEXUS Phase 3)", () => {
+  let btc: number;
+  const asEngine = async <T>(fn: (q: Client["query"]) => Promise<T>): Promise<T> => {
+    await db.query("begin");
+    try {
+      await db.query("set local role nexus_engine");
+      return await fn(db.query.bind(db) as Client["query"]);
+    } finally {
+      await db.query("rollback");
+    }
+  };
+  const candle = (openTime: string, o = 100, h = 110, l = 90, c = 105): unknown[] => [
+    btc, "1h", openTime, new Date(Date.parse(openTime) + 3_600_000 - 1).toISOString(), o, h, l, c, 12.5,
+  ];
+  const insertSql =
+    "insert into public.market_candles (pair_id, timeframe, open_time, close_time, open, high, low, close, volume, is_final) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,true)";
+
+  beforeAll(async () => {
+    btc = (await db.query("select p.id from public.market_pairs p join public.market_sources s on s.id = p.source_id where s.key = 'binance_spot' and p.symbol = 'BTCUSDT'")).rows[0].id;
+  });
+
+  it("seeds Binance BTC/USDT and ETH/USDT on four timeframes, with the terms review not yet recorded", async () => {
+    const { rows } = await db.query("select s.key, s.terms_reviewed_at, p.symbol, p.timeframes from public.market_pairs p join public.market_sources s on s.id = p.source_id order by p.symbol");
+    expect(rows.map((r) => r.symbol)).toEqual(["BTCUSDT", "ETHUSDT"]);
+    expect(rows.every((r) => r.terms_reviewed_at === null)).toBe(true);
+    expect(rows[0].timeframes).toEqual(["15m", "1h", "4h", "1d"]);
+  });
+
+  it("the engine role can write candles; users and anon cannot", async () => {
+    await asEngine(async (q) => {
+      await q(insertSql, candle("2026-01-01T00:00:00Z"));
+      expect((await q("select 1 from public.market_candles where pair_id = $1", [btc])).rowCount).toBe(1);
+    });
+    for (const actor of [{ role: "anon" as const }, { role: "authenticated" as const, userId: carol }]) {
+      const msg = await as(db, actor, (q) => expectError(q(insertSql, candle("2026-01-01T01:00:00Z"))));
+      expect(msg).toMatch(/permission denied/);
+    }
+  });
+
+  it("the engine role cannot touch user or billing data", async () => {
+    for (const sql of ["select 1 from public.profiles", "select 1 from public.subscriptions", "update public.market_sources set terms_reviewed_at = now()"]) {
+      expect(await asEngine((q) => expectError(q(sql)))).toMatch(/permission denied/);
+    }
+  });
+
+  it("rejects invalid candles: misaligned, wrong close time, inconsistent OHLC, non-positive prices", async () => {
+    const bad = [
+      [btc, "1h", "2026-01-01T00:30:00Z", "2026-01-01T01:29:59.999Z", 100, 110, 90, 105, 1],
+      [btc, "1h", "2026-01-01T00:00:00Z", "2026-01-01T01:00:00Z", 100, 110, 90, 105, 1],
+      [btc, "1h", "2026-01-01T00:00:00Z", "2026-01-01T00:59:59.999Z", 100, 104, 90, 105, 1],
+      [btc, "1h", "2026-01-01T00:00:00Z", "2026-01-01T00:59:59.999Z", 0, 110, 90, 105, 1],
+      [btc, "1h", "2026-01-01T00:00:00Z", "2026-01-01T00:59:59.999Z", 100, 110, 90, 105, -1],
+      [btc, "2h", "2026-01-01T00:00:00Z", "2026-01-01T01:59:59.999Z", 100, 110, 90, 105, 1],
+    ];
+    for (const params of bad) expect(await asEngine((q) => expectError(q(insertSql, params)))).toMatch(/violates check constraint/);
+  });
+
+  it("duplicates are impossible and final candles are immutable, even for the engine", async () => {
+    await asEngine(async (q) => {
+      await q(insertSql, candle("2026-01-02T00:00:00Z"));
+      const upsert = await q(
+        "insert into public.market_candles (pair_id, timeframe, open_time, close_time, open, high, low, close, volume, is_final) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,true) on conflict (pair_id, timeframe, open_time) do update set close = excluded.close where market_candles.is_final = false",
+        candle("2026-01-02T00:00:00Z", 100, 110, 90, 106),
+      );
+      expect(upsert.rowCount).toBe(0);
+      expect((await q("select count(*)::int n, max(close) c from public.market_candles where pair_id = $1 and open_time = '2026-01-02T00:00:00Z'", [btc])).rows[0]).toEqual({ n: 1, c: "105" });
+    });
+    expect(await asEngine(async (q) => {
+      await q(insertSql, candle("2026-01-03T00:00:00Z"));
+      return expectError(q("update public.market_candles set close = 107 where pair_id = $1 and open_time = '2026-01-03T00:00:00Z'", [btc]));
+    })).toMatch(/final candles are immutable/);
+    expect(await asEngine(async (q) => {
+      await q(insertSql, candle("2026-01-04T00:00:00Z"));
+      return expectError(q("delete from public.market_candles where pair_id = $1", [btc]));
+    })).toMatch(/permission denied|cannot be deleted/);
+  });
+
+  it("a non-final candle may be finalized", async () => {
+    await asEngine(async (q) => {
+      await q(insertSql.replace(",true)", ",false)"), candle("2026-01-05T00:00:00Z"));
+      const r = await q("update public.market_candles set close = 108, high = 111, is_final = true where pair_id = $1 and open_time = '2026-01-05T00:00:00Z'", [btc]);
+      expect(r.rowCount).toBe(1);
+    });
+  });
+
+  it("operational tables are staff-only (MFA); candles and pairs are public", async () => {
+    await db.query("insert into public.engine_heartbeats (component) values ('test.worker') on conflict do nothing");
+    for (const t of ["engine_heartbeats", "candle_gaps", "ingest_runs", "engine_jobs"]) {
+      const anonMsg = await as(db, { role: "anon" }, (q) => expectError(q(`select 1 from public.${t}`)));
+      expect(anonMsg).toMatch(/permission denied/);
+      const user = await as(db, { role: "authenticated", userId: carol }, (q) => q(`select 1 from public.${t}`));
+      expect(user.rowCount).toBe(0);
+    }
+    const staff = await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => q("select 1 from public.engine_heartbeats"));
+    expect(staff.rowCount).toBeGreaterThan(0);
+    const pairs = await as(db, { role: "anon" }, (q) => q("select symbol from public.market_pairs"));
+    expect(pairs.rowCount).toBe(2);
+  });
+
+  it("only MFA admins add pairs or record a terms review, and only as themselves", async () => {
+    const add = "insert into public.market_pairs (source_id, symbol, base_asset, quote_asset) select id, 'SOLUSDT', 'SOL', 'USDT' from public.market_sources where key = 'binance_spot'";
+    expect(await as(db, { role: "authenticated", userId: admin }, (q) => expectError(q(add)))).toMatch(/row-level security/);
+    expect((await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => q(add))).rowCount).toBe(1);
+    const review = "update public.market_sources set terms_reviewed_at = now(), terms_reviewed_by = $1 where key = 'binance_spot'";
+    expect((await as(db, { role: "authenticated", userId: carol }, (q) => q(review, [carol]))).rowCount).toBe(0);
+    expect(await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => expectError(q(review, [carol])))).toMatch(/row-level security/);
+    expect((await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => q(review, [admin]))).rowCount).toBe(1);
+    const forge = await as(db, { role: "authenticated", userId: admin, aal: "aal2" }, (q) => expectError(q("update public.market_sources set base_url = 'https://evil.example' where key = 'binance_spot'")));
+    expect(forge).toMatch(/permission denied/);
+  });
+});
