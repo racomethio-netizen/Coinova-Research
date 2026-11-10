@@ -120,6 +120,33 @@ jobs:
       - run: uv run pip-audit --skip-editable
       - run: docker build -t nexus-engine:ci .
 
+  mobile:
+    name: Mobile (Expo) typecheck, tests, bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      EXPO_OFFLINE: "1"
+      EXPO_PUBLIC_API_URL: https://example.invalid
+      EXPO_PUBLIC_SUPABASE_URL: https://example.invalid
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test
+      - name: Bundle for iOS and Android (Metro, Hermes)
+        run: npx expo export --platform ios --platform android --output-dir .expo-export --no-minify
+      - name: Audit (critical only; known highs are in Expo CLI build tooling, see docs/nexus/MOBILE.md)
+        run: npm audit --omit=dev --audit-level=critical
+
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest

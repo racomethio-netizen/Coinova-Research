@@ -144,7 +144,10 @@ notifications, abuse reports, plans, pairs, audit logs. Candlestick + indicator 
 Tests: e2e desktop + mobile, accessibility checks, no horizontal overflow at 360 px,
 and claims-policy copy review.
 
-## Phase 8: Mobile application
+## Phase 8: Mobile application ✅
+_Session 2: done (see docs/nexus/MOBILE.md). D7 is decided as no in-app purchase UI.
+Charts open the web chart. Account deletion is in the app. Push alerts work end to
+end. Release builds (EAS, store accounts) await owner approval and the G-7 review._
 `packages/shared` (Zod schemas, API types, client). Expo app: auth (secure store),
 dashboard, scanner, signal detail, performance, paper trading, notifications (push
 tokens), settings. Chart approach decided (DEPENDENCIES.md). Store policy review (G-7, D7).

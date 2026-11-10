@@ -1,0 +1,14 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "paths": {
+      "@nexus/shared": ["../packages/shared/src/index.ts"],
+      "@/*": ["./src/*"],
+      "zod": ["./node_modules/zod"],
+      "decimal.js": ["./node_modules/decimal.js"]
+    }
+  },
+  "include": ["app/**/*.ts", "app/**/*.tsx", "src/**/*.ts", "src/**/*.tsx", "../packages/shared/src/**/*.ts", "expo-env.d.ts"]
+}

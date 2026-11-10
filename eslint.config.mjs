@@ -9,6 +9,8 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Python engine (its own tooling: ruff, mypy).
     "engine/**",
+    // Expo app (its own tooling: tsc strict, vitest, Metro bundle check in CI).
+    "mobile/**",
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",

@@ -16,6 +16,7 @@ the target system and how we get there.
 | [DEPENDENCIES.md](DEPENDENCIES.md) | Current and planned dependencies, why each exists, and what we deliberately do not use |
 | [SECURITY_RISKS.md](SECURITY_RISKS.md) | Threat model and risk register with mitigations and owning phase |
 | [MARKET_DATA_SOURCES.md](MARKET_DATA_SOURCES.md) | Terms and availability review of candidate data sources (decision D5) |
+| [MOBILE.md](MOBILE.md) | Mobile app architecture, decisions (D7), store-policy checklist (G-7), building |
 | [COMPLIANCE.md](COMPLIANCE.md) | Legal gates, kill switches, and the claims policy (no guaranteed accuracy, no fabricated stats) |
 
 ## Status
@@ -29,7 +30,8 @@ the target system and how we get there.
 | 5. Backtesting and performance tracking | 🟡 Built and tested on synthetic data. The real validation report needs Phase 3 data |
 | 6. Paper trading | ✅ Done (virtual, long-only). Fills need live prices from Phase 3 |
 | 7. Web dashboard | ✅ Done (the brand name waits on D2) |
-| 8–10 | ⬜ Not started. See IMPLEMENTATION_PLAN.md |
+| 8. Mobile application | ✅ Done (no store release yet; see MOBILE.md) |
+| 9–10 | ⬜ Not started. See IMPLEMENTATION_PLAN.md |
 
 No NEXUS feature is described as implemented unless the code exists and its tests pass.
 The capabilities CryptoScope already has are listed, with their verification
