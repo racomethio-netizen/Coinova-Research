@@ -103,7 +103,7 @@ failing to render under POSIX locales; the not-found page returning HTTP 200.
 
 ### Phase 10: Production readiness
 - ✅ Full check suite green; security headers; health check; structured logs; deployment/rollback docs; `render.yaml`
-- ⬜ CI pipeline (GitHub Actions running the suites)
+- ✅ CI pipeline (GitHub Actions: checks, audit, DB, integration, build, e2e, gitleaks)
 - ⬜ Shared-store rate limiter for multi-instance deployments
 - ⬜ Load testing on the target instance size
 - ⬜ Legal pages (terms, privacy, refund policy): owner/legal input required
