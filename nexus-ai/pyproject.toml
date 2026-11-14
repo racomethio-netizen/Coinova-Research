@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nexus-ai"
+version = "0.1.0"
+description = "NEXUS AI: multi-exchange crypto SPOT trading system (paper-first, personal use)"
+requires-python = ">=3.12"
+# Pinned to versions released well before this project started.
+dependencies = [
+  "fastapi==0.115.12",
+  "uvicorn[standard]==0.34.2",
+  "sqlalchemy==2.0.40",
+  "alembic==1.15.2",
+  "pydantic==2.11.4",
+  "pydantic-settings==2.9.1",
+  "psycopg[binary]==3.2.7",
+  "redis==5.2.1",
+  "cryptography==44.0.3",
+  "structlog==25.3.0",
+  "ccxt==4.4.80",
+  "httpx==0.28.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==8.3.5",
+  "pytest-asyncio==0.26.0",
+  "ruff==0.11.9",
+  "mypy==1.15.0",
+]
+# Installed from Phase 6 (AI engine); kept out of the API image until needed.
+ml = [
+  "numpy==2.2.5",
+  "pandas==2.2.3",
+  "scikit-learn==1.6.1",
+  "xgboost==3.0.0",
+]
+
+# Each top-level directory in the required layout holds one importable package.
+[tool.setuptools.packages.find]
+where = [
+  "packages/common",
+  "packages/configuration",
+  "packages/database",
+  "packages/security",
+  "services/exchange-gateway",
+  "apps/api",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+  "db: needs a real PostgreSQL (NEXUS_DATABASE_URL); skipped otherwise",
+  "redis: needs a real Redis (NEXUS_REDIS_URL); skipped otherwise",
+  "live_exchange: hits a real exchange API; never runs by default",
+]
+addopts = "-ra --strict-markers -m 'not live_exchange'"
+filterwarnings = ["error::DeprecationWarning:nexus_.*"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["apps/dashboard"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "DTZ", "RUF", "ASYNC"]
+ignore = ["S101"]  # assert is fine in tests
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106"]
+"migrations/**" = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+mypy_path = "packages/common:packages/configuration:packages/database:packages/security:services/exchange-gateway:apps/api"
+explicit_package_bases = true
+exclude = ["tests/", "migrations/"]
+
+[[tool.mypy.overrides]]
+module = ["ccxt.*"]
+ignore_missing_imports = true

@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.env
+.env.*
+!.env.example
+# Model artifacts and datasets are versioned by hash, not committed.
+research/**/artifacts/
+research/**/data/
