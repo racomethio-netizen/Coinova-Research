@@ -33,7 +33,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.engine = make_engine(settings.database_url.get_secret_value())
         app.state.factory = make_session_factory(app.state.engine)
-        app.state.redis = aioredis.from_url(  # type: ignore[no-untyped-call]
+        app.state.redis = aioredis.from_url(
             settings.redis_url.get_secret_value(),
             socket_timeout=2, socket_connect_timeout=2,
         )

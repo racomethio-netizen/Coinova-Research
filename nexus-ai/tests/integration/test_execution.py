@@ -37,7 +37,7 @@ class ScriptedBroker:
         self.submits: list[Any] = []
         self.submit_result: BrokerUpdate | Exception = BrokerUpdate(OrderStatus.OPEN, "X1")
         self.refresh_result: BrokerUpdate = BrokerUpdate(OrderStatus.OPEN, "X1")
-        self.find_result: BrokerUpdate | None | Exception = None
+        self.find_result: BrokerUpdate | Exception | None = None
 
     async def submit(self, req: Any, *, exchange: str) -> BrokerUpdate:
         self.submits.append(req)

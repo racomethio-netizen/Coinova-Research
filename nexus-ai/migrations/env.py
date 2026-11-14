@@ -37,6 +37,13 @@ def run_migrations_online() -> None:
                           compare_type=True, transaction_per_migration=True)
         with context.begin_transaction():
             context.run_migrations()
+        # Re-apply least-privilege grants after every upgrade so new tables are covered.
+        if context.get_x_argument(as_dictionary=True).get("skip_grants") is None:
+            from importlib import import_module
+
+            grants = import_module("migrations.versions.20261114_0003_app_role_grants").GRANTS
+            with connection.begin():
+                connection.exec_driver_sql(grants)
 
 
 if context.is_offline_mode():

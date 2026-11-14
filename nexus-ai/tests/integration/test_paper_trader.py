@@ -145,7 +145,7 @@ async def test_kill_switch_and_duplicate_signals(engine_setup: tuple[Any, ...]) 
 
 
 async def test_stale_or_missing_book_blocks_trading(engine_setup: tuple[Any, ...]) -> None:
-    eng, factory, state, _ = engine_setup
+    eng, factory, _state, _ = engine_setup
     eng.bootstrap()
     v = await eng.valuation()
     eng.books.adapters["binance"]._client.errors["fetch_order_book"] = RuntimeError("down")

@@ -176,7 +176,7 @@ async def main() -> None:
     settings = get_settings()
     configure_logging(settings.log_level, json=settings.log_json)
     engine = make_engine(settings.database_url.get_secret_value())
-    redis = aioredis.from_url(settings.redis_url.get_secret_value())  # type: ignore[no-untyped-call]
+    redis = aioredis.from_url(settings.redis_url.get_secret_value())
     service = MarketDataService(settings, make_session_factory(engine), redis)
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):

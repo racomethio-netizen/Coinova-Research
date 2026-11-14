@@ -1,6 +1,6 @@
 # Exchange support (honest status)
 
-Verified against the ccxt 4.4.80 source installed in this repo. Items marked
+Verified against the ccxt source installed in this repo (4.4.80, re-checked on 4.5.91). Items marked
 **to verify** must be confirmed against the live API in Phase 3 before live trading on
 that exchange is permitted.
 

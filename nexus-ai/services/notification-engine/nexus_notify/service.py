@@ -125,7 +125,7 @@ async def daily_reports(factory: sessionmaker[Session], redis: Any, now: datetim
 async def main() -> None:
     settings = get_settings()
     configure_logging(settings.log_level, json=settings.log_json)
-    redis = aioredis.from_url(settings.redis_url.get_secret_value())  # type: ignore[no-untyped-call]
+    redis = aioredis.from_url(settings.redis_url.get_secret_value())
     engine = make_engine(settings.database_url.get_secret_value(), pool_size=2)
     factory = make_session_factory(engine)
     sender = None

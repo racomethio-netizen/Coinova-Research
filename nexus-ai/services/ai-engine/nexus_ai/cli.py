@@ -29,7 +29,7 @@ MODEL_NAME = "xgb_triple_barrier_15m"
 
 def _git_sha() -> str | None:
     try:
-        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"],  # noqa: S603,S607
+        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"],  # noqa: S607
                                        text=True).strip()
     except (OSError, subprocess.CalledProcessError):
         return None

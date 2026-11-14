@@ -36,7 +36,8 @@ def portfolio_report(s: Session, portfolio_id: int) -> dict[str, Any]:
         models.Order.portfolio_id == p.id, models.Order.average_fill_price.is_not(None),
         models.Order.expected_price.is_not(None))).all()
     slip_bps = [((avg - exp) / exp * 10_000) * (1 if side == "buy" else -1)
-                for side, exp, avg in slippage if exp > 0]
+                for side, exp, avg in slippage
+                if exp is not None and avg is not None and exp > 0]
 
     def opt(x: Decimal | None) -> str | None:
         return None if x is None else str(x)

@@ -56,7 +56,7 @@ def build_features(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
     hours = close_time.hour + close_time.minute / 60
     feats["hour_sin"] = np.sin(2 * np.pi * hours / 24)
     feats["hour_cos"] = np.cos(2 * np.pi * hours / 24)
-    feats["dow"] = close_time.dayofweek.astype(float)
+    feats["dow"] = close_time.day_of_week.astype(float)
     for tf, prefix in (("1h", "h1_"), ("4h", "h4_")):
         block = _block(frames[tf], "")
         feats = align_higher(feats, BASE_TF, block, tf, prefix)

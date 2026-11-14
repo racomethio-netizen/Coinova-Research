@@ -492,7 +492,7 @@ async def main() -> None:
     configure_logging(settings.log_level, json=settings.log_json)
     engine = make_engine(settings.database_url.get_secret_value())
     factory = make_session_factory(engine)
-    redis = aioredis.from_url(settings.redis_url.get_secret_value())  # type: ignore[no-untyped-call]
+    redis = aioredis.from_url(settings.redis_url.get_secret_value())
     if settings.trading_mode is TradingMode.LIVE:
         from nexus_execution.live_gate import build_live_broker, credentialed_adapters
         with transaction(factory) as s:

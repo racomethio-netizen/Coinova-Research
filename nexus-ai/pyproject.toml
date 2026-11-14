@@ -7,32 +7,34 @@ name = "nexus-ai"
 version = "0.1.0"
 description = "NEXUS AI: multi-exchange crypto SPOT trading system (paper-first, personal use)"
 requires-python = ">=3.12"
-# Pinned to versions released well before this project started.
+# Pinned exactly; each version was released at least two weeks before adoption.
+# Re-audited with pip-audit (see docs/SECURITY.md).
 dependencies = [
-  "fastapi==0.115.12",
-  "uvicorn[standard]==0.34.2",
-  "sqlalchemy==2.0.40",
-  "alembic==1.15.2",
-  "pydantic==2.11.4",
-  "pydantic-settings==2.9.1",
-  "psycopg[binary]==3.2.7",
-  "redis==5.2.1",
-  "cryptography==44.0.3",
-  "structlog==25.3.0",
-  "ccxt==4.4.80",
+  "fastapi==0.162.0",
+  "starlette==1.10.0",  # explicit: patched release (fastapi allows older vulnerable ones)
+  "uvicorn[standard]==0.54.0",
+  "sqlalchemy==2.1.6",
+  "alembic==1.20.1",
+  "pydantic==2.14.2",
+  "pydantic-settings==2.16.2",
+  "psycopg[binary]==3.3.6",
+  "redis==8.1.0",
+  "cryptography==50.0.2",
+  "structlog==26.1.0",
+  "ccxt==4.5.91",
   "httpx==0.28.1",
-  "numpy==2.2.5",
-  "pandas==2.2.3",
-  "scikit-learn==1.6.1",
-  "xgboost-cpu==3.0.0",
+  "numpy==2.5.4",
+  "pandas==3.1.0",
+  "scikit-learn==1.9.1",
+  "xgboost-cpu==3.4.1",
 ]
 
 [project.optional-dependencies]
 dev = [
-  "pytest==8.3.5",
-  "pytest-asyncio==0.26.0",
-  "ruff==0.11.9",
-  "mypy==1.15.0",
+  "pytest==9.2.0",
+  "pytest-asyncio==1.4.1",
+  "ruff==0.17.3",
+  "mypy==2.4.1",
 ]
 
 # Each top-level directory in the required layout holds one importable package.

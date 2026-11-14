@@ -11,9 +11,12 @@ any code path, migration or default.
 | `NEXUS_LIVE_TRADING_ENABLED=true` (rejected unless mode is live) | env | ✅ |
 | `NEXUS_LIVE_TRADING_ACK` equals exactly `I accept that live trading can lose real money` | env | ✅ |
 | `NEXUS_APP_ENV=production`, no sandbox endpoints | env | ✅ |
-| Owner approval recorded in the DB (authenticated, TOTP-confirmed, audit-logged) | DB | ⬜ Phase 8/13 |
-| Kill switch cleared; no unreconciled orders; balances reconciled | runtime | ⬜ Phase 7/8 |
-| Exchange key verified to have withdrawals disabled (or owner-confirmed where the exchange can't report it) | DB | ⬜ Phase 3/13 |
+| Owner approval in the append-only audit log (TOTP + exact phrase; expires after 30 days; revocable) | DB | ✅ |
+| Kill switch clear (fails closed if unreadable); no `unknown` orders; balances markable | runtime | ✅ |
+| Active production credential per exchange with withdrawals confirmed disabled | DB | ✅ (owner attestation; API verification for Binance/Coinbase still to add) |
+
+`LiveBroker` can only be constructed by `live_gate.build_live_broker` (a private token
+enforces it; a static test checks no other module constructs it).
 
 `Settings.live_trading_config_problems()` lists every unmet configuration gate; the
 API exposes only the boolean.
@@ -49,8 +52,43 @@ Non-root user (uid 10001), `no-new-privileges`, all capabilities dropped, read-o
 root filesystem for the API, memory limits, ports bound to localhost; Nginx terminates
 HTTPS in production (Phase 14). Docs/OpenAPI are disabled in production.
 
-## Still to do (tracked in ROADMAP.md)
+## Authentication and API (Phase 13)
 
-Authentication (Argon2id + TOTP, session cookies, CSRF), authorization on every
-endpoint, rate limiting, firewall (ufw: 22/80/443 only), fail2ban, backup encryption,
-dependency scanning, and the Phase 13 security test suite.
+* Single owner account (`python -m nexus_api.cli create-owner`); scrypt hashes.
+* Server-side sessions in Redis; HttpOnly + SameSite=Strict (+ Secure in staging/prod)
+  cookie; 2 h idle / 12 h absolute expiry.
+* Login: IP rate limit (20 / 15 min), account lockout (5 failures / 15 min), generic
+  errors and timing equalization (no account enumeration), audit-logged.
+* TOTP 2FA (RFC 6238, secret encrypted at rest); step-up 2FA with replay protection for
+  clearing the kill switch, activating models, storing API keys and live approval.
+  Engaging the kill switch never requires 2FA: stopping must always be easy.
+* CSRF: custom header required on mutations (no CORS) + Origin check.
+* Headers: CSP, X-Frame-Options DENY, nosniff, no-referrer, no-store, Permissions-Policy.
+* All routes require a session; mutations are owner-only (viewer role is read-only).
+
+## Database roles
+
+Migrations run as the schema owner; services connect as `nexus_app`
+(`infrastructure/docker/postgres-init/01-roles.sh`). Grants are re-applied after every
+migration: DML only, no TRUNCATE/DDL, `audit_logs` INSERT/SELECT only, no writes to
+reference tables, and, as a non-owner, the app cannot disable the audit triggers.
+Tested in `tests/integration/test_db_roles.py`.
+
+## Supply chain
+
+`scripts/security-audit.sh`: `pip-audit` + `npm audit` + static checks. In Phase 13 the
+audit found real advisories in the originally pinned versions (cryptography, starlette,
+pytest, and a critical Next.js RCE in the image optimizer, a feature this static export
+does not use). Everything was upgraded to the newest releases at least two weeks old.
+Result: 0 known vulnerabilities (Python and npm) as of 2026-11-14.
+
+## Static security tests (`tests/security`)
+
+No committed secrets or `.env` files; no disabled TLS verification, `shell=True`, `eval`,
+unsafe YAML or unverified pickle; no floats in money code; no withdraw/transfer/margin
+calls; no secrets exposed to the browser; ports bound to localhost; capabilities dropped.
+
+## Telegram
+
+The bot token is part of the API URL: `httpx` request logging is silenced and errors are
+reported without URLs. Tested.

@@ -12,12 +12,11 @@ import asyncio
 import random
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from nexus_common.logging import get_logger
 from nexus_common.timeutil import utcnow
 
-T = TypeVar("T")
 log = get_logger("nexus.market.stream")
 
 
@@ -30,7 +29,7 @@ class StreamStats:
     last_error: str | None = None
 
 
-class ReconnectingStream(Generic[T]):
+class ReconnectingStream[T]:
     def __init__(
         self, name: str, watch: Callable[[], Awaitable[T]],
         on_update: Callable[[T], Awaitable[None]], *,

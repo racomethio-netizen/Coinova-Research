@@ -32,5 +32,7 @@ def decode(fields: dict[Any, Any]) -> dict[str, Any]:
     raw = fields.get("data", fields.get(b"data"))
     if isinstance(raw, bytes):
         raw = raw.decode()
+    if not isinstance(raw, str):
+        raise ValueError("stream entry has no 'data' field")
     result: dict[str, Any] = json.loads(raw)
     return result
