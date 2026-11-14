@@ -71,6 +71,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; "
             "base-uri 'self'; form-action 'self'")
         response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        if request.url.path == "/docs" and settings.app_env.value != "production":
+            # Dev-only interactive API docs load Swagger UI from jsdelivr (disabled in prod).
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: "
+                "https://fastapi.tiangolo.com; connect-src 'self'; frame-ancestors 'none'")
         return response
 
     @app.get("/health/live")
