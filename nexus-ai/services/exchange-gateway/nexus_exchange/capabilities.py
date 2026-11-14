@@ -46,6 +46,8 @@ CAPABILITIES: dict[ExchangeCode, Capabilities] = {
         # /api/v3/brokerage/key_permissions exists but is not wrapped by ccxt 4.4.80;
         # native call to implement in Phase 3. Until then: manual confirmation.
         withdrawal_permission_check="manual",
+        # Coinbase granularities: 1m 5m 15m 30m 1h 2h 6h 1d (verified live: "4h" rejected).
+        aggregated_timeframes=(("4h", "1h"),),
         notes=("Coinbase lists BTC-USDT/ETH-USDT; liquidity may be lower than USD pairs.",),
     ),
 }

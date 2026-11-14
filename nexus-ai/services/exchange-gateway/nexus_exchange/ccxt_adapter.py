@@ -23,6 +23,7 @@ from nexus_common.timeutil import ensure_utc, from_ms, to_ms, utcnow
 from nexus_config import Timeframe
 
 from nexus_exchange.base import ExchangeAdapter
+from nexus_exchange.candles import aggregate_candles
 from nexus_exchange.errors import (
     AuthenticationFailed,
     ExchangeError,
@@ -291,6 +292,14 @@ class CcxtSpotAdapter(ExchangeAdapter):
         self, symbol: str, timeframe: Timeframe, *, since: datetime | None = None,
         limit: int = 500, now: datetime | None = None,
     ) -> list[Candle]:
+        source = dict(self.capabilities.aggregated_timeframes).get(timeframe.value)
+        if source is not None:
+            src_tf = Timeframe(source)
+            factor = timeframe.seconds // src_tf.seconds
+            base = await self.fetch_closed_candles(
+                symbol, src_tf, since=since, limit=min(limit * factor + factor, 1000), now=now)
+            return aggregate_candles(base, source_seconds=src_tf.seconds,
+                                     target_seconds=timeframe.seconds)[-limit:]
         since_ms = to_ms(since) if since else None
         rows = await self._call(self._client.fetch_ohlcv, symbol, timeframe.value, since_ms, limit)
         cutoff = ensure_utc(now or utcnow())
@@ -436,7 +445,8 @@ def _with_client_id(snap: OrderSnapshot, client_order_id: str) -> OrderSnapshot:
 
 def create_ccxt_client(
     code: str, *, api_key: str | None = None, secret: str | None = None,
-    sandbox: bool = False, timeout_ms: int = 10_000,
+    sandbox: bool = False, timeout_ms: int = 10_000, public_api_url: str | None = None,
+    ca_file: str | None = None,
 ) -> Any:
     """Instantiate a ccxt async client configured for SPOT only."""
     cls = getattr(ccxt_async, code)
@@ -445,10 +455,21 @@ def create_ccxt_client(
         "timeout": timeout_ms,
         "options": {"defaultType": "spot", "adjustForTimeDifference": True},
     }
+    if ca_file:
+        # Verification stays ON; this only replaces certifi's bundle (e.g. corporate proxy).
+        config["cafile"] = ca_file
     if api_key and secret:
         config["apiKey"] = api_key
         config["secret"] = secret
+    if code == "binance":
+        # Never load margin/futures markets (they also hit other API hosts).
+        config["options"]["fetchMarkets"] = ["spot"]
+        config["options"]["fetchCurrencies"] = False
     client = cls(config)
     if sandbox:
         client.set_sandbox_mode(True)
+    elif public_api_url:
+        # Market data only (e.g. Binance's data-api.binance.vision mirror). Private
+        # endpoints are untouched and still go to the main API host.
+        client.urls["api"]["public"] = public_api_url
     return client

@@ -9,7 +9,7 @@ import pytest
 def _isolate_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Unit tests must not pick up the developer's NEXUS_* settings, except the
     connection URLs that integration tests rely on."""
-    keep = {"NEXUS_TEST_DATABASE_URL", "NEXUS_TEST_REDIS_URL"}
+    keep = {"NEXUS_TEST_DATABASE_URL", "NEXUS_TEST_REDIS_URL", "NEXUS_EXTRA_CA_FILE"}
     for key in list(os.environ):
         if key.startswith("NEXUS_") and key not in keep:
             monkeypatch.delenv(key, raising=False)

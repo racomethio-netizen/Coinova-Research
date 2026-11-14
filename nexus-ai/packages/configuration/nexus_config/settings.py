@@ -133,6 +133,12 @@ class Settings(BaseSettings):
     )
     quote_currency: str = "USDT"
     use_exchange_sandbox: bool = False
+    # Binance blocks api.binance.com in some jurisdictions (HTTP 451). Public market
+    # data is also served by this official mirror. Set to "" to use the main host.
+    binance_public_api_url: str | None = "https://data-api.binance.vision/api/v3"
+    # Optional CA bundle replacing certifi's for exchange HTTPS (TLS-inspecting proxies).
+    # Certificate verification is never disabled.
+    extra_ca_file: str | None = None
 
     risk: RiskSettings = Field(default_factory=RiskSettings)
 

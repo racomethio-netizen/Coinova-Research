@@ -224,4 +224,6 @@ class Capabilities:
     websocket_market_data: bool
     post_only: bool
     withdrawal_permission_check: str
+    # Timeframe -> source timeframe it is aggregated from (exchange lacks it natively).
+    aggregated_timeframes: tuple[tuple[str, str], ...] = ()
     notes: tuple[str, ...] = field(default_factory=tuple)
