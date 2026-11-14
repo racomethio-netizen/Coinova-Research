@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import json
 import secrets
 from collections.abc import Iterator
@@ -120,6 +121,8 @@ def ser(value: Any) -> Any:
         return str(value)
     if isinstance(value, datetime):
         return value.isoformat()
+    if isinstance(value, ipaddress.IPv4Address | ipaddress.IPv6Address):
+        return str(value)  # INET columns come back as ipaddress objects
     if isinstance(value, dict):
         return {k: ser(v) for k, v in value.items()}
     if isinstance(value, list | tuple):
@@ -133,8 +136,6 @@ def client_ip(request: Request) -> str:
 
 def audit_ip(request: Request) -> str | None:
     """Client IP for the audit log's INET column; None if not a valid address."""
-    import ipaddress
-
     try:
         return str(ipaddress.ip_address(client_ip(request)))
     except ValueError:

@@ -91,3 +91,17 @@ class TestRedaction:
         assert "LEAKME" not in line
         logging.getLogger().handlers.clear()
         structlog.reset_defaults()
+
+
+def test_api_serializer_handles_db_types() -> None:
+    import ipaddress
+    from datetime import UTC, datetime
+    from decimal import Decimal
+
+    from nexus_api.deps import ser
+
+    out = ser({"ip": ipaddress.ip_address("10.0.0.1"), "v6": ipaddress.ip_address("::1"),
+               "d": Decimal("0.000000000000000001"), "t": datetime(2026, 1, 1, tzinfo=UTC),
+               "nested": [Decimal("1.50")]})
+    assert out == {"ip": "10.0.0.1", "v6": "::1", "d": "1E-18",
+                   "t": "2026-01-01T00:00:00+00:00", "nested": ["1.50"]}
