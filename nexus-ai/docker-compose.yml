@@ -1,10 +1,11 @@
-# NEXUS AI: base stack (development and staging). Production adds
-# infrastructure/docker/compose.prod.yml (Nginx/HTTPS, backups) in Phase 14.
+# NEXUS AI base stack (development). Overlays:
+#   staging:     docker compose -f docker-compose.yml -f infrastructure/docker/compose.staging.yml ...
+#   production:  docker compose -f docker-compose.yml -f infrastructure/docker/compose.prod.yml ...
 #
-#   cp .env.example .env    # then fill in the secrets
+#   cp .env.example .env    # then fill in the secrets (scripts/generate-secrets.sh)
 #   docker compose up -d --build
 #
-# Nothing is published on public interfaces: ports bind to 127.0.0.1 only.
+# Nothing is published on public interfaces here: ports bind to 127.0.0.1 only.
 
 name: nexus-ai
 
@@ -16,10 +17,11 @@ x-hardening: &hardening
   security_opt: ["no-new-privileges:true"]
   cap_drop: ["ALL"]
 
+# Services connect as the least-privilege role; only `migrate` uses the schema owner.
 x-python-env: &python-env
   NEXUS_APP_ENV: ${NEXUS_APP_ENV:-development}
   NEXUS_LOG_LEVEL: ${NEXUS_LOG_LEVEL:-INFO}
-  NEXUS_DATABASE_URL: postgresql+psycopg://nexus:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/nexus
+  NEXUS_DATABASE_URL: postgresql+psycopg://nexus_app:${NEXUS_APP_DB_PASSWORD:?set NEXUS_APP_DB_PASSWORD}@postgres:5432/nexus
   NEXUS_REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}@redis:6379/0
   NEXUS_CREDENTIAL_ENCRYPTION_KEYS: ${NEXUS_CREDENTIAL_ENCRYPTION_KEYS:-}
   NEXUS_SESSION_SECRET: ${NEXUS_SESSION_SECRET:-}
@@ -29,6 +31,21 @@ x-python-env: &python-env
   NEXUS_TELEGRAM_BOT_TOKEN: ${NEXUS_TELEGRAM_BOT_TOKEN:-}
   NEXUS_TELEGRAM_CHAT_ID: ${NEXUS_TELEGRAM_CHAT_ID:-}
   NEXUS_MARKET_BACKFILL_DAYS: ${NEXUS_MARKET_BACKFILL_DAYS:-120}
+  NEXUS_PAPER_INITIAL_CAPITAL: ${NEXUS_PAPER_INITIAL_CAPITAL:-10000}
+  NEXUS_CORS_ORIGINS: ${NEXUS_CORS_ORIGINS:-}
+
+x-python-service: &python-service
+  image: nexus-ai/python:${NEXUS_IMAGE_TAG:-dev}
+  restart: unless-stopped
+  environment: *python-env
+  depends_on:
+    migrate: { condition: service_completed_successfully }
+    redis: { condition: service_healthy }
+  read_only: true
+  tmpfs: ["/tmp"]
+  logging: *logging
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: ["ALL"]
 
 services:
   postgres:
@@ -39,15 +56,20 @@ services:
       POSTGRES_USER: nexus
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+      NEXUS_APP_DB_PASSWORD: ${NEXUS_APP_DB_PASSWORD:?set NEXUS_APP_DB_PASSWORD}
       TZ: UTC
-    command: ["postgres", "-c", "timezone=UTC", "-c", "log_min_duration_statement=1000"]
-    volumes: [pgdata:/var/lib/postgresql/data]
+    command: ["postgres", "-c", "timezone=UTC", "-c", "log_min_duration_statement=1000",
+              "-c", "shared_buffers=512MB", "-c", "max_connections=60"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres-init:/docker-entrypoint-initdb.d:ro
     ports: ["127.0.0.1:${POSTGRES_HOST_PORT:-5433}:5432"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U nexus -d nexus"]
       interval: 5s
       timeout: 3s
       retries: 20
+    mem_limit: 1536m
     logging: *logging
     security_opt: ["no-new-privileges:true"]
 
@@ -64,6 +86,7 @@ services:
       retries: 20
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+    mem_limit: 640m
     logging: *logging
     security_opt: ["no-new-privileges:true"]
 
@@ -74,7 +97,9 @@ services:
       secrets: [extra_ca]
     image: nexus-ai/python:${NEXUS_IMAGE_TAG:-dev}
     command: ["alembic", "upgrade", "head"]
-    environment: *python-env
+    environment:
+      <<: *python-env
+      NEXUS_DATABASE_URL: postgresql+psycopg://nexus:${POSTGRES_PASSWORD}@postgres:5432/nexus
     depends_on:
       postgres: { condition: service_healthy }
     restart: "no"
@@ -82,73 +107,53 @@ services:
     <<: *hardening
 
   api:
-    image: nexus-ai/python:${NEXUS_IMAGE_TAG:-dev}
-    restart: unless-stopped
-    environment: *python-env
-    depends_on:
-      migrate: { condition: service_completed_successfully }
-      redis: { condition: service_healthy }
+    <<: *python-service
     ports: ["127.0.0.1:${API_HOST_PORT:-8000}:8000"]
-    read_only: true
-    tmpfs: ["/tmp"]
-    mem_limit: 1g
-    logging: *logging
-    <<: *hardening
+    mem_limit: 768m
 
   market-data:
-    image: nexus-ai/python:${NEXUS_IMAGE_TAG:-dev}
+    <<: *python-service
     command: ["python", "-m", "nexus_market.runner"]
-    restart: unless-stopped
-    environment: *python-env
-    depends_on:
-      migrate: { condition: service_completed_successfully }
-      redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import os,redis,sys; r=redis.from_url(os.environ['NEXUS_REDIS_URL']); sys.exit(0 if r.exists('nexus:heartbeat:market-data:candles') else 1)\""]
       interval: 60s
       timeout: 5s
-      start_period: 600s
+      start_period: 900s
       retries: 3
-    read_only: true
-    tmpfs: ["/tmp"]
     mem_limit: 768m
-    logging: *logging
-    <<: *hardening
-
 
   trader:
-    image: nexus-ai/python:${NEXUS_IMAGE_TAG:-dev}
+    <<: *python-service
     command: ["python", "-m", "nexus_execution.trader"]
-    restart: unless-stopped
-    environment: *python-env
-    depends_on:
-      migrate: { condition: service_completed_successfully }
-      redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import os,redis,sys; r=redis.from_url(os.environ['NEXUS_REDIS_URL']); sys.exit(0 if any(r.exists(k) for k in ('nexus:heartbeat:trader:paper','nexus:heartbeat:trader:live')) else 1)\""]
       interval: 60s
       timeout: 5s
-      start_period: 180s
+      start_period: 300s
       retries: 3
-    read_only: true
-    tmpfs: ["/tmp"]
     mem_limit: 1g
-    logging: *logging
-    <<: *hardening
 
   notifier:
-    image: nexus-ai/python:${NEXUS_IMAGE_TAG:-dev}
+    <<: *python-service
     command: ["python", "-m", "nexus_notify.service"]
-    restart: unless-stopped
-    environment: *python-env
-    depends_on:
-      migrate: { condition: service_completed_successfully }
-      redis: { condition: service_healthy }
-    read_only: true
-    tmpfs: ["/tmp"]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import os,redis,sys; r=redis.from_url(os.environ['NEXUS_REDIS_URL']); sys.exit(0 if r.exists('nexus:heartbeat:notifier') else 1)\""]
+      interval: 60s
+      timeout: 5s
+      start_period: 120s
+      retries: 3
     mem_limit: 256m
-    logging: *logging
-    <<: *hardening
+
+  monitor:
+    <<: *python-service
+    command: ["python", "-m", "nexus_notify.monitor"]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import os,redis,sys; r=redis.from_url(os.environ['NEXUS_REDIS_URL']); sys.exit(0 if r.exists('nexus:heartbeat:monitor') else 1)\""]
+      interval: 60s
+      timeout: 5s
+      start_period: 120s
+      retries: 3
+    mem_limit: 256m
 
 secrets:
   extra_ca:

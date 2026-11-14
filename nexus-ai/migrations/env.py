@@ -42,8 +42,10 @@ def run_migrations_online() -> None:
             from importlib import import_module
 
             grants = import_module("migrations.versions.20261114_0003_app_role_grants").GRANTS
-            with connection.begin():
-                connection.exec_driver_sql(grants)
+            if connection.in_transaction():
+                connection.commit()
+            connection.exec_driver_sql(grants)
+            connection.commit()
 
 
 if context.is_offline_mode():

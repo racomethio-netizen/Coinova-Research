@@ -1,0 +1,74 @@
+# Production overlay: HTTPS via Nginx + Let's Encrypt, daily encrypted backups.
+#   docker compose -f docker-compose.yml -f infrastructure/docker/compose.prod.yml up -d --build
+# Only Nginx publishes ports (80/443). Everything else stays on the internal network.
+services:
+  postgres:
+    ports: !reset []
+  api:
+    ports: !reset []
+    environment:
+      NEXUS_APP_ENV: production
+  market-data: { environment: { NEXUS_APP_ENV: production } }
+  trader: { environment: { NEXUS_APP_ENV: production } }
+  notifier: { environment: { NEXUS_APP_ENV: production } }
+  monitor:
+    environment: { NEXUS_APP_ENV: production }
+
+  nginx:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/nginx.Dockerfile
+      secrets: [extra_ca]
+    image: nexus-ai/nginx:${NEXUS_IMAGE_TAG:-dev}
+    restart: unless-stopped
+    environment:
+      NEXUS_DOMAIN: ${NEXUS_DOMAIN:?set NEXUS_DOMAIN}
+    ports: ["80:80", "443:443"]
+    volumes:
+      - letsencrypt:/etc/letsencrypt:ro
+      - certbot-webroot:/var/www/certbot:ro
+    depends_on: [api]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- --no-check-certificate --header \"Host: $$NEXUS_DOMAIN\" https://127.0.0.1/health/live | grep -q ok"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    mem_limit: 128m
+    logging: { driver: json-file, options: { max-size: "20m", max-file: "5" } }
+
+  certbot:
+    image: certbot/certbot:v3.0.1
+    restart: unless-stopped
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - certbot-webroot:/var/www/certbot
+    entrypoint: ["/bin/sh", "-c", "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"]
+    mem_limit: 128m
+
+  backup:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/backup.Dockerfile
+      secrets: [extra_ca]
+    image: nexus-ai/backup:${NEXUS_IMAGE_TAG:-dev}
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: nexus
+      PGDATABASE: nexus
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    secrets: [backup_passphrase]
+    volumes: ["backups:/backups"]
+    depends_on: { postgres: { condition: service_healthy } }
+    mem_limit: 256m
+    security_opt: ["no-new-privileges:true"]
+
+secrets:
+  backup_passphrase:
+    file: ${BACKUP_PASSPHRASE_FILE:?set BACKUP_PASSPHRASE_FILE (keep a copy OFF the server)}
+
+volumes:
+  letsencrypt:
+  certbot-webroot:
+  backups:

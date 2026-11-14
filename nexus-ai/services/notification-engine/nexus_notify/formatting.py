@@ -55,6 +55,9 @@ def format_event(p: dict[str, Any]) -> str | None:
         return (f"{icon} {m}<b>Order state unknown</b> #{_e(p.get('order_id'))}\n"
                 "Exchange did not confirm the order. It will be reconciled by client order ID; "
                 "it is never resubmitted automatically. New orders are blocked meanwhile.")
+    if kind == "system_alert":
+        state = "recovered" if p.get("ok") else "PROBLEM"
+        return f"🖥️ <b>System {state}</b>: {_e(p.get('check'))} ({_e(p.get('detail'))})"
     if kind == "daily_report":
         r = p.get("report") or {}
         return (f"{icon} {m}<b>Daily performance</b> {_e(p.get('date'))}\n"

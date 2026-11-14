@@ -1,0 +1,19 @@
+# Staging: isolated project (own volumes), paper only, different localhost ports.
+#   docker compose -p nexus-staging -f docker-compose.yml \
+#     -f infrastructure/docker/compose.staging.yml --env-file .env.staging up -d
+x-staging-env: &staging-env
+  NEXUS_APP_ENV: staging
+  NEXUS_TRADING_MODE: paper
+  NEXUS_LIVE_TRADING_ENABLED: "false"
+  NEXUS_LIVE_TRADING_ACK: ""
+
+services:
+  postgres:
+    ports: !override ["127.0.0.1:5533:5432"]
+  api:
+    ports: !override ["127.0.0.1:8200:8000"]
+    environment: *staging-env
+  market-data: { environment: *staging-env }
+  trader: { environment: *staging-env }
+  notifier: { environment: *staging-env }
+  monitor: { environment: *staging-env }

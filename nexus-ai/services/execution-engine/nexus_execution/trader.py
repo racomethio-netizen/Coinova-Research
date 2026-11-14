@@ -474,7 +474,18 @@ class TradingEngine:
                            "severity": severity, "equity": str(v.equity)})
 
     async def run(self, interval: float) -> None:
-        await asyncio.to_thread(self.bootstrap)
+        while not self.stop.is_set():
+            try:
+                await asyncio.to_thread(self.bootstrap)
+                break
+            except RuntimeError as exc:  # e.g. fresh deployment before the owner exists
+                log.warning("trader_waiting", reason=str(exc))
+                await self.redis.set(events.heartbeat_key(f"trader:{self.mode}"),
+                                     utcnow().isoformat(), ex=300)
+                try:
+                    await asyncio.wait_for(self.stop.wait(), timeout=60)
+                except TimeoutError:
+                    pass
         log.info("trader_started", mode=self.mode, portfolio_id=self.portfolio_id)
         while not self.stop.is_set():
             try:

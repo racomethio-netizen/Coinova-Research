@@ -101,7 +101,7 @@ def test_compose_binds_localhost_only_and_drops_capabilities() -> None:
     for line in compose.splitlines():
         if "ports:" in line:
             assert "127.0.0.1:" in line, line
-    assert compose.count('cap_drop: ["ALL"]') == 1 and "<<: *hardening" in compose
+    assert compose.count('cap_drop: ["ALL"]') >= 1 and "<<: *python-service" in compose
 
 
 def test_no_withdrawal_or_margin_calls() -> None:
