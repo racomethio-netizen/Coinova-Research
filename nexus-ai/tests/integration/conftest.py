@@ -58,3 +58,12 @@ def conn(migrated_engine: Engine) -> Iterator[object]:
             yield connection
         finally:
             trans.rollback()
+
+
+def truncate(engine: Engine, tables: str) -> None:
+    """Test-only cleanup. audit_logs blocks TRUNCATE (append-only), and users cascades to
+    it, so the guard trigger is disabled just for this statement by the table owner."""
+    with engine.begin() as c:
+        c.execute(text("ALTER TABLE audit_logs DISABLE TRIGGER audit_logs_no_truncate"))
+        c.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
+        c.execute(text("ALTER TABLE audit_logs ENABLE TRIGGER audit_logs_no_truncate"))

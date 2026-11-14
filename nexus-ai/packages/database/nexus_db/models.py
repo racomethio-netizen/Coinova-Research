@@ -434,6 +434,13 @@ class Order(Base):
                   "status IN ('pending_submit','submitted','open','partially_filled','unknown')"
               )),
         Index("ix_orders_portfolio_created", "portfolio_id", "created_at"),
+        CheckConstraint(in_list("purpose", ("entry", "exit")), name="purpose_valid"),
+        # Duplicate-order prevention at the database level: one ACTIVE order per
+        # portfolio / pair / side, whatever process tries to place it.
+        Index("uq_orders_one_active", "portfolio_id", "pair_id", "side", unique=True,
+              postgresql_where=text(
+                  "status IN ('pending_submit','submitted','open','partially_filled','unknown')"
+              )),
     )
 
     id: Mapped[bigint_pk]
@@ -456,6 +463,11 @@ class Order(Base):
     fee_asset: Mapped[str | None] = mapped_column(String(16))
     # Reference price at decision time, for slippage measurement.
     expected_price: Mapped[Decimal | None]
+    purpose: Mapped[str] = mapped_column(String(8), server_default="entry")
+    position_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("positions.id", ondelete="RESTRICT", use_alter=True))
+    # Intent metadata (strategy, stop/target for entries, exit reason for exits).
+    details: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
     status: Mapped[str] = mapped_column(String(20), server_default="pending_submit")
     last_error: Mapped[str | None] = mapped_column(Text)
     submitted_at: Mapped[datetime | None]

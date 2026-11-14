@@ -145,6 +145,12 @@ class Settings(BaseSettings):
 
     risk: RiskSettings = Field(default_factory=RiskSettings)
 
+    # VIRTUAL capital for the paper portfolio (the real initial capital is undecided).
+    paper_initial_capital: Decimal = Decimal("10000")
+    # Exchange whose candles drive signals (deepest, gap-free history; see EXCHANGES.md).
+    signal_exchange: str = "binance"
+    trader_interval_seconds: float = 30.0
+
     # Paper trading simulation parameters (basis points).
     paper_fee_bps: Decimal = Decimal("10")
     paper_slippage_bps: Decimal = Decimal("5")

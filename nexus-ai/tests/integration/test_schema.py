@@ -120,7 +120,7 @@ def test_reference_data_seeded_disabled(conn: Connection) -> None:
 def test_live_order_cannot_reference_paper_portfolio(conn: Connection, world: dict[str, int]) -> None:
     insert_order(conn, world["paper"], "paper", world["pair"])
     violates(conn, "INSERT INTO orders (portfolio_id, mode, exchange_id, pair_id, client_order_id,"
-                   " side, order_type, price, amount) VALUES (:p, 'live', 1, :pair, :cid, 'buy',"
+                   " side, order_type, price, amount) VALUES (:p, 'live', 1, :pair, :cid, 'sell',"
                    " 'limit', 1, 1)", "23503",
              p=world["paper"], pair=world["pair"], cid=str(uuid.uuid4()))
 
