@@ -17,7 +17,7 @@ from fastapi import FastAPI, Response, status
 from nexus_common.logging import configure_logging, get_logger
 from nexus_common.timeutil import utcnow
 from nexus_config import Settings, get_settings
-from nexus_db import make_engine, ping
+from nexus_db import make_engine, make_session_factory, ping
 from sqlalchemy import Engine
 
 from nexus_api import __version__
@@ -32,6 +32,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.engine = make_engine(settings.database_url.get_secret_value())
+        app.state.factory = make_session_factory(app.state.engine)
         app.state.redis = aioredis.from_url(  # type: ignore[no-untyped-call]
             settings.redis_url.get_secret_value(),
             socket_timeout=2, socket_connect_timeout=2,
@@ -53,6 +54,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_url=None if settings.app_env.value == "production" else "/openapi.json",
     )
 
+    app.state.settings = settings
+    from nexus_api.auth import router as auth_router
+    from nexus_api.routes import router as api_router
+
+    app.include_router(auth_router)
+    app.include_router(api_router)
+
     @app.middleware("http")
     async def security_headers(request: Any, call_next: Any) -> Any:
         response = await call_next(request)
@@ -60,6 +68,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "no-referrer")
         response.headers.setdefault("Cache-Control", "no-store")
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' "
+            "'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; "
+            "base-uri 'self'; form-action 'self'")
+        response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
         return response
 
     @app.get("/health/live")
@@ -94,5 +108,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         """Non-secret configuration. Trading mode is labeled explicitly everywhere."""
         return settings.safe_summary()
 
+    if settings.dashboard_dir:
+        # Static Next.js export served same-origin (Nginx does this in production).
+        from fastapi.staticfiles import StaticFiles
+
+        app.mount("/", StaticFiles(directory=settings.dashboard_dir, html=True), name="dashboard")
     return app
 

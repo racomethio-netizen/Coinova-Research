@@ -163,6 +163,8 @@ class Settings(BaseSettings):
     api_host: str = "127.0.0.1"
     api_port: int = 8000
     cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    # Directory of the static dashboard build to serve from the API (dev/test only).
+    dashboard_dir: str | None = None
 
     @field_validator("enabled_exchanges", "trading_pairs", "timeframes", "cors_origins",
                      mode="before")
