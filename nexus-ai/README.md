@@ -4,9 +4,10 @@ Personal, multi-exchange (Binance, Kraken, Coinbase Advanced Trade) cryptocurren
 **spot** trading system. Paper trading by default. Live trading is disabled and can
 only be enabled by the owner through several independent gates (docs/SECURITY.md).
 
-> **Status: Phase 1 complete (foundation).** No strategy, model or order execution
-> exists yet. Nothing here has produced trading results, and no profitability is
-> claimed or implied. See docs/ROADMAP.md.
+> **Status: all 15 phases built and tested; deployment verified locally.** No strategy or
+> AI model has passed out-of-sample validation on 2 years of real data after costs, so
+> the system currently places **no trades** (by design). No profitability is claimed.
+> See docs/ROADMAP.md for results and the decisions needed from the owner.
 
 ## Fixed trading rules
 
@@ -20,10 +21,15 @@ never loosened (startup fails).
 ```bash
 cp .env.example .env
 scripts/generate-secrets.sh            # paste the output into .env
-docker compose up -d --build           # postgres, redis, migrate, api
+docker compose up -d --build           # postgres, redis, migrate, api, market-data,
+                                       # trader (paper), notifier, monitor
+docker compose exec api python -m nexus_api.cli create-owner --email you@example.com
 curl localhost:8000/health/ready       # {"status":"ok",...}
 curl localhost:8000/api/v1/system/config
 ```
+
+Production (HTTPS, backups): docs/DEPLOYMENT.md. Dashboard dev: `cd apps/dashboard &&
+npm ci && npx next build`, then serve with `NEXUS_DASHBOARD_DIR=apps/dashboard/out`.
 
 Behind a TLS-inspecting proxy, build with `EXTRA_CA_FILE=/path/ca.pem` (a BuildKit
 secret; it is not stored in the image).
@@ -60,10 +66,10 @@ docs/                        ARCHITECTURE, ROADMAP, SECURITY, EXCHANGES, DATABAS
 
 ## Development plan
 
-1 environment ✅ · 2 architecture & database 🟡 · 3 exchange adapters 🟡 · 4 market
-data · 5 strategies · 6 AI · 7 risk · 8 execution · 9 backtesting · 10 paper trading ·
-11 dashboard · 12 Telegram · 13 security testing · 14 VPS deployment · 15 continuous
-paper trading and evaluation.
+1 environment ✅ · 2 database ✅ · 3 exchange adapters 🟡 (orders need keys) · 4 market
+data ✅ · 5 strategies ✅ (all rejected) · 6 AI ✅ (model rejected) · 7 risk ✅ ·
+8 execution ✅ · 9 backtesting ✅ · 10 paper trading ✅ · 11 dashboard ✅ · 12 Telegram ✅ ·
+13 security ✅ · 14 deployment 🟡 (needs VPS) · 15 continuous paper evaluation 🟡.
 
 A phase is marked complete only when its acceptance tests pass. Models are promoted
 only after passing out-of-sample and walk-forward validation; a high historical win

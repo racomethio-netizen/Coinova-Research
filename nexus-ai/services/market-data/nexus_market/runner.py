@@ -16,9 +16,9 @@ from datetime import timedelta
 from decimal import Decimal
 from typing import Any
 
-import redis.asyncio as aioredis
 from nexus_common import events
 from nexus_common.logging import configure_logging, get_logger
+from nexus_common.redisutil import connect as connect_redis
 from nexus_common.timeutil import utcnow
 from nexus_config import ExchangeCode, Settings, get_settings
 from nexus_db import make_engine, make_session_factory, models, transaction
@@ -176,7 +176,7 @@ async def main() -> None:
     settings = get_settings()
     configure_logging(settings.log_level, json=settings.log_json)
     engine = make_engine(settings.database_url.get_secret_value())
-    redis = aioredis.from_url(settings.redis_url.get_secret_value())
+    redis = connect_redis(settings.redis_url.get_secret_value())
     service = MarketDataService(settings, make_session_factory(engine), redis)
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):

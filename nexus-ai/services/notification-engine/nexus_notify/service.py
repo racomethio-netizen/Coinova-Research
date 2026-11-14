@@ -13,9 +13,9 @@ import signal
 from datetime import datetime, timedelta
 from typing import Any, Protocol
 
-import redis.asyncio as aioredis
 from nexus_common import events
 from nexus_common.logging import configure_logging, get_logger
+from nexus_common.redisutil import connect as connect_redis
 from nexus_common.timeutil import utcnow
 from nexus_config import get_settings
 from nexus_db import make_engine, make_session_factory, models, transaction
@@ -79,7 +79,7 @@ class Notifier:
         log.error("notify_gave_up", type=payload.get("type"))
         return True
 
-    async def process_once(self, block_ms: int = 5000) -> int:
+    async def process_once(self, block_ms: int = 2000) -> int:
         # Pending (delivered but unacked, e.g. after a crash) first, then new entries.
         handled = 0
         for start in ("0", ">"):
@@ -125,7 +125,7 @@ async def daily_reports(factory: sessionmaker[Session], redis: Any, now: datetim
 async def main() -> None:
     settings = get_settings()
     configure_logging(settings.log_level, json=settings.log_json)
-    redis = aioredis.from_url(settings.redis_url.get_secret_value())
+    redis = connect_redis(settings.redis_url.get_secret_value())
     engine = make_engine(settings.database_url.get_secret_value(), pool_size=2)
     factory = make_session_factory(engine)
     sender = None

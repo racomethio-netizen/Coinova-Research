@@ -52,17 +52,17 @@ live trading only after explicit owner activation (see SECURITY.md).
 | `packages/security` (`nexus_security`) | AES-256-GCM credential encryption, key rotation | ✅ Phase 1 |
 | `packages/database` (`nexus_db`) | SQLAlchemy models, sessions, transactions | ✅ Phase 1–2 |
 | `migrations/` | Alembic migrations (schema source of truth) | ✅ Phase 1–2 |
-| `services/exchange-gateway` (`nexus_exchange`) | Common adapter interface, CCXT spot adapter, precision | ✅ interface (Phase 1); live verification Phase 3 |
-| `services/market-data` | REST backfill, WebSocket streams, gap detection | ⬜ Phase 4 |
-| `services/strategies` | Trend, momentum, breakout, mean reversion; MTF | ⬜ Phase 5 |
-| `services/ai-engine` | Features, XGBoost, regimes, calibration, drift | ⬜ Phase 6 |
-| `services/risk-engine` | Sizing, loss limits, drawdown shutdown, allocator | ⬜ Phase 7 |
-| `services/execution-engine` | Order lifecycle, reconciliation, slippage | ⬜ Phase 8 |
-| `research/backtesting` | Event-driven backtester, walk-forward | ⬜ Phase 9 |
-| paper trading | Simulated fills on live prices (execution-engine mode) | ⬜ Phase 10 |
-| `apps/dashboard` | Next.js + Tailwind + Lightweight Charts | ⬜ Phase 11 |
-| `services/notification-engine` | Telegram | ⬜ Phase 12 |
-| `infrastructure/` | Docker, Nginx, monitoring, backups | 🟡 Docker Compose (Phase 1); rest Phase 14 |
+| `services/exchange-gateway` (`nexus_exchange`) | Common adapter interface, CCXT spot adapter, precision | ✅ read-only verified live; orders need keys |
+| `services/market-data` (`nexus_market`) | REST backfill, WebSocket streams, gap detection, health | ✅ |
+| `services/strategies` | Trend, momentum, breakout, mean reversion; MTF | ✅ (all rejected by validation) |
+| `services/ai-engine` | Features, XGBoost, regimes, calibration, drift | ✅ (model rejected) |
+| `services/risk-engine` | Sizing, loss limits, drawdown shutdown, allocator | ✅ |
+| `services/execution-engine` | Order lifecycle, reconciliation, slippage | ✅ |
+| `research/backtesting` | Event-driven backtester, walk-forward | ✅ |
+| paper trading | Simulated fills on live prices (execution-engine mode) | ✅ |
+| `apps/dashboard` | Next.js + Tailwind + Lightweight Charts | ✅ |
+| `services/notification-engine` | Telegram | ✅ |
+| `infrastructure/` | Docker, Nginx, monitoring, backups | ✅ verified locally; VPS pending |
 
 All Python services share one image; each Compose service runs a different command.
 Services communicate through PostgreSQL (durable state) and Redis (streams for

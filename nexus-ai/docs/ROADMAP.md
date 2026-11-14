@@ -1,71 +1,81 @@
 # NEXUS AI roadmap and status
 
-_Last updated: 2026-11-14 (session 1: Phase 1 + schema part of Phase 2)._
+_Last updated: 2026-11-14 (session 1: phases 1–15)._
 
-Legend: ✅ done and covered by passing tests · 🟡 done but needs external
-verification · ⛔ blocked on owner decision/credentials · ⬜ not started.
+Legend: ✅ done and covered by passing tests · 🟡 done, needs external verification ·
+⛔ blocked on owner decision/credentials/infrastructure · ⬜ not started.
+
+## Headline result (read this first)
+
+The software platform is complete and tested. **No trading strategy and no AI model has
+passed independent out-of-sample validation**, so the system correctly places **no
+trades**. On 2 years of real Binance data (Nov 2024–Nov 2026), after realistic costs
+(0.10% fee + 0.05% slippage per side):
+
+| Candidate | OOS trades | Win rate | Expectancy / trade | Profit factor | Positive windows | Verdict |
+|---|---|---|---|---|---|---|
+| Trend following (1h/4h) | 763 | 32.5% | −0.53% | 0.54 | 0 / 9 | rejected |
+| Momentum (15m/1h) | 196 | 26.0% | −0.35% | 0.46 | 0 / 9 | rejected |
+| Breakout (15m/1h) | 113 | 27.4% | −0.43% | 0.40 | 1 / 9 | rejected |
+| Mean reversion (15m/1h) | 114 | 42.1% | −0.31% | 0.52 | 3 / 9 | rejected |
+| AI model (XGBoost + logit, triple barrier, 15m) | 90 | 11% | −0.32% | 0.12 | 0 / 7 | rejected (AUC 0.513, Brier skill < 0) |
+
+Walk-forward: parameters chosen on 180 days, judged on the next 60 unseen days; AI used
+270-day purged training windows. Tests prove the same gates **pass** on synthetic data
+with a real signal, so the rejections reflect the market, not rigged gates.
+
+An 80–90% win rate is easy to manufacture (tiny targets, wide stops) and is worthless
+when expectancy after costs is negative; the system optimizes expectancy and refuses to
+promote anything on in-sample metrics. Further research should change the *hypothesis*
+(e.g. longer horizons, different instruments, maker-only execution), not re-tune until
+something passes, which would be data snooping.
 
 ## Verified this session
 
 | Check | Result |
 |---|---|
-| `ruff check .` | ✅ clean |
-| `mypy` (strict, 6 packages, 22 files) | ✅ no issues |
-| Unit tests (`tests/unit`) | ✅ 46 / 46 |
-| Security tests (`tests/security`) | ✅ 18 / 18 |
-| Exchange adapter tests (`tests/exchange`, fake ccxt client) | ✅ 58 / 58 |
-| Integration tests (`tests/integration`, PostgreSQL 16 + Redis 7) | ✅ 26 / 26 |
-| `alembic upgrade head` → `alembic check` → `downgrade base` → `upgrade head` | ✅ |
-| `docker compose up` (postgres, redis, migrate, api) | ✅ all healthy, `/health/ready` 200 |
-| Container auto-restart after crash (SIGKILL of API process) | ✅ restarted |
-| Secrets absent from container logs | ✅ (Postgres/Redis passwords, session secret, encryption key) |
+| `scripts/test.sh` (ruff, mypy --strict on 13 packages, pytest) | ✅ 348 passed |
+| Live read-only exchange tests (`pytest -m live_exchange`) | ✅ 23 passed (Binance via public mirror, Kraken, Coinbase; paper fills on real books) |
+| Dashboard e2e (Playwright, desktop + 360 px) | ✅ 11 passed (+1 skipped by design) |
+| `pip-audit` / `npm audit` | ✅ 0 known vulnerabilities |
+| Production stack locally (Nginx/TLS, 11 services) | ✅ all healthy; restore drill matched 23/23 tables; ≈0.9 GB RAM |
+| Continuous paper run on live data | ✅ see Phase 15 |
 
 ## Phases
 
-### Phase 1: environment, architecture, foundation ✅
-- ✅ Environment inspected (Python 3.13, Postgres 16, Redis 7, Docker 29)
-- ✅ Architecture (docs/ARCHITECTURE.md), repository structure
-- ✅ Configuration management with hard risk ceilings and live-trading gates
-- ✅ Credential encryption (AES-256-GCM, context-bound, rotatable)
-- ✅ Structured JSON logging with secret redaction
-- ✅ Exchange adapter interface + CCXT spot adapter + precision validation
-- ✅ FastAPI app with liveness/readiness, Docker image, Compose stack
+1. **Environment & foundation** ✅: config with hard risk ceilings, encryption, logging, adapter interface, Docker.
+2. **Database** ✅: 22 tables + 3 migrations; paper/live isolation via composite FKs; append-only audit; one-active-order and one-position-per-asset indexes; least-privilege app role.
+3. **Exchange adapters** 🟡: CCXT spot adapter; verified read-only live on all three. ⛔ Order placement untested on real exchanges (needs your API keys; Binance testnet keys recommended first). Coinbase has no 4h candles (aggregated from 1h). Kraken/Coinbase lack client-ID lookup (scan fallback).
+4. **Market data** ✅: backfill, gap reporting, 6 live WebSocket books, health monitor. Finding: Coinbase BTC/USDT omits ~30% of 5m bars (illiquid USDT books).
+5. **Strategies** ✅: 4 long-only MTF strategies, causal indicators (truncation tests), cost-aware filter. All fail validation (above).
+6. **AI** ✅: features, triple-barrier labels, XGBoost+logit ensemble, isotonic calibration, purged walk-forward, drift (PSI), sha256-verified registry. Model rejected (above).
+7. **Risk** ✅: Decimal sizing incl. costs, daily/weekly limits, 5% drawdown shutdown, fail-closed kill switch, allocator, reconciliation.
+8. **Execution** ✅: intent-before-submit, exactly-once submission, unknown→reconcile by client ID, idempotent fills, DB duplicate guard, live gate.
+9. **Backtesting** ✅: event-driven engine (next-open fills, stop-first, gap fills, costs), walk-forward, metrics, persisted runs.
+10. **Paper trading** ✅: real-book fill simulation, virtual capital, reports titled PAPER.
+11. **Dashboard** ✅: 14 pages + login, static export, auth, charts.
+12. **Telegram** ✅: all event types, daily report, token never logged. ⛔ Needs your bot token/chat ID to deliver.
+13. **Security** ✅: auth/2FA/CSRF/rate limits, DB roles, static checks, dependency audit (found and fixed real advisories).
+14. **Deployment** 🟡: complete and verified locally. ⛔ Needs your VPS, domain and approval to deploy.
+15. **Continuous paper trading** 🟡: stack ran continuously on live data (results in docs/PAPER_EVALUATION.md); zero trades because nothing passed validation. Long-horizon paper evaluation requires the VPS.
 
-### Phase 2: architecture and database (partially done)
-- ✅ 22 tables, NUMERIC money, UTC timestamps, FKs, indexes, unique and CHECK
-  constraints; paper/live isolation via composite FKs + immutable mode; append-only
-  audit log; one open position per base asset; one active model per name
-- ⬜ Repository layer (typed CRUD for orders/positions/balances in transactions)
-- ⬜ Users/auth bootstrap (owner account creation CLI, Argon2id)
+## Owner decisions / inputs needed ⛔
 
-### Phase 3: exchange adapters 🟡 (interface done)
-- ⬜ Read-only live verification on all three exchanges (markets, tickers, books, OHLCV)
-  — needs network access to exchange APIs from the runtime host
-- ⬜ Binance spot testnet order round-trip (needs testnet keys) ⛔
-- ⬜ Native Coinbase `key_permissions` and Binance `apiRestrictions` checks
-- ⬜ Account fee tiers; Kraken native `cl_ord_id` lookup verification
-- ⬜ Exchange health monitor job + `system_events`
-
-### Phases 4–15 ⬜
-Market data → strategies → AI → risk → execution → backtesting → paper trading →
-dashboard → Telegram → security testing → VPS deployment → continuous paper trading.
-See the master plan in README.md.
-
-## Open decisions for the owner ⛔
-- Initial capital (needed only for paper portfolio sizing; any number works for paper).
-- Exchange API keys: create **read + spot-trade only, withdrawals disabled, IP-restricted**
-  keys when Phase 3 live verification starts. Binance testnet keys for order tests.
-- VPS provider and domain name (Phase 14).
+1. **VPS + domain** (and permission to deploy). Choose a region where your exchanges allow trading (Binance returned HTTP 451 here).
+2. **Research direction**: accept that no current candidate trades, or fund new hypotheses (see headline). Do not lower the gates.
+3. **API keys** (read + spot trade, no withdrawals, IP-restricted) only when a strategy passes validation and has a successful paper period.
+4. **Telegram** bot token + chat ID (optional).
+5. **Initial real capital**: still undecided; irrelevant until live approval.
 
 ## Next session: exact commands
 
 ```bash
-cd nexus-ai
-uv venv .venv -p 3.13 && . .venv/bin/activate && uv pip install -e ".[dev]"
-# local services (or: docker compose up -d postgres redis)
+cd nexus-ai && uv venv .venv -p 3.13 && . .venv/bin/activate && uv pip install -e ".[dev]"
 export NEXUS_TEST_DATABASE_URL=postgresql+psycopg://nexus:<pw>@localhost:5432/nexus_test
 export NEXUS_TEST_REDIS_URL=redis://localhost:6379/15
-scripts/test.sh                       # lint + mypy + all tests: must be green first
+scripts/test.sh                                    # must be green
+pytest -m live_exchange tests/exchange/live        # read-only, needs exchange access
+scripts/security-audit.sh                          # re-audit dependencies
 ```
-Then: Phase 2 repository layer → Phase 3 read-only live adapter verification
-(`pytest -m live_exchange`, new tests in `tests/exchange/live/`).
+Then: deploy (docs/DEPLOYMENT.md) once a VPS exists; Binance testnet order round-trip;
+new research hypotheses through `nexus_backtest.cli validate-strategies` / `nexus_ai.cli train`.

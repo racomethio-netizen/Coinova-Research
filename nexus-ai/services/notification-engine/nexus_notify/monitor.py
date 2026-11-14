@@ -14,9 +14,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import redis.asyncio as aioredis
 from nexus_common import events
 from nexus_common.logging import configure_logging, get_logger
+from nexus_common.redisutil import connect as connect_redis
 from nexus_common.timeutil import utcnow
 from nexus_config import TradingMode, get_settings
 from nexus_db import make_engine, make_session_factory, ping, repo, transaction
@@ -125,7 +125,7 @@ class Monitor:
 async def main() -> None:
     settings = get_settings()
     configure_logging(settings.log_level, json=settings.log_json)
-    redis = aioredis.from_url(settings.redis_url.get_secret_value())
+    redis = connect_redis(settings.redis_url.get_secret_value())
     engine = make_engine(settings.database_url.get_secret_value(), pool_size=1)
     mode = "live" if settings.trading_mode is TradingMode.LIVE else "paper"
     mon = Monitor(redis, engine, make_session_factory(engine), mode)

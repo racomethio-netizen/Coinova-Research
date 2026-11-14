@@ -12,9 +12,9 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
-import redis.asyncio as aioredis
 from fastapi import FastAPI, Response, status
 from nexus_common.logging import configure_logging, get_logger
+from nexus_common.redisutil import connect as connect_redis
 from nexus_common.timeutil import utcnow
 from nexus_config import Settings, get_settings
 from nexus_db import make_engine, make_session_factory, ping
@@ -33,10 +33,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.engine = make_engine(settings.database_url.get_secret_value())
         app.state.factory = make_session_factory(app.state.engine)
-        app.state.redis = aioredis.from_url(
-            settings.redis_url.get_secret_value(),
-            socket_timeout=2, socket_connect_timeout=2,
-        )
+        app.state.redis = connect_redis(settings.redis_url.get_secret_value())
         log.info("api_started", **settings.safe_summary())
         try:
             yield
