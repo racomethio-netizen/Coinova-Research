@@ -69,11 +69,14 @@ class BackfillResult:
 
 async def backfill(adapter: ExchangeAdapter, factory: sessionmaker[Session], *, pair_id: int,
                    symbol: str, timeframe: Timeframe, start: datetime,
-                   now: datetime | None = None, max_pages: int = 500) -> BackfillResult:
-    """Fetch closed candles from max(start, last stored + 1 bar) up to now, page by page."""
+                   now: datetime | None = None, max_pages: int = 500,
+                   from_start: bool = False) -> BackfillResult:
+    """Fetch closed candles from max(start, last stored + 1 bar) up to now, page by page.
+    ``from_start`` re-fetches from ``start`` (history extension; upserts are idempotent)."""
     step = timedelta(seconds=timeframe.seconds)
     now = now or utcnow()
-    latest = await asyncio.to_thread(_latest, factory, pair_id, timeframe.value)
+    latest = None if from_start else await asyncio.to_thread(_latest, factory, pair_id,
+                                                             timeframe.value)
     cursor = max(start, latest + step) if latest else start
     page_limit = adapter.capabilities.ohlcv_page_limit
     result = BackfillResult()

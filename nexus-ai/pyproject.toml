@@ -21,6 +21,10 @@ dependencies = [
   "structlog==25.3.0",
   "ccxt==4.4.80",
   "httpx==0.28.1",
+  "numpy==2.2.5",
+  "pandas==2.2.3",
+  "scikit-learn==1.6.1",
+  "xgboost-cpu==3.0.0",
 ]
 
 [project.optional-dependencies]
@@ -29,13 +33,6 @@ dev = [
   "pytest-asyncio==0.26.0",
   "ruff==0.11.9",
   "mypy==1.15.0",
-]
-# Installed from Phase 6 (AI engine); kept out of the API image until needed.
-ml = [
-  "numpy==2.2.5",
-  "pandas==2.2.3",
-  "scikit-learn==1.6.1",
-  "xgboost==3.0.0",
 ]
 
 # Each top-level directory in the required layout holds one importable package.
@@ -47,6 +44,11 @@ where = [
   "packages/security",
   "services/exchange-gateway",
   "services/market-data",
+  "services/strategies",
+  "services/ai-engine",
+  "services/risk-engine",
+  "services/execution-engine",
+  "research/backtesting",
   "apps/api",
 ]
 
@@ -58,9 +60,10 @@ markers = [
   "db: needs a real PostgreSQL (NEXUS_DATABASE_URL); skipped otherwise",
   "redis: needs a real Redis (NEXUS_REDIS_URL); skipped otherwise",
   "live_exchange: hits a real exchange API; never runs by default",
+  "slow: takes more than a few seconds",
 ]
 addopts = "-ra --strict-markers -m 'not live_exchange'"
-filterwarnings = ["error::DeprecationWarning:nexus_.*"]
+filterwarnings = ["error::DeprecationWarning:nexus_.*", "ignore:Unknown solver options:scipy.optimize.OptimizeWarning"]
 
 [tool.ruff]
 line-length = 110
@@ -72,17 +75,17 @@ select = ["E", "F", "W", "I", "B", "UP", "S", "DTZ", "RUF", "ASYNC"]
 ignore = ["S101"]  # assert is fine in tests
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S105", "S106"]
+"tests/**" = ["S105", "S106", "S311"]
 "migrations/**" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-mypy_path = "packages/common:packages/configuration:packages/database:packages/security:services/exchange-gateway:services/market-data:apps/api"
+mypy_path = "packages/common:packages/configuration:packages/database:packages/security:services/exchange-gateway:services/market-data:services/strategies:services/ai-engine:services/risk-engine:services/execution-engine:research/backtesting:apps/api"
 explicit_package_bases = true
 exclude = ["tests/", "migrations/"]
 
 [[tool.mypy.overrides]]
-module = ["ccxt.*"]
+module = ["ccxt.*", "sklearn.*", "xgboost.*", "pandas.*"]
 ignore_missing_imports = true
