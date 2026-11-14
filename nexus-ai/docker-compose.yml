@@ -136,6 +136,20 @@ services:
     logging: *logging
     <<: *hardening
 
+  notifier:
+    image: nexus-ai/python:${NEXUS_IMAGE_TAG:-dev}
+    command: ["python", "-m", "nexus_notify.service"]
+    restart: unless-stopped
+    environment: *python-env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    read_only: true
+    tmpfs: ["/tmp"]
+    mem_limit: 256m
+    logging: *logging
+    <<: *hardening
+
 secrets:
   extra_ca:
     file: ${EXTRA_CA_FILE:-/dev/null}

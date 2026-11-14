@@ -163,3 +163,25 @@ async def test_no_enabled_strategies_means_no_trades(engine_setup: tuple[Any, ..
     with transaction(factory) as s:
         assert s.scalar(select(models.TradingSignal)) is None
         assert s.scalar(select(models.Order)) is None
+
+
+async def test_daily_report_queued_once_per_day(engine_setup: tuple[Any, ...]) -> None:
+    from nexus_notify.service import daily_reports
+    eng, factory, _, redis = engine_setup
+    eng.bootstrap()
+    now = datetime(2026, 6, 2, 0, 6, tzinfo=UTC)
+    assert await daily_reports(factory, redis, now) == 1
+    assert await daily_reports(factory, redis, now) == 0
+    entries = await redis.xrange(events.NOTIFY_STREAM)
+    payload = events.decode(entries[-1][1])
+    assert payload["type"] == "daily_report" and payload["mode"] == "paper"
+    assert payload["date"] == "2026-06-01" and payload["report"]["title"].startswith("PAPER")
+
+
+async def test_signal_decisions_are_notified(engine_setup: tuple[Any, ...]) -> None:
+    eng, _, _, redis = engine_setup
+    eng.bootstrap()
+    v = await eng.valuation()
+    await eng.handle_signal(1, signal(), v, v.equity, v.equity, v.equity)
+    kinds = [events.decode(f)["type"] for _, f in await redis.xrange(events.NOTIFY_STREAM)]
+    assert "signal" in kinds and "order_submitted" in kinds

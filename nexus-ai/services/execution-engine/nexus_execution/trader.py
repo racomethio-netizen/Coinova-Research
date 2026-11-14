@@ -305,7 +305,7 @@ class TradingEngine:
                             (utcnow() - book.timestamp).total_seconds() if book else None)
         decision = evaluate_trade(snap, check, self.settings.risk)
         if not decision.approved:
-            self._set_signal(signal_id, "rejected", "; ".join(decision.reasons))
+            await self._decide(sig, signal_id, "rejected", "; ".join(decision.reasons))
             return
         # Size against the cheapest eligible venue (allocator re-checks cash/depth).
         entry_ref = Decimal(repr(sig.entry_price))
@@ -313,7 +313,7 @@ class TradingEngine:
         target = Decimal(repr(sig.target))
         trial = choose_buy_venue(venues, notional=Decimal(1), now=utcnow())
         if trial.exchange is None:
-            self._set_signal(signal_id, "rejected", f"no venue: {trial.rejected}")
+            await self._decide(sig, signal_id, "rejected", f"no venue: {trial.rejected}")
             return
         venue = next(x for x in venues if x.exchange == trial.exchange)
         rules = await self.adapters[venue.exchange].market_rules(sig.symbol)
@@ -332,11 +332,11 @@ class TradingEngine:
             amount_step=rules.amount_step, min_amount=rules.min_amount,
             min_notional=rules.min_notional))
         if not sizing.approved:
-            self._set_signal(signal_id, "rejected", f"sizing: {sizing.rejected_reason}")
+            await self._decide(sig, signal_id, "rejected", f"sizing: {sizing.rejected_reason}")
             return
         alloc = choose_buy_venue(venues, notional=sizing.notional, now=utcnow())
         if alloc.exchange != venue.exchange:
-            self._set_signal(signal_id, "rejected", f"allocator: {alloc.reason} {alloc.rejected}")
+            await self._decide(sig, signal_id, "rejected", f"allocator: {alloc.reason} {alloc.rejected}")
             return
         price = floor_to_step(entry * (1 + self.settings.paper_slippage_bps / 10_000),
                               rules.price_tick)
@@ -349,10 +349,14 @@ class TradingEngine:
                 details={"strategy_id": strat_id, "strategy": sig.strategy, "stop": str(stop_px),
                          "target": str(target_px), "regime": sig.regime}))
         except (DuplicateOrder, InsufficientBalance) as exc:
-            self._set_signal(signal_id, "rejected", str(exc))
+            await self._decide(sig, signal_id, "rejected", str(exc))
             return
-        self._set_signal(signal_id, "executed", None)
+        await self._decide(sig, signal_id, "executed", None)
+        with transaction(self.factory) as s:
+            placed = s.get(models.Order, order_id)
+            order_status = placed.status if placed else "unknown"
         await self.notify({"type": "order_submitted", "mode": self.mode, "order_id": order_id,
+                           "status": order_status,
                            "strategy": sig.strategy, "symbol": sig.symbol,
                            "exchange": venue.exchange, "quantity": str(sizing.quantity),
                            "price": str(price), "stop": str(stop_px), "target": str(target_px)})
@@ -406,6 +410,12 @@ class TradingEngine:
                 return row.id
         except IntegrityError:
             return None
+
+    async def _decide(self, sig: Signal, signal_id: int, status: str, reason: str | None) -> None:
+        self._set_signal(signal_id, status, reason)
+        await self.notify({"type": "signal", "mode": self.mode, "strategy": sig.strategy,
+                           "symbol": sig.symbol, "entry": sig.entry_price, "stop": sig.stop,
+                           "target": sig.target, "status": status, "reason": reason})
 
     def _set_signal(self, signal_id: int, status: str, reason: str | None) -> None:
         with transaction(self.factory) as s:
