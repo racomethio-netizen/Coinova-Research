@@ -39,7 +39,7 @@ something passes, which would be data snooping.
 | Dashboard e2e (Playwright, desktop + 360 px) | ✅ 11 passed (+1 skipped by design) |
 | `pip-audit` / `npm audit` | ✅ 0 known vulnerabilities |
 | Production stack locally (Nginx/TLS, 11 services) | ✅ all healthy; restore drill matched 23/23 tables; ≈0.9 GB RAM |
-| Continuous paper run on live data | ✅ see Phase 15 |
+| Continuous paper run on live data (25 min, prod stack) | ✅ 0 restarts, 0 errors; see docs/PAPER_EVALUATION.md |
 
 ## Phases
 
@@ -57,7 +57,7 @@ something passes, which would be data snooping.
 12. **Telegram** ✅: all event types, daily report, token never logged. ⛔ Needs your bot token/chat ID to deliver.
 13. **Security** ✅: auth/2FA/CSRF/rate limits, DB roles, static checks, dependency audit (found and fixed real advisories).
 14. **Deployment** 🟡: complete and verified locally. ⛔ Needs your VPS, domain and approval to deploy.
-15. **Continuous paper trading** 🟡: stack ran continuously on live data (results in docs/PAPER_EVALUATION.md); zero trades because nothing passed validation. Long-horizon paper evaluation requires the VPS.
+15. **Continuous paper trading** 🟡: 25-min continuous production-stack run on live data: 0 restarts, 0 errors, 6/6 streams, fresh candles; two defects found and fixed (Redis timeout, Nginx stale DNS). Zero trades because nothing passed validation (docs/PAPER_EVALUATION.md). Multi-week paper evaluation requires the VPS.
 
 ## Owner decisions / inputs needed ⛔
 

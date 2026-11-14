@@ -73,7 +73,9 @@ Full production overlay with a self-signed certificate: all 11 services healthy;
 HTTP→HTTPS redirect; HTTP/2 + TLS; HSTS/CSP/frame headers; `/health/ready` blocked
 externally (403); unknown paths 404; anonymous API 401; login through Nginx with a
 `Secure` cookie; login rate limit → 429; services connected as `nexus_app`; encrypted
-backup → checksum → decrypt → restore into a new database with **all 23 tables matching**.
+backup → checksum → decrypt → restore into a new database with **all 23 tables matching**;
+25-minute continuous run with 0 restarts/errors; Nginx keeps routing after the API
+container is recreated with a new IP (Docker DNS re-resolution).
 
 Not verified (needs your VPS/domain): Let's Encrypt issuance, ufw/fail2ban on a real
 host, off-site backup copies.

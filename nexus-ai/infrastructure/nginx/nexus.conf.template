@@ -3,6 +3,9 @@
 limit_req_zone $binary_remote_addr zone=login:10m rate=10r/m;
 limit_req_zone $binary_remote_addr zone=api:10m rate=20r/s;
 server_tokens off;
+# Re-resolve service names via Docker DNS: containers get new IPs when recreated
+# (e.g. on deploy); a statically resolved upstream would keep returning 502.
+resolver 127.0.0.11 valid=10s ipv6=off;
 limit_req_status 429;
 
 server {
@@ -16,6 +19,7 @@ server {
     listen 443 ssl;
     http2 on;
     server_name ${NEXUS_DOMAIN};
+    set $api_upstream http://api:8000;
 
     ssl_certificate     /etc/letsencrypt/live/${NEXUS_DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${NEXUS_DOMAIN}/privkey.pem;
@@ -40,15 +44,15 @@ server {
 
     location = /api/v1/auth/login {
         limit_req zone=login burst=5 nodelay;
-        proxy_pass http://api:8000;
+        proxy_pass $api_upstream;
         include /etc/nginx/proxy_params.conf;
     }
     location /api/ {
         limit_req zone=api burst=40 nodelay;
-        proxy_pass http://api:8000;
+        proxy_pass $api_upstream;
         include /etc/nginx/proxy_params.conf;
     }
-    location = /health/live { proxy_pass http://api:8000; include /etc/nginx/proxy_params.conf; }
+    location = /health/live { proxy_pass $api_upstream; include /etc/nginx/proxy_params.conf; }
     location /health/ { deny all; }   # readiness details stay internal
 
     root /usr/share/nginx/html;
