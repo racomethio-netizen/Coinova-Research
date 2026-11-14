@@ -7,7 +7,8 @@
 .git
 tests
 docs
-research
+research/**/data
+research/**/artifacts
 apps/dashboard
 .pytest_cache
 .mypy_cache

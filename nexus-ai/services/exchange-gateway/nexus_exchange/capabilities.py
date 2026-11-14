@@ -18,6 +18,7 @@ CAPABILITIES: dict[ExchangeCode, Capabilities] = {
         websocket_market_data=True,
         post_only=True,                # LIMIT_MAKER
         withdrawal_permission_check="api",  # GET /sapi/v1/account/apiRestrictions
+        ohlcv_page_limit=1000,
         notes=(
             "Testnet balances and liquidity are synthetic; use only for adapter tests.",
         ),
@@ -31,6 +32,10 @@ CAPABILITIES: dict[ExchangeCode, Capabilities] = {
         websocket_market_data=True,
         post_only=True,
         withdrawal_permission_check="manual",  # key permissions not readable via API
+        ohlcv_page_limit=720,
+        # Kraken's OHLC endpoint only ever returns the most recent 720 bars; deeper
+        # history needs trade-level data. Backtests therefore use Binance history.
+        ohlcv_history_bars=720,
         notes=(
             "No spot sandbox: adapter is tested with recorded/fake clients and read-only "
             "live calls; first live orders must be minimum size under owner supervision.",
@@ -48,6 +53,7 @@ CAPABILITIES: dict[ExchangeCode, Capabilities] = {
         withdrawal_permission_check="manual",
         # Coinbase granularities: 1m 5m 15m 30m 1h 2h 6h 1d (verified live: "4h" rejected).
         aggregated_timeframes=(("4h", "1h"),),
+        ohlcv_page_limit=300,
         notes=("Coinbase lists BTC-USDT/ETH-USDT; liquidity may be lower than USD pairs.",),
     ),
 }

@@ -136,6 +136,9 @@ class Settings(BaseSettings):
     # Binance blocks api.binance.com in some jurisdictions (HTTP 451). Public market
     # data is also served by this official mirror. Set to "" to use the main host.
     binance_public_api_url: str | None = "https://data-api.binance.vision/api/v3"
+    binance_public_ws_url: str | None = "wss://data-stream.binance.vision/ws"
+    # Candle history to backfill on first start (Kraken is capped at 720 bars anyway).
+    market_backfill_days: int = 120
     # Optional CA bundle replacing certifi's for exchange HTTPS (TLS-inspecting proxies).
     # Certificate verification is never disabled.
     extra_ca_file: str | None = None

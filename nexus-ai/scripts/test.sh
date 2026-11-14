@@ -5,5 +5,5 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 ruff check .
-mypy -p nexus_common -p nexus_config -p nexus_db -p nexus_security -p nexus_exchange -p nexus_api
+mypy -p nexus_common -p nexus_config -p nexus_db -p nexus_security -p nexus_exchange -p nexus_market -p nexus_api
 python -m pytest "$@"

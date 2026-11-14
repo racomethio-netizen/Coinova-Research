@@ -226,4 +226,7 @@ class Capabilities:
     withdrawal_permission_check: str
     # Timeframe -> source timeframe it is aggregated from (exchange lacks it natively).
     aggregated_timeframes: tuple[tuple[str, str], ...] = ()
+    ohlcv_page_limit: int = 500
+    # Max bars of history the OHLCV endpoint can return (None = paginates freely).
+    ohlcv_history_bars: int | None = None
     notes: tuple[str, ...] = field(default_factory=tuple)

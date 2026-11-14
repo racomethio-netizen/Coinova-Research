@@ -16,7 +16,8 @@ WORKDIR /app
 # Dependencies first for layer caching.
 COPY pyproject.toml ./
 COPY packages ./packages
-COPY services/exchange-gateway ./services/exchange-gateway
+COPY services ./services
+COPY research ./research
 COPY apps/api ./apps/api
 # Optional extra CA (e.g. a TLS-inspecting corporate proxy), passed as a BuildKit
 # secret so it never ends up in an image layer. Empty/absent = public CAs only.

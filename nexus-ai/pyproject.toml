@@ -46,6 +46,7 @@ where = [
   "packages/database",
   "packages/security",
   "services/exchange-gateway",
+  "services/market-data",
   "apps/api",
 ]
 
@@ -78,7 +79,7 @@ ignore = ["S101"]  # assert is fine in tests
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-mypy_path = "packages/common:packages/configuration:packages/database:packages/security:services/exchange-gateway:apps/api"
+mypy_path = "packages/common:packages/configuration:packages/database:packages/security:services/exchange-gateway:services/market-data:apps/api"
 explicit_package_bases = true
 exclude = ["tests/", "migrations/"]
 

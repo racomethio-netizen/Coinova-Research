@@ -66,9 +66,10 @@ class ExchangeAdapter(ABC):
     @abstractmethod
     async def fetch_closed_candles(
         self, symbol: str, timeframe: Timeframe, *, since: datetime | None = None,
-        limit: int = 500,
+        limit: int = 500, now: datetime | None = None,
     ) -> list[Candle]:
-        """OHLCV, oldest first, containing ONLY candles that have fully closed."""
+        """OHLCV, oldest first, containing ONLY candles that have fully closed at
+        ``now`` (default: current time)."""
 
     # ---------------------------------------------------------------- account
     @abstractmethod

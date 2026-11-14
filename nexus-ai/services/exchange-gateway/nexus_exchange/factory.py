@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from nexus_config import ExchangeCode, Settings
 
 from nexus_exchange.base import ExchangeAdapter
@@ -31,3 +33,23 @@ def build_from_settings(code: ExchangeCode, settings: Settings) -> ExchangeAdapt
     url = settings.binance_public_api_url if code is ExchangeCode.BINANCE else None
     return build_adapter(code, sandbox=settings.use_exchange_sandbox, public_api_url=url,
                          ca_file=settings.extra_ca_file)
+
+
+def build_ws_client(code: ExchangeCode, settings: Settings) -> Any:
+    """ccxt.pro client for PUBLIC market-data streams (no credentials)."""
+    import ccxt.pro as ccxt_pro
+
+    config: dict[str, Any] = {"enableRateLimit": True, "options": {"defaultType": "spot"}}
+    if settings.extra_ca_file:
+        config["cafile"] = settings.extra_ca_file
+    if code is ExchangeCode.BINANCE:
+        config["options"]["fetchMarkets"] = ["spot"]
+        config["options"]["fetchCurrencies"] = False
+    client = getattr(ccxt_pro, code.value)(config)
+    if code is ExchangeCode.BINANCE:
+        # Order book streams also fetch a REST depth snapshot: use the same public mirror.
+        if settings.binance_public_ws_url:
+            client.urls["api"]["ws"]["spot"] = settings.binance_public_ws_url
+        if settings.binance_public_api_url:
+            client.urls["api"]["public"] = settings.binance_public_api_url
+    return client
