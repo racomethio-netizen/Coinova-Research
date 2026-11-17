@@ -16,7 +16,7 @@ from __future__ import annotations
 from decimal import Decimal
 from enum import StrEnum
 from functools import lru_cache
-from typing import Annotated, Final
+from typing import Annotated, Final, Literal
 
 from pydantic import BaseModel, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -65,7 +65,11 @@ MAX_OPEN_POSITIONS: Final = 2
 MAX_PORTFOLIO_EXPOSURE: Final = Decimal("0.50")
 # Futures (owner-approved 2026-11-14): Binance only, at most 1x leverage, long and short.
 # Disabled by default; a futures strategy must pass the same out-of-sample gates as spot.
-MAX_FUTURES_LEVERAGE: Final = Decimal("1")
+# Owner-approved 2026-11-17: selectable leverage tiers, default 2x, hard maximum 20x.
+# Leverage never changes position size (size comes from risk); it only sets margin use.
+FUTURES_LEVERAGE_OPTIONS: Final = (2, 5, 10, 20)
+MAX_FUTURES_LEVERAGE: Final = Decimal("20")
+MAX_FUTURES_RISK_PER_TRADE: Final = Decimal("0.01")  # owner-approved: 1%
 FUTURES_EXCHANGES: Final = ("binance",)
 
 
@@ -143,8 +147,13 @@ class Settings(BaseSettings):
     futures_enabled: bool = False
     futures_exchanges: Annotated[list[ExchangeCode], NoDecode] = Field(
         default_factory=lambda: [ExchangeCode.BINANCE])
-    futures_max_leverage: Decimal = MAX_FUTURES_LEVERAGE
+    futures_default_leverage: int = 2
+    futures_leverage_options: Annotated[list[int], NoDecode] = Field(
+        default_factory=lambda: list(FUTURES_LEVERAGE_OPTIONS))
+    futures_risk_per_trade: Decimal = MAX_FUTURES_RISK_PER_TRADE
     futures_allow_short: bool = False
+    futures_margin_mode: Literal["isolated", "cross"] = "isolated"
+    futures_cross_margin_enabled: bool = False
     use_exchange_sandbox: bool = False
     # Binance blocks api.binance.com in some jurisdictions (HTTP 451). Public market
     # data is also served by this official mirror. Set to "" to use the main host.
@@ -224,12 +233,34 @@ class Settings(BaseSettings):
             return [part.strip() for part in value.split(",") if part.strip()]
         return value
 
-    @field_validator("futures_max_leverage")
+    @field_validator("futures_leverage_options", mode="before")
     @classmethod
-    def _leverage_ceiling(cls, value: Decimal) -> Decimal:
-        if value < 1 or value > MAX_FUTURES_LEVERAGE:
-            raise ValueError(f"futures_max_leverage must be between 1 and {MAX_FUTURES_LEVERAGE}")
+    def _split_leverage(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [int(part) for part in value.split(",") if part.strip()]
         return value
+
+    @field_validator("futures_leverage_options")
+    @classmethod
+    def _leverage_options(cls, options: list[int]) -> list[int]:
+        if not options or any(o not in FUTURES_LEVERAGE_OPTIONS for o in options):
+            raise ValueError(f"leverage options must be chosen from {FUTURES_LEVERAGE_OPTIONS}")
+        return sorted(set(options))
+
+    @field_validator("futures_risk_per_trade")
+    @classmethod
+    def _futures_risk_ceiling(cls, value: Decimal) -> Decimal:
+        if value <= 0 or value > MAX_FUTURES_RISK_PER_TRADE:
+            raise ValueError(f"futures_risk_per_trade must be > 0 and <= {MAX_FUTURES_RISK_PER_TRADE}")
+        return value
+
+    @model_validator(mode="after")
+    def _futures_defaults(self) -> Settings:
+        if self.futures_default_leverage not in self.futures_leverage_options:
+            raise ValueError("futures_default_leverage must be one of the leverage options")
+        if self.futures_cross_margin_enabled is False and self.futures_margin_mode == "cross":
+            raise ValueError("cross margin is disabled; set futures_cross_margin_enabled to use it")
+        return self
 
     @model_validator(mode="after")
     def _cross_checks(self) -> Settings:
@@ -288,7 +319,10 @@ class Settings(BaseSettings):
             "spot_enabled": True,
             "futures_enabled": self.futures_enabled,
             "futures_exchanges": [e.value for e in self.futures_exchanges],
-            "max_futures_leverage": str(self.futures_max_leverage),
+            "futures_default_leverage": self.futures_default_leverage,
+            "futures_max_leverage": max(self.futures_leverage_options),
+            "futures_margin_mode": self.futures_margin_mode,
+            "futures_risk_per_trade": str(self.futures_risk_per_trade),
             "short_selling_enabled": self.futures_enabled and self.futures_allow_short,
             "martingale_enabled": False,
             "telegram_configured": self.telegram_bot_token is not None,

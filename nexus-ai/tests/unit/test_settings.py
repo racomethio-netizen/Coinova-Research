@@ -122,15 +122,22 @@ def test_secrets_not_in_repr_or_summary() -> None:
 def test_futures_defaults_and_ceilings(monkeypatch: pytest.MonkeyPatch) -> None:
     s = Settings()
     assert s.futures_enabled is False and s.futures_allow_short is False
+    assert s.futures_default_leverage == 2 and s.futures_leverage_options == [2, 5, 10, 20]
+    assert s.futures_margin_mode == "isolated" and s.futures_cross_margin_enabled is False
+    assert s.futures_risk_per_trade == Decimal("0.01")
     assert [e.value for e in s.futures_exchanges] == ["binance"]
     with pytest.raises(ValidationError):
-        Settings(futures_max_leverage="2")
+        Settings(futures_leverage_options="2,50")  # not a selectable tier
     with pytest.raises(ValidationError):
-        Settings(futures_exchanges="binance,kraken")
+        Settings(futures_default_leverage=10, futures_leverage_options="2,5")
+    with pytest.raises(ValidationError):
+        Settings(futures_risk_per_trade="0.011")
+    with pytest.raises(ValidationError):
+        Settings(futures_margin_mode="cross")  # cross margin is disabled by default
     with pytest.raises(ValidationError):
         Settings(futures_exchanges="kraken")
-    assert Settings(futures_enabled=True, futures_allow_short=True).safe_summary()[
-        "short_selling_enabled"] is True
+    summary = Settings(futures_enabled=True, futures_allow_short=True).safe_summary()
+    assert summary["short_selling_enabled"] is True and summary["futures_max_leverage"] == 20
     monkeypatch.setenv("NEXUS_MARTINGALE_ENABLED", "true")
     assert Settings().safe_summary()["martingale_enabled"] is False
 
