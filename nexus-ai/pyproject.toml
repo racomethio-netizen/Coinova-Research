@@ -51,6 +51,7 @@ where = [
   "services/risk-engine",
   "services/execution-engine",
   "services/notification-engine",
+  "services/analysis",
   "research/backtesting",
   "apps/api",
 ]
@@ -88,7 +89,7 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-mypy_path = "packages/common:packages/configuration:packages/database:packages/security:services/exchange-gateway:services/market-data:services/strategies:services/ai-engine:services/risk-engine:services/execution-engine:services/notification-engine:research/backtesting:apps/api"
+mypy_path = "packages/common:packages/configuration:packages/database:packages/security:services/exchange-gateway:services/market-data:services/strategies:services/ai-engine:services/risk-engine:services/execution-engine:services/notification-engine:services/analysis:research/backtesting:apps/api"
 explicit_package_bases = true
 exclude = ["tests/", "migrations/"]
 
