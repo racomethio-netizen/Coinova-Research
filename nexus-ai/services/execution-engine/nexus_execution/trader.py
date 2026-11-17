@@ -311,6 +311,10 @@ class TradingEngine:
         if not decision.approved:
             await self._decide(sig, signal_id, "rejected", "; ".join(decision.reasons))
             return
+        proceed, explanation = await self._decision_gate(sig, v, day0, week0, book, metrics, best)
+        if not proceed:
+            await self._decide(sig, signal_id, "rejected", explanation)
+            return
         # Size against the cheapest eligible venue (allocator re-checks cash/depth).
         entry_ref = Decimal(repr(sig.entry_price))
         stop = Decimal(repr(sig.stop))
@@ -364,6 +368,81 @@ class TradingEngine:
                            "strategy": sig.strategy, "symbol": sig.symbol,
                            "exchange": venue.exchange, "quantity": str(sizing.quantity),
                            "price": str(price), "stop": str(stop_px), "target": str(target_px)})
+
+    async def _news_score(self) -> float | None:
+        import json as _json
+
+        from nexus_news.service import KEY as NEWS_KEY
+
+        raw = await self.redis.get(NEWS_KEY)
+        if raw is None:
+            return None
+        score = _json.loads(raw).get("score")
+        return None if score is None else float(score)
+
+    async def _decision_gate(self, sig: Signal, v: Valuation, day0: Decimal, week0: Decimal,
+                             book: OrderBook | None, metrics: Any, best: VenueState | None
+                             ) -> tuple[bool, str]:
+        """Score the setup (0-100), apply the NO TRADE gates and the 1:2 minimum.
+
+        Built from the same candles the strategy used plus the live order book. Returns
+        (proceed, explanation). The explanation is stored with the signal either way.
+        """
+        import math
+
+        from nexus_analysis import liquidity_sweeps, market_structure, rolling_correlation, support_resistance
+        from nexus_decision import MarketSnapshot, NoTradeInputs, decide
+        from nexus_risk.limits import loss_fraction
+        from nexus_strategies.indicators import atr as atr_fn
+        from nexus_strategies.indicators import rolling_percentile, volume_z
+
+        frames = self.frames(self.settings.signal_exchange, sig.symbol, (sig.timeframe, "1h", "4h"))
+        base, htf = frames[sig.timeframe], frames["1h"]
+        if base.empty or htf.empty or len(base) < 200:
+            return False, "NO TRADE: insufficient candle history for analysis"
+        st_base = market_structure(base).iloc[-1]
+        st_htf = market_structure(htf).iloc[-1]
+        sr = support_resistance(base).iloc[-1]
+        sw = liquidity_sweeps(base).iloc[-1]
+        atr_s = atr_fn(base, 14)
+        a = float(atr_s.iloc[-1])
+        entry, stop, target = float(sig.entry_price), float(sig.stop), float(sig.target)
+        sup = float(sr["support"]) if not math.isnan(float(sr["support"])) else None
+        at_level = sup is not None and abs(entry - sup) <= 0.5 * a
+        vz = volume_z(base["volume"], 50).iloc[-1]
+        btc_corr = btc_trend = None
+        if sig.symbol != "BTC/USDT":
+            btc = self.frames(self.settings.signal_exchange, "BTC/USDT", (sig.timeframe, "1h"))
+            if not btc[sig.timeframe].empty and not btc["1h"].empty:
+                corr = rolling_correlation(base["close"], btc[sig.timeframe]["close"], 96)
+                btc_corr = None if math.isnan(float(corr.iloc[-1])) else float(corr.iloc[-1])
+                btc_trend = market_structure(btc["1h"]).iloc[-1]["trend"]
+        atr_rank = rolling_percentile(atr_s, 2000, min_periods=200).iloc[-1]
+        snap = MarketSnapshot(
+            side="long", entry=Decimal(repr(entry)), stop=Decimal(repr(stop)),
+            target=Decimal(repr(target)), higher_trend=str(st_htf["trend"]),
+            structure_event=None if st_base["event"] is None else str(st_base["event"]),
+            at_level=at_level, sweep=bool(sw["sweep_low"]),
+            volume_z=None if math.isnan(float(vz)) else float(vz),
+            book_imbalance=metrics.imbalance if metrics else None,
+            btc_corr=btc_corr, btc_trend=None if btc_trend is None else str(btc_trend))
+        stop_frac = (entry - stop) / entry if entry > 0 else 0.0
+        size_frac = min(float(self.settings.risk.risk_per_trade) / stop_frac, 0.25) if stop_frac > 0 else 0.0
+        news = await self._news_score()
+        inputs = NoTradeInputs(
+            now=utcnow(), data_time=book.timestamp if book else None,
+            exchange_healthy=bool(best and best.healthy),
+            spread_bps=metrics.spread_bps if metrics else None,
+            depth_quote=metrics.ask_depth_quote if metrics else None,
+            order_quote=v.equity * Decimal(repr(size_frac)),
+            atr_percentile=None if math.isnan(float(atr_rank)) else float(atr_rank),
+            news_risk=news,
+            daily_loss_limit_reached=loss_fraction(day0, v.equity) >= self.settings.risk.daily_loss_limit,
+            weekly_loss_limit_reached=loss_fraction(week0, v.equity) >= self.settings.risk.weekly_loss_limit,
+            kill_switch=await self.kill.is_engaged(), reward_risk=None,
+            confirmations_conflict=False, regime=sig.regime, setup_present=True)
+        d = decide(snap, inputs, min_score=60)
+        return d.action == "ENTER", d.explanation
 
     async def _news_block(self) -> str | None:
         """Block entries on unknown or high-impact news. Missing data is unknown, not calm."""

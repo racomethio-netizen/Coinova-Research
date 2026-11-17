@@ -69,6 +69,13 @@ async def engine_setup(migrated_engine: Engine, redis: Any) -> AsyncIterator[tup
     broker = PaperBroker(books.get, taker_fee=D("0.001"), maker_fee=D("0.001"),
                          extra_slippage=D("0.0005"))
     eng = TradingEngine(settings, factory, redis, {"binance": adapter}, broker, books)
+    # These tests cover order lifecycle, not market analysis: the analysis gate is bypassed
+    # here. test_decision_gate_* exercises the real gate, which must refuse without history.
+
+    async def _bypass_gate(*_: Any, **__: Any) -> tuple[bool, str]:
+        return True, "test fixture: analysis gate bypassed"
+
+    eng._decision_gate = _bypass_gate  # type: ignore[method-assign]
     yield eng, factory, state, redis
     truncate(migrated_engine, "trades, orders, positions, balances, risk_events, "
                               "performance_snapshots, trading_signals, portfolios, trading_pairs, "
@@ -214,3 +221,15 @@ async def test_news_block_stops_entries(engine_setup: tuple[Any, ...]) -> None:
     assert any("high-impact news" in r for r in reasons)
     assert any("news risk unknown (no data from sec)" in r for r in reasons)
     assert any("news risk unknown (monitor" in r for r in reasons)
+
+
+async def test_decision_gate_refuses_without_candle_history(engine_setup: tuple[Any, ...]) -> None:
+    """The real gate (not the fixture bypass) must refuse to trade on missing analysis data."""
+    eng, _factory, _, _ = engine_setup
+    eng.bootstrap()
+    v = await eng.valuation()
+    book = await eng.books.get("binance", "BTC/USDT")
+    proceed, explanation = await TradingEngine._decision_gate(
+        eng, signal(), v, v.equity, v.equity, book, None, None)
+    assert proceed is False
+    assert "insufficient candle history" in explanation
