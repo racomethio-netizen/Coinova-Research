@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge, Card, Loading, PageHeader, Stat, Table, statusTone } from "@/components/ui";
+import { BotControl } from "@/components/botcontrol";
 import { DASH, num, pct, signed, time } from "@/lib/format";
 import { useApi, useMode } from "@/lib/hooks";
 
@@ -33,6 +34,7 @@ export default function Overview() {
             <Stat label="Profit factor" value={num(r?.profit_factor)} />
             <Stat label="Open trades" value={String(data.open_positions)} />
           </div>
+          <BotControl />
           <div className="grid gap-4 md:grid-cols-2">
             <Card title="Exchange status">
               <ul className="space-y-2 text-sm">

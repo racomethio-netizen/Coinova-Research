@@ -437,3 +437,31 @@ async def live_approval(body: ApprovalBody, s: Session = Depends(db), redis: Any
                       action="live_trading_approved" if body.approve else "live_trading_revoked")
     return {"approved": body.approve}
 
+
+
+class BotAction(BaseModel):
+    reason: str = Field(min_length=5, max_length=300)
+
+
+@router.get("/bot")
+async def bot_status(redis: Any = Depends(redis_dep)) -> dict[str, Any]:
+    from nexus_common.botstate import KEY, get_state
+
+    state = await get_state(redis)
+    raw = await redis.get(KEY)
+    details = json.loads(raw) if raw else None
+    return {"state": state.value, "details": details}
+
+
+@router.post("/bot/{action}", dependencies=[Depends(owner)])
+async def bot_action(action: Literal["start", "pause", "stop"], body: BotAction,
+                     s: Session = Depends(db), redis: Any = Depends(redis_dep),
+                     viewer: Viewer = Depends(current_viewer)) -> dict[str, Any]:
+    """START resumes new entries; PAUSE and STOP block them. Stopping never closes positions."""
+    from nexus_common.botstate import BotState, set_state
+
+    target = {"start": BotState.RUNNING, "pause": BotState.PAUSED, "stop": BotState.STOPPED}[action]
+    await set_state(redis, target, actor=viewer.actor, reason=body.reason)
+    repo.record_audit(s, actor=viewer.actor, action=f"bot_{action}", user_id=viewer.user.id,
+                      target_type="bot", details={"reason": body.reason})
+    return {"state": target.value}

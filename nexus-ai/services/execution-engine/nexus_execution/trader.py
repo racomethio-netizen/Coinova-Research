@@ -481,7 +481,13 @@ class TradingEngine:
             await self._risk_event(kind, severity, v)
         if port.shutdown and not await self.kill.is_engaged():
             await self.kill.engage(f"max drawdown reached ({self.mode})", actor="system:risk")
-        await self.evaluate_entries(v, day0, week0, peak)
+        from nexus_common.botstate import BotState, get_state
+
+        state = await get_state(self.redis)
+        if state is BotState.RUNNING:
+            await self.evaluate_entries(v, day0, week0, peak)
+        else:
+            log.info("entries_paused", state=state.value)
         await self.redis.set(events.heartbeat_key(f"trader:{self.mode}"), utcnow().isoformat(),
                              ex=300)
 
