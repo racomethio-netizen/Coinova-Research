@@ -63,4 +63,5 @@ def equity_returns_from_trades(entry: np.ndarray, stop: np.ndarray, ret: np.ndar
     stop = np.asarray(stop, float)
     stop_frac = np.clip((entry - stop) / entry, 1e-9, None)
     size = np.minimum(risk_per_trade / stop_frac, max_position)
-    return np.asarray(ret, float) * size
+    result: np.ndarray = np.asarray(ret, float) * size
+    return result
