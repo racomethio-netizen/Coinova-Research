@@ -12,7 +12,7 @@ def test_defaults_are_safe() -> None:
     assert s.trading_mode is TradingMode.PAPER
     assert s.live_trading_enabled is False
     assert s.trading_pairs == ["BTC/USDT", "ETH/USDT"]
-    assert [t.value for t in s.timeframes] == ["5m", "15m", "1h", "4h"]
+    assert [t.value for t in s.timeframes] == ["5m", "15m", "1h", "4h", "1d"]
     assert s.risk.risk_per_trade == Decimal("0.01")
     assert s.risk.daily_loss_limit == Decimal("0.01")
     assert s.risk.weekly_loss_limit == Decimal("0.02")
@@ -138,3 +138,8 @@ def test_futures_defaults_and_ceilings(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_timeframe_seconds() -> None:
     assert Timeframe("4h").seconds == 14400
     assert Timeframe("5m").seconds == 300
+
+
+def test_one_day_timeframe() -> None:
+    assert Timeframe("1d").seconds == 86400
+    assert Timeframe.D1 in Settings().timeframes

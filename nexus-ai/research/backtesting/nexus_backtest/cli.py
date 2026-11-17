@@ -27,7 +27,7 @@ from nexus_backtest.metrics import compute_metrics, json_safe
 from nexus_backtest.signals import CostModel
 from nexus_backtest.walkforward import walk_forward
 
-TIMEFRAMES = ["5m", "15m", "1h", "4h"]
+TIMEFRAMES = ["5m", "15m", "1h", "4h", "1d"]
 
 
 def validate_strategies(exchange: str) -> list[dict[str, object]]:

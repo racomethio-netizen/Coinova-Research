@@ -124,7 +124,7 @@ async def exchanges(s: Session = Depends(db), redis: Any = Depends(redis_dep)) -
 
 
 @router.get("/markets/candles")
-def candles(exchange: str, symbol: str, timeframe: Literal["5m", "15m", "1h", "4h"] = "1h",
+def candles(exchange: str, symbol: str, timeframe: Literal["5m", "15m", "1h", "4h", "1d"] = "1h",
             limit: int = Query(300, ge=10, le=2000), s: Session = Depends(db)) -> dict[str, Any]:
     try:
         pid = repo.pair_id(s, exchange, symbol)

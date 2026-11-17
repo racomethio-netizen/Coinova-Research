@@ -197,7 +197,7 @@ def test_candle_consistency(conn: Connection, world: dict[str, int]) -> None:
     violates(conn, sql.replace("'2026-01-01Z'", "'2026-01-02Z'"), "23514",
              pair=world["pair"], tf="5m", o=100, h=99, l=98, c=100)
     violates(conn, sql.replace("'2026-01-01Z'", "'2026-01-03Z'"), "23514",
-             pair=world["pair"], tf="1d", o=1, h=1, l=1, c=1)
+             pair=world["pair"], tf="1w", o=1, h=1, l=1, c=1)
 
 
 def test_buy_signal_stop_and_target_sides(conn: Connection, world: dict[str, int]) -> None:
@@ -229,3 +229,12 @@ def test_credentials_one_active_per_exchange(conn: Connection, world: dict[str, 
     q(conn, sql, u=world["user"], label="a", rev=None)
     violates(conn, sql, "23505", u=world["user"], label="b", rev=None)
     q(conn, sql, u=world["user"], label="c", rev="2026-01-01Z")
+
+
+def test_one_day_timeframe_accepted_and_others_rejected(conn: Connection,
+                                                        world: dict[str, int]) -> None:
+    sql = ("INSERT INTO market_candles (pair_id, timeframe, open_time, open, high, low, close, "
+           "volume) VALUES (:pair, :tf, '2026-01-01Z', 100, 101, 99, 100.5, 1)")
+    q(conn, sql, pair=world["pair"], tf="1d")
+    violates(conn, sql.replace("'2026-01-01Z'", "'2026-01-02Z'"), "23514",
+             pair=world["pair"], tf="1w")

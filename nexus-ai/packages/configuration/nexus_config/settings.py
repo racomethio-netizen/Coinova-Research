@@ -45,10 +45,11 @@ class Timeframe(StrEnum):
     M15 = "15m"
     H1 = "1h"
     H4 = "4h"
+    D1 = "1d"
 
     @property
     def seconds(self) -> int:
-        return {"5m": 300, "15m": 900, "1h": 3600, "4h": 14400}[self.value]
+        return {"5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}[self.value]
 
 
 # Exact phrase the owner must set to acknowledge live-trading risk. This is one of
@@ -133,7 +134,8 @@ class Settings(BaseSettings):
         default_factory=lambda: ["BTC/USDT", "ETH/USDT"]
     )
     timeframes: Annotated[list[Timeframe], NoDecode] = Field(
-        default_factory=lambda: [Timeframe.M5, Timeframe.M15, Timeframe.H1, Timeframe.H4]
+        default_factory=lambda: [Timeframe.M5, Timeframe.M15, Timeframe.H1, Timeframe.H4,
+                                 Timeframe.D1]
     )
     quote_currency: str = "USDT"
 
