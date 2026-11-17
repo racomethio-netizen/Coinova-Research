@@ -26,6 +26,10 @@ GRIDS: dict[str, dict[str, list[float]]] = {
                  "stop_atr": [1.5, 2.5], "target_atr": [3.0, 5.0], "use_exit": [0, 1]},
     "mean_reversion": {"rsi_max": [25, 30], "h_adx_max": [18, 25], "stop_atr": [1.5, 2.5],
                        "use_exit": [0, 1]},
+    "pullback_support": {"stop_atr": [0.5, 1.0], "target_atr": [2.0, 3.0],
+                         "touch_atr": [0.3, 0.5], "use_exit": [0, 1]},
+    "liquidity_sweep_reversal": {"stop_atr": [0.2, 0.5], "target_atr": [2.0, 3.0],
+                                 "use_exit": [0, 1]},
 }
 
 

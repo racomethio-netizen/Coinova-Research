@@ -146,3 +146,20 @@ def test_ai_features_are_causal(frames: dict[str, pd.DataFrame]) -> None:
     part = build_features(truncate(frames, cutoff))
     # rvol_rank uses a 2000-bar rolling rank: equal on the overlap once both are warm.
     pd.testing.assert_frame_equal(full.loc[part.index], part, check_dtype=False)
+
+
+def test_regime_gate_only_allows_validated_regimes() -> None:
+    from nexus_strategies.strategies import allowed_regimes
+
+    edges = {
+        "pullback_support": {
+            "trend_up": {"n": 80, "expectancy": 0.004, "profit_factor": 1.4},
+            "range": {"n": 80, "expectancy": -0.002, "profit_factor": 0.8},
+            "trend_down": {"n": 10, "expectancy": 0.01, "profit_factor": 2.0},  # too few trades
+        }
+    }
+    assert allowed_regimes(edges) == {"pullback_support": ["trend_up"]}
+
+
+def test_new_strategies_registered() -> None:
+    assert {"pullback_support", "liquidity_sweep_reversal"} <= set(ALL_STRATEGIES)

@@ -125,5 +125,85 @@ class MeanReversion(Strategy):
                       df["close"] - p["stop_atr"] * df["atr"], target, conf)
 
 
+
+
+class PullbackToSupport(Strategy):
+    """1h pullback to a confirmed support level in a 4h uptrend.
+
+    Entry: 4h EMA20 above EMA50; on the 1h bar the low reached the nearest confirmed support
+    (within 0.5 ATR) and the bar closed back above it, bullish. Stop: below the support by
+    ``stop_atr`` ATR. Target: ``target_atr`` ATR above entry.
+    """
+
+    code = "pullback_support"
+    base_tf, confirm_tf = "1h", "4h"
+    defaults: ClassVar[dict[str, float]] = {"stop_atr": 1.0, "target_atr": 3.0, "touch_atr": 0.5}
+
+    def rules(self, df: pd.DataFrame) -> pd.DataFrame:
+        from nexus_analysis import support_resistance
+
+        p = self.params
+        sr = support_resistance(df, tolerance_atr=0.5)
+        sup = sr["support"]
+        band = p["touch_atr"] * df["atr"]
+        touched = (df["low"] <= sup + band) & (df["low"] >= sup - band)
+        resumed = (df["close"] > sup) & (df["close"] > df["open"])
+        htf_up = df["h_ema20"] > df["h_ema50"]
+        entry = htf_up & touched & resumed & sup.notna()
+        conf = htf_up.astype(float) * 0.5 + ((df["h_adx"] - 15) / 30).clip(0, 1) * 0.5
+        return _frame(df, entry, df["close"] < df["h_ema50"], sup - p["stop_atr"] * df["atr"],
+                      df["close"] + p["target_atr"] * df["atr"], conf)
+
+
+class LiquiditySweepReversal(Strategy):
+    """15m reversal after a liquidity sweep of a confirmed swing low, with 1h not in a downtrend.
+
+    Entry: the bar wicks below the last confirmed swing low and closes back above it (the
+    sweep), with a bullish close. Stop: below the sweep wick by ``stop_atr`` ATR. Target:
+    ``target_atr`` ATR above entry.
+    """
+
+    code = "liquidity_sweep_reversal"
+    base_tf, confirm_tf = "15m", "1h"
+    defaults: ClassVar[dict[str, float]] = {"stop_atr": 0.3, "target_atr": 3.0}
+
+    def rules(self, df: pd.DataFrame) -> pd.DataFrame:
+        from nexus_analysis import liquidity_sweeps
+
+        p = self.params
+        sw = liquidity_sweeps(df, left=2, right=2)
+        htf_not_down = df["h_ema20"] >= df["h_ema50"]
+        bullish = df["close"] > df["open"]
+        entry = sw["sweep_low"] & bullish & htf_not_down
+        conf = htf_not_down.astype(float) * 0.5 + bullish.astype(float) * 0.5
+        return _frame(df, entry, df["close"] < df["h_ema20"],
+                      df["low"] - p["stop_atr"] * df["atr"],
+                      df["close"] + p["target_atr"] * df["atr"], conf)
+
+
 ALL_STRATEGIES: dict[str, type[Strategy]] = {
-    s.code: s for s in (TrendFollowing, Momentum, Breakout, MeanReversion)}
+    s.code: s for s in (TrendFollowing, Momentum, Breakout, MeanReversion,
+                        PullbackToSupport, LiquiditySweepReversal)}
+
+
+# --- Regime matrix -----------------------------------------------------------------------
+# A strategy may trade in a regime only if its out-of-sample edge in that regime passed the
+# same gates as the whole strategy (see `allowed_regimes`). Nothing is combined blindly.
+
+def allowed_regimes(edges: dict[str, dict[str, dict[str, float | int | None]]], *,
+                    min_trades: int = 30, min_expectancy: float = 0.0,
+                    min_profit_factor: float = 1.15) -> dict[str, list[str]]:
+    """``edges[strategy][regime]`` = out-of-sample stats (n, expectancy, profit_factor).
+    Returns the regimes in which each strategy's edge passes the gates."""
+    out: dict[str, list[str]] = {}
+    for strat, by_regime in edges.items():
+        ok = []
+        for regime, stats in by_regime.items():
+            n = stats.get("n") or 0
+            exp = stats.get("expectancy")
+            pf = stats.get("profit_factor")
+            if n >= min_trades and exp is not None and exp > min_expectancy \
+                    and pf is not None and pf >= min_profit_factor:
+                ok.append(regime)
+        out[strat] = sorted(ok)
+    return out
