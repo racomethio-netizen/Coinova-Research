@@ -116,3 +116,54 @@ portfolio, a paper fill on a live order, or flipping a portfolio's mode.
 | Client order ID = UUIDv4 | Accepted by all three exchanges (Binance ≤36 chars, Kraken `cl_ord_id`, Coinbase) |
 | Sync SQLAlchemy in services, thread offload in the API | Simpler transactions; DB is not the bottleneck at this scale |
 | One Python image | Smaller attack surface and identical dependencies across services |
+
+---
+
+## Mandate v2 (owner-approved 2026-11-14)
+
+This section supersedes the earlier spot-only mandate where they differ.
+
+| Item | Previous | Now |
+|---|---|---|
+| Markets | Spot only | Spot (Binance, Kraken, Coinbase) **and** futures (Binance only) |
+| Futures leverage | Not allowed | Up to **1x** (hard ceiling in code: `MAX_FUTURES_LEVERAGE`) |
+| Short selling | Disabled | Allowed on Binance futures only (`futures_allow_short`, off by default) |
+| Futures status | n/a | **Disabled by default**; must pass the same out-of-sample gates as spot |
+| Risk per trade | 0.25% | **1%** (hard ceiling `MAX_RISK_PER_TRADE`) |
+| Daily loss / weekly loss / max drawdown | 1% / 2% / 5% | unchanged |
+| Minimum risk/reward | not enforced | **1:2** required for every trade (to be enforced in Phase 5 / no-trade module) |
+| Timeframes | 5m, 15m, 1h, 4h | + **1d** (Phase 2: needs a migration to widen CHECK constraints) |
+| Martingale / averaging down | Disabled | Disabled (never configurable) |
+| LIVE trading | Off until approved | Unchanged: off until every gate in `docs/SECURITY.md` passes |
+
+Not in scope unless the owner approves later: funding-rate-driven strategies on other
+exchanges, leverage above 1x, and any automatic change to live strategy parameters.
+
+### Phase 1 deliverables (this document and `packages/configuration`)
+
+* Owner-approved limits above, enforced by `nexus_config.Settings` with ceilings and tests.
+* Futures settings: `futures_enabled` (default false), `futures_exchanges` (Binance only),
+  `futures_max_leverage` (ceiling 1), `futures_allow_short` (default false). Any config
+  that asks for an unsupported exchange or more than 1x leverage fails at startup.
+* `safe_summary()` reports `spot_enabled`, `futures_enabled`, `max_futures_leverage`,
+  `short_selling_enabled` and `martingale_enabled` (always false).
+
+### Planned architecture additions (built in later phases)
+
+| Package | Responsibility | Phase |
+|---|---|---|
+| `services/analysis` | Market structure (swing highs/lows, BOS, CHoCH), support/resistance, supply/demand zones, liquidity sweeps, volume profile, ATR/volatility, order-book imbalance, BTC correlation, regime classification (trend, range, high volatility) | 3 |
+| `services/no_trade` | Explicit NO TRADE decisions with reasons: abnormal volatility, insufficient liquidity, wide spread, stale data, conflicting signals, risk/reward below 1:2, sideways market without a setup, daily risk limit reached, news pause | 5 |
+| `services/strategies` (extend) | Pullback, liquidity-sweep reversal (new); a regime-to-strategy performance matrix so each strategy is used only where it validated | 6 |
+| `services/ai-engine` (extend) | 0–100 trade score built from independent confirmations, with a plain-language explanation for each decision. Language models never execute trades | 4 |
+| `services/risk-engine` (extend) | Trailing stops, partial profit taking, consecutive-loss protection, correlated-exposure limits | 7 |
+| `services/exchange-gateway` (extend) | Binance USD-M futures adapter (1x, isolated margin), order types for long and short | 10 |
+| `services/news` (new) | Free public feeds (Federal Reserve, BLS, SEC, exchange status pages), news-risk score, automatic trading pause during high-risk windows | 9 |
+
+### Gaps this plan does not cover (called out explicitly)
+
+* Monte Carlo analysis is planned for Phase 8 (backtesting).
+* Online self-modification of live strategies is never allowed; parameter changes go
+  through offline evaluation and validation only.
+* Dashboard START / PAUSE / STOP / EMERGENCY KILL SWITCH controls need explicit
+  confirmation dialogs; the kill switch already exists in the API.

@@ -95,9 +95,9 @@ async def test_paper_entry_stop_exit_cycle(engine_setup: tuple[Any, ...]) -> Non
         assert order is not None and order.status == "filled" and order.mode == "paper"
         assert order.purpose == "entry" and order.time_in_force == "IOC"
         assert pos is not None and pos.status == "open"
-        # Risk 0.25% of 10,000 = 25 USDT; per-unit loss = 1000 stop distance + 0.15% costs
-        # on both legs (60000*0.0015 + 59000*0.0015) = 1178.5 -> 0.02121 BTC.
-        assert pos.quantity == D("0.02121")
+        # Risk 1% of 10,000 = 100 USDT would allow 100 / 1178.5 = 0.0849 BTC, but the 25%
+        # per-asset concentration cap (2,500 / 60,000) binds first: 0.0416 BTC.
+        assert pos.quantity == D("0.0416")
         assert pos.stop_loss == D(59000) and pos.take_profit == D(62000)
         trade_ids = s.scalars(select(models.Trade.exchange_trade_id)).all()
         assert trade_ids and all(t.startswith("paper-") for t in trade_ids)
@@ -109,7 +109,7 @@ async def test_paper_entry_stop_exit_cycle(engine_setup: tuple[Any, ...]) -> Non
         pos = s.scalar(select(models.Position))
         assert pos is not None and pos.status == "closed" and pos.exit_reason == "stop_loss"
         loss = -pos.realized_pnl
-        assert D(20) < loss < D(35)          # ~ the 25 USDT risk budget, plus the gap
+        assert D(40) < loss < D(55)          # ~ 0.0416 BTC x ~1,100 USDT stop distance
         snap = s.scalar(select(models.PerformanceSnapshot))
         assert snap is not None and snap.mode == "paper" and snap.portfolio_id == pid
         exits = s.scalars(select(models.Order).where(models.Order.purpose == "exit")).all()

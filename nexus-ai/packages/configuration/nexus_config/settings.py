@@ -5,8 +5,8 @@ Design rules:
 * Secrets are ``SecretStr`` and never appear in ``repr``/logs/API responses.
 * Risk limits have hard ceilings taken from the project mandate. Configuration may
   make them *stricter*, never looser. Exceeding a ceiling is a startup error.
-* Leverage, futures, short selling and martingale are not configurable at all:
-  the system is spot-only by construction.
+* Leverage is capped at 1x and only on Binance futures; martingale is never configurable:
+  spot trading is always available; futures is off until validated.
 * ``trading_mode=live`` alone never enables live trading. See
   :meth:`Settings.live_trading_config_problems` and ``docs/SECURITY.md``.
 """
@@ -56,12 +56,16 @@ class Timeframe(StrEnum):
 LIVE_TRADING_ACK_PHRASE: Final = "I accept that live trading can lose real money"
 
 # Mandated ceilings (fractions of equity). Config may only go lower.
-MAX_RISK_PER_TRADE: Final = Decimal("0.0025")
+MAX_RISK_PER_TRADE: Final = Decimal("0.01")  # owner-approved 2026-11-14 (was 0.25%)
 MAX_DAILY_LOSS: Final = Decimal("0.01")
 MAX_WEEKLY_LOSS: Final = Decimal("0.02")
 MAX_DRAWDOWN: Final = Decimal("0.05")
 MAX_OPEN_POSITIONS: Final = 2
 MAX_PORTFOLIO_EXPOSURE: Final = Decimal("0.50")
+# Futures (owner-approved 2026-11-14): Binance only, at most 1x leverage, long and short.
+# Disabled by default; a futures strategy must pass the same out-of-sample gates as spot.
+MAX_FUTURES_LEVERAGE: Final = Decimal("1")
+FUTURES_EXCHANGES: Final = ("binance",)
 
 
 class RiskSettings(BaseModel):
@@ -132,6 +136,13 @@ class Settings(BaseSettings):
         default_factory=lambda: [Timeframe.M5, Timeframe.M15, Timeframe.H1, Timeframe.H4]
     )
     quote_currency: str = "USDT"
+
+    # --- Futures (disabled by default; see MAX_FUTURES_LEVERAGE) ----------------
+    futures_enabled: bool = False
+    futures_exchanges: Annotated[list[ExchangeCode], NoDecode] = Field(
+        default_factory=lambda: [ExchangeCode.BINANCE])
+    futures_max_leverage: Decimal = MAX_FUTURES_LEVERAGE
+    futures_allow_short: bool = False
     use_exchange_sandbox: bool = False
     # Binance blocks api.binance.com in some jurisdictions (HTTP 451). Public market
     # data is also served by this official mirror. Set to "" to use the main host.
@@ -202,8 +213,25 @@ class Settings(BaseSettings):
             raise ValueError("must be >= 0")
         return value
 
+    @field_validator("futures_exchanges", mode="before")
+    @classmethod
+    def _split_futures(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [part.strip() for part in value.split(",") if part.strip()]
+        return value
+
+    @field_validator("futures_max_leverage")
+    @classmethod
+    def _leverage_ceiling(cls, value: Decimal) -> Decimal:
+        if value < 1 or value > MAX_FUTURES_LEVERAGE:
+            raise ValueError(f"futures_max_leverage must be between 1 and {MAX_FUTURES_LEVERAGE}")
+        return value
+
     @model_validator(mode="after")
     def _cross_checks(self) -> Settings:
+        unsupported = [e.value for e in self.futures_exchanges if e.value not in FUTURES_EXCHANGES]
+        if unsupported:
+            raise ValueError(f"futures not supported on: {', '.join(unsupported)}")
         if self.app_env is AppEnv.PRODUCTION:
             missing = [
                 name
@@ -253,9 +281,11 @@ class Settings(BaseSettings):
             "timeframes": [t.value for t in self.timeframes],
             "quote_currency": self.quote_currency,
             "risk": {k: str(v) for k, v in self.risk.model_dump().items()},
-            "spot_only": True,
-            "leverage_enabled": False,
-            "short_selling_enabled": False,
+            "spot_enabled": True,
+            "futures_enabled": self.futures_enabled,
+            "futures_exchanges": [e.value for e in self.futures_exchanges],
+            "max_futures_leverage": str(self.futures_max_leverage),
+            "short_selling_enabled": self.futures_enabled and self.futures_allow_short,
             "martingale_enabled": False,
             "telegram_configured": self.telegram_bot_token is not None,
         }

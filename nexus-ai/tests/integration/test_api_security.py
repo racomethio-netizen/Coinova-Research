@@ -69,7 +69,7 @@ def test_all_routes_work_when_signed_in(client: TestClient) -> None:
         r = client.get(path)
         assert r.status_code == 200, (path, r.text)
     over = client.get("/api/v1/overview").json()
-    assert over["mode"] == "paper" and over["config"]["spot_only"] is True
+    assert over["mode"] == "paper" and over["config"]["futures_enabled"] is False
 
 
 def test_session_cookie_flags_and_logout(client: TestClient) -> None:

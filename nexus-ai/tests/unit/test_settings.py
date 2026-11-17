@@ -13,7 +13,7 @@ def test_defaults_are_safe() -> None:
     assert s.live_trading_enabled is False
     assert s.trading_pairs == ["BTC/USDT", "ETH/USDT"]
     assert [t.value for t in s.timeframes] == ["5m", "15m", "1h", "4h"]
-    assert s.risk.risk_per_trade == Decimal("0.0025")
+    assert s.risk.risk_per_trade == Decimal("0.01")
     assert s.risk.daily_loss_limit == Decimal("0.01")
     assert s.risk.weekly_loss_limit == Decimal("0.02")
     assert s.risk.max_drawdown == Decimal("0.05")
@@ -35,7 +35,7 @@ def test_env_parsing(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.mark.parametrize(
     ("field", "value"),
     [
-        ("risk_per_trade", "0.003"),
+        ("risk_per_trade", "0.011"),
         ("daily_loss_limit", "0.02"),
         ("weekly_loss_limit", "0.03"),
         ("max_drawdown", "0.10"),
@@ -114,16 +114,25 @@ def test_secrets_not_in_repr_or_summary() -> None:
     assert "topsecretvalue" not in repr(s)
     summary = str(s.safe_summary())
     assert "SUPERSECRET" not in summary and "nexus:nexus" not in summary
-    assert s.safe_summary()["spot_only"] is True
-    assert s.safe_summary()["leverage_enabled"] is False
+    assert s.safe_summary()["spot_enabled"] is True
+    assert s.safe_summary()["futures_enabled"] is False
+    assert s.safe_summary()["short_selling_enabled"] is False
 
 
-def test_spot_only_flags_are_not_configurable(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("NEXUS_LEVERAGE_ENABLED", "true")
-    monkeypatch.setenv("NEXUS_SHORT_SELLING_ENABLED", "true")
-    summary = Settings().safe_summary()
-    assert summary["leverage_enabled"] is False
-    assert summary["short_selling_enabled"] is False
+def test_futures_defaults_and_ceilings(monkeypatch: pytest.MonkeyPatch) -> None:
+    s = Settings()
+    assert s.futures_enabled is False and s.futures_allow_short is False
+    assert [e.value for e in s.futures_exchanges] == ["binance"]
+    with pytest.raises(ValidationError):
+        Settings(futures_max_leverage="2")
+    with pytest.raises(ValidationError):
+        Settings(futures_exchanges="binance,kraken")
+    with pytest.raises(ValidationError):
+        Settings(futures_exchanges="kraken")
+    assert Settings(futures_enabled=True, futures_allow_short=True).safe_summary()[
+        "short_selling_enabled"] is True
+    monkeypatch.setenv("NEXUS_MARTINGALE_ENABLED", "true")
+    assert Settings().safe_summary()["martingale_enabled"] is False
 
 
 def test_timeframe_seconds() -> None:

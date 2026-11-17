@@ -65,8 +65,9 @@ def test_entry_at_next_open_and_target_fill() -> None:
     (t,) = res.trades
     assert t.entry_time == bars(rows).index[1] and t.entry_price == D("101.0")
     assert t.exit_reason == "target" and t.exit_price == D("105.0")
-    # risk sizing: 25 / (101-95) = 4.1666 -> concentration cap 2500/101 = 24.75 ... risk binds
-    assert t.quantity == D("4.1666")
+    # 1% of 10,000 = 100 budget; 100 / (101-95) = 16.67 -> floored to the 0.0001 step.
+    # Concentration cap (25% = 2500 / 101 = 24.75) does not bind; risk does.
+    assert t.quantity == D("16.6666")
 
 
 def test_stop_wins_when_both_touched_same_bar() -> None:
