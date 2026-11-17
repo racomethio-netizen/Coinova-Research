@@ -144,6 +144,11 @@ services:
       retries: 3
     mem_limit: 256m
 
+  news:
+    <<: *python-service
+    command: ["python", "-m", "nexus_news.service"]
+    mem_limit: 256m
+
   monitor:
     <<: *python-service
     command: ["python", "-m", "nexus_notify.monitor"]

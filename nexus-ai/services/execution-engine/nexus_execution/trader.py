@@ -287,6 +287,10 @@ class TradingEngine:
         signal_id = self._record_signal(strat_id, sig)
         if signal_id is None:
             return  # already processed (idempotent)
+        news_block = await self._news_block()
+        if news_block is not None:
+            await self._decide(sig, signal_id, "rejected", news_block)
+            return
         unknown = self._count_unknown()
         snap = RiskSnapshot(
             equity=v.equity, day_start_equity=day0, week_start_equity=week0, peak_equity=peak,
@@ -360,6 +364,25 @@ class TradingEngine:
                            "strategy": sig.strategy, "symbol": sig.symbol,
                            "exchange": venue.exchange, "quantity": str(sizing.quantity),
                            "price": str(price), "stop": str(stop_px), "target": str(target_px)})
+
+    async def _news_block(self) -> str | None:
+        """Block entries on unknown or high-impact news. Missing data is unknown, not calm."""
+        import json as _json
+
+        from nexus_news.service import KEY as NEWS_KEY
+
+        raw = await self.redis.get(NEWS_KEY)
+        if raw is None:
+            return "news risk unknown (monitor has not reported)"
+        data = _json.loads(raw)
+        if data.get("unknown_sources"):
+            return f"news risk unknown (no data from {', '.join(data['unknown_sources'])})"
+        score = data.get("score")
+        if score is None:
+            return "news risk unknown"
+        if score > self.settings.news_block_threshold:
+            return f"high-impact news window (risk {score:.2f} > {self.settings.news_block_threshold})"
+        return None
 
     async def venues(self, symbol: str) -> list[VenueState]:
         out = []

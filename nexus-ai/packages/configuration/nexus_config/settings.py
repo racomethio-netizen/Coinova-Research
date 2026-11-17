@@ -163,6 +163,8 @@ class Settings(BaseSettings):
     # Exchange whose candles drive signals (deepest, gap-free history; see EXCHANGES.md).
     signal_exchange: str = "binance"
     trader_interval_seconds: float = 30.0
+    # Entries are paused while the news-risk score is above this (0..1).
+    news_block_threshold: float = 0.7
 
     # Paper trading simulation parameters (basis points).
     paper_fee_bps: Decimal = Decimal("10")

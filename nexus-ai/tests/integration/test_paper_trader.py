@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal as D
 from typing import Any
 
@@ -61,6 +61,9 @@ async def engine_setup(migrated_engine: Engine, redis: Any) -> AsyncIterator[tup
     adapter = CcxtSpotAdapter("binance", client, CAPABILITIES[ExchangeCode.BINANCE])
     await adapter.load_markets()
     await redis.set(events.health_key("binance"), json.dumps({"ok": True}))
+    from nexus_news.service import KEY as NEWS_KEY
+
+    await redis.set(NEWS_KEY, json.dumps({"score": 0.1, "unknown_sources": []}))
     settings = Settings(enabled_exchanges=["binance"], trading_pairs=["BTC/USDT"])
     books = BookCache({"binance": adapter}, ttl=0)
     broker = PaperBroker(books.get, taker_fee=D("0.001"), maker_fee=D("0.001"),
@@ -185,3 +188,29 @@ async def test_signal_decisions_are_notified(engine_setup: tuple[Any, ...]) -> N
     await eng.handle_signal(1, signal(), v, v.equity, v.equity, v.equity)
     kinds = [events.decode(f)["type"] for _, f in await redis.xrange(events.NOTIFY_STREAM)]
     assert "signal" in kinds and "order_submitted" in kinds
+
+
+async def test_news_block_stops_entries(engine_setup: tuple[Any, ...]) -> None:
+    from nexus_news.service import KEY as NEWS_KEY
+
+    eng, factory, _, redis = engine_setup
+    eng.bootstrap()
+    v = await eng.valuation()
+    await redis.set(NEWS_KEY, json.dumps({"score": 0.95, "unknown_sources": []}))
+    await eng.handle_signal(1, signal(), v, v.equity, v.equity, v.equity)
+    await redis.set(NEWS_KEY, json.dumps({"score": None, "unknown_sources": ["sec"]}))
+    # Each bar is recorded once (idempotent), so each test signal needs its own bar.
+    from dataclasses import replace as _replace
+
+    base = signal()
+    await eng.handle_signal(1, _replace(base, bar_time=base.bar_time + timedelta(hours=1)),
+                            v, v.equity, v.equity, v.equity)
+    await redis.delete(NEWS_KEY)
+    await eng.handle_signal(1, _replace(base, bar_time=base.bar_time + timedelta(hours=2)),
+                            v, v.equity, v.equity, v.equity)
+    with transaction(factory) as s:
+        reasons = [x.rejection_reason or "" for x in s.scalars(select(models.TradingSignal)).all()]
+        assert s.scalar(select(models.Order)) is None
+    assert any("high-impact news" in r for r in reasons)
+    assert any("news risk unknown (no data from sec)" in r for r in reasons)
+    assert any("news risk unknown (monitor" in r for r in reasons)
