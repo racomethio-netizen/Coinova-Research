@@ -12,3 +12,7 @@ build/
 # Model artifacts and datasets are versioned by hash, not committed.
 research/**/artifacts/
 research/**/data/
+
+# Redis snapshots (runtime data, never commit)
+dump.rdb
+*.rdb
