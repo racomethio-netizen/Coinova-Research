@@ -79,3 +79,31 @@ scripts/security-audit.sh                          # re-audit dependencies
 ```
 Then: deploy (docs/DEPLOYMENT.md) once a VPS exists; Binance testnet order round-trip;
 new research hypotheses through `nexus_backtest.cli validate-strategies` / `nexus_ai.cli train`.
+
+---
+
+## Status against the 12-phase mandate v2 (updated 2026-11-17)
+
+Legend: ✅ built, tested and wired into the live pipeline · 🟡 built and tested, not yet
+wired into the trader · ⛔ blocked (external access or owner decision) · ⬜ not started.
+
+| # | Phase | Status | Notes |
+|---|---|---|---|
+| 1 | Architecture and structure | ✅ | Mandate v2 and plan in `docs/ARCHITECTURE.md`. |
+| 2 | Market data | ✅ | 5m, 15m, 1h, 4h and 1d (1d verified on all three exchanges). Live books and WebSocket streams. |
+| 3 | Technical and quantitative analysis | ✅ | Swings, BOS and CHoCH, support/resistance, supply/demand zones, liquidity sweeps, BTC correlation, ATR, volume. Used by the trader gate. Funding rate and open interest need futures (⬜). |
+| 4 | AI decision engine | ✅ | Deterministic 0–100 score with explained earned and missed parts, wired into every entry. The XGBoost model remains rejected and is not used in decisions. |
+| 5 | No-trade intelligence | ✅ | All gates in `nexus_decision.no_trade`, wired. 1:2 minimum enforced. Tests: each gate blocks alone. |
+| 6 | Strategy engine | 🟡 | Six strategies (trend, momentum, breakout, mean reversion, pullback, liquidity-sweep reversal). The regime gate is built, but the trader does not yet use it. None of the six passes validation. |
+| 7 | Risk management | 🟡 | Daily, weekly and drawdown limits, the 1% risk setting, correlated exposure (`nexus_risk.correlation`), trailing stops and partial take-profit (`nexus_risk.exits`), and consecutive-loss protection (`nexus_risk.streak`). The exit and streak modules are not yet called from live exit management or trade recording. |
+| 8 | Backtesting | ✅ | Fees, slippage, walk-forward, out-of-sample, Monte Carlo (live sizing), Sharpe, Sortino, profit factor. Futures funding costs need futures (⬜). |
+| 9 | Paper trading and news | ✅ | Paper fills against real books. News monitor (Federal Reserve, SEC, Kraken and Coinbase status), blocking entries on high-impact or unknown news. BLS and BEA feeds unavailable. |
+| 10 | Exchange execution | 🟡 | Spot: the existing lifecycle with duplicate protection and reconciliation. Binance futures (1x, long and short): ⬜ not built. Live futures API blocked from this location (HTTP 451). The historical futures archive is reachable. |
+| 11 | Dashboard and Telegram | ✅ | START, PAUSE and STOP with confirmations and audit. Kill switch. Telegram alerts. Daily and monthly P&L and regime view: ⬜. |
+| 12 | Security, testing and deployment | 🟡 | Security and dependency audit clean (Next.js 16.4.5, npm and pip 0 vulnerabilities). Production stack verified locally. ⛔ Deployment needs a VPS in an eligible region and your approval. |
+
+**Not done yet, in order of importance:**
+1. Wire trailing stops, partial take-profit, consecutive-loss protection and the regime gate into the live trader.
+2. Build the Binance futures adapter (1x, long and short). Verify live once the server is in an eligible region.
+3. Daily and monthly P&L and the regime view on the dashboard.
+4. Deploy (⛔ VPS and approval).
