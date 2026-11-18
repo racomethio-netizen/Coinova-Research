@@ -107,3 +107,32 @@ wired into the trader · ⛔ blocked (external access or owner decision) · ⬜ 
 2. Build the Binance futures adapter (1x, long and short). Verify live once the server is in an eligible region.
 3. Daily and monthly P&L and the regime view on the dashboard.
 4. Deploy (⛔ VPS and approval).
+
+---
+
+## Futures progress (2026-11-18)
+
+**Built and tested (offline):**
+- Futures settings: leverage tiers 2x, 5x, 10x, 20x (default 2x); futures risk per trade 1%; isolated margin.
+- Futures sizing engine: size from risk, stop distance, fees and slippage; liquidation-distance refusal.
+- Binance USD-M adapter (native endpoints): orders, stops, reduce-only closes, positions, funding, margin settings. Live read-only check returns HTTP 451 from this location.
+- Futures backtester: isolated margin, long and short, funding, liquidation, mark-price stops, drawdown halt. Loader for public archives (no account needed).
+
+**Baseline run, 2024-11 to 2026-10, real BTC and ETH USDT-M data (in-sample, not validated):**
+trend-following, long only, costs 0.05% taker and 0.02% slippage per side.
+
+| Symbol | Tier | Trades | Net return | Max drawdown | Halted |
+|---|---|---|---|---|---|
+| BTCUSDT | 2x | 52 | −5.5% | 10.3% | yes, Jul 2025 |
+| BTCUSDT | 5x and 10x | 32 | −3.1% | 10.5% | yes, Apr 2025 |
+| BTCUSDT | 20x | 31 | −4.5% | 10.5% | yes, Apr 2025 |
+| ETHUSDT | 2x | 36 | −4.4% | 10.2% | yes, May 2025 |
+| ETHUSDT | 5x and 10x | 36 | −3.9% | 10.9% | yes, May 2025 |
+| ETHUSDT | 20x | 35 | −3.8% | 10.9% | yes, May 2025 (1 liquidation, 12 refusals) |
+
+This baseline is not a result to trade on. The strategy already fails spot validation.
+The halt is permanent for the run: a live system needs an owner reset after a drawdown breach.
+
+**Not yet done:** walk-forward validation of futures strategies, a short-side strategy,
+trader integration of the futures path, futures paper trading, the futures dashboard, and
+live verification (blocked by eligibility and the server).
