@@ -123,15 +123,17 @@ trend-following, long only, costs 0.05% taker and 0.02% slippage per side.
 
 | Symbol | Tier | Trades | Net return | Max drawdown | Halted |
 |---|---|---|---|---|---|
-| BTCUSDT | 2x | 52 | −5.5% | 10.3% | yes, Jul 2025 |
-| BTCUSDT | 5x and 10x | 32 | −3.1% | 10.5% | yes, Apr 2025 |
-| BTCUSDT | 20x | 31 | −4.5% | 10.5% | yes, Apr 2025 |
-| ETHUSDT | 2x | 36 | −4.4% | 10.2% | yes, May 2025 |
-| ETHUSDT | 5x and 10x | 36 | −3.9% | 10.9% | yes, May 2025 |
-| ETHUSDT | 20x | 35 | −3.8% | 10.9% | yes, May 2025 (1 liquidation, 12 refusals) |
+| BTCUSDT | 2x | 52 | −5.5% | 10.3% | yes, 2025-07-03 |
+| BTCUSDT | 5x and 10x | 32 | −3.1% | 10.5% | not recorded |
+| BTCUSDT | 20x | 31 | −4.5% | not recorded | not recorded |
+| ETHUSDT | 2x | 36 | −4.4% | 10.2% | not recorded |
+| ETHUSDT | 5x and 10x | not recorded | −3.9% | not recorded | not recorded |
+| ETHUSDT | 20x | not recorded | −3.8% | not recorded | not recorded (1 liquidation, 12 refusals) |
 
+"Not recorded" means the value was not captured from the run output and has not been re-derived.
+Re-running the baseline will fill these cells. Nothing in this table is a trading result.
 This baseline is not a result to trade on. The strategy already fails spot validation.
-The halt is permanent for the run: a live system needs an owner reset after a drawdown breach.
+The drawdown halt stops new entries at 10%. A live system would need an owner reset after a breach.
 
 **Not yet done:** walk-forward validation of futures strategies, a short-side strategy,
 trader integration of the futures path, futures paper trading, the futures dashboard, and
