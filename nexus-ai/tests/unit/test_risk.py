@@ -86,8 +86,8 @@ class TestLimits:
         assert evaluate_trade(snapshot(), MKT, RiskSettings()).approved
 
     @pytest.mark.parametrize(("kw", "fragment"), [
-        ({"equity": D(9_900)}, "daily loss"),
-        ({"equity": D(9_800), "day_start_equity": D(9_850)}, "weekly loss"),
+        ({"equity": D(9_800)}, "daily loss"),
+        ({"equity": D(9_600), "day_start_equity": D(9_650)}, "weekly loss"),
         ({"kill_switch": True}, "kill switch"),
         ({"unreconciled_orders": 1}, "unknown state"),
         ({"balances_reconciled": False}, "not reconciled"),
@@ -101,12 +101,12 @@ class TestLimits:
         assert not d.approved and any(fragment in r for r in d.reasons), d.reasons
 
     def test_just_below_daily_limit_warns_but_allows(self) -> None:
-        d = evaluate_trade(snapshot(equity=D(9_901)), MKT, RiskSettings())
+        d = evaluate_trade(snapshot(equity=D(9_801)), MKT, RiskSettings())
         assert d.approved and ("daily_loss_warning", "warning") in d.events
 
     def test_drawdown_shutdown(self) -> None:
-        d = evaluate_portfolio(snapshot(equity=D(9_500), peak_equity=D(10_000),
-                                        day_start_equity=D(9_500), week_start_equity=D(9_500)),
+        d = evaluate_portfolio(snapshot(equity=D(9_000), peak_equity=D(10_000),
+                                        day_start_equity=D(9_000), week_start_equity=D(9_000)),
                                RiskSettings())
         assert d.shutdown and not d.approved
         assert ("max_drawdown_shutdown", "critical") in d.events

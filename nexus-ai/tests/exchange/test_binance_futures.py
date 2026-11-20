@@ -96,7 +96,7 @@ async def test_leverage_only_approved_tiers_and_never_automatic(
 ) -> None:
     await ad.set_leverage("BTC/USDT:USDT", 2)
     assert rec.last("fapiPrivatePostLeverage") == {"symbol": "BTCUSDT", "leverage": 2}
-    for bad in (3, 25, 50):
+    for bad in (1, 6, 10, 20, 50):  # only the 2-5x tiers are approved
         with pytest.raises(InvalidOrder):
             await ad.set_leverage("BTC/USDT:USDT", bad)
     assert rec.count("fapiPrivatePostLeverage") == 1

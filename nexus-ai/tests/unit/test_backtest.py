@@ -67,7 +67,7 @@ def test_entry_at_next_open_and_target_fill() -> None:
     assert t.exit_reason == "target" and t.exit_price == D("105.0")
     # 1% of 10,000 = 100 budget; 100 / (101-95) = 16.67 -> floored to the 0.0001 step.
     # Concentration cap (25% = 2500 / 101 = 24.75) does not bind; risk does.
-    assert t.quantity == D("16.6666")
+    assert t.quantity == D("8.3333")  # 0.5% default risk
 
 
 def test_stop_wins_when_both_touched_same_bar() -> None:

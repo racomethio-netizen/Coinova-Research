@@ -13,10 +13,10 @@ def test_defaults_are_safe() -> None:
     assert s.live_trading_enabled is False
     assert s.trading_pairs == ["BTC/USDT", "ETH/USDT"]
     assert [t.value for t in s.timeframes] == ["5m", "15m", "1h", "4h", "1d"]
-    assert s.risk.risk_per_trade == Decimal("0.01")
-    assert s.risk.daily_loss_limit == Decimal("0.01")
-    assert s.risk.weekly_loss_limit == Decimal("0.02")
-    assert s.risk.max_drawdown == Decimal("0.05")
+    assert s.risk.risk_per_trade == Decimal("0.005")
+    assert s.risk.daily_loss_limit == Decimal("0.02")
+    assert s.risk.weekly_loss_limit == Decimal("0.04")
+    assert s.risk.max_drawdown == Decimal("0.10")
     assert s.risk.max_open_positions == 2
     assert s.risk.max_portfolio_exposure == Decimal("0.50")
     assert s.live_trading_config_problems()  # live not permitted
@@ -36,9 +36,9 @@ def test_env_parsing(monkeypatch: pytest.MonkeyPatch) -> None:
     ("field", "value"),
     [
         ("risk_per_trade", "0.011"),
-        ("daily_loss_limit", "0.02"),
-        ("weekly_loss_limit", "0.03"),
-        ("max_drawdown", "0.10"),
+        ("daily_loss_limit", "0.021"),
+        ("weekly_loss_limit", "0.041"),
+        ("max_drawdown", "0.11"),
         ("max_open_positions", 3),
         ("max_portfolio_exposure", "0.6"),
         ("risk_per_trade", "0"),
@@ -122,14 +122,14 @@ def test_secrets_not_in_repr_or_summary() -> None:
 def test_futures_defaults_and_ceilings(monkeypatch: pytest.MonkeyPatch) -> None:
     s = Settings()
     assert s.futures_enabled is False and s.futures_allow_short is False
-    assert s.futures_default_leverage == 2 and s.futures_leverage_options == [2, 5, 10, 20]
+    assert s.futures_default_leverage == 2 and s.futures_leverage_options == [2, 3, 4, 5]
     assert s.futures_margin_mode == "isolated" and s.futures_cross_margin_enabled is False
-    assert s.futures_risk_per_trade == Decimal("0.01")
+    assert s.futures_risk_per_trade == Decimal("0.005")
     assert [e.value for e in s.futures_exchanges] == ["binance"]
     with pytest.raises(ValidationError):
-        Settings(futures_leverage_options="2,50")  # not a selectable tier
+        Settings(futures_leverage_options="2,10")  # not a selectable tier
     with pytest.raises(ValidationError):
-        Settings(futures_default_leverage=10, futures_leverage_options="2,5")
+        Settings(futures_default_leverage=4, futures_leverage_options="2,3")
     with pytest.raises(ValidationError):
         Settings(futures_risk_per_trade="0.011")
     with pytest.raises(ValidationError):
@@ -137,7 +137,7 @@ def test_futures_defaults_and_ceilings(monkeypatch: pytest.MonkeyPatch) -> None:
     with pytest.raises(ValidationError):
         Settings(futures_exchanges="kraken")
     summary = Settings(futures_enabled=True, futures_allow_short=True).safe_summary()
-    assert summary["short_selling_enabled"] is True and summary["futures_max_leverage"] == 20
+    assert summary["short_selling_enabled"] is True and summary["futures_max_leverage"] == 5
     monkeypatch.setenv("NEXUS_MARTINGALE_ENABLED", "true")
     assert Settings().safe_summary()["martingale_enabled"] is False
 

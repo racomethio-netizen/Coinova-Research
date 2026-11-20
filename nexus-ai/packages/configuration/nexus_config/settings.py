@@ -57,24 +57,26 @@ class Timeframe(StrEnum):
 LIVE_TRADING_ACK_PHRASE: Final = "I accept that live trading can lose real money"
 
 # Mandated ceilings (fractions of equity). Config may only go lower.
-MAX_RISK_PER_TRADE: Final = Decimal("0.01")  # owner-approved 2026-11-14 (was 0.25%)
-MAX_DAILY_LOSS: Final = Decimal("0.01")
-MAX_WEEKLY_LOSS: Final = Decimal("0.02")
-MAX_DRAWDOWN: Final = Decimal("0.05")
+# Owner mandate 2026-11-20: risk 0.5% default / 1% max, daily loss 2%, max drawdown 10%,
+# futures 2x default / 5x max, isolated margin. Weekly 4% keeps daily <= weekly <= drawdown.
+MAX_RISK_PER_TRADE: Final = Decimal("0.01")
+DEFAULT_RISK_PER_TRADE: Final = Decimal("0.005")
+MAX_DAILY_LOSS: Final = Decimal("0.02")
+MAX_WEEKLY_LOSS: Final = Decimal("0.04")
+MAX_DRAWDOWN: Final = Decimal("0.10")
 MAX_OPEN_POSITIONS: Final = 2
 MAX_PORTFOLIO_EXPOSURE: Final = Decimal("0.50")
-# Futures (owner-approved 2026-11-14): Binance only, at most 1x leverage, long and short.
-# Disabled by default; a futures strategy must pass the same out-of-sample gates as spot.
-# Owner-approved 2026-11-17: selectable leverage tiers, default 2x, hard maximum 20x.
-# Leverage never changes position size (size comes from risk); it only sets margin use.
-FUTURES_LEVERAGE_OPTIONS: Final = (2, 5, 10, 20)
-MAX_FUTURES_LEVERAGE: Final = Decimal("20")
-MAX_FUTURES_RISK_PER_TRADE: Final = Decimal("0.01")  # owner-approved: 1%
+# Futures: Binance only, disabled by default, isolated margin. Leverage never changes
+# position size (size comes from risk); it only sets margin use.
+FUTURES_LEVERAGE_OPTIONS: Final = (2, 3, 4, 5)
+MAX_FUTURES_LEVERAGE: Final = Decimal("5")
+MAX_FUTURES_RISK_PER_TRADE: Final = Decimal("0.01")
+DEFAULT_FUTURES_RISK_PER_TRADE: Final = Decimal("0.005")
 FUTURES_EXCHANGES: Final = ("binance",)
 
 
 class RiskSettings(BaseModel):
-    risk_per_trade: Decimal = MAX_RISK_PER_TRADE
+    risk_per_trade: Decimal = DEFAULT_RISK_PER_TRADE
     daily_loss_limit: Decimal = MAX_DAILY_LOSS
     weekly_loss_limit: Decimal = MAX_WEEKLY_LOSS
     max_drawdown: Decimal = MAX_DRAWDOWN
@@ -161,7 +163,7 @@ class Settings(BaseSettings):
     futures_default_leverage: int = 2
     futures_leverage_options: Annotated[list[int], NoDecode] = Field(
         default_factory=lambda: list(FUTURES_LEVERAGE_OPTIONS))
-    futures_risk_per_trade: Decimal = MAX_FUTURES_RISK_PER_TRADE
+    futures_risk_per_trade: Decimal = DEFAULT_FUTURES_RISK_PER_TRADE
     futures_allow_short: bool = False
     futures_margin_mode: Literal["isolated", "cross"] = "isolated"
     futures_cross_margin_enabled: bool = False

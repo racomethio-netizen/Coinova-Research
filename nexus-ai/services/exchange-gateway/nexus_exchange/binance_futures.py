@@ -35,7 +35,7 @@ from nexus_exchange.errors import (
     OrderStateUnknown,
 )
 
-APPROVED_LEVERAGE = (2, 5, 10, 20)
+APPROVED_LEVERAGE = (2, 3, 4, 5)
 MAX_LEVERAGE = 20
 ALERT_LIQUIDATION_DISTANCE = Decimal("0.10")  # alert when mark is within 10% of liquidation
 
