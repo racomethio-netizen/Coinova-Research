@@ -16,8 +16,6 @@ export default function SecurityPage() {
   const [setup, setSetup] = useState<{ secret: string; uri: string } | null>(null);
   const [code, setCode] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
-  const [cred, setCred] = useState({ exchange: "binance", label: "main", api_key: "", api_secret: "", totp: "" });
-  const [noWithdraw, setNoWithdraw] = useState(false);
   const [ack, setAck] = useState("");
   const [approveTotp, setApproveTotp] = useState("");
   const run = async (fn: () => Promise<unknown>, ok: string) => {
@@ -41,22 +39,8 @@ export default function SecurityPage() {
             </div>
           )}
         </Card>
-        <Card title="Add exchange API key">
-          <p className="mb-3 text-xs text-muted">Create keys with READ + SPOT TRADE permissions only. Withdrawals and transfers must be DISABLED, and restrict the key to your server IP. Keys are encrypted (AES-256-GCM) and never shown again.</p>
-          <div className="grid gap-3 md:grid-cols-2">
-            <div>
-              <label htmlFor="cred-ex" className="mb-1 block text-xs text-muted">Exchange</label>
-              <select id="cred-ex" className="w-full rounded-lg border border-line bg-elevated px-3 py-2 text-sm" value={cred.exchange} onChange={(e) => setCred({ ...cred, exchange: e.target.value })}>
-                {["binance", "kraken", "coinbase"].map((x) => <option key={x}>{x}</option>)}
-              </select>
-            </div>
-            <Field id="cred-label" label="Label" value={cred.label} onChange={(v) => setCred({ ...cred, label: v })} />
-            <Field id="cred-key" label="API key" value={cred.api_key} onChange={(v) => setCred({ ...cred, api_key: v })} autoComplete="off" />
-            <Field id="cred-secret" label="API secret" type="password" value={cred.api_secret} onChange={(v) => setCred({ ...cred, api_secret: v })} autoComplete="off" />
-            <Field id="cred-totp" label="Two-factor code" value={cred.totp} onChange={(v) => setCred({ ...cred, totp: v })} inputMode="numeric" />
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={noWithdraw} onChange={(e) => setNoWithdraw(e.target.checked)} /> I confirm withdrawals are disabled for this key</label>
-          </div>
-          <div className="mt-3"><Button tone="primary" onClick={() => run(() => api.post("/security/credentials", { ...cred, withdrawals_disabled_confirmed: noWithdraw }), "Key stored (encrypted).")}>Store key</Button></div>
+        <Card title="Exchange API keys">
+          <p className="text-sm">Binance keys are added, tested and disconnected on the <a className="underline" href="/connection/">Binance connection</a> page.</p>
         </Card>
         <Card title="Live trading approval" actions={<Badge tone={sec.data?.live_trading_permitted ? "bad" : "good"}>{sec.data?.live_trading_permitted ? "LIVE PERMITTED" : "live blocked"}</Badge>}>
           <p className="mb-2 text-sm">Live trading needs every gate below cleared. Currently blocking:</p>
