@@ -158,7 +158,7 @@ async def test_order_status_by_our_client_id(rec: Recorder, ad: BinanceFuturesAd
 
 
 async def test_positions_sign_liquidation_and_distance(rec: Recorder, ad: BinanceFuturesAdapter) -> None:
-    rec.responses["fapiPrivateGetPositionRisk"] = [
+    rec.responses["fapiPrivateV2GetPositionRisk"] = [
         {
             "symbol": "BTCUSDT",
             "positionAmt": "-0.5",

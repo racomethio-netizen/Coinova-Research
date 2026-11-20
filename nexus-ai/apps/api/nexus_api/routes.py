@@ -364,6 +364,9 @@ async def security(s: Session = Depends(db), redis: Any = Depends(redis_dep),
                                     "details", "ip_address", "created_at"])}
 
 
+Market = Literal["spot", "futures"]
+
+
 class CredentialBody(BaseModel):
     exchange: Literal["binance", "kraken", "coinbase"]
     label: str = Field(min_length=1, max_length=64)
@@ -371,6 +374,9 @@ class CredentialBody(BaseModel):
     api_secret: str = Field(min_length=8, max_length=8192)
     withdrawals_disabled_confirmed: bool
     totp: str = Field(min_length=6, max_length=6)
+    environment: Literal["testnet", "production"] = "testnet"
+    markets: list[Market] = Field(default_factory=lambda: list[Market](["futures"]),
+                                  min_length=1, max_length=2)
 
 
 @router.post("/security/credentials", dependencies=[Depends(owner)])
@@ -387,10 +393,12 @@ async def add_credential(body: CredentialBody, s: Session = Depends(db), redis: 
     cipher = CredentialCipher(ring)
     cred = models.ExchangeCredential(
         user_id=viewer.user.id, exchange_id=repo.exchange_id(s, body.exchange), label=body.label,
+        environment="sandbox" if body.environment == "testnet" else "production",
         api_key_encrypted=b"pending", api_secret_encrypted=b"pending",
         key_fingerprint=key_fingerprint(body.api_key), encryption_key_id=ring.primary_id,
         # Owner attestation; exchanges with an API check are re-verified in Phase 3 tooling.
-        withdrawal_disabled_verified=True, permissions={"owner_confirmed_no_withdrawals": True})
+        withdrawal_disabled_verified=True,
+        permissions={"owner_confirmed_no_withdrawals": True, "markets": sorted(set(body.markets))})
     s.add(cred)
     try:
         s.flush()
@@ -403,8 +411,60 @@ async def add_credential(body: CredentialBody, s: Session = Depends(db), redis: 
                                                context={**ctx, "field": "api_secret"})
     repo.record_audit(s, actor=viewer.actor, action="credential_added", user_id=viewer.user.id,
                       target_type="exchange_credential", target_id=str(cred.id),
-                      details={"exchange": body.exchange, "fingerprint": cred.key_fingerprint})
+                      details={"exchange": body.exchange, "fingerprint": cred.key_fingerprint,
+                               "environment": body.environment, "markets": sorted(set(body.markets))})
     return {"id": cred.id, "fingerprint": cred.key_fingerprint}
+
+
+def _cred_view(s: Session, c: models.ExchangeCredential) -> dict[str, Any]:
+    ex = s.get(models.Exchange, c.exchange_id)
+    perms = c.permissions or {}
+    return {"id": c.id, "exchange": ex.code if ex else None, "label": c.label,
+            "environment": "testnet" if c.environment == "sandbox" else "production",
+            "markets": perms.get("markets", []), "fingerprint": c.key_fingerprint,
+            "created_at": ser(c.created_at), "last_verified_at": ser(c.last_verified_at),
+            "last_check": perms.get("last_check")}
+
+
+@router.get("/security/credentials", dependencies=[Depends(owner)])
+def list_credentials(s: Session = Depends(db),
+                     viewer: Viewer = Depends(current_viewer)) -> dict[str, Any]:
+    """Connection metadata only: keys and secrets are never returned."""
+    rows = s.scalars(select(models.ExchangeCredential).where(
+        models.ExchangeCredential.user_id == viewer.user.id,
+        models.ExchangeCredential.revoked_at.is_(None)).order_by(models.ExchangeCredential.id)).all()
+    return {"credentials": [_cred_view(s, c) for c in rows]}
+
+
+@router.post("/security/credentials/{cred_id}/test", dependencies=[Depends(owner)])
+async def test_credential(cred_id: int, s: Session = Depends(db),
+                          viewer: Viewer = Depends(current_viewer),
+                          settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Real signed, read-only Binance calls with the stored key. Places no orders."""
+    from nexus_api import connection
+
+    cred = s.get(models.ExchangeCredential, cred_id)
+    if cred is None or cred.user_id != viewer.user.id or cred.revoked_at is not None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")
+    ex = s.get(models.Exchange, cred.exchange_id)
+    if ex is None or ex.code != "binance":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "connection test supports Binance only")
+    if settings.credential_encryption_keys is None:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "encryption not configured")
+    cipher = CredentialCipher(KeyRing.parse(settings.credential_encryption_keys.get_secret_value()))
+    ctx = {"user_id": str(cred.user_id), "exchange": ex.code, "credential_id": str(cred.id)}
+    api_key = cipher.decrypt(cred.api_key_encrypted, context={**ctx, "field": "api_key"})
+    secret = cipher.decrypt(cred.api_secret_encrypted, context={**ctx, "field": "api_secret"})
+    markets = list((cred.permissions or {}).get("markets") or ["futures"])
+    result = await connection.probe(api_key, secret, environment=cred.environment,
+                                    markets=markets, cafile=settings.extra_ca_file)
+    cred.permissions = {**(cred.permissions or {}), "last_check": result}
+    if result["ok"]:
+        cred.last_verified_at = utcnow()
+    repo.record_audit(s, actor=viewer.actor, action="credential_tested", user_id=viewer.user.id,
+                      target_type="exchange_credential", target_id=str(cred.id),
+                      details={"ok": result["ok"], "environment": result["environment"]})
+    return {"credential": _cred_view(s, cred), "result": result}
 
 
 @router.delete("/security/credentials/{cred_id}", dependencies=[Depends(owner)])

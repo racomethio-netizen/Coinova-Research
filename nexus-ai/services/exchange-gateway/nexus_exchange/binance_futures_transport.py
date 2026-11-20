@@ -12,7 +12,8 @@ import ccxt.async_support as ccxt_async
 
 class CcxtFuturesTransport:
     def __init__(
-        self, api_key: str, secret: str, *, timeout_ms: int = 10_000, cafile: str | None = None
+        self, api_key: str, secret: str, *, timeout_ms: int = 10_000, cafile: str | None = None,
+        testnet: bool = False,
     ) -> None:
         config: dict[str, Any] = {
             "apiKey": api_key,
@@ -20,10 +21,20 @@ class CcxtFuturesTransport:
             "enableRateLimit": True,
             "timeout": timeout_ms,
             "options": {"defaultType": "future", "fetchMarkets": ["linear"], "adjustForTimeDifference": True},
+            # Honour HTTPS_PROXY when one is configured (no effect otherwise).
+            "aiohttp_trust_env": True,
         }
         if cafile:
             config["cafile"] = cafile  # verification stays on
         self._client = ccxt_async.binanceusdm(config)
+        if testnet:
+            # testnet.binancefuture.com: real signed API, test funds only. ccxt's
+            # set_sandbox_mode() refuses futures since Binance announced Demo Trading as the
+            # successor, so the fapi hosts are pointed at the testnet directly.
+            urls = self._client.urls
+            for key, url in urls["test"].items():
+                if key.startswith("fapi"):
+                    urls["api"][key] = url
 
     def __repr__(self) -> str:
         return "CcxtFuturesTransport(<credentials hidden>)"

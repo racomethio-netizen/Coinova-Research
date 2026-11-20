@@ -209,3 +209,46 @@ def test_security_headers(client: TestClient) -> None:
     h = client.get("/health/live").headers
     assert "frame-ancestors 'none'" in h["content-security-policy"]
     assert h["x-frame-options"] == "DENY"
+
+
+def test_binance_connection_add_list_test_disconnect(client: TestClient,
+                                                    monkeypatch: pytest.MonkeyPatch) -> None:
+    from nexus_api import connection
+
+    seen: dict[str, Any] = {}
+
+    async def fake_futures(api_key: str, secret: str, *, testnet: bool,
+                           cafile: str | None = None) -> dict[str, Any]:
+        seen.update(api_key=api_key, secret=secret, testnet=testnet)
+        return {"ok": True, "wallet_balance_usdt": "15000", "position_mode": "one-way"}
+
+    monkeypatch.setitem(connection.PROBES, "futures", fake_futures)
+    login(client)
+    secret = _enable_totp(client)
+    body = {"exchange": "binance", "label": "testnet", "api_key": "TESTNET-KEY-0001",
+            "api_secret": "TESTNET-SECRET-0002", "withdrawals_disabled_confirmed": True,
+            "totp": _code(secret, 1), "environment": "testnet", "markets": ["futures"]}
+    r = client.post("/api/v1/security/credentials", json=body, headers=CSRF)
+    assert r.status_code == 200, r.text
+    cred_id = r.json()["id"]
+
+    listing = client.get("/api/v1/security/credentials")
+    assert listing.status_code == 200
+    assert "TESTNET-KEY" not in listing.text and "TESTNET-SECRET" not in listing.text
+    row = listing.json()["credentials"][0]
+    assert row["environment"] == "testnet" and row["markets"] == ["futures"]
+    assert row["last_check"] is None
+
+    t = client.post(f"/api/v1/security/credentials/{cred_id}/test", headers=CSRF)
+    assert t.status_code == 200, t.text
+    assert t.json()["result"]["ok"] is True and t.json()["result"]["environment"] == "testnet"
+    assert seen == {"api_key": "TESTNET-KEY-0001", "secret": "TESTNET-SECRET-0002", "testnet": True}
+    assert "TESTNET-SECRET" not in t.text
+    row = client.get("/api/v1/security/credentials").json()["credentials"][0]
+    assert row["last_check"]["futures"]["wallet_balance_usdt"] == "15000"
+    assert row["last_verified_at"] is not None
+
+    assert client.delete(f"/api/v1/security/credentials/{cred_id}", headers=CSRF).status_code == 200
+    assert client.get("/api/v1/security/credentials").json()["credentials"] == []
+    assert client.post(f"/api/v1/security/credentials/{cred_id}/test",
+                       headers=CSRF).status_code == 404

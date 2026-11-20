@@ -172,7 +172,7 @@ class BinanceFuturesAdapter:
 
     # ------------------------------------------------------------------ account
     async def account(self) -> dict[str, Decimal]:
-        r = await self._call("fapiPrivateGetAccount")
+        r = await self._call("fapiPrivateV2GetAccount")
         return {
             "wallet_balance": _d(r["totalWalletBalance"]),
             "available_balance": _d(r["availableBalance"]),
@@ -187,7 +187,7 @@ class BinanceFuturesAdapter:
 
     async def positions(self, symbol: str | None = None) -> list[FuturesPosition]:
         params = {"symbol": _native(symbol)} if symbol else {}
-        rows = await self._call("fapiPrivateGetPositionRisk", params)
+        rows = await self._call("fapiPrivateV2GetPositionRisk", params)
         out = []
         for r in rows:
             qty = _d(r.get("positionAmt"))
