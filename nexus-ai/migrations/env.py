@@ -20,6 +20,10 @@ def _url() -> str:
     url = os.environ.get("NEXUS_DATABASE_URL")
     if not url:
         raise RuntimeError("NEXUS_DATABASE_URL is not set")
+    # Hosts such as Render give postgresql:// URLs; the installed driver is psycopg 3.
+    for prefix in ("postgresql://", "postgres://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
     return url
 
 
