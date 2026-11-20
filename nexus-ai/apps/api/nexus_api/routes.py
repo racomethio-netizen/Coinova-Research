@@ -298,8 +298,19 @@ async def risk(mode: Mode = "paper", s: Session = Depends(db), redis: Any = Depe
     last = None if p is None else s.scalar(select(models.PerformanceSnapshot).where(
         models.PerformanceSnapshot.portfolio_id == p.id)
         .order_by(desc(models.PerformanceSnapshot.captured_at)).limit(1))
+    from nexus_execution import protection
+    from nexus_risk.streak import DEFAULT_POLICY, risk_multiplier
+
+    reset_at = await protection.streak_reset_at(redis)
+    streak = None if p is None else protection.streak_state(s, p.id, reset_at)
     return {"mode": mode, "limits": {k: str(v) for k, v in settings.risk.model_dump().items()},
             "kill_switch": await KillSwitch(redis).status(),
+            "loss_streak": None if streak is None else {
+                "consecutive_losses": streak.losses, "paused": streak.paused,
+                "risk_multiplier": str(risk_multiplier(streak)),
+                "reduce_after": DEFAULT_POLICY.reduce_after,
+                "pause_after": DEFAULT_POLICY.pause_after,
+                "reset_at": ser(reset_at)},
             "current": None if last is None else {
                 "equity": ser(last.equity), "peak_equity": ser(last.peak_equity),
                 "drawdown": ser(last.drawdown), "exposure": ser(last.exposure),
@@ -583,3 +594,18 @@ async def telegram_test(s: Session = Depends(db), viewer: Viewer = Depends(curre
     repo.record_audit(s, actor=viewer.actor, action="telegram_test", user_id=viewer.user.id,
                       details={"ok": result.ok})
     return {"ok": result.ok, "error": result.error}
+
+
+@router.post("/risk/streak/reset", dependencies=[Depends(owner)])
+async def reset_streak(body: KillBody, s: Session = Depends(db), redis: Any = Depends(redis_dep),
+                       viewer: Viewer = Depends(current_viewer),
+                       settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Resume after a loss-streak pause. Like clearing the kill switch, this needs 2FA."""
+    from nexus_execution.protection import STREAK_RESET_KEY
+
+    await check_totp(viewer, body.totp, settings, redis)
+    now = utcnow()
+    await redis.set(STREAK_RESET_KEY, now.isoformat())
+    repo.record_audit(s, actor=viewer.actor, action="loss_streak_reset", user_id=viewer.user.id,
+                      details={"reason": body.reason})
+    return {"reset_at": ser(now)}

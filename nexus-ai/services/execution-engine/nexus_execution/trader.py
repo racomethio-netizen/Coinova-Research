@@ -34,15 +34,19 @@ from nexus_exchange.factory import build_from_settings
 from nexus_exchange.models import OrderBook, Side, TimeInForce
 from nexus_market.analytics import book_metrics
 from nexus_risk.allocator import VenueState, choose_buy_venue
+from nexus_risk.exits import ExitState, partial_take_profit, trailing_stop
 from nexus_risk.kill_switch import KillSwitch
 from nexus_risk.limits import MarketCheck, RiskSnapshot, evaluate_portfolio, evaluate_trade
 from nexus_risk.sizing import SizingInput, size_position
+from nexus_risk.streak import DEFAULT_POLICY, risk_multiplier
 from nexus_strategies import ALL_STRATEGIES, Signal, Strategy
 from nexus_strategies.frames import to_frame
+from nexus_strategies.indicators import atr as atr_series
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
+from nexus_execution import protection
 from nexus_execution.brokers import Broker, PaperBroker
 from nexus_execution.order_manager import (
     DuplicateOrder,
@@ -56,6 +60,11 @@ log = get_logger("nexus.trader")
 BOOK_MAX_AGE = 15.0
 HISTORY_BARS = 600
 MAX_EXIT_SLIPPAGE = Decimal("0.005")
+# Exit management: sell half at +1R once, then trail the rest at 2 x ATR(14, 1h).
+PARTIAL_R = Decimal("1")
+PARTIAL_FRACTION = Decimal("0.5")
+TRAIL_ATR = Decimal("2")
+TRAIL_TIMEFRAME = "1h"
 
 
 class BookCache:
@@ -220,6 +229,8 @@ class TradingEngine:
             if book is None or book.best_bid is None:
                 continue
             bid = book.best_bid
+            if await self._advance_exits(pos, code, symbol, bid):
+                continue  # a partial exit was placed this cycle
             reason = None
             if pos.stop_loss is not None and bid <= pos.stop_loss:
                 reason = "stop_loss"
@@ -243,6 +254,90 @@ class TradingEngine:
                 continue
             await self.notify({"type": reason, "mode": self.mode, "exchange": code,
                                "symbol": symbol, "bid": str(bid), "quantity": str(qty)})
+
+    def _atr(self, symbol: str) -> Decimal | None:
+        frame = self.frames(self.settings.signal_exchange, symbol, (TRAIL_TIMEFRAME,))[TRAIL_TIMEFRAME]
+        if frame is None or len(frame) < 30:
+            return None
+        value = float(atr_series(frame).iloc[-1])
+        return None if value != value else Decimal(repr(value))  # NaN -> None
+
+    async def _advance_exits(self, pos: models.Position, code: str, symbol: str,
+                             bid: Decimal) -> bool:
+        """Partial take-profit at +1R (once), then an ATR trailing stop. The stop only
+        ever moves up. Returns True when a partial exit is placed or still working."""
+        if pos.stop_loss is None or pos.avg_entry_price <= 0:
+            return False
+        with transaction(self.factory) as s:
+            taken = protection.partial_taken(s, pos.id)
+            in_flight = protection.partial_in_flight(s, pos.id)
+            first_stop = protection.initial_stop(s, pos)
+        if in_flight:
+            return True
+        rules = await self.adapters[code].market_rules(symbol)
+        if not taken:
+            if first_stop is None or first_stop >= pos.avg_entry_price:
+                return False
+            state = ExitState(pos.avg_entry_price, first_stop, bid, pos.quantity)
+            qty, _ = partial_take_profit(state, last=bid, amount_step=rules.amount_step,
+                                         r_multiple=PARTIAL_R, fraction=PARTIAL_FRACTION)
+            too_small = rules.min_notional is not None and qty * bid < rules.min_notional
+            too_small = too_small or (rules.min_amount is not None and qty < rules.min_amount)
+            if qty <= 0 or too_small:
+                return False
+            try:
+                await self.orders.place(OrderIntent(
+                    portfolio_id=pos.portfolio_id, mode=self.mode, exchange=code,
+                    symbol=symbol, side=Side.SELL, amount=qty,
+                    price=floor_to_step(bid, rules.price_tick), purpose="exit",
+                    expected_price=bid, time_in_force=TimeInForce.IOC, position_id=pos.id,
+                    details={"exit_reason": protection.PARTIAL_REASON}))
+            except DuplicateOrder:
+                return True
+            self._set_stop(pos, max(pos.stop_loss, pos.avg_entry_price))
+            await self.notify({"type": "take_profit", "mode": self.mode, "exchange": code,
+                               "symbol": symbol, "bid": str(bid), "quantity": str(qty),
+                               "partial": True})
+            return True
+        atr = self._atr(symbol)
+        if atr is None:
+            return False
+        key = f"nexus:exit:highest:{pos.id}"
+        raw = await self.redis.get(key)
+        seen = Decimal(raw.decode() if isinstance(raw, bytes) else raw) if raw else bid
+        highest = max(seen, bid)
+        await self.redis.set(key, str(highest), ex=30 * 86400)
+        trailed = trailing_stop(ExitState(pos.avg_entry_price, pos.stop_loss, highest,
+                                          pos.quantity, True), last=bid, atr=atr,
+                                trail_atr=TRAIL_ATR)
+        new_stop = floor_to_step(trailed.stop, rules.price_tick)
+        if new_stop > pos.stop_loss:
+            self._set_stop(pos, new_stop)
+        return False
+
+    def _set_stop(self, pos: models.Position, stop: Decimal) -> None:
+        """Raise (never lower) the stored stop for a long position."""
+        with transaction(self.factory) as s:
+            row = s.get(models.Position, pos.id, with_for_update=True)
+            if row is not None and row.status == "open" and (
+                    row.stop_loss is None or stop > row.stop_loss):
+                row.stop_loss = stop
+        if pos.stop_loss is None or stop > pos.stop_loss:
+            pos.stop_loss = stop
+
+    async def _streak(self) -> tuple[Decimal, str | None]:
+        """Risk multiplier from the losing streak since the owner's last reset."""
+        since = await protection.streak_reset_at(self.redis)
+        with transaction(self.factory) as s:
+            state = protection.streak_state(s, self.portfolio_id or 0, since)
+        mult = risk_multiplier(state)
+        if mult == 0:
+            return mult, (f"loss streak: entries paused after {state.losses} consecutive losses "
+                          "(owner reset required)")
+        if mult < 1:
+            return mult, (f"loss streak: {state.losses} consecutive losses, risk reduced to "
+                          f"{mult * 100:.0f}% (pause after {DEFAULT_POLICY.pause_after})")
+        return mult, None
 
     # ------------------------------------------------------------------ entries
     def enabled_strategies(self) -> list[tuple[int, Strategy]]:
@@ -311,6 +406,10 @@ class TradingEngine:
         if not decision.approved:
             await self._decide(sig, signal_id, "rejected", "; ".join(decision.reasons))
             return
+        streak_mult, streak_note = await self._streak()
+        if streak_mult == 0:
+            await self._decide(sig, signal_id, "rejected", streak_note)
+            return
         proceed, explanation = await self._decision_gate(sig, v, day0, week0, book, metrics, best)
         if not proceed:
             await self._decide(sig, signal_id, "rejected", explanation)
@@ -332,7 +431,7 @@ class TradingEngine:
         target_px = entry + (target - entry_ref)
         sizing = size_position(SizingInput(
             equity=v.equity, cash_available=venue.cash_available(), entry_price=entry,
-            stop_price=stop_px, risk_per_trade=self.settings.risk.risk_per_trade,
+            stop_price=stop_px, risk_per_trade=self.settings.risk.risk_per_trade * streak_mult,
             fee_rate=venue.taker_fee, slippage_rate=self.settings.paper_slippage_bps / 10_000,
             exposure_now=v.exposure, max_exposure=self.settings.risk.max_portfolio_exposure,
             asset_exposure_now=ZERO,
@@ -355,7 +454,8 @@ class TradingEngine:
                 purpose="entry", expected_price=entry, time_in_force=TimeInForce.IOC,
                 signal_id=signal_id,
                 details={"strategy_id": strat_id, "strategy": sig.strategy, "stop": str(stop_px),
-                         "target": str(target_px), "regime": sig.regime}))
+                         "target": str(target_px), "regime": sig.regime,
+                         "risk_multiplier": str(streak_mult), "streak_note": streak_note}))
         except (DuplicateOrder, InsufficientBalance) as exc:
             await self._decide(sig, signal_id, "rejected", str(exc))
             return

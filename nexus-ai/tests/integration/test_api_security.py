@@ -293,3 +293,15 @@ def test_telegram_status_and_test_without_config(client: TestClient) -> None:
     assert r["configured"] is False and any(e["type"] == "daily_report" for e in r["events"])
     t = client.post("/api/v1/telegram/test", headers=CSRF)
     assert t.status_code == 400 and "not configured" in t.text
+
+
+def test_loss_streak_reset_needs_totp(client: TestClient) -> None:
+    login(client)
+    r = client.get("/api/v1/risk").json()
+    assert "loss_streak" in r
+    body = {"reason": "reviewed the losing trades", "totp": "000000"}
+    assert client.post("/api/v1/risk/streak/reset", json=body, headers=CSRF).status_code == 403
+    secret = _enable_totp(client)
+    body["totp"] = _code(secret, 1)
+    ok = client.post("/api/v1/risk/streak/reset", json=body, headers=CSRF)
+    assert ok.status_code == 200 and ok.json()["reset_at"]

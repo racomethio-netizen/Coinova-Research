@@ -23,7 +23,7 @@ export default function Risk() {
   const L = data?.limits;
   return (
     <>
-      <PageHeader title="Risk management" subtitle="Limits can only be tightened. Breaches block new entries; the max-drawdown breach engages the kill switch." />
+      <PageHeader title="Risk management" subtitle="Owner-set limits. Breaches block new entries; the max-drawdown breach engages the kill switch; a losing streak first halves risk, then pauses entries." />
       <Loading error={error} loading={loading && !data} />
       {data && (
         <div className="space-y-4">
@@ -50,6 +50,20 @@ export default function Risk() {
             </div>
             {msg && <p role="alert" className="mt-2 text-sm text-down">{msg}</p>}
           </Card>
+          {data.loss_streak && (
+            <Card title="Loss-streak protection" actions={<Badge tone={data.loss_streak.paused ? "bad" : Number(data.loss_streak.risk_multiplier) < 1 ? "warn" : "good"}>{data.loss_streak.paused ? "ENTRIES PAUSED" : Number(data.loss_streak.risk_multiplier) < 1 ? "risk reduced" : "normal"}</Badge>}>
+              <p className="mb-3 text-sm">Consecutive losses: <span className="num">{data.loss_streak.consecutive_losses}</span>. Risk is halved after {data.loss_streak.reduce_after} losses in a row and new entries pause after {data.loss_streak.pause_after}. Current risk multiplier: <span className="num">{data.loss_streak.risk_multiplier}</span>{data.loss_streak.reset_at ? ` · last reset ${time(data.loss_streak.reset_at)}` : ""}.</p>
+              {data.loss_streak.paused && (
+                <div className="space-y-2">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Field id="streak-reason" label="Reason for resuming (min 5 characters)" value={reason} onChange={setReason} />
+                    <Field id="streak-totp" label="Two-factor code" value={totp} onChange={setTotp} inputMode="numeric" />
+                  </div>
+                  <Button disabled={reason.trim().length < 5} onClick={() => act("/risk/streak/reset", { reason, totp })}>Resume after review</Button>
+                </div>
+              )}
+            </Card>
+          )}
           <Card title="Risk events">
             <Table rows={data.events} empty="No risk events." columns={[
               { key: "created_at", label: "Time", render: (e: Any) => time(e.created_at) },

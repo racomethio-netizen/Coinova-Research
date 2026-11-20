@@ -233,3 +233,98 @@ async def test_decision_gate_refuses_without_candle_history(engine_setup: tuple[
         eng, signal(), v, v.equity, v.equity, book, None, None)
     assert proceed is False
     assert "insufficient candle history" in explanation
+
+
+async def _enter(eng: Any, factory: Any) -> Any:
+    eng.bootstrap()
+    v = await eng.valuation()
+    day0, week0, peak = eng.period_starts(v.equity, utcnow())
+    await eng.handle_signal(1, signal(), v, day0, week0, peak)
+    with transaction(factory) as s:
+        pos = s.scalar(select(models.Position))
+        assert pos is not None and pos.status == "open"
+        return pos.id, pos.quantity, pos.avg_entry_price
+
+
+async def test_partial_take_profit_once_then_trailing_stop(engine_setup: tuple[Any, ...]) -> None:
+    from nexus_execution import protection
+
+    eng, factory, state, _ = engine_setup
+    pid, qty0, entry = await _enter(eng, factory)
+    one_r = entry - D(59_000)
+    # +1R reached (below the 62,000 target): sell half once, stop to breakeven.
+    state.update(bid=float(entry + one_r + 50), ask=float(entry + one_r + 51))
+    await eng.cycle()
+    await eng.cycle()  # must not sell a second partial
+    with transaction(factory) as s:
+        pos = s.get(models.Position, pid)
+        partials = [o for o in s.scalars(select(models.Order).where(models.Order.purpose == "exit"))
+                    if o.details.get("exit_reason") == protection.PARTIAL_REASON]
+        assert len(partials) == 1 and partials[0].status == "filled"
+        assert pos is not None and pos.status == "open" and pos.quantity < qty0
+        assert pos.stop_loss is not None and pos.stop_loss >= pos.avg_entry_price
+        breakeven = pos.stop_loss
+
+    # Trailing: with ATR 100 and a new high of 61,900 the stop rises to ~61,700.
+    eng._atr = lambda symbol: D(100)  # type: ignore[method-assign]
+    state.update(bid=61_900.0, ask=61_901.0)
+    await eng.cycle()
+    with transaction(factory) as s:
+        pos = s.get(models.Position, pid)
+        assert pos is not None and pos.status == "open"
+        assert pos.stop_loss is not None and pos.stop_loss > breakeven
+        assert D(61_690) <= pos.stop_loss <= D(61_700)
+    # The trailed stop is never loosened, and a pullback through it exits at a profit.
+    state.update(bid=61_650.0, ask=61_651.0)
+    await eng.cycle()
+    with transaction(factory) as s:
+        pos = s.get(models.Position, pid)
+        assert pos is not None and pos.status == "closed" and pos.exit_reason == "stop_loss"
+        assert pos.realized_pnl > 0
+
+
+def _closed_loss(factory: Any, portfolio_id: int, minutes_ago: int) -> None:
+    from datetime import timedelta as _td
+    with transaction(factory) as s:
+        pair = s.scalar(select(models.TradingPair))
+        assert pair is not None
+        t = utcnow() - _td(minutes=minutes_ago)
+        s.add(models.Position(
+            portfolio_id=portfolio_id, mode="paper", exchange_id=pair.exchange_id,
+            pair_id=pair.id, base_asset="BTC", status="closed", quantity=D(0),
+            avg_entry_price=D(60_000), cost_basis=D(0), realized_pnl=D(-50),
+            opened_at=t, closed_at=t, exit_reason="stop_loss"))
+
+
+async def test_loss_streak_reduces_then_pauses_until_owner_reset(
+        engine_setup: tuple[Any, ...]) -> None:
+    from dataclasses import replace as _replace
+
+    from nexus_execution.protection import STREAK_RESET_KEY
+
+    eng, factory, _, redis = engine_setup
+    pid = eng.bootstrap()
+    v = await eng.valuation()
+    for m in (40, 30):
+        _closed_loss(factory, pid, m)
+    base = signal()
+    await eng.handle_signal(1, base, v, v.equity, v.equity, v.equity)
+    with transaction(factory) as s:
+        order = s.scalar(select(models.Order).where(models.Order.purpose == "entry"))
+        assert order is not None and order.details["risk_multiplier"] == "0.5"
+        assert "2 consecutive losses" in order.details["streak_note"]
+        s.execute(text("UPDATE positions SET status='closed', quantity=0, realized_pnl=-10, "
+                       "closed_at=now() - interval '20 minutes' WHERE status='open'"))
+    _closed_loss(factory, pid, 10)  # four losses in a row now
+    await eng.handle_signal(1, _replace(base, bar_time=base.bar_time + timedelta(hours=1)),
+                            v, v.equity, v.equity, v.equity)
+    with transaction(factory) as s:
+        last = s.scalars(select(models.TradingSignal).order_by(models.TradingSignal.id.desc())).first()
+        assert last is not None and last.status == "rejected"
+        assert "entries paused after 4 consecutive losses" in (last.rejection_reason or "")
+    await redis.set(STREAK_RESET_KEY, utcnow().isoformat())
+    await eng.handle_signal(1, _replace(base, bar_time=base.bar_time + timedelta(hours=2)),
+                            v, v.equity, v.equity, v.equity)
+    with transaction(factory) as s:
+        last = s.scalars(select(models.TradingSignal).order_by(models.TradingSignal.id.desc())).first()
+        assert last is not None and last.status == "executed"
