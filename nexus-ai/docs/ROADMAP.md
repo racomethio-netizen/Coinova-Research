@@ -167,6 +167,13 @@ live verification (blocked by eligibility and the server).
 3. DONE: Spot and Futures pages (live Binance account data via the stored key), Telegram
    settings page (status, alert list, real test message), trailing stop + partial
    take-profit + loss-streak protection in the trader (restart-safe; tests on real DB).
-4. Futures path in the trader (paper first), using the futures sizing engine and adapter.
+4. Futures path in the trader (paper first). BLOCKED for real data: Binance's futures
+   API (fapi/dapi) returns HTTP 451 here and Render's region is in the US; only the
+   testnet (not real prices) and the historical archive are reachable.
+   DONE instead: futures walk-forward validation on real archive data (5m perpetual
+   klines + real funding, 2024-11..2026-10, BTC+ETH, long-only): all six strategies
+   FAIL out of sample (expectancy -0.04% to -0.31%/trade, PF 0.52-0.89). Recorded in
+   backtest_runs and shown on the Backtesting page. Migration 0005 seeds the two newer
+   strategies (they were missing from the strategies table).
 5. Workers on Render (paid background workers) for market data and paper trading.
 6. Production Binance: needs a server region and an account Binance serves. Not bypassed.
