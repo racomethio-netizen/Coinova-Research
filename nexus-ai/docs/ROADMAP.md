@@ -138,3 +138,34 @@ The drawdown halt stops new entries at 10%. A live system would need an owner re
 **Not yet done:** walk-forward validation of futures strategies, a short-side strategy,
 trader integration of the futures path, futures paper trading, the futures dashboard, and
 live verification (blocked by eligibility and the server).
+
+---
+
+## Session 2026-11-20: owner mandate v3, Binance connection, Render deployment
+
+**Done and verified**
+- Risk mandate: 0.5% default / 1% max risk per trade, 2% daily, 4% weekly (chosen so
+  daily <= weekly <= drawdown), 10% drawdown, futures 2x default / 5x max, isolated.
+- Binance connection page and API: testnet or production key, spot and/or futures,
+  2FA to add, encrypted at rest, never returned; real signed read-only test; disconnect.
+- Bug found against the real futures testnet: Binance retired GET /fapi/v1/account;
+  the adapter now uses /fapi/v2/account and /fapi/v2/positionRisk.
+- Deployed: https://nexus-ai-qioq.onrender.com (Render, Oregon, free plan; Supabase
+  Postgres; Render Key Value). Supabase public API locked (RLS on, no anon grants).
+- Tests: 452 passed (scripts/test.sh); e2e: every page renders on desktop and 360px.
+
+**Verified limits of this environment**
+- api.binance.com, fapi.binance.com, spot testnet and demo trading: HTTP 451 here.
+- testnet.binancefuture.com: reachable; a signed call with an invalid key returns
+  Binance -2014, so signing and routing work. A real testnet key is still needed.
+- Render's Oregon region is in the US, which Binance.com does not serve.
+
+**Not done yet (next)**
+1. Owner: enable 2FA, add a Binance Futures testnet key on the connection page, test it.
+2. With owner authorization: testnet order round-trip (entry, exchange stop, take-profit,
+   reduce-only close) through the adapter.
+3. Spot and Futures dashboard pages with live account data; Telegram settings page.
+4. Futures path in the trader (paper first); trailing/partial exits and streak protection
+   wired into live exit management.
+5. Workers on Render (paid background workers) for market data and paper trading.
+6. Production Binance: needs a server region and an account Binance serves. Not bypassed.
