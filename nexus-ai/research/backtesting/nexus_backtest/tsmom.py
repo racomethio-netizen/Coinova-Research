@@ -96,7 +96,8 @@ def walk_forward(data: dict[str, tuple[pd.Series, pd.Series]], *, train_days: in
     gates = gates or Gates()
     series = {lb: portfolio(data, lb) for lb in LOOKBACKS}
     idx = series[max(LOOKBACKS)].index
-    windows, parts = [], []
+    windows: list[dict[str, Any]] = []
+    parts: list[pd.Series] = []
     t = idx[0] + pd.Timedelta(days=train_days)
     while t + pd.Timedelta(days=test_days) <= idx[-1] + pd.Timedelta(days=1):
         lo, hi = t - pd.Timedelta(days=train_days), t + pd.Timedelta(days=test_days)
@@ -115,7 +116,7 @@ def walk_forward(data: dict[str, tuple[pd.Series, pd.Series]], *, train_days: in
     n = len(oos)
     t_stat = float(oos.mean() / (oos.std() / math.sqrt(n))) if n > 1 and oos.std() > 0 else None
     positive = [w for w in windows if w["test_return"] > 0]
-    stats = {"days": n, "mean_daily": float(oos.mean()) if n else None, "sharpe": sharpe(oos),
+    stats: dict[str, Any] = {"days": n, "mean_daily": float(oos.mean()) if n else None, "sharpe": sharpe(oos),
              "total_return": float((1 + oos).prod() - 1) if n else None,
              "max_drawdown": max_drawdown(oos), "t_stat": t_stat,
              "positive_window_share": len(positive) / len(windows) if windows else None,
@@ -129,7 +130,7 @@ def walk_forward(data: dict[str, tuple[pd.Series, pd.Series]], *, train_days: in
         failures.append(f"positive windows {stats['positive_window_share']} < {gates.min_positive_windows}")
     if t_stat is None or t_stat < gates.min_t_stat:
         failures.append(f"t-stat {t_stat} < {gates.min_t_stat}")
-    if stats["max_drawdown"] > gates.max_drawdown:
+    if float(stats["max_drawdown"]) > gates.max_drawdown:
         failures.append(f"max drawdown {stats['max_drawdown']} > {gates.max_drawdown}")
     return Report(windows, oos, stats, not failures, failures)
 
