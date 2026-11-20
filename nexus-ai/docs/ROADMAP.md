@@ -177,3 +177,9 @@ live verification (blocked by eligibility and the server).
    strategies (they were missing from the strategies table).
 5. Workers on Render (paid background workers) for market data and paper trading.
 6. Production Binance: needs a server region and an account Binance serves. Not bypassed.
+
+**2026-11-20 (later):** AI Intelligence page live: per-pair analysis from Binance public
+spot data (works from Render: data-api.binance.vision reachable there), scored with the
+trader's decide() rules for long and short, reasons for/against, NO TRADE reasons.
+Funding/open interest unavailable (fapi HTTP 451). This also confirms spot paper
+trading on Render can use live data once background workers are approved.
