@@ -525,3 +525,19 @@ async def bot_action(action: Literal["start", "pause", "stop"], body: BotAction,
     repo.record_audit(s, actor=viewer.actor, action=f"bot_{action}", user_id=viewer.user.id,
                       target_type="bot", details={"reason": body.reason})
     return {"state": target.value}
+
+
+@router.get("/account/{market}")
+async def live_account(market: Literal["spot", "futures"], s: Session = Depends(db),
+                       redis: Any = Depends(redis_dep), viewer: Viewer = Depends(current_viewer),
+                       settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Live Binance account data for the dashboard, read with the operator's stored key."""
+    from nexus_api.account import account_view
+
+    owner_id = viewer.user.id
+    if viewer.user.role != "owner":
+        owner = s.scalar(select(models.User).where(models.User.role == "owner"))
+        if owner is None:
+            return {"connected": False, "market": market, "message": "No owner account."}
+        owner_id = owner.id
+    return await account_view(market, s, owner_id, settings, redis)

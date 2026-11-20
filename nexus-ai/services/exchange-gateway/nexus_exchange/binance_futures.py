@@ -327,17 +327,36 @@ class BinanceFuturesAdapter:
             "client_order_id": r.get("clientOrderId"),
         }
 
-    async def open_orders(self, symbol: str) -> list[dict[str, Any]]:
-        rows = await self._call("fapiPrivateGetOpenOrders", {"symbol": _native(symbol)})
+    async def open_orders(self, symbol: str | None = None) -> list[dict[str, Any]]:
+        """Open orders for one symbol, or all symbols when ``symbol`` is None."""
+        params = {"symbol": _native(symbol)} if symbol else {}
+        rows = await self._call("fapiPrivateGetOpenOrders", params)
         return [
             {
                 "client_order_id": r["clientOrderId"],
+                "symbol": r.get("symbol"),
+                "side": r.get("side"),
                 "type": r["type"],
                 "status": r["status"],
+                "price": str(_d(r.get("price"))),
+                "stop_price": str(_d(r.get("stopPrice"))),
+                "quantity": str(_d(r.get("origQty"))),
+                "reduce_only": bool(r.get("reduceOnly")),
                 "close_position": bool(r.get("closePosition")),
+                "time": r.get("time"),
             }
             for r in rows
         ]
+
+    async def income(self, income_type: str, since_ms: int | None = None,
+                     limit: int = 1000) -> list[dict[str, Any]]:
+        """Account income rows (e.g. REALIZED_PNL, FUNDING_FEE, COMMISSION), all symbols."""
+        params: dict[str, Any] = {"incomeType": income_type, "limit": limit}
+        if since_ms is not None:
+            params["startTime"] = since_ms
+        rows = await self._call("fapiPrivateGetIncome", params)
+        return [{"symbol": r.get("symbol"), "income": str(_d(r.get("income"))),
+                 "asset": r.get("asset"), "time": r.get("time")} for r in rows]
 
     async def cancel(self, symbol: str, client_order_id: str) -> None:
         await self._call(

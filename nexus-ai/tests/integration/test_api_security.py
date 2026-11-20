@@ -252,3 +252,36 @@ def test_binance_connection_add_list_test_disconnect(client: TestClient,
     assert client.get("/api/v1/security/credentials").json()["credentials"] == []
     assert client.post(f"/api/v1/security/credentials/{cred_id}/test",
                        headers=CSRF).status_code == 404
+
+
+def test_live_account_views(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    from nexus_api import account
+
+    login(client)
+    r = client.get("/api/v1/account/futures")
+    assert r.status_code == 200 and r.json()["connected"] is False
+
+    calls: list[bool] = []
+
+    async def fake_futures(api_key: str, secret: str, *, testnet: bool,
+                           cafile: str | None = None) -> dict[str, Any]:
+        calls.append(testnet)
+        assert (api_key, secret) == ("TESTNET-KEY-0001", "TESTNET-SECRET-0002")
+        return {"account": {"wallet_balance": "15000"}, "positions": [], "open_orders": [],
+                "last_7_days": {"realized_pnl": "0", "funding": "0", "commission": "0"}}
+
+    monkeypatch.setattr(account, "futures_snapshot", fake_futures)
+    secret = _enable_totp(client)
+    body = {"exchange": "binance", "label": "testnet", "api_key": "TESTNET-KEY-0001",
+            "api_secret": "TESTNET-SECRET-0002", "withdrawals_disabled_confirmed": True,
+            "totp": _code(secret, 1), "environment": "testnet", "markets": ["futures"]}
+    assert client.post("/api/v1/security/credentials", json=body, headers=CSRF).status_code == 200
+    r = client.get("/api/v1/account/futures").json()
+    assert r["connected"] and r["ok"] and r["environment"] == "testnet" and not r["cached"]
+    assert r["data"]["account"]["wallet_balance"] == "15000"
+    assert "TESTNET-SECRET" not in client.get("/api/v1/account/futures").text
+    assert client.get("/api/v1/account/futures").json()["cached"] is True
+    assert calls == [True]  # cached: Binance called once
+    spot = client.get("/api/v1/account/spot").json()
+    assert spot["connected"] is False  # key has futures access only
+    assert client.get("/api/v1/account/margin").status_code == 422
