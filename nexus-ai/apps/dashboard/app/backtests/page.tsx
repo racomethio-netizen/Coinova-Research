@@ -35,7 +35,7 @@ export default function BacktestsPage() {
             { key: "passed", label: "Verdict", render: (x: Any) => <Badge tone={x.passed ? "good" : "bad"}>{x.passed ? "passed" : "failed"}</Badge> },
             { key: "n", label: "Trades", numeric: true, render: (x: Any) => x.summary?.n ?? DASH },
             { key: "win", label: "Win rate", numeric: true, render: (x: Any) => pct(x.summary?.win_rate) },
-            { key: "exp", label: "Expectancy / trade", numeric: true, render: (x: Any) => pct(x.summary?.expectancy, 3) },
+            { key: "exp", label: "Expectancy", numeric: true, render: (x: Any) => x.summary?.total_return !== undefined ? `${pct(x.summary.total_return)} total` : pct(x.summary?.expectancy, 3) },
             { key: "pf", label: "Profit factor", numeric: true, render: (x: Any) => num(x.summary?.profit_factor) },
             { key: "pw", label: "Positive windows", numeric: true, render: (x: Any) => pct(x.summary?.positive_window_share, 0) },
             { key: "period", label: "Data", render: (x: Any) => `${(x.data_start ?? "").slice(0, 10)} → ${(x.data_end ?? "").slice(0, 10)}` },
@@ -53,7 +53,7 @@ export default function BacktestsPage() {
               { key: "test_start", label: "Test window", render: (w: Any) => `${String(w.test_start).slice(0, 10)} → ${String(w.test_end).slice(0, 10)}` },
               { key: "params", label: "Chosen on train", render: (w: Any) => w.params ? Object.entries(w.params).map(([k, v]) => `${k}=${v}`).join(", ") : "no parameters met the trade minimum" },
               { key: "n", label: "Test trades", numeric: true, render: (w: Any) => w.test?.n ?? DASH },
-              { key: "exp", label: "Test expectancy", numeric: true, render: (w: Any) => pct(w.test?.expectancy, 3) },
+              { key: "exp", label: "Test expectancy / return", numeric: true, render: (w: Any) => w.test?.return !== undefined ? `${pct(w.test.return)} (window)` : pct(w.test?.expectancy, 3) },
               { key: "pf", label: "Test PF", numeric: true, render: (w: Any) => num(w.test?.profit_factor) },
             ]} />
           </Card>

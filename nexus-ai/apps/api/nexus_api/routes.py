@@ -624,7 +624,8 @@ def backtests(market: Literal["all", "spot", "futures"] = "all",
         if market != "all" and mkt != market:
             continue
         m = r.metrics or {}
-        out.append({"id": r.id, "strategy": code, "market": mkt, "walk_forward": r.is_walk_forward,
+        out.append({"id": r.id, "strategy": code or cfg.get("strategy"), "market": mkt,
+                    "walk_forward": r.is_walk_forward,
                     "exchange": cfg.get("exchange"), "symbols": cfg.get("symbols"),
                     "side": cfg.get("side", "long-only"), "funding": cfg.get("funding"),
                     "train_days": cfg.get("train_days"), "test_days": cfg.get("test_days"),
