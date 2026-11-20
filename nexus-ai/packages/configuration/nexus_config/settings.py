@@ -122,6 +122,17 @@ class Settings(BaseSettings):
     database_url: SecretStr = SecretStr("postgresql+psycopg://nexus:nexus@localhost:5432/nexus")
     redis_url: SecretStr = SecretStr("redis://localhost:6379/0")
 
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _normalize_database_url(cls, value: object) -> object:
+        """Hosts such as Render give `postgresql://` URLs; the app's driver is psycopg 3."""
+        raw = value.get_secret_value() if isinstance(value, SecretStr) else value
+        if isinstance(raw, str):
+            for prefix in ("postgresql://", "postgres://"):
+                if raw.startswith(prefix):
+                    return "postgresql+psycopg://" + raw[len(prefix):]
+        return value
+
     # Base64 (urlsafe) 32-byte keys, as "<key_id>:<base64>" entries separated by commas.
     # The first entry encrypts; all entries can decrypt (key rotation).
     credential_encryption_keys: SecretStr | None = None

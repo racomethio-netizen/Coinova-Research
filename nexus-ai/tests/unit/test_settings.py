@@ -150,3 +150,16 @@ def test_timeframe_seconds() -> None:
 def test_one_day_timeframe() -> None:
     assert Timeframe("1d").seconds == 86400
     assert Timeframe.D1 in Settings().timeframes
+
+
+@pytest.mark.parametrize(
+    ("given", "expected"),
+    [
+        ("postgresql://u:p@host:5432/nexus", "postgresql+psycopg://u:p@host:5432/nexus"),
+        ("postgres://u:p@host:5432/nexus", "postgresql+psycopg://u:p@host:5432/nexus"),
+        ("postgresql+psycopg://u:p@host:5432/nexus", "postgresql+psycopg://u:p@host:5432/nexus"),
+    ],
+)
+def test_database_url_accepts_host_style_urls(given: str, expected: str) -> None:
+    s = Settings(database_url=given)
+    assert s.database_url.get_secret_value() == expected
