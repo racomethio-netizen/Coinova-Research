@@ -659,3 +659,31 @@ async def intelligence(redis: Any = Depends(redis_dep),
     return await market_intelligence(list(settings.trading_pairs), base, redis=redis,
                                      news_risk=news, kill_switch=await KillSwitch(redis).is_engaged(),
                                      order_quote=order_quote)
+
+
+BINANCE_PINGS = {
+    "spot (live)": "https://api.binance.com/api/v3/ping",
+    "futures (live)": "https://fapi.binance.com/fapi/v1/ping",
+    "spot (demo)": "https://demo-api.binance.com/api/v3/ping",
+    "futures (demo)": "https://demo-fapi.binance.com/fapi/v1/ping",
+    "futures (testnet)": "https://testnet.binancefuture.com/fapi/v1/ping",
+    "spot public data (mirror)": "https://data-api.binance.vision/api/v3/ping",
+}
+
+
+@router.get("/system/binance-reachability", dependencies=[Depends(owner)])
+async def binance_reachability() -> dict[str, Any]:
+    """Unauthenticated pings from THIS server. HTTP 451 means Binance refuses the server's
+    location; NEXUS reports it and never works around it."""
+    import httpx
+
+    out: dict[str, Any] = {}
+    async with httpx.AsyncClient(timeout=10, trust_env=True) as client:
+        for name, url in BINANCE_PINGS.items():
+            try:
+                r = await client.get(url)
+                out[name] = {"status": r.status_code, "reachable": r.status_code == 200,
+                             "blocked_by_location": r.status_code == 451}
+            except httpx.HTTPError as exc:
+                out[name] = {"status": None, "reachable": False, "error": type(exc).__name__}
+    return {"checked_at": ser(utcnow()), "hosts": out}

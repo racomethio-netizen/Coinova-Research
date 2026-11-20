@@ -342,3 +342,16 @@ def test_demo_key_is_stored_and_listed_as_demo(client: TestClient) -> None:
     assert client.post("/api/v1/security/credentials", json=body, headers=CSRF).status_code == 200
     row = client.get("/api/v1/security/credentials").json()["credentials"][0]
     assert row["environment"] == "demo"
+
+
+def test_binance_reachability_is_owner_only(client: TestClient,
+                                            monkeypatch: pytest.MonkeyPatch) -> None:
+    from nexus_api import routes
+
+    monkeypatch.setattr(routes, "BINANCE_PINGS", {})
+    login(client, email="viewer@example.test")
+    assert client.get("/api/v1/system/binance-reachability").status_code == 403
+    client.post("/api/v1/auth/logout", headers=CSRF)
+    login(client)
+    r = client.get("/api/v1/system/binance-reachability")
+    assert r.status_code == 200 and r.json()["hosts"] == {}
