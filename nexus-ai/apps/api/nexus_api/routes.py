@@ -687,3 +687,46 @@ async def binance_reachability() -> dict[str, Any]:
             except httpx.HTTPError as exc:
                 out[name] = {"status": None, "reachable": False, "error": type(exc).__name__}
     return {"checked_at": ser(utcnow()), "hosts": out}
+
+
+@router.post("/security/credentials/{cred_id}/order-test", dependencies=[Depends(owner)])
+async def credential_order_test(cred_id: int, s: Session = Depends(db),
+                                redis: Any = Depends(redis_dep),
+                                viewer: Viewer = Depends(current_viewer),
+                                settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Real order round trip on a DEMO or TESTNET futures key (never production)."""
+    from nexus_exchange.binance_futures import BinanceFuturesAdapter
+    from nexus_exchange.binance_futures_transport import CcxtFuturesTransport
+
+    from nexus_api.account import decrypt
+    from nexus_api.connection import ENV_NAMES, explain
+    from nexus_api.ordertest import run_round_trip
+
+    cred = s.get(models.ExchangeCredential, cred_id)
+    if cred is None or cred.user_id != viewer.user.id or cred.revoked_at is not None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")
+    env = ENV_NAMES.get(cred.environment, cred.environment)
+    if env not in ("demo", "testnet"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            "the order test runs only on demo or testnet keys, never production")
+    if "futures" not in ((cred.permissions or {}).get("markets") or []):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "this key has no futures access")
+    if not await redis.set(f"nexus:order_test:{cred_id}", "1", nx=True, ex=120):
+        raise HTTPException(status.HTTP_409_CONFLICT, "an order test is already running")
+    api_key, secret = decrypt(cred, settings)
+    transport = CcxtFuturesTransport(api_key, secret, cafile=settings.extra_ca_file,
+                                     environment=env)
+    try:
+        result = await run_round_trip(BinanceFuturesAdapter(transport))
+    except Exception as exc:
+        result = {"ok": False, "steps": [], "alerts": [], "error": explain(exc)}
+    finally:
+        await transport.close()
+        await redis.delete(f"nexus:order_test:{cred_id}")
+    result["environment"] = env
+    repo.record_audit(s, actor=viewer.actor, action="order_test", user_id=viewer.user.id,
+                      target_type="exchange_credential", target_id=str(cred_id),
+                      details={"ok": result["ok"], "environment": env,
+                               "steps": [x["step"] + (" ok" if x["ok"] else " FAILED")
+                                         for x in result["steps"]]})
+    return result

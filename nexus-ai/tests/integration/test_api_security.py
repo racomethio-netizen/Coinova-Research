@@ -355,3 +355,14 @@ def test_binance_reachability_is_owner_only(client: TestClient,
     login(client)
     r = client.get("/api/v1/system/binance-reachability")
     assert r.status_code == 200 and r.json()["hosts"] == {}
+
+
+def test_order_test_refuses_production_keys(client: TestClient) -> None:
+    login(client)
+    secret = _enable_totp(client)
+    body = {"exchange": "binance", "label": "prod", "api_key": "PROD-KEY-0000001",
+            "api_secret": "PROD-SECRET-00002", "withdrawals_disabled_confirmed": True,
+            "totp": _code(secret, 1), "environment": "production", "markets": ["futures"]}
+    cred_id = client.post("/api/v1/security/credentials", json=body, headers=CSRF).json()["id"]
+    r = client.post(f"/api/v1/security/credentials/{cred_id}/order-test", headers=CSRF)
+    assert r.status_code == 400 and "never production" in r.text
