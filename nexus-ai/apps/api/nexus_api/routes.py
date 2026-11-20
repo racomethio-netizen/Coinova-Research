@@ -635,3 +635,26 @@ def backtests(market: Literal["all", "spot", "futures"] = "all",
                     "oos_funding_paid": m.get("oos_funding_paid"),
                     "completed_at": ser(r.completed_at)})
     return {"runs": out}
+
+
+@router.get("/intelligence")
+async def intelligence(redis: Any = Depends(redis_dep),
+                       settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Live analysis of the configured pairs from Binance public market data (no orders)."""
+    from nexus_news.service import KEY as NEWS_KEY
+
+    from nexus_api.intelligence import market_intelligence
+
+    raw = await redis.get(NEWS_KEY)
+    news = None
+    if raw:
+        try:
+            value = json.loads(raw).get("score")
+            news = None if value is None else float(value)
+        except (ValueError, AttributeError):
+            news = None
+    base = settings.binance_public_api_url or "https://api.binance.com/api/v3"
+    order_quote = settings.paper_initial_capital * settings.risk.max_asset_concentration
+    return await market_intelligence(list(settings.trading_pairs), base, redis=redis,
+                                     news_risk=news, kill_switch=await KillSwitch(redis).is_engaged(),
+                                     order_quote=order_quote)

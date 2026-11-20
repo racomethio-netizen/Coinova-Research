@@ -521,7 +521,9 @@ class TradingEngine:
         snap = MarketSnapshot(
             side="long", entry=Decimal(repr(entry)), stop=Decimal(repr(stop)),
             target=Decimal(repr(target)), higher_trend=str(st_htf["trend"]),
-            structure_event=None if st_base["event"] is None else str(st_base["event"]),
+            structure_event=(None if st_base["event"] is None or (
+                isinstance(st_base["event"], float) and math.isnan(st_base["event"]))
+                else str(st_base["event"])),
             at_level=at_level, sweep=bool(sw["sweep_low"]),
             volume_z=None if math.isnan(float(vz)) else float(vz),
             book_imbalance=metrics.imbalance if metrics else None,
