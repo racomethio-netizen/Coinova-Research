@@ -164,8 +164,9 @@ live verification (blocked by eligibility and the server).
 1. Owner: enable 2FA, add a Binance Futures testnet key on the connection page, test it.
 2. With owner authorization: testnet order round-trip (entry, exchange stop, take-profit,
    reduce-only close) through the adapter.
-3. Spot and Futures dashboard pages with live account data; Telegram settings page.
-4. Futures path in the trader (paper first); trailing/partial exits and streak protection
-   wired into live exit management.
+3. DONE: Spot and Futures pages (live Binance account data via the stored key), Telegram
+   settings page (status, alert list, real test message), trailing stop + partial
+   take-profit + loss-streak protection in the trader (restart-safe; tests on real DB).
+4. Futures path in the trader (paper first), using the futures sizing engine and adapter.
 5. Workers on Render (paid background workers) for market data and paper trading.
 6. Production Binance: needs a server region and an account Binance serves. Not bypassed.
