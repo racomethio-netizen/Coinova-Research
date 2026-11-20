@@ -32,3 +32,21 @@ Also reported: buy-and-hold over the same days, for comparison only.
 ## Decision
 Pass -> eligible for paper trading only (never live without owner approval).
 Fail -> recorded as failed; no re-tuning of this hypothesis.
+
+## Result (run once, 2026-11-20, after this file was committed as 04f015f)
+
+Data: 2,496 daily bars per symbol (2020-01-01 to 2026-10-31), funding every day.
+Out-of-sample: 22 windows of 90 days, 2021-04-01 to 2026-09-02 (1,980 days).
+
+| Metric | Momentum (long/short) | Buy and hold, same days |
+|---|---|---|
+| Total return | -58.7% | -7.3% |
+| Annualised Sharpe | 0.005 | 0.29 |
+| Max drawdown | 81% | 77% |
+| Positive windows | 50% (11/22) | n/a |
+| t-statistic | 0.01 | n/a |
+
+**FAIL** on gates 1-4 (Sharpe, positive windows, t-stat, drawdown). Mean daily return was
+essentially zero; volatility drag turned it into a large loss. The chosen lookback changed
+often between windows (10, 40, 60, 90), another sign there is no stable effect in this
+sample. As pre-registered, this hypothesis is closed and will not be re-tuned.
