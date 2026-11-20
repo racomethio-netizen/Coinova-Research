@@ -86,11 +86,37 @@ def backtest(exchange: str, strategy: str, start: str | None, end: str | None) -
     return out
 
 
+def validate_futures(symbols: list[str], start: str, end: str, cache: str, *,
+                     record_runs: bool = True) -> list[dict[str, object]]:
+    import asyncio
+    from pathlib import Path
+
+    from nexus_backtest import futures_validation as fv
+
+    data = {sym: asyncio.run(fv.load_symbol(sym, start, end, Path(cache))) for sym in symbols}
+    results = fv.validate(data)
+    if record_runs:
+        settings = get_settings()
+        engine = make_engine(settings.database_url.get_secret_value())
+        idx = next(iter(data.values())).frames["5m"].index
+        fv.record(make_session_factory(engine), results, symbols=symbols,
+                  data_start=idx[0].to_pydatetime(), data_end=idx[-1].to_pydatetime())
+        engine.dispose()
+    return [{k: r[k] for k in ("strategy", "passed", "failures", "summary", "oos_funding_paid")}
+            for r in results]
+
+
 def main() -> None:
     p = argparse.ArgumentParser(prog="nexus-backtest")
     sub = p.add_subparsers(dest="cmd", required=True)
     v = sub.add_parser("validate-strategies")
     v.add_argument("--exchange", default="binance")
+    f = sub.add_parser("validate-futures")
+    f.add_argument("--symbols", default="BTCUSDT,ETHUSDT")
+    f.add_argument("--start", required=True, help="first month, YYYY-MM")
+    f.add_argument("--end", required=True, help="last month, YYYY-MM")
+    f.add_argument("--cache", default=".cache/futures-archive")
+    f.add_argument("--no-record", action="store_true", help="do not write backtest_runs")
     b = sub.add_parser("backtest")
     b.add_argument("--exchange", default="binance")
     b.add_argument("--strategy", required=True, choices=list(ALL_STRATEGIES))
@@ -100,6 +126,9 @@ def main() -> None:
     configure_logging(get_settings().log_level, json=False)
     if args.cmd == "validate-strategies":
         out: object = validate_strategies(args.exchange)
+    elif args.cmd == "validate-futures":
+        out = validate_futures(args.symbols.split(","), args.start, args.end, args.cache,
+                               record_runs=not args.no_record)
     else:
         out = backtest(args.exchange, args.strategy, args.start, args.end)
     print(json.dumps(out, indent=2, default=str))

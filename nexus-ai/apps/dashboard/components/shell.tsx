@@ -9,7 +9,7 @@ import { ModeProvider, useMode } from "@/lib/hooks";
 export const NAV: [string, string][] = [
   ["/", "Overview"], ["/spot/", "Spot trading"], ["/futures/", "Futures trading"], ["/portfolio/", "Portfolio"], ["/exchanges/", "Exchanges"],
   ["/markets/", "Live markets"], ["/signals/", "AI signals"], ["/positions/", "Open positions"],
-  ["/orders/", "Order history"], ["/trades/", "Trade history"], ["/performance/", "Performance"],
+  ["/orders/", "Order history"], ["/trades/", "Trade history"], ["/performance/", "Performance"], ["/backtests/", "Backtesting"],
   ["/strategies/", "Strategies"], ["/models/", "AI models"], ["/risk/", "Risk management"],
   ["/connection/", "Binance connection"], ["/telegram/", "Telegram"], ["/system/", "System"], ["/security/", "Security"],
 ];

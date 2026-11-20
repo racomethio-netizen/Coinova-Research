@@ -609,3 +609,29 @@ async def reset_streak(body: KillBody, s: Session = Depends(db), redis: Any = De
     repo.record_audit(s, actor=viewer.actor, action="loss_streak_reset", user_id=viewer.user.id,
                       details={"reason": body.reason})
     return {"reset_at": ser(now)}
+
+
+@router.get("/backtests")
+def backtests(market: Literal["all", "spot", "futures"] = "all",
+              s: Session = Depends(db)) -> dict[str, Any]:
+    """Recorded walk-forward / backtest runs. Out-of-sample results only; never live P&L."""
+    rows = s.execute(select(models.BacktestRun, models.Strategy.code).outerjoin(models.Strategy)
+                     .order_by(desc(models.BacktestRun.id)).limit(200)).all()
+    out = []
+    for r, code in rows:
+        cfg = r.config or {}
+        mkt = cfg.get("market", "spot")
+        if market != "all" and mkt != market:
+            continue
+        m = r.metrics or {}
+        out.append({"id": r.id, "strategy": code, "market": mkt, "walk_forward": r.is_walk_forward,
+                    "exchange": cfg.get("exchange"), "symbols": cfg.get("symbols"),
+                    "side": cfg.get("side", "long-only"), "funding": cfg.get("funding"),
+                    "train_days": cfg.get("train_days"), "test_days": cfg.get("test_days"),
+                    "data_start": ser(r.data_start), "data_end": ser(r.data_end),
+                    "fee_bps": ser(r.fee_bps), "slippage_bps": ser(r.slippage_bps),
+                    "summary": m.get("summary"), "passed": m.get("passed"),
+                    "failures": m.get("failures"), "windows": m.get("windows"),
+                    "oos_funding_paid": m.get("oos_funding_paid"),
+                    "completed_at": ser(r.completed_at)})
+    return {"runs": out}

@@ -238,3 +238,12 @@ def test_one_day_timeframe_accepted_and_others_rejected(conn: Connection,
     q(conn, sql, pair=world["pair"], tf="1d")
     violates(conn, sql.replace("'2026-01-01Z'", "'2026-01-02Z'"), "23514",
              pair=world["pair"], tf="1w")
+
+
+def test_every_strategy_in_code_has_a_disabled_row(migrated_engine: Engine) -> None:
+    from nexus_strategies import ALL_STRATEGIES
+    from sqlalchemy import text as _text
+
+    with migrated_engine.connect() as c:
+        rows = dict(c.execute(_text("SELECT code, is_enabled FROM strategies")).all())
+    assert set(ALL_STRATEGIES) <= set(rows)

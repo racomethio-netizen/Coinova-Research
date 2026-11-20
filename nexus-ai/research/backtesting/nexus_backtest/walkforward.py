@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import itertools
 import math
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -78,7 +79,11 @@ def _slice(df: pd.DataFrame, lo: pd.Timestamp, hi: pd.Timestamp) -> pd.DataFrame
 
 def walk_forward(data: dict[str, dict[str, pd.DataFrame]], strategy_cls: type[Strategy], *,
                  costs: CostModel | None = None, train_days: int = 180, test_days: int = 60,
-                 min_train_trades: int = 15, gates: Gates | None = None) -> WalkForwardReport:
+                 min_train_trades: int = 15, gates: Gates | None = None,
+                 adjust: Callable[[pd.DataFrame, str], pd.DataFrame] | None = None
+                 ) -> WalkForwardReport:
+    """``adjust(study, symbol)`` may correct per-trade returns (e.g. futures funding)
+    before any parameter choice, so train and test see the same cost model."""
     costs = costs or CostModel()
     gates = gates or Gates()
     combos = grid(strategy_cls)
@@ -88,6 +93,8 @@ def walk_forward(data: dict[str, dict[str, pd.DataFrame]], strategy_cls: type[St
         strat = strategy_cls(**params, round_trip_cost=costs.round_trip)
         parts = [study_signals(frames, strat, costs=costs).assign(symbol=sym)
                  for sym, frames in data.items()]
+        if adjust is not None:
+            parts = [adjust(part, sym) for part, sym in zip(parts, data, strict=True)]
         studies.append(pd.concat(parts).sort_values("entry_time"))
     any_frames = next(iter(data.values()))
     idx = any_frames["5m"].index

@@ -305,3 +305,27 @@ def test_loss_streak_reset_needs_totp(client: TestClient) -> None:
     body["totp"] = _code(secret, 1)
     ok = client.post("/api/v1/risk/streak/reset", json=body, headers=CSRF)
     assert ok.status_code == 200 and ok.json()["reset_at"]
+
+
+def test_backtests_listing_filters_by_market(client: TestClient, migrated_engine: Engine) -> None:
+    from datetime import UTC, datetime
+    from decimal import Decimal
+
+    with transaction(make_session_factory(migrated_engine)) as s:
+        t = datetime(2026, 1, 1, tzinfo=UTC)
+        for mkt in ("spot", "futures"):
+            s.add(models.BacktestRun(
+                status="succeeded", is_walk_forward=True,
+                config={"market": mkt, "symbols": ["BTCUSDT"]} if mkt == "futures" else {},
+                data_start=t, data_end=datetime(2026, 2, 1, tzinfo=UTC), fee_bps=Decimal(5),
+                slippage_bps=Decimal(2),
+                metrics={"summary": {"n": 3}, "passed": False, "failures": ["x"],
+                         "windows": [{"test_start": "2026-01-01", "test": {"n": 3}}]}))
+    login(client)
+    allr = client.get("/api/v1/backtests").json()["runs"]
+    fut = client.get("/api/v1/backtests?market=futures").json()["runs"]
+    assert {r["market"] for r in allr} == {"spot", "futures"}
+    assert len(fut) == 1 and fut[0]["symbols"] == ["BTCUSDT"] and fut[0]["windows"][0]["test"]["n"] == 3
+    with migrated_engine.begin() as conn:
+        from sqlalchemy import text
+        conn.execute(text("DELETE FROM backtest_runs"))
