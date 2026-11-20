@@ -385,7 +385,7 @@ class CredentialBody(BaseModel):
     api_secret: str = Field(min_length=8, max_length=8192)
     withdrawals_disabled_confirmed: bool
     totp: str = Field(min_length=6, max_length=6)
-    environment: Literal["testnet", "production"] = "testnet"
+    environment: Literal["testnet", "demo", "production"] = "testnet"
     markets: list[Market] = Field(default_factory=lambda: list[Market](["futures"]),
                                   min_length=1, max_length=2)
 
@@ -404,7 +404,7 @@ async def add_credential(body: CredentialBody, s: Session = Depends(db), redis: 
     cipher = CredentialCipher(ring)
     cred = models.ExchangeCredential(
         user_id=viewer.user.id, exchange_id=repo.exchange_id(s, body.exchange), label=body.label,
-        environment="sandbox" if body.environment == "testnet" else "production",
+        environment={"testnet": "sandbox", "demo": "demo"}.get(body.environment, "production"),
         api_key_encrypted=b"pending", api_secret_encrypted=b"pending",
         key_fingerprint=key_fingerprint(body.api_key), encryption_key_id=ring.primary_id,
         # Owner attestation; exchanges with an API check are re-verified in Phase 3 tooling.
@@ -431,7 +431,7 @@ def _cred_view(s: Session, c: models.ExchangeCredential) -> dict[str, Any]:
     ex = s.get(models.Exchange, c.exchange_id)
     perms = c.permissions or {}
     return {"id": c.id, "exchange": ex.code if ex else None, "label": c.label,
-            "environment": "testnet" if c.environment == "sandbox" else "production",
+            "environment": {"sandbox": "testnet", "demo": "demo"}.get(c.environment, "production"),
             "markets": perms.get("markets", []), "fingerprint": c.key_fingerprint,
             "created_at": ser(c.created_at), "last_verified_at": ser(c.last_verified_at),
             "last_check": perms.get("last_check")}

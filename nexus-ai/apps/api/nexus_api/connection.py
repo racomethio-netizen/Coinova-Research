@@ -41,9 +41,9 @@ def explain(exc: BaseException) -> str:
     return f"{type(exc).__name__}{detail}"
 
 
-async def probe_futures(api_key: str, secret: str, *, testnet: bool,
+async def probe_futures(api_key: str, secret: str, *, environment: str,
                         cafile: str | None = None) -> dict[str, Any]:
-    transport = CcxtFuturesTransport(api_key, secret, cafile=cafile, testnet=testnet)
+    transport = CcxtFuturesTransport(api_key, secret, cafile=cafile, environment=environment)
     try:
         adapter = BinanceFuturesAdapter(transport)
         await adapter.ping()
@@ -60,7 +60,7 @@ async def probe_futures(api_key: str, secret: str, *, testnet: bool,
         await transport.close()
 
 
-async def probe_spot(api_key: str, secret: str, *, testnet: bool,
+async def probe_spot(api_key: str, secret: str, *, environment: str,
                      cafile: str | None = None) -> dict[str, Any]:
     config: dict[str, Any] = {"apiKey": api_key, "secret": secret, "enableRateLimit": True,
                               "timeout": 10_000, "options": {"adjustForTimeDifference": True},
@@ -68,14 +68,16 @@ async def probe_spot(api_key: str, secret: str, *, testnet: bool,
     if cafile:
         config["cafile"] = cafile
     client = ccxt_async.binance(config)
-    if testnet:
+    if environment == "demo":
+        client.enable_demo_trading(True)
+    elif environment == "testnet":
         client.set_sandbox_mode(True)
     try:
         bal = await client.fetch_balance()
         totals = {k: v for k, v in (bal.get("total") or {}).items() if v}
         result: dict[str, Any] = {"ok": True, "assets_with_balance": len(totals),
                                   "usdt_total": str(Decimal(str(totals.get("USDT", 0))))}
-        if not testnet:
+        if environment == "production":
             # Production only: refuse keys that can withdraw.
             restrictions = await client.sapi_get_account_apirestrictions()
             if restrictions.get("enableWithdrawals"):
@@ -90,6 +92,10 @@ async def probe_spot(api_key: str, secret: str, *, testnet: bool,
         await client.close()
 
 
+# Stored value -> name used by transports and shown to the operator.
+ENV_NAMES = {"production": "production", "sandbox": "testnet", "demo": "demo"}
+ENV_STORED = {v: k for k, v in ENV_NAMES.items()}
+
 Prober = Callable[..., Awaitable[dict[str, Any]]]
 PROBES: dict[str, Prober] = {"futures": probe_futures, "spot": probe_spot}
 
@@ -98,10 +104,9 @@ async def probe(api_key: str, secret: str, *, environment: str, markets: list[st
                 cafile: str | None = None,
                 probes: dict[str, Prober] | None = None) -> dict[str, Any]:
     table = probes or PROBES
-    testnet = environment == "sandbox"
-    out: dict[str, Any] = {"checked_at": utcnow().isoformat(),
-                           "environment": "testnet" if testnet else "production"}
+    name = ENV_NAMES.get(environment, environment)
+    out: dict[str, Any] = {"checked_at": utcnow().isoformat(), "environment": name}
     for market in markets:
-        out[market] = await table[market](api_key, secret, testnet=testnet, cafile=cafile)
+        out[market] = await table[market](api_key, secret, environment=name, cafile=cafile)
     out["ok"] = all(out[m]["ok"] for m in markets)
     return out

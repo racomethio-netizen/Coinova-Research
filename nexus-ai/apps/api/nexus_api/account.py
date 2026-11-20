@@ -55,9 +55,9 @@ def _sum(rows: list[dict[str, Any]]) -> str:
     return str(sum((Decimal(r["income"]) for r in rows), Decimal(0)))
 
 
-async def futures_snapshot(api_key: str, secret: str, *, testnet: bool,
+async def futures_snapshot(api_key: str, secret: str, *, environment: str,
                            cafile: str | None = None) -> dict[str, Any]:
-    transport = CcxtFuturesTransport(api_key, secret, cafile=cafile, testnet=testnet)
+    transport = CcxtFuturesTransport(api_key, secret, cafile=cafile, environment=environment)
     try:
         ad = BinanceFuturesAdapter(transport)
         acct = await ad.account()
@@ -85,7 +85,7 @@ async def futures_snapshot(api_key: str, secret: str, *, testnet: bool,
         await transport.close()
 
 
-async def spot_snapshot(api_key: str, secret: str, *, testnet: bool, pairs: list[str],
+async def spot_snapshot(api_key: str, secret: str, *, environment: str, pairs: list[str],
                         cafile: str | None = None) -> dict[str, Any]:
     config: dict[str, Any] = {"apiKey": api_key, "secret": secret, "enableRateLimit": True,
                               "timeout": 10_000, "aiohttp_trust_env": True,
@@ -94,7 +94,9 @@ async def spot_snapshot(api_key: str, secret: str, *, testnet: bool, pairs: list
     if cafile:
         config["cafile"] = cafile
     client = ccxt_async.binance(config)
-    if testnet:
+    if environment == "demo":
+        client.enable_demo_trading(True)
+    elif environment == "testnet":
         client.set_sandbox_mode(True)
     try:
         bal = await client.fetch_balance()
@@ -128,7 +130,9 @@ async def account_view(market: str, s: Session, user_id: int, settings: Settings
     if cred is None:
         return {"connected": False, "market": market,
                 "message": f"No Binance key with {market} access is connected."}
-    environment = "testnet" if cred.environment == "sandbox" else "production"
+    from nexus_api.connection import ENV_NAMES
+
+    environment = ENV_NAMES.get(cred.environment, cred.environment)
     base = {"connected": True, "market": market, "environment": environment,
             "label": cred.label, "fingerprint": cred.key_fingerprint}
     cache_key = f"nexus:account:{market}:{cred.id}"
@@ -138,10 +142,10 @@ async def account_view(market: str, s: Session, user_id: int, settings: Settings
     api_key, secret = decrypt(cred, settings)
     try:
         if market == "futures":
-            data = await futures_snapshot(api_key, secret, testnet=environment == "testnet",
+            data = await futures_snapshot(api_key, secret, environment=environment,
                                           cafile=settings.extra_ca_file)
         else:
-            data = await spot_snapshot(api_key, secret, testnet=environment == "testnet",
+            data = await spot_snapshot(api_key, secret, environment=environment,
                                        pairs=list(settings.trading_pairs),
                                        cafile=settings.extra_ca_file)
         payload: dict[str, Any] = {"ok": True, "data": data, "fetched_at": utcnow().isoformat()}

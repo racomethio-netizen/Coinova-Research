@@ -24,12 +24,32 @@ async def test_probe_combines_markets_and_marks_testnet() -> None:
     calls: list[tuple[str, bool]] = []
 
     async def ok(name: str):  # type: ignore[no-untyped-def]
-        async def f(api_key: str, secret: str, *, testnet: bool, cafile: str | None = None):  # type: ignore[no-untyped-def]
-            calls.append((name, testnet))
+        async def f(api_key: str, secret: str, *, environment: str, cafile: str | None = None):  # type: ignore[no-untyped-def]
+            calls.append((name, environment))
             return {"ok": name == "futures"}
         return f
 
     res = await probe("k", "s", environment="sandbox", markets=["futures", "spot"],
                       probes={"futures": await ok("futures"), "spot": await ok("spot")})
     assert res["environment"] == "testnet" and res["ok"] is False
-    assert calls == [("futures", True), ("spot", True)]
+    assert calls == [("futures", "testnet"), ("spot", "testnet")]
+
+
+async def test_probe_maps_demo_environment() -> None:
+    seen: list[str] = []
+
+    async def f(api_key: str, secret: str, *, environment: str, cafile: str | None = None):  # type: ignore[no-untyped-def]
+        seen.append(environment)
+        return {"ok": True}
+
+    res = await probe("k", "s", environment="demo", markets=["futures"], probes={"futures": f})
+    assert res["environment"] == "demo" and seen == ["demo"]
+
+
+def test_transport_demo_hosts() -> None:
+    from nexus_exchange.binance_futures_transport import CcxtFuturesTransport
+
+    t = CcxtFuturesTransport("k" * 32, "s" * 48, environment="demo")
+    assert t._client.urls["api"]["fapiPrivateV2"].startswith("https://demo-fapi.binance.com")
+    t2 = CcxtFuturesTransport("k" * 32, "s" * 48, environment="testnet")
+    assert t2._client.urls["api"]["fapiPrivateV2"].startswith("https://testnet.binancefuture.com")

@@ -89,7 +89,8 @@ class Exchange(Base):
 class ExchangeCredential(Base):
     __tablename__ = "exchange_credentials"
     __table_args__ = (
-        CheckConstraint(in_list("environment", ("production", "sandbox")), name="environment_valid"),
+        CheckConstraint(in_list("environment", ("production", "sandbox", "demo")),
+                        name="environment_valid"),
         UniqueConstraint("user_id", "exchange_id", "label"),
         # At most one usable credential per user/exchange/environment.
         Index(

@@ -13,8 +13,12 @@ import ccxt.async_support as ccxt_async
 class CcxtFuturesTransport:
     def __init__(
         self, api_key: str, secret: str, *, timeout_ms: int = 10_000, cafile: str | None = None,
-        testnet: bool = False,
+        environment: str = "production",
     ) -> None:
+        """``environment``: "production", "testnet" (testnet.binancefuture.com) or "demo"
+        (Binance Demo Trading, demo-fapi.binance.com). Test funds only outside production."""
+        if environment not in ("production", "testnet", "demo"):
+            raise ValueError(f"unknown environment {environment!r}")
         config: dict[str, Any] = {
             "apiKey": api_key,
             "secret": secret,
@@ -27,7 +31,9 @@ class CcxtFuturesTransport:
         if cafile:
             config["cafile"] = cafile  # verification stays on
         self._client = ccxt_async.binanceusdm(config)
-        if testnet:
+        if environment == "demo":
+            self._client.enable_demo_trading(True)
+        elif environment == "testnet":
             # testnet.binancefuture.com: real signed API, test funds only. ccxt's
             # set_sandbox_mode() refuses futures since Binance announced Demo Trading as the
             # successor, so the fapi hosts are pointed at the testnet directly.

@@ -9,7 +9,7 @@ import { useApi } from "@/lib/hooks";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
 
-const EMPTY = { label: "testnet", api_key: "", api_secret: "", totp: "" };
+const EMPTY = { label: "demo", api_key: "", api_secret: "", totp: "" };
 
 function CheckResult({ check }: { check: Any }) {
   if (!check) return <p className="text-sm text-muted">Not tested yet.</p>;
@@ -46,7 +46,7 @@ export default function ConnectionPage() {
   const me = useApi<Any>("/auth/me");
   const creds = useApi<{ credentials: Any[] }>("/security/credentials");
   const [form, setForm] = useState(EMPTY);
-  const [environment, setEnvironment] = useState<"testnet" | "production">("testnet");
+  const [environment, setEnvironment] = useState<"demo" | "testnet" | "production">("demo");
   const [markets, setMarkets] = useState<string[]>(["futures"]);
   const [noWithdraw, setNoWithdraw] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -75,7 +75,7 @@ export default function ConnectionPage() {
               <div key={c.id} className="rounded-xl border border-line p-4">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <span className="font-medium">{c.label}</span>
-                  <Badge tone={c.environment === "production" ? "warn" : "muted"}>{c.environment}</Badge>
+                  <Badge tone={c.environment === "production" ? "warn" : "info"}>{c.environment}</Badge>
                   {c.markets.map((m: string) => <Badge key={m}>{m}</Badge>)}
                   <span className="num text-xs text-muted">key …{c.fingerprint}</span>
                 </div>
@@ -103,14 +103,14 @@ export default function ConnectionPage() {
             </p>
           )}
           <ul className="mb-3 list-disc space-y-1 pl-5 text-xs text-muted">
-            <li>Testnet keys come from Binance&apos;s futures testnet and use test funds only. Use testnet first.</li>
+            <li>Demo keys come from Binance Demo Trading (demo.binance.com, profile → API Management) and use test funds only. Start with demo.</li>
             <li>Production keys: enable Reading plus only the trading permissions you choose. Withdrawals must be DISABLED, and restrict the key to your server&apos;s IP.</li>
             <li>Binance refuses some server locations (HTTP 451). The test result says so if that happens. NEXUS does not work around it.</li>
           </ul>
           <fieldset className="mb-3">
             <legend className="mb-1 text-xs text-muted">Environment</legend>
             <div className="flex gap-4 text-sm">
-              {(["testnet", "production"] as const).map((e) => (
+              {(["demo", "testnet", "production"] as const).map((e) => (
                 <label key={e} className="flex items-center gap-2">
                   <input type="radio" name="env" checked={environment === e} onChange={() => setEnvironment(e)} /> {e}
                 </label>

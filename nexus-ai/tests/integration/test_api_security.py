@@ -217,9 +217,9 @@ def test_binance_connection_add_list_test_disconnect(client: TestClient,
 
     seen: dict[str, Any] = {}
 
-    async def fake_futures(api_key: str, secret: str, *, testnet: bool,
+    async def fake_futures(api_key: str, secret: str, *, environment: str,
                            cafile: str | None = None) -> dict[str, Any]:
-        seen.update(api_key=api_key, secret=secret, testnet=testnet)
+        seen.update(api_key=api_key, secret=secret, environment=environment)
         return {"ok": True, "wallet_balance_usdt": "15000", "position_mode": "one-way"}
 
     monkeypatch.setitem(connection.PROBES, "futures", fake_futures)
@@ -242,7 +242,8 @@ def test_binance_connection_add_list_test_disconnect(client: TestClient,
     t = client.post(f"/api/v1/security/credentials/{cred_id}/test", headers=CSRF)
     assert t.status_code == 200, t.text
     assert t.json()["result"]["ok"] is True and t.json()["result"]["environment"] == "testnet"
-    assert seen == {"api_key": "TESTNET-KEY-0001", "secret": "TESTNET-SECRET-0002", "testnet": True}
+    assert seen == {"api_key": "TESTNET-KEY-0001", "secret": "TESTNET-SECRET-0002",
+                    "environment": "testnet"}
     assert "TESTNET-SECRET" not in t.text
     row = client.get("/api/v1/security/credentials").json()["credentials"][0]
     assert row["last_check"]["futures"]["wallet_balance_usdt"] == "15000"
@@ -261,11 +262,11 @@ def test_live_account_views(client: TestClient, monkeypatch: pytest.MonkeyPatch)
     r = client.get("/api/v1/account/futures")
     assert r.status_code == 200 and r.json()["connected"] is False
 
-    calls: list[bool] = []
+    calls: list[str] = []
 
-    async def fake_futures(api_key: str, secret: str, *, testnet: bool,
+    async def fake_futures(api_key: str, secret: str, *, environment: str,
                            cafile: str | None = None) -> dict[str, Any]:
-        calls.append(testnet)
+        calls.append(environment)
         assert (api_key, secret) == ("TESTNET-KEY-0001", "TESTNET-SECRET-0002")
         return {"account": {"wallet_balance": "15000"}, "positions": [], "open_orders": [],
                 "last_7_days": {"realized_pnl": "0", "funding": "0", "commission": "0"}}
@@ -281,7 +282,7 @@ def test_live_account_views(client: TestClient, monkeypatch: pytest.MonkeyPatch)
     assert r["data"]["account"]["wallet_balance"] == "15000"
     assert "TESTNET-SECRET" not in client.get("/api/v1/account/futures").text
     assert client.get("/api/v1/account/futures").json()["cached"] is True
-    assert calls == [True]  # cached: Binance called once
+    assert calls == ["testnet"]  # cached: Binance called once
     spot = client.get("/api/v1/account/spot").json()
     assert spot["connected"] is False  # key has futures access only
     assert client.get("/api/v1/account/margin").status_code == 422
@@ -329,3 +330,15 @@ def test_backtests_listing_filters_by_market(client: TestClient, migrated_engine
     with migrated_engine.begin() as conn:
         from sqlalchemy import text
         conn.execute(text("DELETE FROM backtest_runs"))
+
+
+
+def test_demo_key_is_stored_and_listed_as_demo(client: TestClient) -> None:
+    login(client)
+    secret = _enable_totp(client)
+    body = {"exchange": "binance", "label": "demo", "api_key": "DEMO-KEY-000001",
+            "api_secret": "DEMO-SECRET-0002", "withdrawals_disabled_confirmed": True,
+            "totp": _code(secret, 1), "environment": "demo", "markets": ["futures"]}
+    assert client.post("/api/v1/security/credentials", json=body, headers=CSRF).status_code == 200
+    row = client.get("/api/v1/security/credentials").json()["credentials"][0]
+    assert row["environment"] == "demo"
