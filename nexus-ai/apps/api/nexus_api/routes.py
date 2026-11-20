@@ -541,3 +541,45 @@ async def live_account(market: Literal["spot", "futures"], s: Session = Depends(
             return {"connected": False, "market": market, "message": "No owner account."}
         owner_id = owner.id
     return await account_view(market, s, owner_id, settings, redis)
+
+
+TELEGRAM_EVENTS = [
+    ("signal", "New trading opportunity (signal accepted or rejected)"),
+    ("order_submitted", "Trade opened (order submitted and confirmed)"),
+    ("take_profit", "Take-profit reached"), ("stop_loss", "Stop-loss triggered"),
+    ("risk_warning", "Risk limit warning or limit reached"),
+    ("exchange_disconnected", "Exchange disconnected"), ("exchange_connected", "Exchange reconnected"),
+    ("emergency_shutdown", "Emergency shutdown / kill switch"),
+    ("order_state_unknown", "Order state unknown (needs reconciliation)"),
+    ("system_alert", "System alerts (bot started, stopped, services down)"),
+    ("daily_report", "Daily trading report"),
+]
+
+
+@router.get("/telegram", dependencies=[Depends(owner)])
+def telegram_status(settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Configuration status only: the bot token is never returned."""
+    chat = settings.telegram_chat_id or ""
+    return {"configured": bool(settings.telegram_bot_token and chat),
+            "chat_id": (chat[:3] + "…" + chat[-2:]) if len(chat) > 6 else (chat and "set"),
+            "events": [{"type": t, "description": d} for t, d in TELEGRAM_EVENTS]}
+
+
+@router.post("/telegram/test", dependencies=[Depends(owner)])
+async def telegram_test(s: Session = Depends(db), viewer: Viewer = Depends(current_viewer),
+                        settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Send one real test message through the Telegram Bot API."""
+    from nexus_notify.telegram import TelegramClient
+
+    if not (settings.telegram_bot_token and settings.telegram_chat_id):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            "Telegram is not configured: set NEXUS_TELEGRAM_BOT_TOKEN and "
+                            "NEXUS_TELEGRAM_CHAT_ID on the server")
+    client = TelegramClient(settings.telegram_bot_token.get_secret_value(), settings.telegram_chat_id)
+    try:
+        result = await client.send("✅ <b>NEXUS AI</b>: test message from the dashboard.")
+    finally:
+        await client.close()
+    repo.record_audit(s, actor=viewer.actor, action="telegram_test", user_id=viewer.user.id,
+                      details={"ok": result.ok})
+    return {"ok": result.ok, "error": result.error}

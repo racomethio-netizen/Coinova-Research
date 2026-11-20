@@ -11,7 +11,7 @@ export const NAV: [string, string][] = [
   ["/markets/", "Live markets"], ["/signals/", "AI signals"], ["/positions/", "Open positions"],
   ["/orders/", "Order history"], ["/trades/", "Trade history"], ["/performance/", "Performance"],
   ["/strategies/", "Strategies"], ["/models/", "AI models"], ["/risk/", "Risk management"],
-  ["/connection/", "Binance connection"], ["/system/", "System"], ["/security/", "Security"],
+  ["/connection/", "Binance connection"], ["/telegram/", "Telegram"], ["/system/", "System"], ["/security/", "Security"],
 ];
 
 function ModeBanner() {

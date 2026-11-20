@@ -285,3 +285,11 @@ def test_live_account_views(client: TestClient, monkeypatch: pytest.MonkeyPatch)
     spot = client.get("/api/v1/account/spot").json()
     assert spot["connected"] is False  # key has futures access only
     assert client.get("/api/v1/account/margin").status_code == 422
+
+
+def test_telegram_status_and_test_without_config(client: TestClient) -> None:
+    login(client)
+    r = client.get("/api/v1/telegram").json()
+    assert r["configured"] is False and any(e["type"] == "daily_report" for e in r["events"])
+    t = client.post("/api/v1/telegram/test", headers=CSRF)
+    assert t.status_code == 400 and "not configured" in t.text

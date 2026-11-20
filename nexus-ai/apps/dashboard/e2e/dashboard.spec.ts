@@ -9,7 +9,7 @@ const PAGES: [string, string][] = [
   ["/orders/", "Order history"], ["/trades/", "Trade history"], ["/performance/", "Performance analytics"],
   ["/strategies/", "Strategy configuration"], ["/models/", "AI model monitoring"],
   ["/risk/", "Risk management"], ["/system/", "System monitoring"], ["/security/", "Security settings"],
-  ["/connection/", "Binance connection"], ["/spot/", "Spot trading"], ["/futures/", "Futures trading"],
+  ["/connection/", "Binance connection"], ["/spot/", "Spot trading"], ["/futures/", "Futures trading"], ["/telegram/", "Telegram settings"],
 ];
 
 async function login(page: Page) {
