@@ -227,3 +227,6 @@ trading on Render can use live data once background workers are approved.
   to -0.53% per trade, profit factor 0.31-0.57). Copied those results into production
   (is_enabled stays false). A 120-day run gives 0 windows and was not used. The page now
   says why Enable is locked.
+* Telegram configured on nexus-ai-fra by the owner (token and chat ID set in Render, never
+  in the repo or chat). Notifier runs as the third inline worker; owner confirmed the test
+  message arrived (2026-11-21).
