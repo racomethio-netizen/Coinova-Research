@@ -284,3 +284,24 @@ trading on Render can use live data once background workers are approved.
   stop exits floor at MAX_EXIT_SLIPPAGE); measured per trade in reports.
 * Tests: 519 pass. Next: Phase 3 (agents, trade proposals, independent Risk Manager
   verdict, trade review).
+
+## 2026-11-21: Phase 3 (agents, proposals, Risk Manager, trade review)
+
+* `services/agents/nexus_agents` (deterministic, no LLM in the decision path):
+  market intelligence, technical (15m/1h/4h/1d: structure, EMA stack, MACD, RSI, VWAP,
+  S/R, volume), quant (regime, volatility, out-of-sample EV of strategies in the CURRENT
+  regime), derivatives (funding, OI; basis/liquidations reported as not collected),
+  sentiment (X + news risk), portfolio (capacity, duplicates).
+* Proposal: direction, entry, stop, TP1 (1R partial) / TP2 (2R), R:R, size and risk % via
+  the real sizing function, regime, validated strategy, technical and sentiment evidence,
+  confidence, contradicting evidence, reasons to reject.
+* Risk Manager: rule-only, independent of agent opinions; any failed rule = REJECT =
+  final "NO TRADE" (kill switch, news unknown/high, X block, regime, no validated
+  strategy, R:R < 2, sizing, stale data, portfolio limits, NO TRADE rules, short on spot).
+* Trade review: good/bad trade by PROCESS, good/poor execution (slippage vs 2x assumed),
+  strategy failure, risk failure (loss > 1.5x planned), rule violation.
+* API: GET /agents/proposals, GET /agents/reviews. Page: "AI proposals". Verified locally
+  with live Binance data: both pairs NO TRADE with explicit reasons (regime high_vol,
+  no validated strategy, news unknown locally).
+* Does not change trading behaviour. Tests: 531 pass.
+* Next: Phase 4 (paper realism: latency, missed fills, outages; execution reports).

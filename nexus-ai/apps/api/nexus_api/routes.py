@@ -777,23 +777,128 @@ def backtests(market: Literal["all", "spot", "futures"] = "all",
 async def intelligence(redis: Any = Depends(redis_dep),
                        settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
     """Live analysis of the configured pairs from Binance public market data (no orders)."""
+    return await _intelligence(redis, settings)
+
+
+async def _news_risk(redis: Any) -> float | None:
     from nexus_news.service import KEY as NEWS_KEY
 
+    raw = await redis.get(NEWS_KEY)
+    if not raw:
+        return None
+    try:
+        value = json.loads(raw).get("score")
+        return None if value is None else float(value)
+    except (ValueError, AttributeError):
+        return None
+
+
+async def _intelligence(redis: Any, settings: Settings) -> dict[str, Any]:
     from nexus_api.intelligence import market_intelligence
 
-    raw = await redis.get(NEWS_KEY)
-    news = None
-    if raw:
-        try:
-            value = json.loads(raw).get("score")
-            news = None if value is None else float(value)
-        except (ValueError, AttributeError):
-            news = None
     base = settings.binance_public_api_url or "https://api.binance.com/api/v3"
     order_quote = settings.paper_initial_capital * settings.risk.max_asset_concentration
     return await market_intelligence(list(settings.trading_pairs), base, redis=redis,
-                                     news_risk=news, kill_switch=await KillSwitch(redis).is_engaged(),
+                                     news_risk=await _news_risk(redis),
+                                     kill_switch=await KillSwitch(redis).is_engaged(),
                                      order_quote=order_quote)
+
+
+@router.get("/agents/proposals")
+async def agent_proposals(s: Session = Depends(db), redis: Any = Depends(redis_dep),
+                          settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """One explained proposal per trading pair: six agents, then the independent Risk
+    Manager. Advisory only: nothing here places orders."""
+    from datetime import UTC
+    from datetime import datetime as _dt
+
+    from nexus_agents import Context, build_proposal
+    from nexus_social.service import RISK as X_RISK
+    from nexus_social.service import SNAPSHOT as X_SNAPSHOT
+
+    intel = await _intelligence(redis, settings)
+    markets = {str(r.get("symbol")): r for r in intel.get("pairs") or []}
+    strategies = [{"code": st.code, "enabled": st.is_enabled,
+                   "validation": (st.parameters or {}).get("validation") or {}}
+                  for st in s.scalars(select(models.Strategy).order_by(models.Strategy.id))]
+    p = _portfolio(s, "paper")
+    snap = None if p is None else s.scalar(select(models.PerformanceSnapshot).where(
+        models.PerformanceSnapshot.portfolio_id == p.id)
+        .order_by(desc(models.PerformanceSnapshot.captured_at)).limit(1))
+    held = [] if p is None else list(s.scalars(select(models.Position.base_asset).where(
+        models.Position.portfolio_id == p.id, models.Position.status == "open",
+        models.Position.quantity > 0)))
+    equity = snap.equity if snap else settings.paper_initial_capital
+    portfolio = {"equity": str(equity), "cash": str(snap.cash if snap else equity),
+                 "exposure": str(snap.exposure if snap else 0), "open_positions": len(held),
+                 "held_assets": held, "source": "latest paper snapshot" if snap else
+                 "initial paper capital (no snapshot yet)"}
+    raw_x = await redis.get(X_SNAPSHOT)
+    xsnap = json.loads(raw_x) if raw_x else {}
+    raw_blocks = await redis.get(X_RISK)
+    blocks = (json.loads(raw_blocks).get("blocks") or {}) if raw_blocks else {}
+    kill = await _kill_status(s, redis) is not None
+    news = await _news_risk(redis)
+    now = _dt.now(UTC)
+    out = []
+    for pair in settings.trading_pairs:
+        coin = pair.split("/")[0]
+        ctx = Context(
+            symbol=pair, market=markets.get(pair), strategies=strategies, portfolio=portfolio,
+            risk=settings.risk, news_risk=news, news_threshold=settings.news_block_threshold,
+            kill_switch=kill, now=now,
+            x_coin=next((c for c in xsnap.get("coins") or [] if c.get("coin") == coin), None),
+            x_alerts=[a for a in xsnap.get("alerts") or [] if a.get("coin") in (coin, "MARKET")],
+            x_block=blocks.get(coin) or blocks.get("MARKET"),
+            fee_rate=settings.paper_fee_bps / 10_000,
+            slippage_rate=settings.paper_slippage_bps / 10_000,
+            futures_enabled=settings.futures_enabled)
+        out.append(build_proposal(ctx))
+    return {"generated_at": now.isoformat(), "mode": "paper", "portfolio": portfolio,
+            "proposals": out,
+            "disclaimer": "Advisory analysis only. No guaranteed profits; 'no trade' is a "
+                          "valid decision. Orders are placed only by the trader after the "
+                          "same gates pass again."}
+
+
+@router.get("/agents/reviews")
+def agent_reviews(mode: Mode = "paper", s: Session = Depends(db),
+                  settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Process-based review of the last 50 closed trades."""
+    from nexus_agents import review_trade
+
+    p = _portfolio(s, mode)
+    if p is None:
+        return {"mode": mode, "reviews": [], "summary": {}}
+    rows = s.execute(select(models.Position, models.TradingPair.symbol)
+                     .join(models.TradingPair, models.TradingPair.id == models.Position.pair_id)
+                     .where(models.Position.portfolio_id == p.id,
+                            models.Position.status == "closed")
+                     .order_by(desc(models.Position.closed_at)).limit(50)).all()
+
+    def order_dict(o: models.Order) -> dict[str, Any]:
+        return {"expected_price": ser(o.expected_price),
+                "average_fill_price": ser(o.average_fill_price),
+                "filled_amount": ser(o.filled_amount), "details": o.details or {}}
+
+    reviews = []
+    for pos, sym in rows:
+        orders = s.scalars(select(models.Order).where(models.Order.position_id == pos.id)
+                           .order_by(models.Order.id)).all()
+        entry = next((o for o in orders if o.purpose == "entry"), None)
+        if entry is None and pos.entry_order_id:
+            entry = s.get(models.Order, pos.entry_order_id)
+        reviews.append(review_trade(
+            {"id": pos.id, "symbol": sym, "realized_pnl": ser(pos.realized_pnl),
+             "exit_reason": pos.exit_reason, "closed_at": ser(pos.closed_at)},
+            order_dict(entry) if entry else None,
+            [order_dict(o) for o in orders if o.purpose == "exit"],
+            slippage_bps_assumed=settings.paper_slippage_bps))
+    summary: dict[str, int] = {}
+    for r in reviews:
+        for lab in r["labels"]:
+            summary[lab] = summary.get(lab, 0) + 1
+    return {"mode": mode, "reviews": reviews, "summary": summary}
 
 
 @router.get("/x/status")

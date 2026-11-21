@@ -434,3 +434,18 @@ def test_kill_switch_state_survives_redis_loss_and_close_needs_confirmation(
     assert ok.status_code == 200 and ok.json()["requested"] is True
     assert client.get("/api/v1/risk/kill-switch/state").json()["modes"]["paper"][
         "close_all_requested"] is True
+
+
+def test_agent_proposals_say_no_trade_without_data_and_reviews_empty(
+        client: TestClient) -> None:
+    login(client)
+    r = client.get("/api/v1/agents/proposals")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["proposals"] and all(p["final_decision"] == "NO TRADE"
+                                     for p in body["proposals"])
+    p = body["proposals"][0]
+    assert p["reasons_to_reject"] and p["risk_manager"]["verdict"] == "REJECT"
+    assert len(p["agents"]) == 6 and "No guaranteed profits" in body["disclaimer"]
+    rev = client.get("/api/v1/agents/reviews").json()
+    assert rev["reviews"] == []
