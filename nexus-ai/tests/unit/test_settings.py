@@ -164,3 +164,15 @@ def test_one_day_timeframe() -> None:
 def test_database_url_accepts_host_style_urls(given: str, expected: str) -> None:
     s = Settings(database_url=given)
     assert s.database_url.get_secret_value() == expected
+
+
+
+def test_cooldown_and_correlation_cannot_be_switched_off() -> None:
+    with pytest.raises(ValidationError):
+        RiskSettings(cooldown_after_stop_minutes=0)
+    with pytest.raises(ValidationError):
+        RiskSettings(correlation_threshold=0.99)
+    with pytest.raises(ValidationError):
+        RiskSettings(max_correlated_exposure="0.6")
+    r = RiskSettings(cooldown_after_stop_minutes=240, correlation_threshold=0.6)
+    assert r.cooldown_after_stop_minutes == 240

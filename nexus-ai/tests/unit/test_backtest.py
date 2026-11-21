@@ -132,3 +132,18 @@ def test_signal_study_matches_engine_rules() -> None:
     Scripted.script = {df.index[0]: ("entry", 95.0, 105.0)}
     st = study_signals({"5m": df}, Scripted(), costs=CostModel(0, 0))
     assert st.outcome.tolist() == ["stop"] and st.ret.iloc[0] == pytest.approx(-0.05)
+
+
+
+def test_regime_breakdown_feeds_allowed_regimes() -> None:
+    import pandas as pd
+    from nexus_backtest.cli import regime_breakdown
+    from nexus_strategies.strategies import allowed_regimes
+
+    rows = [{"ret": 0.01 if i % 3 else -0.004, "win": bool(i % 3), "regime": "trend_up"}
+            for i in range(40)]
+    rows += [{"ret": -0.01, "win": False, "regime": "range"} for _ in range(40)]
+    edges = regime_breakdown(pd.DataFrame(rows))
+    assert set(edges) == {"trend_up", "range"} and edges["trend_up"]["n"] == 40
+    assert allowed_regimes({"s": edges})["s"] == ["trend_up"]
+    assert regime_breakdown(pd.DataFrame(columns=["ret", "win"])) == {}

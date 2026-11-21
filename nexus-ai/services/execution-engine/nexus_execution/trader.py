@@ -387,9 +387,10 @@ class TradingEngine:
         signal_id = self._record_signal(strat_id, sig)
         if signal_id is None:
             return  # already processed (idempotent)
-        news_block = await self._news_block() or await self._x_block(sig.symbol)
-        if news_block is not None:
-            await self._decide(sig, signal_id, "rejected", news_block)
+        block = (await self._news_block() or await self._x_block(sig.symbol)
+                 or self._regime_block(strat_id, sig) or self._cooldown_block(sig.symbol))
+        if block is not None:
+            await self._decide(sig, signal_id, "rejected", block)
             return
         unknown = self._count_unknown()
         snap = RiskSnapshot(
@@ -446,6 +447,10 @@ class TradingEngine:
         if not sizing.approved:
             await self._decide(sig, signal_id, "rejected", f"sizing: {sizing.rejected_reason}")
             return
+        corr = self._correlation_block(sig.symbol, sizing.notional, v.equity)
+        if corr is not None:
+            await self._decide(sig, signal_id, "rejected", corr)
+            return
         alloc = choose_buy_venue(venues, notional=sizing.notional, now=utcnow())
         if alloc.exchange != venue.exchange:
             await self._decide(sig, signal_id, "rejected", f"allocator: {alloc.reason} {alloc.rejected}")
@@ -473,6 +478,85 @@ class TradingEngine:
                            "strategy": sig.strategy, "symbol": sig.symbol,
                            "exchange": venue.exchange, "quantity": str(sizing.quantity),
                            "price": str(price), "stop": str(stop_px), "target": str(target_px)})
+
+    # ------------------------------------------------------------------ Phase 2 gates
+    def _regime_block(self, strat_id: int, sig: Signal) -> str | None:
+        """Trade only in market regimes where this strategy's own out-of-sample edge
+        passed the validation gates (recorded by validate-strategies)."""
+        with transaction(self.factory) as s:
+            row = s.get(models.Strategy, strat_id)
+            val = ((row.parameters if row else None) or {}).get("validation") or {}
+        allowed = val.get("allowed_regimes")
+        if allowed is None:
+            return "no validated regime record for this strategy (re-run validation)"
+        if sig.regime is None:
+            return "market regime unknown"
+        if sig.regime not in allowed:
+            return (f"regime {sig.regime} is outside the strategy's validated regimes "
+                    f"({', '.join(allowed) or 'none'})")
+        return None
+
+    def _cooldown_block(self, symbol: str) -> str | None:
+        """No re-entry into a pair for a while after a LOSING exit of any kind (stop-loss,
+        trailing stop, manual): no revenge trading."""
+        minutes = self.settings.risk.cooldown_after_stop_minutes
+        since = utcnow() - timedelta(minutes=minutes)
+        with transaction(self.factory) as s:
+            closed = s.scalar(
+                select(models.Position.closed_at)
+                .join(models.TradingPair, models.TradingPair.id == models.Position.pair_id)
+                .where(models.Position.portfolio_id == self.portfolio_id,
+                       models.TradingPair.symbol == symbol,
+                       models.Position.status == "closed",
+                       models.Position.realized_pnl < 0,
+                       models.Position.closed_at >= since)
+                .order_by(models.Position.closed_at.desc()).limit(1))
+        if closed is None:
+            return None
+        until = closed + timedelta(minutes=minutes)
+        return (f"cooldown: losing exit on {symbol} at {closed:%H:%M} UTC; "
+                f"no re-entry until {until:%H:%M} UTC")
+
+    def _correlation_block(self, symbol: str, notional: Decimal, equity: Decimal) -> str | None:
+        """Assets that move together count as one exposure. Correlation of 1h returns over
+        the last 30 days; when it cannot be measured it is assumed to be 1 (conservative)."""
+        from nexus_risk.correlation import correlated_exposure_ok
+
+        base, quote = symbol.split("/")
+        with transaction(self.factory) as s:
+            rows = s.execute(
+                select(models.Position.base_asset, models.Position.quantity,
+                       models.Position.avg_entry_price)
+                .where(models.Position.portfolio_id == self.portfolio_id,
+                       models.Position.status == "open", models.Position.quantity > 0)).all()
+        held: dict[str, Decimal] = {}
+        for asset, qty, px in rows:
+            if asset != base:                  # same asset: concentration limit applies
+                held[asset] = held.get(asset, ZERO) + qty * px
+        if not held:
+            return None
+        returns = {}
+        for asset in [base, *held]:
+            try:
+                close = self.frames(self.settings.signal_exchange, f"{asset}/{quote}",
+                                    ("1h",))["1h"]["close"].astype(float)
+                returns[asset] = close.tail(721).pct_change().dropna()
+            except Exception:
+                returns[asset] = None
+        corr: dict[tuple[str, str], float] = {}
+        for asset in held:
+            a, b = returns.get(base), returns.get(asset)
+            rho = None
+            if a is not None and b is not None:
+                joined = a.to_frame("a").join(b.to_frame("b"), how="inner")
+                if len(joined) >= 200:
+                    rho = float(joined["a"].corr(joined["b"]))
+            corr[(base, asset)] = 1.0 if rho is None or rho != rho else rho
+        ok, why = correlated_exposure_ok(
+            new_asset=base, new_notional=notional, equity=equity, held=held,
+            correlations=corr, threshold=self.settings.risk.correlation_threshold,
+            max_fraction=self.settings.risk.max_correlated_exposure)
+        return None if ok else why
 
     async def _news_score(self) -> float | None:
         import json as _json

@@ -267,3 +267,20 @@ trading on Render can use live data once background workers are approved.
   close-all closes a paper position, API state/close confirmation).
 * Next: Phase 2 (regime gate per strategy, correlated exposure, cooldown, fill slippage
   limit).
+
+## 2026-11-21: Phase 2 (risk wiring)
+
+* Regime gate: validate-strategies now records out-of-sample edge per regime
+  (`regime_edges`) and the regimes that pass the same gates (`allowed_regimes`); the
+  trader rejects a signal whose regime is not in that list, or when no record exists.
+  Result on 2 years of Binance data: no strategy passes in ANY regime (all negative);
+  copied to production (all strategies stay disabled). Strategies page shows the table.
+* Correlated exposure (H3): wired; 1h return correlation over 30 days, assumed 1 when it
+  cannot be measured; group cap `max_correlated_exposure` 35% (ceiling 50%), threshold
+  0.7 (bounded 0.5-0.9).
+* Cooldown: no re-entry into a pair for `cooldown_after_stop_minutes` (120, floor 30)
+  after any LOSING exit.
+* Slippage: already bounded at order level (entry IOC limit = ask x (1 + slippage);
+  stop exits floor at MAX_EXIT_SLIPPAGE); measured per trade in reports.
+* Tests: 519 pass. Next: Phase 3 (agents, trade proposals, independent Risk Manager
+  verdict, trade review).

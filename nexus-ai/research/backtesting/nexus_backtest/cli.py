@@ -19,15 +19,23 @@ from nexus_common.logging import configure_logging
 from nexus_config import get_settings
 from nexus_db import make_engine, make_session_factory, models, transaction
 from nexus_strategies import ALL_STRATEGIES
+from nexus_strategies.strategies import allowed_regimes
 from sqlalchemy import select
 
 from nexus_backtest.data import load_frames, load_specs
 from nexus_backtest.engine import BacktestConfig, run_backtest
 from nexus_backtest.metrics import compute_metrics, json_safe
-from nexus_backtest.signals import CostModel
+from nexus_backtest.signals import CostModel, edge_stats
 from nexus_backtest.walkforward import walk_forward
 
 TIMEFRAMES = ["5m", "15m", "1h", "4h", "1d"]
+
+
+def regime_breakdown(oos: pd.DataFrame) -> dict[str, dict[str, float | int | None]]:
+    """Out-of-sample edge statistics per market regime (rows carry the regime at entry)."""
+    if oos.empty or "regime" not in oos:
+        return {}
+    return {str(r): dict(edge_stats(g)) for r, g in oos.groupby("regime") if r is not None}
 
 
 def validate_strategies(exchange: str) -> list[dict[str, object]]:
@@ -41,6 +49,8 @@ def validate_strategies(exchange: str) -> list[dict[str, object]]:
     results = []
     for code, cls in ALL_STRATEGIES.items():
         rep = walk_forward(data, cls, costs=costs)
+        regime_edges = regime_breakdown(rep.oos)
+        regimes_ok = allowed_regimes({code: regime_edges})[code]
         latest_params = next((w["params"] for w in reversed(rep.windows) if w["params"]), None)
         idx = data[settings.trading_pairs[0]]["5m"].index
         metrics = json_safe({"summary": rep.stats, "windows": [
@@ -62,7 +72,8 @@ def validate_strategies(exchange: str) -> list[dict[str, object]]:
                 "params": latest_params if rep.passed else None,
                 "validation": {"passed": rep.passed, "failures": rep.failures,
                                "oos": rep.stats, "validated_at": datetime.now(UTC).isoformat(),
-                               "exchange": exchange}})
+                               "exchange": exchange, "regime_edges": regime_edges,
+                               "allowed_regimes": regimes_ok}})
         results.append({"strategy": code, "passed": rep.passed, "failures": rep.failures,
                         "oos": json_safe(rep.stats)})
     engine.dispose()

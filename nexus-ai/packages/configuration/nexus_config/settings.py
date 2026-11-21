@@ -72,6 +72,7 @@ DEFAULT_WEEKLY_LOSS: Final = Decimal("0.03")
 MAX_DRAWDOWN: Final = Decimal("0.10")
 MAX_OPEN_POSITIONS: Final = 3
 MAX_PORTFOLIO_EXPOSURE: Final = Decimal("0.50")
+MIN_COOLDOWN_AFTER_STOP_MINUTES: Final = 30
 # Futures: Binance only, disabled by default, isolated margin. Leverage never changes
 # position size (size comes from risk); it only sets margin use.
 FUTURES_LEVERAGE_OPTIONS: Final = (2, 3, 4, 5)
@@ -90,6 +91,11 @@ class RiskSettings(BaseModel):
     max_portfolio_exposure: Decimal = MAX_PORTFOLIO_EXPOSURE
     # Max share of equity in a single base asset across all exchanges.
     max_asset_concentration: Decimal = Decimal("0.25")
+    # Assets whose 1h return correlation is >= correlation_threshold count as one exposure.
+    max_correlated_exposure: Decimal = Decimal("0.35")
+    correlation_threshold: float = 0.7
+    # No re-entry into a pair for this long after a losing exit (no revenge trading).
+    cooldown_after_stop_minutes: int = 120
 
     @model_validator(mode="after")
     def _enforce_ceilings(self) -> RiskSettings:
@@ -101,6 +107,7 @@ class RiskSettings(BaseModel):
             ("max_open_positions", self.max_open_positions, MAX_OPEN_POSITIONS),
             ("max_portfolio_exposure", self.max_portfolio_exposure, MAX_PORTFOLIO_EXPOSURE),
             ("max_asset_concentration", self.max_asset_concentration, MAX_PORTFOLIO_EXPOSURE),
+            ("max_correlated_exposure", self.max_correlated_exposure, MAX_PORTFOLIO_EXPOSURE),
         ]
         for name, value, ceiling in checks:
             if value <= 0:
@@ -111,6 +118,12 @@ class RiskSettings(BaseModel):
             raise ValueError("daily_loss_limit cannot exceed weekly_loss_limit")
         if self.weekly_loss_limit > self.max_drawdown:
             raise ValueError("weekly_loss_limit cannot exceed max_drawdown")
+        # Absolute floors: these protections can be tightened, never switched off.
+        if self.cooldown_after_stop_minutes < MIN_COOLDOWN_AFTER_STOP_MINUTES:
+            raise ValueError(f"cooldown_after_stop_minutes must be >= "
+                             f"{MIN_COOLDOWN_AFTER_STOP_MINUTES}")
+        if not 0.5 <= self.correlation_threshold <= 0.9:
+            raise ValueError("correlation_threshold must be between 0.5 and 0.9")
         return self
 
 

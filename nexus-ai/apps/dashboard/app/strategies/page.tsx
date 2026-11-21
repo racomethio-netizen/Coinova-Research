@@ -37,6 +37,15 @@ export default function Strategies() {
                     <div><dt className="text-muted">Profit factor</dt><dd className="num">{num(v.oos?.profit_factor)}</dd></div>
                   </dl>
                   {v.failures?.length > 0 && <ul className="list-disc pl-5 text-xs text-down">{v.failures.map((f: string) => <li key={f}>{f}</li>)}</ul>}
+                  {v.regime_edges && (
+                    <div className="text-xs">
+                      <p className="mb-1 text-muted">By market regime (out-of-sample). Trades only in regimes that pass: <b>{v.allowed_regimes?.length ? v.allowed_regimes.join(", ") : "none"}</b></p>
+                      <table className="w-full"><thead><tr className="text-left text-muted"><th>Regime</th><th>Trades</th><th>Expectancy</th><th>Profit factor</th></tr></thead>
+                        <tbody>{Object.entries(v.regime_edges).map(([r, e]: [string, Any]) => (
+                          <tr key={r}><td>{r}{v.allowed_regimes?.includes(r) ? " ✓" : " ✗"}</td><td className="num">{e.n}</td><td className="num">{pct(e.expectancy, 2)}</td><td className="num">{num(e.profit_factor)}</td></tr>
+                        ))}</tbody></table>
+                    </div>
+                  )}
                   {s.parameters?.params && <pre className="num overflow-x-auto rounded bg-elevated p-2 text-xs">{JSON.stringify(s.parameters.params, null, 1)}</pre>}
                 </div>
               ) : <p className="text-sm text-muted">Not validated yet. Run <code>python -m nexus_backtest.cli validate-strategies</code>.</p>}

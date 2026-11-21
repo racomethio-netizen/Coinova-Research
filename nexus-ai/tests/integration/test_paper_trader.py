@@ -68,6 +68,9 @@ async def engine_setup(migrated_engine: Engine, redis: Any) -> AsyncIterator[tup
     books = BookCache({"binance": adapter}, ttl=0)
     broker = PaperBroker(books.get, taker_fee=D("0.001"), maker_fee=D("0.001"),
                          extra_slippage=D("0.0005"))
+    with transaction(factory) as s:   # validated in trend_up only (Phase 2 regime gate)
+        for st in s.scalars(select(models.Strategy)):
+            st.parameters = {"validation": {"passed": True, "allowed_regimes": ["trend_up"]}}
     eng = TradingEngine(settings, factory, redis, {"binance": adapter}, broker, books)
     # These tests cover order lifecycle, not market analysis: the analysis gate is bypassed
     # here. test_decision_gate_* exercises the real gate, which must refuse without history.
@@ -303,6 +306,7 @@ async def test_loss_streak_reduces_then_pauses_until_owner_reset(
     from nexus_execution.protection import STREAK_RESET_KEY
 
     eng, factory, _, redis = engine_setup
+    eng._cooldown_block = lambda _symbol: None  # type: ignore[method-assign]  # streak only
     pid = eng.bootstrap()
     v = await eng.valuation()
     for m in (40, 30):
@@ -388,3 +392,73 @@ async def test_kill_switch_close_all_positions(engine_setup: tuple[Any, ...]) ->
     with transaction(factory) as s:
         actions = s.scalars(select(models.AuditLog.action)).all()
         assert "kill_switch_positions_closed" in actions
+
+
+
+async def _decision(factory: Any) -> Any:
+    with transaction(factory) as s:
+        sig = s.scalars(select(models.TradingSignal).order_by(models.TradingSignal.id.desc())
+                        ).first()
+        assert sig is not None
+        return sig.status, sig.rejection_reason or ""
+
+
+async def test_regime_outside_validated_regimes_is_rejected(
+        engine_setup: tuple[Any, ...]) -> None:
+    eng, factory, _, _ = engine_setup
+    eng.bootstrap()
+    v = await eng.valuation()
+    day0, week0, peak = eng.period_starts(v.equity, utcnow())
+    sig = Signal("momentum", "BTC/USDT", "15m", datetime(2026, 6, 1, 12, tzinfo=UTC), 60_000,
+                 59_000, 62_000, 0.6, "range", {"params": {}})
+    await eng.handle_signal(1, sig, v, day0, week0, peak)
+    status, reason = await _decision(factory)
+    assert status == "rejected" and "outside the strategy's validated regimes" in reason
+    with transaction(factory) as s:          # no regime record at all -> rejected too
+        st = s.get(models.Strategy, 1)
+        assert st is not None
+        st.parameters = {"validation": {"passed": True}}
+    sig2 = Signal("momentum", "BTC/USDT", "15m", datetime(2026, 6, 1, 13, tzinfo=UTC), 60_000,
+                  59_000, 62_000, 0.6, "trend_up", {"params": {}})
+    await eng.handle_signal(1, sig2, v, day0, week0, peak)
+    status, reason = await _decision(factory)
+    assert status == "rejected" and "no validated regime record" in reason
+
+
+async def test_cooldown_after_stop_loss_blocks_reentry(engine_setup: tuple[Any, ...]) -> None:
+    eng, factory, state, _ = engine_setup
+    await _enter(eng, factory)
+    state.update(bid=58_900.0, ask=58_901.0)
+    await eng.cycle()                                    # stop-loss exit
+    state.update(bid=59_999.0, ask=60_000.0)
+    v = await eng.valuation()
+    day0, week0, peak = eng.period_starts(v.equity, utcnow())
+    later = Signal("momentum", "BTC/USDT", "15m", datetime(2026, 6, 1, 14, tzinfo=UTC), 60_000,
+                   59_000, 62_000, 0.6, "trend_up", {"params": {}})
+    await eng.handle_signal(1, later, v, day0, week0, peak)
+    status, reason = await _decision(factory)
+    assert status == "rejected" and reason.startswith("cooldown: losing exit on BTC/USDT")
+
+
+async def test_correlated_exposure_blocks_new_entry(engine_setup: tuple[Any, ...]) -> None:
+    eng, factory, _, _ = engine_setup
+    pid = eng.bootstrap()
+    with transaction(factory) as s:                       # an ETH position worth 30% equity
+        ex = repo.exchange_id(s, "binance")
+        eth = repo.upsert_trading_pair(
+            s, exchange_id=ex, symbol="ETH/USDT", exchange_symbol="ETHUSDT", base="ETH",
+            quote="USDT", price_tick=D("0.01"), amount_step=D("0.0001"),
+            min_amount=D("0.0001"), min_notional=D(5), maker_fee=D("0.001"),
+            taker_fee=D("0.001"), synced_at=utcnow())
+        s.add(models.Position(portfolio_id=pid, mode="paper", exchange_id=ex,
+                              pair_id=eth if isinstance(eth, int) else eth.id,
+                              base_asset="ETH", status="open", quantity=D("0.06"),
+                              avg_entry_price=D("60000"), cost_basis=D("3600"),
+                              opened_at=utcnow()))
+    v = await eng.valuation()
+    day0, week0, peak = eng.period_starts(v.equity, utcnow())
+    await eng.handle_signal(1, signal(), v, day0, week0, peak)
+    status, reason = await _decision(factory)
+    # The fake book marks ETH at ~60,000: 0.06 ETH = 3,600, equity 13,600. No candle history
+    # -> correlation assumed 1: 3,600 + ~1,270 BTC > 35% x 13,600 = 4,760.
+    assert status == "rejected" and "correlated exposure" in reason
