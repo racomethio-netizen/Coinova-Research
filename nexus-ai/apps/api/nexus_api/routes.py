@@ -123,28 +123,80 @@ async def exchanges(s: Session = Depends(db), redis: Any = Depends(redis_dep)) -
     return out
 
 
+TF_SECONDS = {"5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}
+
+
+async def _public_get(settings: Settings, path: str, params: dict[str, Any]) -> Any:
+    import httpx
+
+    base = settings.binance_public_api_url or "https://api.binance.com/api/v3"
+    async with httpx.AsyncClient(timeout=15, trust_env=True) as client:
+        r = await client.get(f"{base}/{path}", params=params)
+        r.raise_for_status()
+        return r.json()
+
+
 @router.get("/markets/candles")
-def candles(exchange: str, symbol: str, timeframe: Literal["5m", "15m", "1h", "4h", "1d"] = "1h",
-            limit: int = Query(300, ge=10, le=2000), s: Session = Depends(db)) -> dict[str, Any]:
+async def candles(exchange: str, symbol: str,
+                  timeframe: Literal["5m", "15m", "1h", "4h", "1d"] = "1h",
+                  limit: int = Query(300, ge=10, le=1000), s: Session = Depends(db),
+                  settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Stored closed candles; for Binance, falls back to Binance's public klines (closed
+    bars only) when nothing fresh is stored, e.g. while no market-data worker runs."""
+    rows: list[Any] = []
     try:
-        pid = repo.pair_id(s, exchange, symbol)
+        rows = repo.load_candles(s, repo.pair_id(s, exchange, symbol), timeframe, limit=limit)
     except LookupError as exc:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
-    rows = repo.load_candles(s, pid, timeframe, limit=limit)
+        if exchange != "binance":
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                f"unknown market {exchange} {symbol}") from exc
+    now = utcnow()
+    fresh = bool(rows) and (now - rows[-1].open_time).total_seconds() < 3 * TF_SECONDS[timeframe]
+    if fresh or exchange != "binance":
+        return {"exchange": exchange, "symbol": symbol, "timeframe": timeframe,
+                "source": "database",
+                "candles": [{"t": int(c.open_time.timestamp()), "o": str(c.open),
+                             "h": str(c.high), "l": str(c.low), "c": str(c.close),
+                             "v": str(c.volume)} for c in rows]}
+    import httpx
+
+    try:
+        raw = await _public_get(settings, "klines", {"symbol": symbol.replace("/", ""),
+                                                     "interval": timeframe, "limit": limit + 1})
+    except httpx.HTTPError as exc:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY,
+                            f"Binance public data unavailable ({type(exc).__name__})") from exc
+    now_ms = now.timestamp() * 1000
+    closed = [r for r in raw if int(r[6]) < now_ms][-limit:]
     return {"exchange": exchange, "symbol": symbol, "timeframe": timeframe,
-            "candles": [{"t": int(c.open_time.timestamp()), "o": str(c.open), "h": str(c.high),
-                         "l": str(c.low), "c": str(c.close), "v": str(c.volume)} for c in rows]}
+            "source": "binance public API (live)",
+            "candles": [{"t": int(r[0]) // 1000, "o": r[1], "h": r[2], "l": r[3], "c": r[4],
+                         "v": r[5]} for r in closed]}
 
 
 @router.get("/markets/books")
 async def books(redis: Any = Depends(redis_dep),
                 settings: Settings = Depends(settings_dep)) -> list[dict[str, Any]]:
+    """WebSocket top of book from Redis; for Binance, the public REST best bid/ask when no
+    stream is running. Missing data stays missing."""
+    import httpx
+
     out = []
     for ex in settings.enabled_exchanges:
         for sym in settings.trading_pairs:
             raw = await redis.get(events.book_key(ex.value, sym))
             data = json.loads(raw) if raw else None
-            out.append({"exchange": ex.value, "symbol": sym, "book": data})
+            source = "websocket" if data else None
+            if data is None and ex.value == "binance":
+                try:
+                    t = await _public_get(settings, "ticker/bookTicker",
+                                          {"symbol": sym.replace("/", "")})
+                    data = {"bid": t["bidPrice"], "ask": t["askPrice"], "bid_size": t["bidQty"],
+                            "ask_size": t["askQty"], "ts": utcnow().isoformat()}
+                    source = "binance public API (REST)"
+                except (httpx.HTTPError, KeyError):
+                    data = None
+            out.append({"exchange": ex.value, "symbol": sym, "book": data, "source": source})
     return out
 
 

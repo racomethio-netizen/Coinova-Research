@@ -35,8 +35,10 @@ def client(migrated_engine: Engine, db_url: str) -> Iterator[TestClient]:
                           role="owner"))
         s.add(models.User(email="viewer@example.test", password_hash=hash_password(PASSWORD),
                           role="viewer"))
+    # Public-data fallbacks point at a closed local port: tests never reach Binance.
     settings = Settings(database_url=db_url, redis_url=url,
-                        credential_encryption_keys=generate_key_entry("k1"))
+                        credential_encryption_keys=generate_key_entry("k1"),
+                        binance_public_api_url="http://127.0.0.1:9/api/v3")
     with TestClient(create_app(settings)) as c:
         yield c
     sync_redis.from_url(url).flushdb()

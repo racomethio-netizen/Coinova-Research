@@ -15,11 +15,11 @@ export default function Markets() {
   const [exchange, setExchange] = useState("binance");
   const [symbol, setSymbol] = useState("BTC/USDT");
   const [tf, setTf] = useState("1h");
-  const candles = useApi<{ candles: CandleRow[] }>(`/markets/candles?exchange=${exchange}&symbol=${encodeURIComponent(symbol)}&timeframe=${tf}&limit=300`, 60000);
+  const candles = useApi<{ candles: CandleRow[]; source?: string }>(`/markets/candles?exchange=${exchange}&symbol=${encodeURIComponent(symbol)}&timeframe=${tf}&limit=300`, 60000);
   const books = useApi<Any[]>("/markets/books", 3000);
   return (
     <>
-      <PageHeader title="Live markets" subtitle="Closed candles from the database; top of book from WebSocket streams">
+      <PageHeader title="Live markets" subtitle="Closed candles and top of book from Binance (database and streams when the market-data service runs, otherwise Binance public data)">
         <div className="flex flex-wrap gap-2">
           <label className="sr-only" htmlFor="ex">Exchange</label>
           <select id="ex" className={SEL} value={exchange} onChange={(e) => setExchange(e.target.value)}>
@@ -38,7 +38,7 @@ export default function Markets() {
       <div className="space-y-4">
         <Card title={`${exchange} · ${symbol} · ${tf}`}>
           <Loading error={candles.error} loading={candles.loading && !candles.data} />
-          {candles.data && (candles.data.candles.length ? <CandleChart candles={candles.data.candles} label={`${symbol} ${tf} candles on ${exchange}`} /> : <p className="py-6 text-center text-sm text-muted">No candles stored for this market yet.</p>)}
+          {candles.data && (candles.data.candles.length ? <><CandleChart candles={candles.data.candles} label={`${symbol} ${tf} candles on ${exchange}`} /><p className="mt-2 text-xs text-muted">Source: {candles.data.source ?? "database"} · closed candles only</p></> : <p className="py-6 text-center text-sm text-muted">No candles stored for this market yet.</p>)}
         </Card>
         <Card title="Top of book (live)">
           <Table rows={books.data} empty="No live books. Is the market-data service running?" columns={[
@@ -47,6 +47,7 @@ export default function Markets() {
             { key: "ask", label: "Ask", numeric: true, render: (b: Any) => num(b.book?.ask) },
             { key: "spread", label: "Spread (bps)", numeric: true, render: (b: Any) => b.book ? num(String((Number(b.book.ask) - Number(b.book.bid)) / ((Number(b.book.ask) + Number(b.book.bid)) / 2) * 1e4), 2) : DASH },
             { key: "size", label: "Bid / ask size", numeric: true, render: (b: Any) => b.book ? `${qty(b.book.bid_size)} / ${qty(b.book.ask_size)}` : DASH },
+            { key: "source", label: "Source", render: (b: Any) => b.source ?? DASH },
             { key: "ts", label: "Updated", render: (b: Any) => b.book ? time(b.book.ts) : <Badge tone="bad">stale</Badge> },
           ]} />
         </Card>
