@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import gc
+import json
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import replace
@@ -261,7 +262,13 @@ class CcxtSpotAdapter(ExchangeAdapter):
 
     # ---------------------------------------------------------------- metadata
     async def load_markets(self, *, reload: bool = False) -> dict[str, MarketRules]:
-        raw = await self._call(self._client.load_markets, reload)
+        params: dict[str, Any] = {}
+        if self.keep_symbols and self.code == "binance":
+            # Binance's exchangeInfo can be limited to given symbols: request only ours
+            # instead of parsing ~3,500 markets (~100 MB) and discarding them.
+            ids = sorted(sym.replace("/", "") for sym in self.keep_symbols)
+            params["symbols"] = json.dumps(ids, separators=(",", ":"))
+        raw = await self._call(self._client.load_markets, reload, params)
         if self.keep_symbols is not None:
             raw = {k: v for k, v in raw.items() if k in self.keep_symbols}
             self._client.set_markets(list(raw.values()))

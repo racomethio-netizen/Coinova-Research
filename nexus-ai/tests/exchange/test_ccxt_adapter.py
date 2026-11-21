@@ -56,6 +56,13 @@ async def test_keep_symbols_trims_market_metadata() -> None:
     assert set(markets) == {"BTC/USDT"}
     assert set(client.markets) == {"BTC/USDT"}  # the client itself no longer holds the rest
     assert [m["symbol"] for m in a.ccxt_markets()] == ["BTC/USDT"]
+    assert client.load_params == {"symbols": '["BTCUSDT"]'}  # Binance asked for ours only
+
+
+async def test_no_symbol_filter_without_keep_symbols() -> None:
+    a, client = adapter()
+    await a.load_markets()
+    assert client.load_params == {}
 
 
 async def test_decimal_places_precision_mode() -> None:

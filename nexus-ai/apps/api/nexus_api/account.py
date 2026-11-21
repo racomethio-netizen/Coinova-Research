@@ -18,6 +18,7 @@ from nexus_config import Settings
 from nexus_db import models
 from nexus_exchange.binance_futures import BinanceFuturesAdapter
 from nexus_exchange.binance_futures_transport import CcxtFuturesTransport
+from nexus_exchange.factory import load_binance_spot_markets
 from nexus_security import CredentialCipher, KeyRing
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -99,6 +100,7 @@ async def spot_snapshot(api_key: str, secret: str, *, environment: str, pairs: l
     elif environment == "testnet":
         client.set_sandbox_mode(True)
     try:
+        await load_binance_spot_markets(client, pairs)
         bal = await client.fetch_balance()
         balances = [{"asset": a, "free": str(bal["free"].get(a) or 0),
                      "locked": str(bal["used"].get(a) or 0), "total": str(t)}

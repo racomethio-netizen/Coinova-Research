@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from nexus_config import ExchangeCode, Settings
@@ -58,3 +59,17 @@ def build_ws_client(code: ExchangeCode, settings: Settings,
         if settings.binance_public_api_url:
             client.urls["api"]["public"] = settings.binance_public_api_url
     return client
+
+
+async def load_binance_spot_markets(client: Any, symbols: list[str]) -> dict[str, Any]:
+    """Load only the given spot symbols into a ccxt ``binance`` client (any environment).
+
+    Binance's full market list is ~3,500 spot markets plus futures/options (~100 MB+ per
+    client). Everything the API does with a request-time client needs only a few
+    symbols; later ``load_markets()`` calls reuse what is loaded here."""
+    client.options["fetchMarkets"] = ["spot"]
+    client.options["fetchCurrencies"] = False
+    ids = sorted({sym.replace("/", "") for sym in symbols})
+    markets: dict[str, Any] = await client.load_markets(
+        False, {"symbols": json.dumps(ids, separators=(",", ":"))})
+    return markets

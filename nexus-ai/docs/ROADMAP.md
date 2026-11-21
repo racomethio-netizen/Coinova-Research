@@ -202,3 +202,9 @@ trading on Render can use live data once background workers are approved.
 * Render env for the trial (nexus-ai-fra): NEXUS_RUN_WORKERS=true, NEXUS_WORKERS_MODE=inline,
   MALLOC_ARENA_MAX=2, NEXUS_ENABLED_EXCHANGES=binance, NEXUS_KEEP_AWAKE_URL=<service URL>.
   To stop: set NEXUS_RUN_WORKERS=false.
+* First deploy was OOM-killed 4x on Render (512 MiB) ~10 s after the workers started: both
+  workers parsed Binance's full exchangeInfo concurrently on top of a higher baseline than
+  measured locally. Fix: Binance exchangeInfo is now requested for the traded symbols only
+  (`symbols=[...]`), also for request-time clients (spot account view, spot probe, spot
+  order test) via `load_binance_spot_markets`. Local peak with an empty DB and an active
+  trader: 435 MB -> 244 MB.

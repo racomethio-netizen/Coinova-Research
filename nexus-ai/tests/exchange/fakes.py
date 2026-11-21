@@ -47,8 +47,9 @@ class FakeCcxtClient:
     def set_markets(self, markets: list[dict[str, Any]]) -> None:
         self.markets = {m["symbol"]: m for m in markets}
 
-    async def load_markets(self, reload: bool = False) -> Any:
+    async def load_markets(self, reload: bool = False, params: Any = None) -> Any:
         self.calls.append(("load_markets", (reload,)))
+        self.load_params = params or {}
         if "load_markets" in self.errors:
             raise self.errors["load_markets"]
         return self.markets

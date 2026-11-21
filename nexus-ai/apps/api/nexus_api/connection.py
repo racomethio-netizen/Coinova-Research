@@ -15,6 +15,7 @@ import ccxt.async_support as ccxt_async
 from nexus_common.timeutil import utcnow
 from nexus_exchange.binance_futures import BinanceFuturesAdapter
 from nexus_exchange.binance_futures_transport import CcxtFuturesTransport
+from nexus_exchange.factory import load_binance_spot_markets
 
 _BINANCE_MSG = re.compile(r'"code"\s*:\s*(-?\d+)\s*,\s*"msg"\s*:\s*"([^"]{0,200})"')
 
@@ -73,6 +74,7 @@ async def probe_spot(api_key: str, secret: str, *, environment: str,
     elif environment == "testnet":
         client.set_sandbox_mode(True)
     try:
+        await load_binance_spot_markets(client, ["BTC/USDT"])
         bal = await client.fetch_balance()
         totals = {k: v for k, v in (bal.get("total") or {}).items() if v}
         result: dict[str, Any] = {"ok": True, "assets_with_balance": len(totals),

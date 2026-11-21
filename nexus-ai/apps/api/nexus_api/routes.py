@@ -783,6 +783,9 @@ async def credential_order_test(cred_id: int, market: Literal["futures", "spot"]
         else:
             client.set_sandbox_mode(True)
         try:
+            from nexus_exchange.factory import load_binance_spot_markets
+
+            await load_binance_spot_markets(client, ["BTC/USDT"])
             result = await run_spot_round_trip(client)
         except Exception as exc:
             result = {"ok": False, "steps": [], "alerts": [], "error": explain(exc)}
