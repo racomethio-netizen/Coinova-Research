@@ -183,3 +183,15 @@ spot data (works from Render: data-api.binance.vision reachable there), scored w
 trader's decide() rules for long and short, reasons for/against, NO TRADE reasons.
 Funding/open interest unavailable (fapi HTTP 451). This also confirms spot paper
 trading on Render can use live data once background workers are approved.
+
+## 2026-11-21: single-server paper trading switch
+
+* `NEXUS_RUN_WORKERS=true` makes the API process supervise the market-data and trader
+  workers (child processes, restart with back-off, clean shutdown). Paper mode only:
+  refused when `NEXUS_TRADING_MODE` is not paper. Tested (tests/unit/test_workers.py) and
+  verified end to end locally (both workers start with the API and stop with it).
+* Measured memory with all three running: about 870 MB. Render Starter (512 MB) is too
+  small; Standard (2 GB) is needed. The free plan also sleeps when idle, which stops workers.
+* Funding carry research: FAIL (see docs/research/2026-11-21-carry-preregistration.md).
+* Next: owner switches nexus-ai-fra to Standard in the Render dashboard; then set
+  NEXUS_RUN_WORKERS=true on that service and check logs for worker_started / trader_started.

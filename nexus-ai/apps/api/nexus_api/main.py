@@ -35,9 +35,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.factory = make_session_factory(app.state.engine)
         app.state.redis = connect_redis(settings.redis_url.get_secret_value())
         log.info("api_started", **settings.safe_summary())
+        from nexus_api.workers import WorkerSupervisor
+
+        workers = WorkerSupervisor.from_settings(settings)
+        if workers is not None:
+            workers.start()
         try:
             yield
         finally:
+            if workers is not None:
+                await workers.stop()
             await app.state.redis.aclose()
             app.state.engine.dispose()
             log.info("api_stopped")
