@@ -17,7 +17,7 @@ from nexus_common import events
 from nexus_common.logging import configure_logging, get_logger
 from nexus_common.redisutil import connect as connect_redis
 from nexus_common.timeutil import utcnow
-from nexus_config import get_settings
+from nexus_config import Settings, get_settings
 from nexus_db import make_engine, make_session_factory, models, transaction
 from nexus_execution.reports import portfolio_report
 from sqlalchemy import select
@@ -122,9 +122,8 @@ async def daily_reports(factory: sessionmaker[Session], redis: Any, now: datetim
     return queued
 
 
-async def main() -> None:
-    settings = get_settings()
-    configure_logging(settings.log_level, json=settings.log_json)
+async def serve(settings: Settings, stop: asyncio.Event) -> None:
+    """Run until ``stop`` is set (used by main() and by the API's inline worker mode)."""
     redis = connect_redis(settings.redis_url.get_secret_value())
     engine = make_engine(settings.database_url.get_secret_value(), pool_size=2)
     factory = make_session_factory(engine)
@@ -135,9 +134,11 @@ async def main() -> None:
     else:
         log.warning("telegram_not_configured")
     notifier = Notifier(redis, sender)
-    loop = asyncio.get_running_loop()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, notifier.stop.set)
+    async def relay() -> None:
+        await stop.wait()
+        notifier.stop.set()
+
+    relay_task = asyncio.create_task(relay())
 
     async def reporter() -> None:
         while not notifier.stop.is_set():
@@ -150,10 +151,21 @@ async def main() -> None:
         await notifier.run()
     finally:
         task.cancel()
+        relay_task.cancel()
         if isinstance(sender, TelegramClient):
             await sender.close()
         await redis.aclose()
         engine.dispose()
+
+
+async def main() -> None:
+    settings = get_settings()
+    configure_logging(settings.log_level, json=settings.log_json)
+    stop = asyncio.Event()
+    loop = asyncio.get_running_loop()
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, stop.set)
+    await serve(settings, stop)
 
 
 if __name__ == "__main__":

@@ -23,6 +23,7 @@ log = get_logger("nexus.api.workers")
 WORKERS: dict[str, list[str]] = {
     "market-data": ["-m", "nexus_market.runner"],
     "trader": ["-m", "nexus_execution.trader"],
+    "notifier": ["-m", "nexus_notify.service"],
 }
 
 
@@ -101,9 +102,11 @@ class InlineWorkers:
     def for_settings(cls, settings: Settings) -> InlineWorkers:
         from nexus_execution import trader
         from nexus_market import runner
+        from nexus_notify import service as notifier
 
         return cls({"market-data": lambda stop: runner.serve(settings, stop),
-                    "trader": lambda stop: trader.serve(settings, stop)})
+                    "trader": lambda stop: trader.serve(settings, stop),
+                    "notifier": lambda stop: notifier.serve(settings, stop)})
 
     def start(self) -> None:
         self._tasks = [asyncio.create_task(self._keep(n)) for n in self.workers]
