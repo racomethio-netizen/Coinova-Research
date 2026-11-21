@@ -449,3 +449,9 @@ def test_agent_proposals_say_no_trade_without_data_and_reviews_empty(
     assert len(p["agents"]) == 6 and "No guaranteed profits" in body["disclaimer"]
     rev = client.get("/api/v1/agents/reviews").json()
     assert rev["reviews"] == []
+
+
+def test_execution_quality_endpoint_shows_simulation_settings(client: TestClient) -> None:
+    login(client)
+    r = client.get("/api/v1/execution/quality?mode=paper").json()
+    assert r["simulation"]["latency_ms"] == 250 and r["simulation"]["outage_rate"] == 0.0

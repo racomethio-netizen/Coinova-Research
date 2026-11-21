@@ -462,3 +462,45 @@ async def test_correlated_exposure_blocks_new_entry(engine_setup: tuple[Any, ...
     # The fake book marks ETH at ~60,000: 0.06 ETH = 3,600, equity 13,600. No candle history
     # -> correlation assumed 1: 3,600 + ~1,270 BTC > 35% x 13,600 = 4,760.
     assert status == "rejected" and "correlated exposure" in reason
+
+
+async def test_timeout_after_send_is_reconciled_not_resubmitted(
+        engine_setup: tuple[Any, ...]) -> None:
+    eng, factory, _, _ = engine_setup
+    broker = eng.orders.broker
+
+    class Seq:
+        def __init__(self) -> None:
+            self.xs = [0.1, 0.9]
+
+        def random(self) -> float:
+            return self.xs.pop(0) if self.xs else 0.99
+
+    broker.outage_rate, broker._rng = 0.5, Seq()
+    eng.bootstrap()
+    v = await eng.valuation()
+    day0, week0, peak = eng.period_starts(v.equity, utcnow())
+    await eng.handle_signal(1, signal(), v, day0, week0, peak)
+    with transaction(factory) as s:
+        orders = s.scalars(select(models.Order)).all()
+        assert len(orders) == 1 and orders[0].status == "unknown"
+    await eng.orders.reconcile_unknown()                 # look it up by client order id
+    with transaction(factory) as s:
+        orders = s.scalars(select(models.Order)).all()
+        assert len(orders) == 1 and orders[0].status == "filled"   # one order, never resent
+        pos = s.scalar(select(models.Position))
+        assert pos is not None and pos.status == "open"
+
+
+async def test_execution_quality_report(engine_setup: tuple[Any, ...]) -> None:
+    from nexus_execution.reports import execution_quality
+
+    eng, factory, state, _ = engine_setup
+    await _enter(eng, factory)
+    state.update(bid=58_900.0, ask=58_901.0)
+    await eng.cycle()                                    # stop-loss exit
+    with transaction(factory) as s:
+        q = execution_quality(s, eng.portfolio_id)
+    assert q["entry"]["orders"] == 1 and q["entry"]["fill_rate"] == "1.0000"
+    assert q["exit"]["orders"] == 1 and q["exit"]["slippage_bps_avg"] is not None
+    assert q["entry"]["missed"] == 0 and q["entry"]["unknown"] == 0

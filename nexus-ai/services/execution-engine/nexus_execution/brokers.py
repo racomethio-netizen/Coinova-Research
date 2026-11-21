@@ -9,7 +9,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
-from typing import Protocol
+from typing import Any, Protocol
 
 from nexus_common.decimals import ZERO
 from nexus_common.timeutil import utcnow
@@ -113,19 +113,33 @@ class PaperBroker:
     mode = "paper"
 
     def __init__(self, books: BookSource, *, taker_fee: Decimal, maker_fee: Decimal,
-                 extra_slippage: Decimal, quote_asset: str = "USDT") -> None:
+                 extra_slippage: Decimal, quote_asset: str = "USDT",
+                 latency_ms: int = 0, participation: Decimal = Decimal(1),
+                 max_book_age_s: float | None = None, outage_rate: float = 0.0,
+                 rng: Any = None) -> None:
+        import random
+
         self._books = books
         self.taker_fee, self.maker_fee = taker_fee, maker_fee
         self.extra_slippage = extra_slippage
         self.quote_asset = quote_asset
+        self.latency_ms, self.participation = latency_ms, participation
+        self.max_book_age_s, self.outage_rate = max_book_age_s, outage_rate
+        self._rng = rng or random.Random()  # noqa: S311  (simulation only, not security)
         self._known: dict[str, BrokerUpdate] = {}   # client id -> last state (process-local)
 
     async def _book(self, exchange: str, symbol: str) -> OrderBook:
+        from nexus_exchange.errors import ExchangeUnavailable
+
         book = await self._books(exchange, symbol)
         if book is None or book.best_bid is None or book.best_ask is None:
             # No fresh real prices: refuse rather than invent a fill.
-            from nexus_exchange.errors import ExchangeUnavailable
             raise ExchangeUnavailable(f"no fresh order book for {exchange} {symbol}")
+        if self.max_book_age_s is not None and book.timestamp is not None:
+            age = (utcnow() - book.timestamp).total_seconds()
+            if age > self.max_book_age_s:
+                raise ExchangeUnavailable(f"order book {age:.0f}s old (simulated outage: "
+                                          f"no fill on stale prices)")
         return book
 
     def _to_update(self, sim: SimResult, prior_filled: Decimal, amount: Decimal,
@@ -143,11 +157,24 @@ class PaperBroker:
         return BrokerUpdate(status, order_id, fills)
 
     async def submit(self, req: OrderRequest, *, exchange: str) -> BrokerUpdate:
+        import asyncio
+
+        from nexus_exchange.errors import ExchangeUnavailable, OrderStateUnknown
+
+        outage = self.outage_rate > 0 and self._rng.random() < self.outage_rate
+        if outage and self._rng.random() < 0.5:
+            raise ExchangeUnavailable("simulated exchange outage: order refused")
+        if self.latency_ms:
+            await asyncio.sleep(self.latency_ms / 1000)    # the market moves meanwhile
         book = await self._book(exchange, req.symbol)
         sim = simulate_submit(req, book, taker_fee=self.taker_fee,
-                              extra_slippage=self.extra_slippage)
+                              extra_slippage=self.extra_slippage,
+                              participation=self.participation)
         update = self._to_update(sim, ZERO, req.amount, f"paper-{req.client_order_id}")
         self._known[req.client_order_id] = update
+        if outage:   # it executed, but the reply was lost: must be reconciled, not resent
+            raise OrderStateUnknown("simulated timeout after sending",
+                                    client_order_id=req.client_order_id)
         return update
 
     async def refresh(self, *, exchange: str, symbol: str, side: Side, price: Decimal,

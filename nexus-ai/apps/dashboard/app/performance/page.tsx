@@ -10,6 +10,7 @@ type Any = any;
 export default function Performance() {
   const { mode } = useMode();
   const { data, error, loading } = useApi<Any>(`/performance?mode=${mode}`, 60000);
+  const eq = useApi<Any>(`/execution/quality?mode=${mode}`, 60000);
   const r = data?.report;
   return (
     <>
@@ -39,6 +40,23 @@ export default function Performance() {
               { key: "passed", label: "Result", render: (b: Any) => <Badge tone={b.passed ? "good" : "bad"}>{b.passed ? "passed" : "rejected"}</Badge> },
             ]} />
           </Card>
+          {eq.data?.quality && (
+            <Card title="Execution quality" actions={eq.data.simulation ? <Badge tone="info">simulated fills</Badge> : undefined}>
+              <Table rows={(["entry", "exit"] as const).map((k) => ({ k, ...eq.data.quality[k] }))} empty="No orders yet." columns={[
+                { key: "k", label: "Orders" },
+                { key: "orders", label: "Sent", numeric: true },
+                { key: "fill_rate", label: "Fill rate", numeric: true, render: (x: Any) => pct(x.fill_rate, 1) },
+                { key: "partial_fills", label: "Partial", numeric: true },
+                { key: "missed", label: "Missed", numeric: true },
+                { key: "rejected", label: "Rejected", numeric: true },
+                { key: "unknown", label: "Unresolved", numeric: true },
+                { key: "slippage_bps_avg", label: "Slippage avg / p95 / worst (bps)", numeric: true, render: (x: Any) => x.slippage_bps_avg == null ? "—" : `${x.slippage_bps_avg} / ${x.slippage_bps_p95} / ${x.slippage_bps_worst}` },
+              ]} />
+              {eq.data.simulation && (
+                <p className="mt-2 text-xs text-muted">Paper simulation: {eq.data.simulation.latency_ms} ms delay before filling against a fresh real order book, at most {pct(eq.data.simulation.book_participation, 0)} of each visible level, books older than {eq.data.simulation.max_book_age_seconds}s refused, fees {eq.data.simulation.fee_bps} bps + {eq.data.simulation.extra_slippage_bps} bps extra slippage, injected outages {pct(eq.data.simulation.outage_rate, 1)}.</p>
+              )}
+            </Card>
+          )}
         </div>
       )}
     </>

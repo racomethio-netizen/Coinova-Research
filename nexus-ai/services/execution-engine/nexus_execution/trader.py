@@ -915,7 +915,11 @@ async def serve(settings: Settings, stop: asyncio.Event) -> None:
         broker = PaperBroker(books.get, taker_fee=settings.paper_fee_bps / 10_000,
                              maker_fee=settings.paper_fee_bps / 10_000,
                              extra_slippage=settings.paper_slippage_bps / 10_000,
-                             quote_asset=settings.quote_currency)
+                             quote_asset=settings.quote_currency,
+                             latency_ms=settings.paper_latency_ms,
+                             participation=settings.paper_book_participation,
+                             max_book_age_s=settings.paper_max_book_age_seconds,
+                             outage_rate=settings.paper_outage_rate)
     trader = TradingEngine(settings, factory, redis, adapters, broker, books)
     async def relay() -> None:
         await stop.wait()

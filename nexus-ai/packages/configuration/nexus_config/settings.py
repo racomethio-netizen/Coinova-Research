@@ -201,6 +201,13 @@ class Settings(BaseSettings):
 
     # VIRTUAL capital for the paper portfolio (the real initial capital is undecided).
     paper_initial_capital: Decimal = Decimal("10000")
+    # Paper realism: delay before filling against a fresh book, share of each visible
+    # level a paper order may take, max book age (older = simulated outage, no fill), and
+    # an optional injected outage rate for drills (0 keeps paper runs reproducible).
+    paper_latency_ms: int = Field(default=250, ge=0, le=5000)
+    paper_book_participation: Decimal = Field(default=Decimal("0.5"), gt=0, le=1)
+    paper_max_book_age_seconds: float = Field(default=10.0, gt=0, le=120)
+    paper_outage_rate: float = Field(default=0.0, ge=0, le=0.5)
     # Exchange whose candles drive signals (deepest, gap-free history; see EXCHANGES.md).
     signal_exchange: str = "binance"
     trader_interval_seconds: float = 30.0

@@ -305,3 +305,18 @@ trading on Render can use live data once background workers are approved.
   no validated strategy, news unknown locally).
 * Does not change trading behaviour. Tests: 531 pass.
 * Next: Phase 4 (paper realism: latency, missed fills, outages; execution reports).
+
+## 2026-11-21: Phase 4 (paper realism, execution quality)
+
+* PaperBroker: `paper_latency_ms` (250) delay, then fill against a FRESH real book (price
+  can move: worse fill or a missed IOC); `paper_book_participation` (0.5) of each visible
+  level (partial fills); books older than `paper_max_book_age_seconds` (10) refused as an
+  outage; `paper_outage_rate` (0 by default, for drills) injects outages: half "refused"
+  (order rejected), half "sent but no reply" (order marked unknown, then reconciled by
+  client order ID; tested end to end: one order, never resent).
+* Execution quality report (recorded orders only): fill rate, partial, missed, rejected,
+  unresolved, slippage avg/p95/worst by entry/exit; GET /execution/quality; card on the
+  Performance page with the simulation settings.
+* Not simulated: queue position for resting orders beyond the visible-size rule; funding
+  (spot has none; futures paper path remains future work).
+* Tests: 538 pass. Next: Phase 5 (derivatives data: OI history, basis, liquidations).

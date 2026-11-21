@@ -7,6 +7,10 @@
   side of a LATER book has crossed it, so the order was genuinely marketable.
 * Every simulated fill is labeled with a ``paper-`` trade id. Paper fills are never
   presented as exchange executions.
+* Realism (PaperBroker): a latency delay before filling against a FRESH book (price can
+  move away: worse fill or a missed IOC), a participation cap per level (partial fills),
+  stale books refused (treated as an outage), and optional injected outages, both
+  "refused" and "sent but no reply" (the latter must be reconciled by client order ID).
 """
 
 from __future__ import annotations
@@ -40,7 +44,9 @@ def _trade_id() -> str:
 
 
 def simulate_submit(req: OrderRequest, book: OrderBook, *, taker_fee: Decimal,
-                    extra_slippage: Decimal) -> SimResult:
+                    extra_slippage: Decimal, participation: Decimal = Decimal(1)) -> SimResult:
+    """``participation`` = share of each visible level this order may take (other traders
+    compete for the same liquidity); below 1 it produces realistic partial fills."""
     if req.price is None:
         raise ValueError("paper broker accepts limit orders only")
     levels = book.asks if req.side is Side.BUY else book.bids
@@ -50,7 +56,9 @@ def simulate_submit(req: OrderRequest, book: OrderBook, *, taker_fee: Decimal,
         crosses = price <= req.price if req.side is Side.BUY else price >= req.price
         if not crosses or remaining <= 0:
             break
-        take = min(qty, remaining)
+        take = min(qty * participation, remaining)
+        if take <= 0:
+            continue
         px = price * (1 + extra_slippage) if req.side is Side.BUY else price * (1 - extra_slippage)
         # Never fill worse than the order's own limit.
         px = min(px, req.price) if req.side is Side.BUY else max(px, req.price)

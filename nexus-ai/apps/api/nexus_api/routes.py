@@ -861,6 +861,24 @@ async def agent_proposals(s: Session = Depends(db), redis: Any = Depends(redis_d
                           "same gates pass again."}
 
 
+@router.get("/execution/quality")
+def execution_quality_view(mode: Mode = "paper", s: Session = Depends(db),
+                           settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    from nexus_execution.reports import execution_quality
+
+    p = _portfolio(s, mode)
+    sim = None
+    if mode == "paper":
+        sim = {"latency_ms": settings.paper_latency_ms,
+               "book_participation": str(settings.paper_book_participation),
+               "max_book_age_seconds": settings.paper_max_book_age_seconds,
+               "outage_rate": settings.paper_outage_rate,
+               "fee_bps": str(settings.paper_fee_bps),
+               "extra_slippage_bps": str(settings.paper_slippage_bps)}
+    return {"mode": mode, "simulation": sim,
+            "quality": execution_quality(s, p.id) if p else None}
+
+
 @router.get("/agents/reviews")
 def agent_reviews(mode: Mode = "paper", s: Session = Depends(db),
                   settings: Settings = Depends(settings_dep)) -> dict[str, Any]:

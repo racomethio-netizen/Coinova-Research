@@ -63,3 +63,45 @@ def portfolio_report(s: Session, portfolio_id: int) -> dict[str, Any]:
         "avg_slippage_bps": (str(sum(slip_bps, ZERO) / len(slip_bps)) if slip_bps else None),
         "as_of": last.captured_at.isoformat() if last else None,
     }
+
+
+def execution_quality(s: Session, portfolio_id: int) -> dict[str, Any]:
+    """Execution quality from recorded orders only: fill rate, partial and missed fills,
+    rejections, unresolved states and slippage versus the price expected at submission
+    (positive bps = worse than expected), split by entry and exit."""
+    from decimal import Decimal
+
+    rows = s.execute(select(models.Order.purpose, models.Order.side, models.Order.status,
+                            models.Order.amount, models.Order.filled_amount,
+                            models.Order.expected_price, models.Order.average_fill_price)
+                     .where(models.Order.portfolio_id == portfolio_id)).all()
+    out: dict[str, Any] = {}
+    for purpose in ("entry", "exit"):
+        mine = [r for r in rows if r.purpose == purpose]
+        sent = [r for r in mine if r.status not in ("pending_submit",)]
+        filled_any = [r for r in sent if (r.filled_amount or 0) > 0]
+        partial = [r for r in filled_any if r.filled_amount < r.amount]
+        missed = [r for r in sent if r.status in ("canceled", "expired")
+                  and not (r.filled_amount or 0)]
+        rejected = [r for r in sent if r.status == "rejected"]
+        unknown = [r for r in sent if r.status == "unknown"]
+        slips: list[Decimal] = []
+        for r in filled_any:
+            if r.expected_price and r.average_fill_price:
+                d = (r.average_fill_price - r.expected_price) / r.expected_price * 10_000
+                slips.append(d if r.side == "buy" else -d)
+        slips.sort()
+        amount = sum((r.amount for r in sent), ZERO)
+        filled = sum((r.filled_amount or ZERO for r in sent), ZERO)
+        out[purpose] = {
+            "orders": len(sent), "with_fills": len(filled_any), "partial_fills": len(partial),
+            "missed": len(missed), "rejected": len(rejected), "unknown": len(unknown),
+            "fill_rate": None if amount == 0 else str((filled / amount).quantize(
+                Decimal("0.0001"))),
+            "slippage_bps_avg": str(round(sum(slips, ZERO) / len(slips), 2)) if slips else None,
+            "slippage_bps_p95": str(round(slips[min(len(slips) - 1,
+                                                    int(len(slips) * 0.95))], 2))
+            if slips else None,
+            "slippage_bps_worst": str(round(slips[-1], 2)) if slips else None,
+        }
+    return out
