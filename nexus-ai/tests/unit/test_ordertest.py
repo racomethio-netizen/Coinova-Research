@@ -93,3 +93,62 @@ async def test_cleanup_runs_even_when_verification_fails() -> None:
     with pytest.raises(RuntimeError):
         await run_round_trip(ex)  # type: ignore[arg-type]
     assert ex.qty == 0 and ex.orders == {}
+
+
+class FakeSpot:
+    """ccxt-shaped spot client: market orders fill at 60,000; fee taken in BTC."""
+
+    def __init__(self, btc: float = 0.5) -> None:
+        import ccxt
+
+        self.precisionMode = ccxt.TICK_SIZE
+        self.btc = btc
+        self.orders: dict[str, dict[str, Any]] = {}
+        self.log: list[tuple[str, float]] = []
+        self._n = 0
+
+    async def load_markets(self) -> dict[str, Any]:
+        return {"BTC/USDT": {"spot": True, "type": "spot", "active": True, "symbol": "BTC/USDT",
+                             "id": "BTCUSDT", "base": "BTC", "quote": "USDT",
+                             "precision": {"price": 0.01, "amount": 0.00001},
+                             "limits": {"amount": {"min": 0.00001}, "cost": {"min": 5}}}}
+
+    async def fetch_ticker(self, symbol: str) -> dict[str, Any]:
+        return {"last": 60000.0}
+
+    async def fetch_balance(self) -> dict[str, Any]:
+        return {"free": {"BTC": self.btc}}
+
+    async def create_order(self, symbol: str, type_: str, side: str, amount: float,
+                           price: float | None, params: dict[str, Any]) -> dict[str, Any]:
+        self._n += 1
+        oid = str(self._n)
+        self.log.append((f"{type_} {side}", amount))
+        if type_ == "market":
+            self.btc += amount * 0.999 if side == "buy" else -amount
+            self.orders[oid] = {"id": oid, "status": "closed", "filled": amount, "average": 60000}
+        else:
+            self.orders[oid] = {"id": oid, "status": "open", "filled": 0}
+        return {"id": oid}
+
+    async def fetch_order(self, oid: str, symbol: str) -> dict[str, Any]:
+        return self.orders[oid]
+
+    async def fetch_open_orders(self, symbol: str) -> list[dict[str, Any]]:
+        return [o for o in self.orders.values() if o["status"] == "open"]
+
+    async def cancel_order(self, oid: str, symbol: str) -> None:
+        self.orders[oid]["status"] = "canceled"
+
+
+async def test_spot_round_trip_sells_back_only_what_it_bought() -> None:
+    from nexus_api.ordertest import run_spot_round_trip
+
+    ex = FakeSpot(btc=0.5)
+    out = await run_spot_round_trip(ex)
+    assert out["ok"], out["steps"]
+    assert [s["step"] for s in out["steps"]][-2:] == ["stop-loss cancelled",
+                                                      "sold back what the test bought"]
+    assert not [o for o in ex.orders.values() if o["status"] == "open"]
+    assert 0.5 - 1e-5 <= ex.btc <= 0.5 + 1e-5  # the pre-existing 0.5 BTC is untouched
+    assert ex.log[1][0] == "STOP_LOSS_LIMIT sell"

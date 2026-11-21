@@ -90,3 +90,76 @@ async def run_round_trip(ad: BinanceFuturesAdapter, symbol: str = SYMBOL) -> dic
             left = {o["client_order_id"] for o in await ad.open_orders(symbol)} & set(placed)
             step("protective orders cancelled", not left, "none left" if not left else str(left))
     return {"ok": all(s["ok"] for s in steps), "steps": steps, "alerts": alerts}
+
+
+SPOT_SYMBOL = "BTC/USDT"
+
+
+async def run_spot_round_trip(client: Any, symbol: str = SPOT_SYMBOL) -> dict[str, Any]:
+    """Spot round trip on a demo/testnet ccxt client: smallest market buy (verified fill),
+    an exchange-side STOP_LOSS_LIMIT sell (verified resting, then cancelled), and a market
+    sell of only what this test bought. Pre-existing balances are never sold."""
+    from uuid import uuid4
+
+    from nexus_exchange.ccxt_adapter import rules_from_ccxt
+
+    steps: list[dict[str, Any]] = []
+
+    def step(name: str, ok: bool, detail: str = "") -> bool:
+        steps.append({"step": name, "ok": ok, "detail": detail})
+        return ok
+
+    def cid(prefix: str) -> str:
+        return f"{prefix}-{uuid4().hex}"[:36]
+
+    markets = await client.load_markets()
+    rules = rules_from_ccxt(markets[symbol], client.precisionMode)
+    if rules is None:
+        step("market rules", False, "Binance did not return trading filters")
+        return {"ok": False, "steps": steps, "alerts": []}
+    base = rules.base
+    price = Decimal(str((await client.fetch_ticker(symbol))["last"]))
+    min_notional = rules.min_notional or Decimal(5)
+    qty = _ceil_step(max(rules.min_amount or Decimal(0), min_notional * Decimal("1.2") / price),
+                     rules.amount_step)
+    step("order size", True, f"{qty} {base} (~{(qty * price).quantize(Decimal('0.01'))} USDT)")
+    before = Decimal(str((await client.fetch_balance())["free"].get(base) or 0))
+    bought = Decimal(0)
+    stop_id: str | None = None
+    try:
+        buy = await client.create_order(symbol, "market", "buy", float(qty), None,
+                                        {"newClientOrderId": cid("tbuy")})
+        got = await client.fetch_order(buy["id"], symbol)
+        filled = Decimal(str(got.get("filled") or 0))
+        if not step("market buy filled", got.get("status") == "closed" and filled > 0,
+                    f"status {got.get('status')}, filled {filled} {base} at "
+                    f"{got.get('average')} (exchange-confirmed)"):
+            return {"ok": False, "steps": steps, "alerts": []}
+        after = Decimal(str((await client.fetch_balance())["free"].get(base) or 0))
+        bought = floor_to_step(after - before, rules.amount_step)  # net of a base-asset fee
+        step("balance increased", bought > 0, f"+{after - before} {base}")
+        trigger = floor_to_step(price * Decimal("0.97"), rules.price_tick)
+        limit = floor_to_step(price * Decimal("0.965"), rules.price_tick)
+        stop_cid = cid("tstop")
+        so = await client.create_order(symbol, "STOP_LOSS_LIMIT", "sell", float(bought),
+                                       float(limit), {"stopPrice": float(trigger),
+                                                      "timeInForce": "GTC",
+                                                      "newClientOrderId": stop_cid})
+        stop_id = so["id"]
+        resting = {o["id"]: o for o in await client.fetch_open_orders(symbol)}
+        step("stop-loss resting at exchange", stop_id in resting,
+             f"STOP_LOSS_LIMIT trigger {trigger}, limit {limit}" if stop_id in resting
+             else "not found in open orders")
+    finally:
+        if stop_id is not None:
+            if stop_id in {o["id"] for o in await client.fetch_open_orders(symbol)}:
+                await client.cancel_order(stop_id, symbol)
+            gone = stop_id not in {o["id"] for o in await client.fetch_open_orders(symbol)}
+            step("stop-loss cancelled", gone, "none left" if gone else "still open!")
+        if bought > 0:
+            sell = await client.create_order(symbol, "market", "sell", float(bought), None,
+                                             {"newClientOrderId": cid("tsell")})
+            sold = await client.fetch_order(sell["id"], symbol)
+            step("sold back what the test bought", sold.get("status") == "closed",
+                 f"sold {sold.get('filled')} {base} at {sold.get('average')}")
+    return {"ok": all(s["ok"] for s in steps), "steps": steps, "alerts": []}

@@ -92,7 +92,15 @@ export default function ConnectionPage() {
                         setOrderTest(null);
                         void run(`ot-${c.id}`, async () => setOrderTest(await api.post(`/security/credentials/${c.id}/order-test`)), "Order test finished.");
                       }
-                    }}>{busy === `ot-${c.id}` ? "Running…" : "Run demo order test"}</Button>
+                    }}>{busy === `ot-${c.id}` ? "Running…" : "Run futures order test"}</Button>
+                  )}
+                  {c.environment !== "production" && c.markets.includes("spot") && (
+                    <Button disabled={busy !== null} onClick={() => {
+                      if (window.confirm("Run a real SPOT order test with DEMO funds? NEXUS buys the smallest BTC amount, places a stop-loss order at Binance, verifies and cancels it, then sells back only what it bought.")) {
+                        setOrderTest(null);
+                        void run(`os-${c.id}`, async () => setOrderTest(await api.post(`/security/credentials/${c.id}/order-test?market=spot`)), "Spot order test finished.");
+                      }
+                    }}>{busy === `os-${c.id}` ? "Running…" : "Run spot order test"}</Button>
                   )}
                   <Button tone="danger" disabled={busy !== null} onClick={() => {
                     if (window.confirm(`Disconnect "${c.label}"? The stored key is revoked and can no longer be used.`)) {
@@ -106,7 +114,7 @@ export default function ConnectionPage() {
         </Card>
 
         {orderTest && (
-          <Card title={`Order test (${orderTest.environment ?? "demo"})`} actions={<Badge tone={orderTest.ok ? "good" : "bad"}>{orderTest.ok ? "passed" : "failed"}</Badge>}>
+          <Card title={`${orderTest.market === "spot" ? "Spot" : "Futures"} order test (${orderTest.environment ?? "demo"})`} actions={<Badge tone={orderTest.ok ? "good" : "bad"}>{orderTest.ok ? "passed" : "failed"}</Badge>}>
             {orderTest.error && <p role="alert" className="mb-2 text-sm text-down">{orderTest.error}</p>}
             <ol className="space-y-1 text-sm">
               {orderTest.steps.map((x: Any, i: number) => (

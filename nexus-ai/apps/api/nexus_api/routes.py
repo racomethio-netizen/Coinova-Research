@@ -690,7 +690,8 @@ async def binance_reachability() -> dict[str, Any]:
 
 
 @router.post("/security/credentials/{cred_id}/order-test", dependencies=[Depends(owner)])
-async def credential_order_test(cred_id: int, s: Session = Depends(db),
+async def credential_order_test(cred_id: int, market: Literal["futures", "spot"] = "futures",
+                                s: Session = Depends(db),
                                 redis: Any = Depends(redis_dep),
                                 viewer: Viewer = Depends(current_viewer),
                                 settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
@@ -709,24 +710,48 @@ async def credential_order_test(cred_id: int, s: Session = Depends(db),
     if env not in ("demo", "testnet"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST,
                             "the order test runs only on demo or testnet keys, never production")
-    if "futures" not in ((cred.permissions or {}).get("markets") or []):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "this key has no futures access")
+    if market not in ((cred.permissions or {}).get("markets") or []):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"this key has no {market} access")
     if not await redis.set(f"nexus:order_test:{cred_id}", "1", nx=True, ex=120):
         raise HTTPException(status.HTTP_409_CONFLICT, "an order test is already running")
     api_key, secret = decrypt(cred, settings)
-    transport = CcxtFuturesTransport(api_key, secret, cafile=settings.extra_ca_file,
-                                     environment=env)
-    try:
-        result = await run_round_trip(BinanceFuturesAdapter(transport))
-    except Exception as exc:
-        result = {"ok": False, "steps": [], "alerts": [], "error": explain(exc)}
-    finally:
-        await transport.close()
-        await redis.delete(f"nexus:order_test:{cred_id}")
+    if market == "spot":
+        import ccxt.async_support as ccxt_async
+
+        from nexus_api.ordertest import run_spot_round_trip
+
+        config: dict[str, Any] = {"apiKey": api_key, "secret": secret, "enableRateLimit": True,
+                                  "timeout": 10_000, "aiohttp_trust_env": True,
+                                  "options": {"adjustForTimeDifference": True}}
+        if settings.extra_ca_file:
+            config["cafile"] = settings.extra_ca_file
+        client = ccxt_async.binance(config)
+        if env == "demo":
+            client.enable_demo_trading(True)
+        else:
+            client.set_sandbox_mode(True)
+        try:
+            result = await run_spot_round_trip(client)
+        except Exception as exc:
+            result = {"ok": False, "steps": [], "alerts": [], "error": explain(exc)}
+        finally:
+            await client.close()
+            await redis.delete(f"nexus:order_test:{cred_id}")
+    else:
+        transport = CcxtFuturesTransport(api_key, secret, cafile=settings.extra_ca_file,
+                                         environment=env)
+        try:
+            result = await run_round_trip(BinanceFuturesAdapter(transport))
+        except Exception as exc:
+            result = {"ok": False, "steps": [], "alerts": [], "error": explain(exc)}
+        finally:
+            await transport.close()
+            await redis.delete(f"nexus:order_test:{cred_id}")
     result["environment"] = env
+    result["market"] = market
     repo.record_audit(s, actor=viewer.actor, action="order_test", user_id=viewer.user.id,
                       target_type="exchange_credential", target_id=str(cred_id),
-                      details={"ok": result["ok"], "environment": env,
+                      details={"ok": result["ok"], "environment": env, "market": market,
                                "steps": [x["step"] + (" ok" if x["ok"] else " FAILED")
                                          for x in result["steps"]]})
     return result
