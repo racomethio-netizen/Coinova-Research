@@ -188,6 +188,12 @@ class Settings(BaseSettings):
     # Single-server hosting: the API process also supervises the market-data and trader
     # workers. Honoured only in paper mode (see nexus_api.workers).
     run_workers: bool = False
+    # "process": one child process per worker (more memory, isolated).
+    # "inline": workers run as tasks in the API's event loop (fits a 512 MB server).
+    workers_mode: Literal["process", "inline"] = "process"
+    # Optional: this service's own public URL. While workers run, it is requested every
+    # 10 minutes so a hosting plan that sleeps idle web services keeps the workers up.
+    keep_awake_url: str | None = None
     # Entries are paused while the news-risk score is above this (0..1).
     news_block_threshold: float = 0.7
 

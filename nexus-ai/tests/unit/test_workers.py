@@ -1,7 +1,7 @@
 import asyncio
 import sys
 
-from nexus_api.workers import WorkerSupervisor
+from nexus_api.workers import InlineWorkers, WorkerSupervisor, keep_awake
 from nexus_config import Settings, TradingMode
 
 
@@ -37,3 +37,55 @@ def test_restarts_a_crashed_worker_and_stops_cleanly():
     assert sup.restarts["crash"] >= 2
     assert sup.restarts["sleep"] == 0
     assert all(p.returncode is not None for p in sup.procs.values())
+
+
+def test_inline_mode_selected():
+    sup = WorkerSupervisor.from_settings(
+        _settings(run_workers=True, trading_mode="paper", workers_mode="inline"))
+    assert isinstance(sup, InlineWorkers) and set(sup.workers) == {"market-data", "trader"}
+
+
+def test_inline_restarts_crashes_and_stops_cleanly():
+    calls = {"crash": 0, "steady": 0}
+
+    async def crash(stop):
+        calls["crash"] += 1
+        raise RuntimeError("boom")
+
+    async def steady(stop):
+        calls["steady"] += 1
+        await stop.wait()
+
+    async def go():
+        w = InlineWorkers({"crash": crash, "steady": steady}, base_delay=0.05, grace=2)
+        w.start()
+        await asyncio.sleep(0.6)
+        await w.stop()
+        return w
+    w = asyncio.run(go())
+    assert w.restarts["crash"] >= 2 and calls["crash"] >= 2
+    assert calls["steady"] == 1 and w.restarts["steady"] == 0
+    assert all(t.done() for t in w._tasks)
+
+
+def test_keep_awake_requests_health_and_stops(monkeypatch):
+    import httpx
+
+    seen = []
+
+    def handler(request):
+        seen.append(str(request.url))
+        return httpx.Response(200)
+
+    real = httpx.AsyncClient
+    monkeypatch.setattr(httpx, "AsyncClient",
+                        lambda **kw: real(transport=httpx.MockTransport(handler), **kw))
+
+    async def go():
+        stop = asyncio.Event()
+        task = asyncio.create_task(keep_awake("https://x.example/", stop, every=0.05))
+        await asyncio.sleep(0.2)
+        stop.set()
+        await asyncio.wait_for(task, 1)
+    asyncio.run(go())
+    assert seen and all(u == "https://x.example/health/live" for u in seen)

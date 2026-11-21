@@ -23,6 +23,7 @@ from nexus_common.timeutil import utcnow
 from nexus_config import ExchangeCode, Settings, get_settings
 from nexus_db import make_engine, make_session_factory, models, transaction
 from nexus_exchange.base import ExchangeAdapter
+from nexus_exchange.ccxt_adapter import CcxtSpotAdapter
 from nexus_exchange.errors import ExchangeError
 from nexus_exchange.factory import build_from_settings, build_ws_client
 from nexus_exchange.models import OrderBook
@@ -117,8 +118,9 @@ class MarketDataService:
 
     def ws_streams(self) -> list[tuple[ReconnectingStream[Any], Any]]:
         out = []
-        for code in self.adapters:
-            client = build_ws_client(ExchangeCode(code), self.settings)
+        for code, adapter in self.adapters.items():
+            seed = adapter.ccxt_markets() if isinstance(adapter, CcxtSpotAdapter) else None
+            client = build_ws_client(ExchangeCode(code), self.settings, markets=seed)
             for (c, symbol) in self.pairs:
                 if c != code:
                     continue
@@ -172,20 +174,33 @@ class MarketDataService:
             await adapter.close()
 
 
-async def main() -> None:
-    settings = get_settings()
-    configure_logging(settings.log_level, json=settings.log_json)
+async def _relay(src: asyncio.Event, dst: asyncio.Event) -> None:
+    await src.wait()
+    dst.set()
+
+
+async def serve(settings: Settings, stop: asyncio.Event) -> None:
+    """Run until ``stop`` is set (used by main() and by the API's inline worker mode)."""
     engine = make_engine(settings.database_url.get_secret_value())
     redis = connect_redis(settings.redis_url.get_secret_value())
     service = MarketDataService(settings, make_session_factory(engine), redis)
-    loop = asyncio.get_running_loop()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, service.stop.set)
+    relay = asyncio.create_task(_relay(stop, service.stop))
     try:
         await service.run()
     finally:
+        relay.cancel()
         await redis.aclose()
         engine.dispose()
+
+
+async def main() -> None:
+    settings = get_settings()
+    configure_logging(settings.log_level, json=settings.log_json)
+    stop = asyncio.Event()
+    loop = asyncio.get_running_loop()
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, stop.set)
+    await serve(settings, stop)
 
 
 if __name__ == "__main__":

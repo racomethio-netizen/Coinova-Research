@@ -15,7 +15,7 @@ from nexus_exchange.errors import UnsupportedFeature
 def build_adapter(
     code: ExchangeCode, *, api_key: str | None = None, secret: str | None = None,
     sandbox: bool = False, timeout_ms: int = 10_000, public_api_url: str | None = None,
-    ca_file: str | None = None,
+    ca_file: str | None = None, keep_symbols: frozenset[str] | None = None,
 ) -> ExchangeAdapter:
     caps = CAPABILITIES[code]
     if sandbox and not caps.sandbox_available:
@@ -25,18 +25,21 @@ def build_adapter(
     client = create_ccxt_client(code.value, api_key=api_key, secret=secret, sandbox=sandbox,
                                 timeout_ms=timeout_ms, public_api_url=public_api_url,
                                 ca_file=ca_file)
-    return CcxtSpotAdapter(code.value, client, caps)
+    return CcxtSpotAdapter(code.value, client, caps, keep_symbols=keep_symbols)
 
 
 def build_from_settings(code: ExchangeCode, settings: Settings) -> ExchangeAdapter:
     """Public-data adapter (no credentials) configured from settings."""
     url = settings.binance_public_api_url if code is ExchangeCode.BINANCE else None
     return build_adapter(code, sandbox=settings.use_exchange_sandbox, public_api_url=url,
-                         ca_file=settings.extra_ca_file)
+                         ca_file=settings.extra_ca_file,
+                         keep_symbols=frozenset(settings.trading_pairs))
 
 
-def build_ws_client(code: ExchangeCode, settings: Settings) -> Any:
-    """ccxt.pro client for PUBLIC market-data streams (no credentials)."""
+def build_ws_client(code: ExchangeCode, settings: Settings,
+                    markets: list[dict[str, Any]] | None = None) -> Any:
+    """ccxt.pro client for PUBLIC market-data streams (no credentials). ``markets``
+    (already loaded elsewhere) avoids loading every market again in this client."""
     import ccxt.pro as ccxt_pro
 
     config: dict[str, Any] = {"enableRateLimit": True, "options": {"defaultType": "spot"}}
@@ -46,6 +49,8 @@ def build_ws_client(code: ExchangeCode, settings: Settings) -> Any:
         config["options"]["fetchMarkets"] = ["spot"]
         config["options"]["fetchCurrencies"] = False
     client = getattr(ccxt_pro, code.value)(config)
+    if markets:
+        client.set_markets(markets)
     if code is ExchangeCode.BINANCE:
         # Order book streams also fetch a REST depth snapshot: use the same public mirror.
         if settings.binance_public_ws_url:

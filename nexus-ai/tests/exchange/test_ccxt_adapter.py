@@ -48,6 +48,16 @@ async def test_load_markets_spot_only_and_precision_required() -> None:
     assert btc.min_notional == D("5")
 
 
+async def test_keep_symbols_trims_market_metadata() -> None:
+    client = FakeCcxtClient()
+    a = CcxtSpotAdapter("binance", client, CAPABILITIES[ExchangeCode.BINANCE],
+                        keep_symbols=frozenset({"BTC/USDT"}))
+    markets = await a.load_markets()
+    assert set(markets) == {"BTC/USDT"}
+    assert set(client.markets) == {"BTC/USDT"}  # the client itself no longer holds the rest
+    assert [m["symbol"] for m in a.ccxt_markets()] == ["BTC/USDT"]
+
+
 async def test_decimal_places_precision_mode() -> None:
     a, client = adapter()
     client.precisionMode = 2

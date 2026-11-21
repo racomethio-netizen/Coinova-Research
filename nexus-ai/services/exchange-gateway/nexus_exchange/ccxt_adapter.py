@@ -9,6 +9,7 @@ not round-trip exactly.
 from __future__ import annotations
 
 import asyncio
+import gc
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import replace
@@ -211,13 +212,31 @@ def rules_from_ccxt(m: dict[str, Any], precision_mode: int) -> MarketRules | Non
     )
 
 
+def _release_freed_memory() -> None:
+    """Return freed heap pages to the OS (glibc only; a no-op elsewhere)."""
+    try:
+        import ctypes
+
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except (OSError, AttributeError):
+        pass
+
+
 class CcxtSpotAdapter(ExchangeAdapter):
-    def __init__(self, code: str, client: Any, capabilities: Capabilities) -> None:
+    def __init__(self, code: str, client: Any, capabilities: Capabilities, *,
+                 keep_symbols: frozenset[str] | None = None) -> None:
         super().__init__()
         self.code = code
         self.capabilities = capabilities
         self._client = client
+        # When set, only these symbols' metadata is kept after loading. Binance lists
+        # thousands of markets (~100 MB per client); NEXUS uses a handful.
+        self.keep_symbols = keep_symbols
         self.excluded_markets: dict[str, str] = {}
+
+    def ccxt_markets(self) -> list[dict[str, Any]]:
+        """Loaded raw ccxt markets, for seeding another client (e.g. a stream client)."""
+        return list((self._client.markets or {}).values())
 
     def __repr__(self) -> str:  # never expose the client (it holds credentials)
         return f"CcxtSpotAdapter(code={self.code!r})"
@@ -243,6 +262,11 @@ class CcxtSpotAdapter(ExchangeAdapter):
     # ---------------------------------------------------------------- metadata
     async def load_markets(self, *, reload: bool = False) -> dict[str, MarketRules]:
         raw = await self._call(self._client.load_markets, reload)
+        if self.keep_symbols is not None:
+            raw = {k: v for k, v in raw.items() if k in self.keep_symbols}
+            self._client.set_markets(list(raw.values()))
+            gc.collect()
+            _release_freed_memory()
         mode = int(getattr(self._client, "precisionMode", _TICK_SIZE))
         markets: dict[str, MarketRules] = {}
         excluded: dict[str, str] = {}

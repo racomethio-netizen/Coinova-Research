@@ -193,5 +193,12 @@ trading on Render can use live data once background workers are approved.
 * Measured memory with all three running: about 870 MB. Render Starter (512 MB) is too
   small; Standard (2 GB) is needed. The free plan also sleeps when idle, which stops workers.
 * Funding carry research: FAIL (see docs/research/2026-11-21-carry-preregistration.md).
-* Next: owner switches nexus-ai-fra to Standard in the Render dashboard; then set
-  NEXUS_RUN_WORKERS=true on that service and check logs for worker_started / trader_started.
+* Owner chose a 5-day trial on the FREE instance (512 MB). Added
+  NEXUS_WORKERS_MODE=inline (workers as tasks in the API event loop) and trimmed ccxt market
+  metadata to the traded symbols (Binance lists ~3,500 markets, ~100 MB per client) plus
+  malloc_trim. Measured API + both workers: 870 MB (process) -> 575 -> 469 -> 423 MB.
+* NEXUS_KEEP_AWAKE_URL: optional self-request every 10 min while workers run, because the
+  free plan sleeps idle web services (750 free hours/month; 5 days = 120 h).
+* Render env for the trial (nexus-ai-fra): NEXUS_RUN_WORKERS=true, NEXUS_WORKERS_MODE=inline,
+  MALLOC_ARENA_MAX=2, NEXUS_ENABLED_EXCHANGES=binance, NEXUS_KEEP_AWAKE_URL=<service URL>.
+  To stop: set NEXUS_RUN_WORKERS=false.

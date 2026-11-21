@@ -35,14 +35,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.factory = make_session_factory(app.state.engine)
         app.state.redis = connect_redis(settings.redis_url.get_secret_value())
         log.info("api_started", **settings.safe_summary())
-        from nexus_api.workers import WorkerSupervisor
+        from nexus_api.workers import WorkerSupervisor, keep_awake
 
         workers = WorkerSupervisor.from_settings(settings)
+        awake_stop = asyncio.Event()
+        awake: asyncio.Task[None] | None = None
         if workers is not None:
             workers.start()
+            if settings.keep_awake_url:
+                awake = asyncio.create_task(keep_awake(settings.keep_awake_url, awake_stop))
         try:
             yield
         finally:
+            awake_stop.set()
+            if awake is not None:
+                await awake
             if workers is not None:
                 await workers.stop()
             await app.state.redis.aclose()

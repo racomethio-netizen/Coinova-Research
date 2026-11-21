@@ -44,6 +44,9 @@ class FakeCcxtClient:
     def count(self, name: str) -> int:
         return sum(1 for n, _ in self.calls if n == name)
 
+    def set_markets(self, markets: list[dict[str, Any]]) -> None:
+        self.markets = {m["symbol"]: m for m in markets}
+
     async def load_markets(self, reload: bool = False) -> Any:
         self.calls.append(("load_markets", (reload,)))
         if "load_markets" in self.errors:

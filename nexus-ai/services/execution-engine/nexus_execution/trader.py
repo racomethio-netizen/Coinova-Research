@@ -708,9 +708,8 @@ class TradingEngine:
                 pass
 
 
-async def main() -> None:
-    settings = get_settings()
-    configure_logging(settings.log_level, json=settings.log_json)
+async def serve(settings: Settings, stop: asyncio.Event) -> None:
+    """Run until ``stop`` is set (used by main() and by the API's inline worker mode)."""
     engine = make_engine(settings.database_url.get_secret_value())
     factory = make_session_factory(engine)
     redis = connect_redis(settings.redis_url.get_secret_value())
@@ -732,16 +731,29 @@ async def main() -> None:
                              extra_slippage=settings.paper_slippage_bps / 10_000,
                              quote_asset=settings.quote_currency)
     trader = TradingEngine(settings, factory, redis, adapters, broker, books)
-    loop = asyncio.get_running_loop()
-    for sig in (signals.SIGINT, signals.SIGTERM):
-        loop.add_signal_handler(sig, trader.stop.set)
+    async def relay() -> None:
+        await stop.wait()
+        trader.stop.set()
+
+    relay_task = asyncio.create_task(relay())
     try:
         await trader.run(settings.trader_interval_seconds)
     finally:
+        relay_task.cancel()
         for a in adapters.values():
             await a.close()
         await redis.aclose()
         engine.dispose()
+
+
+async def main() -> None:
+    settings = get_settings()
+    configure_logging(settings.log_level, json=settings.log_json)
+    stop = asyncio.Event()
+    loop = asyncio.get_running_loop()
+    for sig in (signals.SIGINT, signals.SIGTERM):
+        loop.add_signal_handler(sig, stop.set)
+    await serve(settings, stop)
 
 
 if __name__ == "__main__":
