@@ -221,3 +221,9 @@ trading on Render can use live data once background workers are approved.
 * Shared egress IPs mean other Render customers' traffic counts toward the same Binance
   limits; a paid instance does not change the egress IP. A dedicated IP (e.g. a VPS) is the
   durable fix if bans recur. The production key's IP whitelist must match the egress IP.
+* Production `strategies.parameters` had no validation, so the Strategies page said "Not
+  validated yet". Re-ran `validate-strategies` locally on 2 years of Binance candles
+  (2024-11-14 to 2026-11-14, 9 walk-forward windows): all six FAIL (OOS expectancy -0.30%
+  to -0.53% per trade, profit factor 0.31-0.57). Copied those results into production
+  (is_enabled stays false). A 120-day run gives 0 windows and was not used. The page now
+  says why Enable is locked.

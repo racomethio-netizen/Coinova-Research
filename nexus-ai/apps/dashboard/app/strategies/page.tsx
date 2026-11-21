@@ -44,6 +44,12 @@ export default function Strategies() {
                 {s.enabled ? <Button onClick={() => toggle(s.code, false)}>Disable</Button>
                   : <Button tone="primary" disabled={!v?.passed} onClick={() => toggle(s.code, true)}>Enable</Button>}
               </div>
+              {!s.enabled && !v?.passed && (
+                <p className="mt-2 text-xs text-muted">
+                  {v ? "Locked: this strategy lost money in its out-of-sample test, so it cannot be enabled."
+                     : "Locked until the strategy passes its out-of-sample test."}
+                </p>
+              )}
             </Card>
           );
         })}
