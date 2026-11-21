@@ -41,3 +41,28 @@ Also reported: always-in-position variant and per-year results, for comparison o
 ## Decision
 Pass -> candidate for paper trading only (never live without owner approval).
 Fail -> recorded as failed; this rule is not re-tuned.
+
+## Result (run once, 2026-11-21, after this file was committed as f187883)
+
+Data: 2,496 daily bars per symbol (2020-01-01 to 2026-10-31), funding every day; largest
+daily spot/perp close gap 0.7% (BTC), 1.0% (ETH). The rule was in position 30% of days.
+
+| Metric | Pre-registered rule | Always-on (comparison only) |
+|---|---|---|
+| Annual return on capital | 3.91% | 5.51% |
+| Sharpe | 5.21 | 7.29 |
+| Max drawdown | 0.89% | 0.93% |
+| Positive quarters | 43% (12/28) | 89% (25/28) |
+| t-statistic | 13.6 | 19.1 |
+
+Per year, rule: 2020 8.3%, 2021 15.7%, 2022 -0.1%, 2023 0.8%, 2024 3.2%, 2025 -0.3%, 2026 0.0%.
+Per year, always-on: 2020 10.0%, 2021 17.0%, 2022 0.3%, 2023 3.5%, 2024 5.7%, 2025 1.8%, 2026 0.6%.
+
+**FAIL** on gate 1 (3.91% < 4%) and gate 4 (43% < 60%; quarters out of position count as
+non-positive). The edge itself is real and low-risk in this sample, but it has shrunk to
+about 1-2% a year in 2025-2026, below cash rates. Not re-tuned. The always-on variant
+passed every gate here, but it was a comparison, not the hypothesis: it may only be
+judged on data it has not seen, i.e. a forward paper test from now on.
+
+Limits of this test: daily closes (intraday basis spikes not modelled); exchange and
+counterparty risk not modelled; capital assumed 1x-collateralised with daily rebalancing.
