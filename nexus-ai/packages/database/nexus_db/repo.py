@@ -142,3 +142,20 @@ def record_risk_event(session: Session, *, mode: str, event_type: str, severity:
 def recent_system_events(session: Session, limit: int = 100) -> Sequence[m.SystemEvent]:
     return session.scalars(select(m.SystemEvent).order_by(m.SystemEvent.id.desc())
                            .limit(limit)).all()
+
+
+KILL_SWITCH_ACTIONS = ("kill_switch_engaged", "kill_switch_cleared")
+
+
+def kill_switch_db_state(session: Session) -> dict[str, Any] | None:
+    """Durable kill-switch state: the latest engage/clear row in the append-only audit
+    log. None = cleared (or never engaged)."""
+    from sqlalchemy import select as _select
+
+    row = session.scalar(_select(m.AuditLog)
+                         .where(m.AuditLog.action.in_(KILL_SWITCH_ACTIONS))
+                         .order_by(m.AuditLog.id.desc()).limit(1))
+    if row is None or row.action == "kill_switch_cleared":
+        return None
+    return {"reason": (row.details or {}).get("reason"), "actor": row.actor,
+            "at": row.created_at.isoformat() if row.created_at else None, "restored": True}

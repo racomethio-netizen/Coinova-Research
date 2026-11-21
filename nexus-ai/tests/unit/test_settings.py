@@ -13,11 +13,12 @@ def test_defaults_are_safe() -> None:
     assert s.live_trading_enabled is False
     assert s.trading_pairs == ["BTC/USDT", "ETH/USDT"]
     assert [t.value for t in s.timeframes] == ["5m", "15m", "1h", "4h", "1d"]
-    assert s.risk.risk_per_trade == Decimal("0.005")
-    assert s.risk.daily_loss_limit == Decimal("0.02")
-    assert s.risk.weekly_loss_limit == Decimal("0.04")
+    # Owner mandate 2026-11-21: initial paper profile.
+    assert s.risk.risk_per_trade == Decimal("0.0025")
+    assert s.risk.daily_loss_limit == Decimal("0.01")
+    assert s.risk.weekly_loss_limit == Decimal("0.03")
     assert s.risk.max_drawdown == Decimal("0.10")
-    assert s.risk.max_open_positions == 2
+    assert s.risk.max_open_positions == 3
     assert s.risk.max_portfolio_exposure == Decimal("0.50")
     assert s.live_trading_config_problems()  # live not permitted
 
@@ -39,7 +40,7 @@ def test_env_parsing(monkeypatch: pytest.MonkeyPatch) -> None:
         ("daily_loss_limit", "0.021"),
         ("weekly_loss_limit", "0.041"),
         ("max_drawdown", "0.11"),
-        ("max_open_positions", 3),
+        ("max_open_positions", 4),
         ("max_portfolio_exposure", "0.6"),
         ("risk_per_trade", "0"),
         ("risk_per_trade", "-0.001"),

@@ -91,8 +91,8 @@ class TestLimits:
         ({"kill_switch": True}, "kill switch"),
         ({"unreconciled_orders": 1}, "unknown state"),
         ({"balances_reconciled": False}, "not reconciled"),
-        ({"open_positions": 2}, "max open positions"),
-        ({"open_positions": 1, "pending_entries": 1}, "max open positions"),
+        ({"open_positions": 3}, "max open positions"),
+        ({"open_positions": 2, "pending_entries": 1}, "max open positions"),
         ({"exposure": D(5_000)}, "exposure"),
         ({"held_assets": frozenset({"BTC"})}, "duplicate"),
     ])
@@ -101,7 +101,7 @@ class TestLimits:
         assert not d.approved and any(fragment in r for r in d.reasons), d.reasons
 
     def test_just_below_daily_limit_warns_but_allows(self) -> None:
-        d = evaluate_trade(snapshot(equity=D(9_801)), MKT, RiskSettings())
+        d = evaluate_trade(snapshot(equity=D(9_901)), MKT, RiskSettings())   # -0.99% vs 1%
         assert d.approved and ("daily_loss_warning", "warning") in d.events
 
     def test_drawdown_shutdown(self) -> None:

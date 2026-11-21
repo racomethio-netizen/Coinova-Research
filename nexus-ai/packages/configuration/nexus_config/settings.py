@@ -59,12 +59,18 @@ LIVE_TRADING_ACK_PHRASE: Final = "I accept that live trading can lose real money
 # Mandated ceilings (fractions of equity). Config may only go lower.
 # Owner mandate 2026-11-20: risk 0.5% default / 1% max, daily loss 2%, max drawdown 10%,
 # futures 2x default / 5x max, isolated margin. Weekly 4% keeps daily <= weekly <= drawdown.
+# Owner mandate 2026-11-21 (initial paper profile): defaults 0.25% risk per trade, 1% daily,
+# 3% weekly, 3 open positions, 1x (spot only; futures stay disabled). The absolute
+# ceilings above are unchanged except max open positions (2 -> 3). Total open risk at the
+# new defaults is 3 x 0.25% = 0.75%, lower than the previous 2 x 0.5% = 1%.
 MAX_RISK_PER_TRADE: Final = Decimal("0.01")
-DEFAULT_RISK_PER_TRADE: Final = Decimal("0.005")
+DEFAULT_RISK_PER_TRADE: Final = Decimal("0.0025")
 MAX_DAILY_LOSS: Final = Decimal("0.02")
+DEFAULT_DAILY_LOSS: Final = Decimal("0.01")
 MAX_WEEKLY_LOSS: Final = Decimal("0.04")
+DEFAULT_WEEKLY_LOSS: Final = Decimal("0.03")
 MAX_DRAWDOWN: Final = Decimal("0.10")
-MAX_OPEN_POSITIONS: Final = 2
+MAX_OPEN_POSITIONS: Final = 3
 MAX_PORTFOLIO_EXPOSURE: Final = Decimal("0.50")
 # Futures: Binance only, disabled by default, isolated margin. Leverage never changes
 # position size (size comes from risk); it only sets margin use.
@@ -77,8 +83,8 @@ FUTURES_EXCHANGES: Final = ("binance",)
 
 class RiskSettings(BaseModel):
     risk_per_trade: Decimal = DEFAULT_RISK_PER_TRADE
-    daily_loss_limit: Decimal = MAX_DAILY_LOSS
-    weekly_loss_limit: Decimal = MAX_WEEKLY_LOSS
+    daily_loss_limit: Decimal = DEFAULT_DAILY_LOSS
+    weekly_loss_limit: Decimal = DEFAULT_WEEKLY_LOSS
     max_drawdown: Decimal = MAX_DRAWDOWN
     max_open_positions: int = MAX_OPEN_POSITIONS
     max_portfolio_exposure: Decimal = MAX_PORTFOLIO_EXPOSURE

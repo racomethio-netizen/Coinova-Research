@@ -401,3 +401,36 @@ def test_x_endpoints_without_a_token(client: TestClient) -> None:
     snap = client.get("/api/v1/x/sentiment").json()
     assert snap["available"] is False and "NEXUS_X_BEARER_TOKEN" in snap["message"]
     assert "never opens a trade" in snap["policy"]
+
+
+def test_kill_switch_state_survives_redis_loss_and_close_needs_confirmation(
+        client: TestClient) -> None:
+    import os
+
+    import redis as sync_redis
+    from nexus_common import events
+
+    login(client)
+    assert client.post("/api/v1/risk/kill-switch/close-positions",
+                       json={"mode": "paper", "confirm": "CLOSE PAPER POSITIONS"},
+                       headers=CSRF).status_code == 409          # not engaged yet
+    client.post("/api/v1/risk/kill-switch", json={"reason": "manual stop"}, headers=CSRF)
+    sync_redis.Redis.from_url(os.environ["NEXUS_TEST_REDIS_URL"]).delete(
+        events.KILL_SWITCH_KEY)                                  # simulate Redis data loss
+    ks = client.get("/api/v1/risk").json()["kill_switch"]
+    assert ks is not None and ks["reason"] == "manual stop"     # durable record
+    st = client.get("/api/v1/risk/kill-switch/state").json()
+    assert st["modes"]["paper"]["open_positions"] == []
+    assert st["modes"]["live"]["confirm_phrase"] == "CLOSE ALL LIVE POSITIONS"
+    bad = client.post("/api/v1/risk/kill-switch/close-positions",
+                      json={"mode": "paper", "confirm": "yes"}, headers=CSRF)
+    assert bad.status_code == 400
+    live = client.post("/api/v1/risk/kill-switch/close-positions",
+                       json={"mode": "live", "confirm": "CLOSE ALL LIVE POSITIONS"},
+                       headers=CSRF)
+    assert live.status_code == 403                               # live needs 2FA
+    ok = client.post("/api/v1/risk/kill-switch/close-positions",
+                     json={"mode": "paper", "confirm": "CLOSE PAPER POSITIONS"}, headers=CSRF)
+    assert ok.status_code == 200 and ok.json()["requested"] is True
+    assert client.get("/api/v1/risk/kill-switch/state").json()["modes"]["paper"][
+        "close_all_requested"] is True

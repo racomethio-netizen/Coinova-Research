@@ -64,7 +64,7 @@ async def overview(mode: Mode = "paper", s: Session = Depends(db), redis: Any = 
     return {
         "mode": mode, "config": settings.safe_summary(), "report": report,
         "open_positions": open_pos, "exchanges": await _health(redis),
-        "kill_switch": await KillSwitch(redis).status(),
+        "kill_switch": await _kill_status(s, redis),
         "recent_signals": _rows(signals, ["id", "status", "side", "timeframe", "bar_time",
                                           "entry_price", "confidence", "rejection_reason"]),
         "strategies": [{"code": x.code, "enabled": x.is_enabled,
@@ -357,7 +357,7 @@ async def risk(mode: Mode = "paper", s: Session = Depends(db), redis: Any = Depe
     reset_at = await protection.streak_reset_at(redis)
     streak = None if p is None else protection.streak_state(s, p.id, reset_at)
     return {"mode": mode, "limits": {k: str(v) for k, v in settings.risk.model_dump().items()},
-            "kill_switch": await KillSwitch(redis).status(),
+            "kill_switch": await _kill_status(s, redis),
             "loss_streak": None if streak is None else {
                 "consecutive_losses": streak.losses, "paused": streak.paused,
                 "risk_multiplier": str(risk_multiplier(streak)),
@@ -370,6 +370,74 @@ async def risk(mode: Mode = "paper", s: Session = Depends(db), redis: Any = Depe
                 "exposure_pct": ser(last.exposure / last.equity) if last.equity else None,
                 "open_positions": last.open_positions, "as_of": ser(last.captured_at)},
             "events": _rows(ev, ["id", "event_type", "severity", "details", "created_at"])}
+
+
+async def _kill_status(s: Session, redis: Any) -> dict[str, Any] | None:
+    """Redis flag, or the durable audit record if Redis lost it (shown as engaged)."""
+    live = await KillSwitch(redis).status()
+    return live if live is not None else repo.kill_switch_db_state(s)
+
+
+CLOSE_CONFIRM = {"paper": "CLOSE PAPER POSITIONS", "live": "CLOSE ALL LIVE POSITIONS"}
+
+
+class ClosePositionsBody(BaseModel):
+    mode: Mode
+    confirm: str = Field(max_length=64)
+    totp: str | None = Field(default=None, max_length=6)
+
+
+@router.get("/risk/kill-switch/state", dependencies=[Depends(owner)])
+async def kill_state(s: Session = Depends(db), redis: Any = Depends(redis_dep)) -> dict[str, Any]:
+    """Kill-switch status with the open positions and resting orders per mode (from the
+    database, which the trader reconciles with the exchange every cycle)."""
+    from nexus_execution.trader import close_all_key
+
+    out: dict[str, Any] = {"kill_switch": await _kill_status(s, redis), "modes": {}}
+    for mode in ("paper", "live"):
+        pos = s.execute(select(models.Position, models.TradingPair.symbol)
+                        .join(models.TradingPair, models.TradingPair.id == models.Position.pair_id)
+                        .where(models.Position.mode == mode, models.Position.status == "open",
+                               models.Position.quantity > 0)).all()
+        orders = s.execute(select(models.Order, models.TradingPair.symbol)
+                           .join(models.TradingPair, models.TradingPair.id == models.Order.pair_id)
+                           .where(models.Order.mode == mode, models.Order.status.in_(
+                               ("pending_submit", "submitted", "open", "partially_filled",
+                                "unknown")))).all()
+        out["modes"][mode] = {
+            "open_positions": [{"id": p.id, "symbol": sym, "quantity": ser(p.quantity),
+                                "entry_price": ser(p.avg_entry_price),
+                                "stop_loss": ser(p.stop_loss)} for p, sym in pos],
+            "active_orders": [{"id": o.id, "symbol": sym, "side": o.side, "purpose": o.purpose,
+                               "status": o.status, "quantity": ser(o.amount)}
+                              for o, sym in orders],
+            "close_all_requested": bool(await redis.get(close_all_key(mode))),
+            "confirm_phrase": CLOSE_CONFIRM[mode],
+        }
+    return out
+
+
+@router.post("/risk/kill-switch/close-positions", dependencies=[Depends(owner)])
+async def kill_close_positions(body: ClosePositionsBody, s: Session = Depends(db),
+                               redis: Any = Depends(redis_dep),
+                               viewer: Viewer = Depends(current_viewer),
+                               settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Ask the trader to close every open position of a mode with bounded-slippage IOC
+    sells. Only while the kill switch is engaged; typed confirmation; live also needs 2FA."""
+    from nexus_execution.trader import close_all_key
+
+    if await _kill_status(s, redis) is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "engage the kill switch first")
+    if body.confirm != CLOSE_CONFIRM[body.mode]:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            f"type exactly: {CLOSE_CONFIRM[body.mode]}")
+    if body.mode == "live":
+        await check_totp(viewer, body.totp, settings, redis)
+    await redis.set(close_all_key(body.mode), viewer.actor, ex=6 * 3600)
+    repo.record_audit(s, actor=viewer.actor, action="kill_switch_close_requested",
+                      user_id=viewer.user.id, details={"mode": body.mode})
+    return {"requested": True, "mode": body.mode,
+            "note": "The trader places the sells on its next cycle (about 30 s)."}
 
 
 class KillBody(BaseModel):

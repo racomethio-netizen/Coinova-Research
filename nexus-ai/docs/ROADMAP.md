@@ -248,3 +248,22 @@ trading on Render can use live data once background workers are approved.
   the token as a session credential for api.x.com; then verify (1) GET
   /2/tweets/search/recent returns posts, (2) MCP initialize + tools/list on
   ?read_only=true lists no write tools, (3) first refresh writes nexus:x:snapshot.
+
+## 2026-11-21: audit and Phase 1 (safety foundations)
+
+* Audit: docs/AUDIT-2026-11-21.md (findings C1-C2, H1-H4, M1-M5, plan in 8 phases).
+* C1 fixed: kill switch is durable. Every engage (owner and the drawdown shutdown) writes
+  `kill_switch_engaged` to the append-only audit log; the trader restores the Redis flag
+  from it every cycle and blocks entries if the record cannot be read; the API shows the
+  durable state if Redis lost it. Clearing still needs the owner + 2FA.
+* C2 fixed: while engaged the trader cancels resting entry orders each cycle;
+  GET /risk/kill-switch/state lists positions and active orders per mode;
+  POST /risk/kill-switch/close-positions (engaged only; typed phrase; live also 2FA) makes
+  the trader sell every position with bounded-slippage IOC orders. Risk page UI added.
+* M5 applied (owner mandate): defaults 0.25% risk, 1% daily, 3% weekly, 3 positions;
+  ceiling for open positions 2 -> 3; other ceilings unchanged; spot is 1x; futures stay
+  disabled (their 2-5x options are unchanged until futures are reconsidered).
+* Tests: 514 pass (new: restore after Redis loss, unreadable record blocks entries,
+  close-all closes a paper position, API state/close confirmation).
+* Next: Phase 2 (regime gate per strategy, correlated exposure, cooldown, fill slippage
+  limit).

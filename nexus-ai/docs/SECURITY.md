@@ -62,6 +62,10 @@ HTTPS in production (Phase 14). Docs/OpenAPI are disabled in production.
 * TOTP 2FA (RFC 6238, secret encrypted at rest); step-up 2FA with replay protection for
   clearing the kill switch, activating models, storing API keys and live approval.
   Engaging the kill switch never requires 2FA: stopping must always be easy.
+* Kill switch durability: every engage/clear is in the append-only audit log; the trader
+  restores the Redis flag from it each cycle and blocks entries if it cannot read it.
+  Engaged = no new entries + resting entry orders cancelled. Closing positions is a
+  separate owner action with a typed phrase (live: plus 2FA).
 * CSRF: custom header required on mutations (no CORS) + Origin check.
 * Headers: CSP, X-Frame-Options DENY, nosniff, no-referrer, no-store, Permissions-Policy.
 * All routes require a session; mutations are owner-only (viewer role is read-only).

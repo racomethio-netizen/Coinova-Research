@@ -10,7 +10,9 @@ live trading never enabled by code (see docs/SECURITY.md); never bypass exchange
 or eligibility restrictions; never resubmit an order after a timeout (reconcile by client
 order ID); Decimal + NUMERIC for money; new migration per schema change, models must match
 (`alembic check`); risk ceilings in `nexus_config/settings.py` change only by explicit owner
-mandate (current: 0.5% default / 1% max risk per trade, 2% daily, 4% weekly, 10% drawdown).
+mandate (ceilings: 1% risk per trade, 2% daily, 4% weekly, 10% drawdown, 3 open
+positions; paper defaults since 2026-11-21: 0.25% per trade, 1% daily, 3% weekly).
+The kill switch is durable (audit log) and must never be auto-cleared.
 
 Before finishing any change: `scripts/test.sh` with NEXUS_TEST_DATABASE_URL and
 NEXUS_TEST_REDIS_URL set (integration tests are skipped otherwise; say so if skipped).

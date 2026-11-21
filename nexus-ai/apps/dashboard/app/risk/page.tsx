@@ -21,6 +21,8 @@ export default function Risk() {
     catch (e) { setMsg(e instanceof Error ? e.message : String(e)); }
   };
   const L = data?.limits;
+  const ks = useApi<Any>(data?.kill_switch ? "/risk/kill-switch/state" : null, 10000);
+  const [confirm, setConfirm] = useState("");
   return (
     <>
       <PageHeader title="Risk management" subtitle="Owner-set limits. Breaches block new entries; the max-drawdown breach engages the kill switch; a losing streak first halves risk, then pauses entries." />
@@ -49,6 +51,31 @@ export default function Risk() {
               </div>
             </div>
             {msg && <p role="alert" className="mt-2 text-sm text-down">{msg}</p>}
+            {data.kill_switch && ks.data && (
+              <div className="mt-4 space-y-3 border-t border-line pt-3 text-sm">
+                <p className="text-muted">While engaged, the trader blocks new entries and cancels resting entry orders every cycle. Open positions stay protected by their stops unless you close them below.</p>
+                {(["paper", "live"] as const).map((m) => {
+                  const st = ks.data.modes[m];
+                  return (
+                    <div key={m} className="rounded-lg border border-line p-3">
+                      <p className="mb-1 font-medium">{m === "live" ? "LIVE" : "Paper"}: {st.open_positions.length} open position(s), {st.active_orders.length} active order(s){st.close_all_requested ? " · close-all requested" : ""}</p>
+                      {st.open_positions.length > 0 && (
+                        <ul className="mb-2 list-disc pl-5 text-xs">{st.open_positions.map((p: Any) => <li key={p.id}>{p.symbol}: {p.quantity} @ {p.entry_price}, stop {p.stop_loss ?? DASH}</li>)}</ul>
+                      )}
+                      {st.open_positions.length > 0 && !st.close_all_requested && (
+                        <div className="grid gap-2 md:grid-cols-3">
+                          <Field id={`close-${m}`} label={`Type: ${st.confirm_phrase}`} value={confirm} onChange={setConfirm} autoComplete="off" />
+                          {m === "live" && <Field id="close-totp" label="Two-factor code" value={totp} onChange={setTotp} inputMode="numeric" />}
+                          <div className="flex items-end">
+                            <Button tone="danger" disabled={confirm !== st.confirm_phrase} onClick={async () => { await act("/risk/kill-switch/close-positions", { mode: m, confirm, totp: totp || null }); setConfirm(""); await ks.reload(); }}>Close all {m} positions</Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </Card>
           {data.loss_streak && (
             <Card title="Loss-streak protection" actions={<Badge tone={data.loss_streak.paused ? "bad" : Number(data.loss_streak.risk_multiplier) < 1 ? "warn" : "good"}>{data.loss_streak.paused ? "ENTRIES PAUSED" : Number(data.loss_streak.risk_multiplier) < 1 ? "risk reduced" : "normal"}</Badge>}>

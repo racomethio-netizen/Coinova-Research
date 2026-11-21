@@ -103,6 +103,11 @@ class Valuation:
     complete: bool          # False if any holding could not be marked (state uncertain)
 
 
+def close_all_key(mode: str) -> str:
+    """Redis flag set by the owner (API, audit-logged) to close all positions of a mode."""
+    return f"nexus:kill:close_all:{mode}"
+
+
 class TradingEngine:
     def __init__(self, settings: Settings, factory: sessionmaker[Session], redis: Any,
                  adapters: dict[str, ExchangeAdapter], broker: Broker,
@@ -391,7 +396,7 @@ class TradingEngine:
             equity=v.equity, day_start_equity=day0, week_start_equity=week0, peak_equity=peak,
             open_positions=v.open_positions, pending_entries=self._pending_entries(),
             exposure=v.exposure, held_assets=v.held_assets,
-            kill_switch=await self.kill.is_engaged(), unreconciled_orders=unknown,
+            kill_switch=await self._kill_active(), unreconciled_orders=unknown,
             balances_reconciled=v.complete, as_of=utcnow())
         base = sig.symbol.split("/")[0]
         venues = await self.venues(sig.symbol)
@@ -541,7 +546,7 @@ class TradingEngine:
             news_risk=news,
             daily_loss_limit_reached=loss_fraction(day0, v.equity) >= self.settings.risk.daily_loss_limit,
             weekly_loss_limit_reached=loss_fraction(week0, v.equity) >= self.settings.risk.weekly_loss_limit,
-            kill_switch=await self.kill.is_engaged(), reward_risk=None,
+            kill_switch=await self._kill_active(), reward_risk=None,
             confirmations_conflict=False, regime=sig.regime, setup_present=True)
         d = decide(snap, inputs, min_score=60)
         return d.action == "ENTER", d.explanation
@@ -660,10 +665,88 @@ class TradingEngine:
                               maxlen=events.STREAM_MAXLEN, approximate=True)
 
     # ------------------------------------------------------------------ cycle
+    # ------------------------------------------------------------------ kill switch
+    async def _sync_kill_switch(self) -> None:
+        """Restore the kill switch from the durable audit record when Redis lost it. If
+        that record cannot be read, entries are blocked for this cycle (fail closed)."""
+        try:
+            with transaction(self.factory) as s:
+                durable = repo.kill_switch_db_state(s)
+            self._kill_db_unknown = False
+        except Exception as exc:
+            log.error("kill_switch_db_unreadable", error=type(exc).__name__)
+            self._kill_db_unknown = True
+            return
+        if await self.kill.restore(durable):
+            await self.notify({"type": "emergency_shutdown", "reason":
+                               f"restored after state loss: {durable and durable.get('reason')}",
+                               "actor": "system:kill_switch"})
+
+    async def _kill_active(self) -> bool:
+        return getattr(self, "_kill_db_unknown", False) or await self.kill.is_engaged()
+
+    async def kill_actions(self) -> None:
+        """While engaged: cancel every resting ENTRY order of this portfolio, and close open
+        positions if the owner requested it (one IOC sell per position per cycle)."""
+        with transaction(self.factory) as s:
+            ids = list(s.scalars(select(models.Order.id).where(
+                models.Order.portfolio_id == self.portfolio_id,
+                models.Order.purpose == "entry",
+                models.Order.status.in_(("submitted", "open", "partially_filled")))))
+        for oid in ids:
+            try:
+                await self.orders.cancel(oid, "kill switch engaged")
+            except Exception as exc:  # reconcile next cycle; never resubmit
+                log.error("kill_cancel_failed", order_id=oid, error=type(exc).__name__)
+        if await self.redis.get(close_all_key(self.mode)):
+            open_left = await self.close_all_positions()
+            if open_left == 0:
+                await self.redis.delete(close_all_key(self.mode))
+                with transaction(self.factory) as s:
+                    repo.record_audit(s, actor="system:kill_switch",
+                                      action="kill_switch_positions_closed",
+                                      details={"mode": self.mode})
+
+    async def close_all_positions(self) -> int:
+        """Place a reduce-only style IOC sell for each open position (bounded slippage).
+        Returns how many positions were still open at the start of this pass."""
+        with transaction(self.factory) as s:
+            rows = s.execute(select(models.Position, models.Exchange.code,
+                                    models.TradingPair.symbol)
+                             .join(models.Exchange,
+                                   models.Exchange.id == models.Position.exchange_id)
+                             .join(models.TradingPair,
+                                   models.TradingPair.id == models.Position.pair_id)
+                             .where(models.Position.portfolio_id == self.portfolio_id,
+                                    models.Position.status == "open",
+                                    models.Position.quantity > 0)).all()
+        for pos, code, symbol in rows:
+            book = await self.books.get(code, symbol)
+            if book is None or book.best_bid is None:
+                log.warning("kill_close_no_book", symbol=symbol)
+                continue
+            rules = await self.adapters[code].market_rules(symbol)
+            qty = floor_to_step(pos.quantity, rules.amount_step)
+            if qty <= 0:
+                continue
+            price = floor_to_step(book.best_bid * (1 - MAX_EXIT_SLIPPAGE), rules.price_tick)
+            try:
+                await self.orders.place(OrderIntent(
+                    portfolio_id=pos.portfolio_id, mode=self.mode, exchange=code,
+                    symbol=symbol, side=Side.SELL, amount=qty, price=price, purpose="exit",
+                    expected_price=book.best_bid, time_in_force=TimeInForce.IOC,
+                    position_id=pos.id, details={"exit_reason": "kill_switch_close"}))
+            except DuplicateOrder:
+                continue
+        return len(rows)
+
     async def cycle(self) -> None:
+        await self._sync_kill_switch()
         await self.orders.reconcile_unknown()
         await self.orders.refresh_open()
         await self.orders.cancel_stale(timedelta(minutes=5))
+        if await self._kill_active():
+            await self.kill_actions()
         await self.manage_exits()
         v = await self.valuation()
         day0, week0, peak = self.period_starts(v.equity, utcnow())
@@ -676,7 +759,11 @@ class TradingEngine:
         for kind, severity in port.events:
             await self._risk_event(kind, severity, v)
         if port.shutdown and not await self.kill.is_engaged():
-            await self.kill.engage(f"max drawdown reached ({self.mode})", actor="system:risk")
+            reason = f"max drawdown reached ({self.mode})"
+            await self.kill.engage(reason, actor="system:risk")
+            with transaction(self.factory) as s:
+                repo.record_audit(s, actor="system:risk", action="kill_switch_engaged",
+                                  details={"reason": reason})
         from nexus_common.botstate import BotState, get_state
 
         state = await get_state(self.redis)
