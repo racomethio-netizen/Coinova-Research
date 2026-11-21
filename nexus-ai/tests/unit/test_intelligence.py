@@ -44,7 +44,7 @@ def test_analysis_outputs_both_sides_with_exact_2r_and_reasons() -> None:
                      asks=((last + Decimal("0.01"), Decimal(50)),), timestamp=NOW)
     out = analyze("ETH/USDT", frames, book, frames, now=NOW, news_risk=0.1,
                   kill_switch=False, order_quote=Decimal(100))
-    assert out["funding_rate"] is None and "451" in out["futures_data_note"]
+    assert out["funding_rate"] is None and "not estimated" in out["futures_data_note"]
     sides = {h["side"]: h for h in out["hypotheses"]}
     assert set(sides) == {"long", "short"}
     for h in sides.values():

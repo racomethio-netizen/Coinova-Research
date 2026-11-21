@@ -191,6 +191,21 @@ class Settings(BaseSettings):
     # "process": one child process per worker (more memory, isolated).
     # "inline": workers run as tasks in the API's event loop (fits a 512 MB server).
     workers_mode: Literal["process", "inline"] = "process"
+    # --- X (Twitter) sentiment: READ-ONLY, official API, app-only Bearer token ------------
+    # Unset token = the X module is off. X bills per resource read, so every refresh is
+    # bounded by x_daily_budget_usd (estimated from the documented prices).
+    x_bearer_token: SecretStr | None = None
+    x_api_base: str = "https://api.x.com"
+    x_coins: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["BTC", "ETH", "SOL", "XRP"])
+    # Accounts watched through one search query (from:...). They also count as trusted.
+    x_watch_accounts: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["whale_alert", "binance", "coinbase", "krakenfx", "SECGov"])
+    x_refresh_minutes: int = Field(default=120, ge=15, le=1440)
+    x_max_posts_per_query: int = Field(default=15, ge=10, le=100)
+    x_daily_budget_usd: Decimal = Field(default=Decimal("1.00"), ge=0, le=Decimal("100"))
+    x_trends_woeid: int | None = 1          # 1 = worldwide; None disables trends
+    x_trends_every_hours: int = Field(default=6, ge=1, le=48)
     # Optional: this service's own public URL. While workers run, it is requested every
     # 10 minutes so a hosting plan that sleeps idle web services keeps the workers up.
     keep_awake_url: str | None = None
@@ -213,7 +228,7 @@ class Settings(BaseSettings):
     dashboard_dir: str | None = None
 
     @field_validator("enabled_exchanges", "trading_pairs", "timeframes", "cors_origins",
-                     mode="before")
+                     "x_coins", "x_watch_accounts", mode="before")
     @classmethod
     def _split_csv(cls, value: object) -> object:
         if isinstance(value, str):
@@ -348,6 +363,7 @@ class Settings(BaseSettings):
             "short_selling_enabled": self.futures_enabled and self.futures_allow_short,
             "martingale_enabled": False,
             "telegram_configured": self.telegram_bot_token is not None,
+            "x_configured": self.x_bearer_token is not None,
         }
 
 

@@ -390,3 +390,14 @@ def test_order_test_refuses_production_keys(client: TestClient) -> None:
     cred_id = client.post("/api/v1/security/credentials", json=body, headers=CSRF).json()["id"]
     r = client.post(f"/api/v1/security/credentials/{cred_id}/order-test", headers=CSRF)
     assert r.status_code == 400 and "never production" in r.text
+
+
+def test_x_endpoints_without_a_token(client: TestClient) -> None:
+    assert client.get("/api/v1/x/status").status_code in (401, 403)
+    login(client)
+    st = client.get("/api/v1/x/status").json()
+    assert st["configured"] is False and st["read_only"] is True
+    assert st["coins"] == ["BTC", "ETH", "SOL", "XRP"]
+    snap = client.get("/api/v1/x/sentiment").json()
+    assert snap["available"] is False and "NEXUS_X_BEARER_TOKEN" in snap["message"]
+    assert "never opens a trade" in snap["policy"]

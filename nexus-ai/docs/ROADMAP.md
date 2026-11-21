@@ -230,3 +230,21 @@ trading on Render can use live data once background workers are approved.
 * Telegram configured on nexus-ai-fra by the owner (token and chat ID set in Render, never
   in the repo or chat). Notifier runs as the third inline worker; owner confirmed the test
   message arrived (2026-11-21).
+
+## 2026-11-21: X (Twitter) integration, read-only (docs/X_INTEGRATION.md)
+
+* Claude Code: `.mcp.json` -> X's hosted MCP `https://api.x.com/mcp?read_only=true`,
+  token from `$X_BEARER_TOKEN` (parsed by `claude mcp get x-readonly`).
+* NEXUS: `services/social/nexus_social` (read-only GET-allowlist client with daily
+  budget, rate-limit pause and caching; lexicon sentiment -100..100 with confidence;
+  credibility, bot, spam and duplicate filtering; news events with confirmed/unconfirmed
+  and fake-news risk; trends; combined market view), `/x/status`, `/x/sentiment`,
+  dashboard page "X sentiment", Telegram `x_alert`. Trader: block-only `_x_block`.
+* Also: the news monitor now runs as a supervised worker (it was not running on Render,
+  so the trader rejected every entry as "news risk unknown"); intelligence shows real
+  funding rate and open interest from fapi.binance.com (reason shown if unreachable).
+* Tested: 510 tests (mocked X API). NOT yet verified live: no X token exists yet.
+  Next: owner creates an X app + credits, sets NEXUS_X_BEARER_TOKEN on Render and saves
+  the token as a session credential for api.x.com; then verify (1) GET
+  /2/tweets/search/recent returns posts, (2) MCP initialize + tools/list on
+  ?read_only=true lists no write tools, (3) first refresh writes nexus:x:snapshot.

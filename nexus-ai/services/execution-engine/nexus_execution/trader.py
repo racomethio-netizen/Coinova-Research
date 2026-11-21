@@ -382,7 +382,7 @@ class TradingEngine:
         signal_id = self._record_signal(strat_id, sig)
         if signal_id is None:
             return  # already processed (idempotent)
-        news_block = await self._news_block()
+        news_block = await self._news_block() or await self._x_block(sig.symbol)
         if news_block is not None:
             await self._decide(sig, signal_id, "rejected", news_block)
             return
@@ -545,6 +545,21 @@ class TradingEngine:
             confirmations_conflict=False, regime=sig.regime, setup_present=True)
         d = decide(snap, inputs, min_score=60)
         return d.action == "ENTER", d.explanation
+
+    async def _x_block(self, symbol: str) -> str | None:
+        """Pause new entries on CONFIRMED high-impact negative X news for this coin (or the
+        whole market). X data can only block; missing X data never blocks (it is optional)."""
+        import json as _json
+
+        from nexus_social.service import RISK as X_RISK
+
+        raw = await self.redis.get(X_RISK)
+        if raw is None:
+            return None
+        blocks = _json.loads(raw).get("blocks") or {}
+        base = symbol.split("/")[0].upper()
+        reason = blocks.get(base) or blocks.get("MARKET")
+        return str(reason) if reason else None
 
     async def _news_block(self) -> str | None:
         """Block entries on unknown or high-impact news. Missing data is unknown, not calm."""

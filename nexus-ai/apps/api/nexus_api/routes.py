@@ -728,6 +728,63 @@ async def intelligence(redis: Any = Depends(redis_dep),
                                      order_quote=order_quote)
 
 
+@router.get("/x/status")
+async def x_status(redis: Any = Depends(redis_dep),
+                   settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """X (Twitter) integration status: configuration, last refresh, spend and limits."""
+    from nexus_social.service import SNAPSHOT, STATUS
+
+    raw_status = await redis.get(STATUS)
+    raw_snap = await redis.get(SNAPSHOT)
+    snap = json.loads(raw_snap) if raw_snap else None
+    return {
+        "configured": settings.x_bearer_token is not None,
+        "read_only": True,
+        "coins": [c.upper() for c in settings.x_coins],
+        "watch_accounts": list(settings.x_watch_accounts),
+        "refresh_minutes": settings.x_refresh_minutes,
+        "max_posts_per_query": settings.x_max_posts_per_query,
+        "daily_budget_usd": str(settings.x_daily_budget_usd),
+        "status": json.loads(raw_status) if raw_status else None,
+        "usage": (snap or {}).get("usage"),
+        "snapshot_at": (snap or {}).get("generated_at"),
+    }
+
+
+@router.get("/x/sentiment")
+async def x_sentiment(redis: Any = Depends(redis_dep),
+                      settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Latest X sentiment per coin with news alerts, trends, history and market context.
+    Context only: X data never opens a trade."""
+    from nexus_social.analysis import POLICY, combine
+    from nexus_social.service import HISTORY, SNAPSHOT
+
+    raw = await redis.get(SNAPSHOT)
+    if raw is None:
+        return {"available": False, "configured": settings.x_bearer_token is not None,
+                "policy": POLICY,
+                "message": ("No X data yet. " + ("The first refresh has not finished."
+                            if settings.x_bearer_token is not None else
+                            "Set NEXUS_X_BEARER_TOKEN on the server to enable X sentiment."))}
+    snap = json.loads(raw)
+    market: dict[str, Any] = {}
+    cached = await redis.get("nexus:intelligence")
+    if cached:
+        for row in json.loads(cached).get("pairs") or []:
+            market[str(row.get("symbol", "")).split("/")[0]] = row
+    traded = {p.split("/")[0].upper() for p in settings.trading_pairs}
+    for c in snap.get("coins") or []:
+        if c["coin"] in traded and c["coin"] not in market:
+            c["market"] = {"available": False, "note": "market context not loaded: open the "
+                           "AI intelligence page (Binance analysis is cached for 30 s)"}
+        else:
+            c["market"] = combine(c, market.get(c["coin"]))
+    history = [json.loads(x) for x in await redis.lrange(HISTORY, -84, -1)]
+    return {"available": True, **snap, "history": history,
+            "market_context_note": None if cached else
+            "Open the Intelligence page to load market context (cached 30 s)."}
+
+
 BINANCE_PINGS = {
     "spot (live)": "https://api.binance.com/api/v3/ping",
     "futures (live)": "https://fapi.binance.com/fapi/v1/ping",

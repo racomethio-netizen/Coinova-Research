@@ -17,7 +17,7 @@ import httpx
 from nexus_common.logging import configure_logging, get_logger
 from nexus_common.redisutil import connect as connect_redis
 from nexus_common.timeutil import utcnow
-from nexus_config import get_settings
+from nexus_config import Settings, get_settings
 
 from nexus_news.feeds import fetch_items
 from nexus_news.scoring import score_items
@@ -38,25 +38,34 @@ async def refresh_once(redis: Any, client: httpx.AsyncClient) -> dict[str, Any]:
     return payload
 
 
+async def serve(settings: Settings, stop: asyncio.Event) -> None:
+    """Run until ``stop`` is set (used by main() and by the API's inline worker mode)."""
+    redis = connect_redis(settings.redis_url.get_secret_value())
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True,
+                                     trust_env=True) as client:
+            while not stop.is_set():
+                try:
+                    await refresh_once(redis, client)
+                except Exception as exc:  # keep running; a missing key already fails closed
+                    log.error("news_refresh_failed", error=type(exc).__name__)
+                try:
+                    await asyncio.wait_for(stop.wait(),
+                                           timeout=timedelta(minutes=5).total_seconds())
+                except TimeoutError:
+                    pass
+    finally:
+        await redis.aclose()
+
+
 async def main() -> None:
     settings = get_settings()
     configure_logging(settings.log_level, json=settings.log_json)
-    redis = connect_redis(settings.redis_url.get_secret_value())
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, stop.set)
-    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
-        while not stop.is_set():
-            try:
-                await refresh_once(redis, client)
-            except Exception as exc:  # keep running; a missing key already fails closed
-                log.error("news_refresh_failed", error=type(exc).__name__)
-            try:
-                await asyncio.wait_for(stop.wait(), timeout=timedelta(minutes=5).total_seconds())
-            except TimeoutError:
-                pass
-    await redis.aclose()
+    await serve(settings, stop)
 
 
 if __name__ == "__main__":

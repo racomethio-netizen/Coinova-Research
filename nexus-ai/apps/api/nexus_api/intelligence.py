@@ -2,9 +2,9 @@
 
 Data: Binance's public spot market data (klines and order book) from the configured public
 API (data-api.binance.vision by default). Only CLOSED candles are used, so every figure is
-reproducible. Futures funding rate and open interest come from Binance's futures API,
-which refuses this server's location (HTTP 451); they are reported as unavailable,
-never estimated.
+reproducible. Futures funding rate and open interest come from Binance's public USD-M
+futures API (fapi.binance.com); when it cannot be reached (e.g. HTTP 451 from some server
+locations) they are reported as unavailable with the reason, never estimated.
 
 The decision uses the same scoring and NO TRADE rules as the trader (nexus_decision) for a
 hypothetical long and short at the last price, with the stop at 2 x ATR(1h) and the target
@@ -37,8 +37,28 @@ from nexus_strategies.regime import classify
 TIMEFRAMES = ("15m", "1h", "4h", "1d")
 CACHE_SECONDS = 30
 MIN_SCORE = 60
-FUTURES_UNAVAILABLE = ("Binance's futures API refuses this server's location (HTTP 451); "
-                       "not estimated")
+FUTURES_UNAVAILABLE = "futures data not fetched; not estimated"
+FAPI = "https://fapi.binance.com/fapi/v1"
+
+
+async def fetch_derivatives(client: httpx.AsyncClient, symbol: str) -> dict[str, Any]:
+    """Last funding rate and open interest (contracts) from Binance's public futures API."""
+    native = symbol.replace("/", "")
+    try:
+        p = await client.get(f"{FAPI}/premiumIndex", params={"symbol": native})
+        p.raise_for_status()
+        oi = await client.get(f"{FAPI}/openInterest", params={"symbol": native})
+        oi.raise_for_status()
+        return {"funding_rate": _f(p.json().get("lastFundingRate"), 8),
+                "open_interest": _f(oi.json().get("openInterest"), 3),
+                "futures_data_note": "Binance USD-M perpetual (fapi.binance.com)"}
+    except httpx.HTTPError as exc:
+        code = getattr(getattr(exc, "response", None), "status_code", None)
+        why = f"HTTP {code}" if code else type(exc).__name__
+        if code == 451:
+            why += ": Binance refuses this server's location"
+        return {"funding_rate": None, "open_interest": None,
+                "futures_data_note": f"futures data unavailable ({why}); not estimated"}
 
 
 def _f(x: Any, digits: int = 6) -> float | None:
@@ -135,7 +155,8 @@ def _hypothesis(side: str, last: float, atr: float, h_trend: str, base_event: st
 
 def analyze(symbol: str, frames: dict[str, pd.DataFrame], book: OrderBook,
             btc_frames: dict[str, pd.DataFrame] | None, *, now: datetime,
-            news_risk: float | None, kill_switch: bool, order_quote: Decimal) -> dict[str, Any]:
+            news_risk: float | None, kill_switch: bool, order_quote: Decimal,
+            derivatives: dict[str, Any] | None = None) -> dict[str, Any]:
     h1, h4, m5 = frames["1h"], frames["4h"], frames["5m"]
     if len(h1) < 210 or len(m5) < 300:
         return {"symbol": symbol, "error": "not enough closed candles for analysis"}
@@ -189,7 +210,8 @@ def analyze(symbol: str, frames: dict[str, pd.DataFrame], book: OrderBook,
             "spread_bps": _f(metrics.spread_bps, 3), "imbalance": _f(metrics.imbalance, 3),
             "bid_depth_quote": _f(metrics.bid_depth_quote, 2),
             "ask_depth_quote": _f(metrics.ask_depth_quote, 2)},
-        "funding_rate": None, "open_interest": None, "futures_data_note": FUTURES_UNAVAILABLE,
+        **(derivatives or {"funding_rate": None, "open_interest": None,
+                           "futures_data_note": FUTURES_UNAVAILABLE}),
         "timeframes": {tf: timeframe_view(frames[tf]) for tf in TIMEFRAMES},
         "hypotheses": hyps, "direction": best["side"] if best["score"] >= 40 else None,
     }
@@ -216,7 +238,8 @@ async def market_intelligence(pairs: list[str], base: str, *, redis: Any, news_r
                 btc = frames
             results.append(analyze(pair, frames, book, None if pair == "BTC/USDT" else btc,
                                    now=now, news_risk=news_risk, kill_switch=kill_switch,
-                                   order_quote=order_quote))
+                                   order_quote=order_quote,
+                                   derivatives=await fetch_derivatives(client, pair)))
     payload = {"generated_at": now.isoformat(), "source": base, "min_score": MIN_SCORE,
                "pairs": results}
     await redis.set("nexus:intelligence", json.dumps(payload, default=str), ex=CACHE_SECONDS)

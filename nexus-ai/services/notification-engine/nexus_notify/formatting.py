@@ -65,4 +65,12 @@ def format_event(p: dict[str, Any]) -> str | None:
                 f"equity {_e(r.get('equity'))} · realized P&L {_e(r.get('realized_pnl'))}\n"
                 f"unrealized {_e(r.get('unrealized_pnl'))} · drawdown {_e(r.get('current_drawdown'))}\n"
                 f"closed trades {_e(r.get('closed_trades'))} · win rate {_e(r.get('win_rate'))}")
+    if kind == "x_alert":
+        arrow = {1: "▲ positive", -1: "▼ negative"}.get(int(p.get("direction") or 0),
+                                                       "◆ unclear")
+        return (f"[X] <b>{_e(p.get('label'))}</b> · {_e(p.get('coin'))} · {arrow}\n"
+                f"{_e(p.get('headline'))}\n"
+                f"{_e(p.get('status'))} by {_e(p.get('credible_sources'))} credible source(s); "
+                f"top: @{_e(p.get('author'))}\n{_e(p.get('url'))}\n"
+                "<i>Information only: NEXUS never trades on X posts.</i>")
     return None  # unknown types are not sent (logged by the caller)

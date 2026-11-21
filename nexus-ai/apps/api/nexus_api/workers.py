@@ -24,6 +24,8 @@ WORKERS: dict[str, list[str]] = {
     "market-data": ["-m", "nexus_market.runner"],
     "trader": ["-m", "nexus_execution.trader"],
     "notifier": ["-m", "nexus_notify.service"],
+    "news": ["-m", "nexus_news.service"],
+    "x-sentiment": ["-m", "nexus_social.service"],
 }
 
 
@@ -46,7 +48,8 @@ class WorkerSupervisor:
             return None
         if settings.workers_mode == "inline":
             return InlineWorkers.for_settings(settings)
-        return cls({name: [sys.executable, *args] for name, args in WORKERS.items()})
+        return cls({name: [sys.executable, *args] for name, args in WORKERS.items()
+                    if name != "x-sentiment" or settings.x_bearer_token is not None})
 
     def start(self) -> None:
         self._tasks = [asyncio.create_task(self._keep(name)) for name in self.commands]
@@ -102,11 +105,18 @@ class InlineWorkers:
     def for_settings(cls, settings: Settings) -> InlineWorkers:
         from nexus_execution import trader
         from nexus_market import runner
+        from nexus_news import service as news
         from nexus_notify import service as notifier
+        from nexus_social import service as social
 
-        return cls({"market-data": lambda stop: runner.serve(settings, stop),
-                    "trader": lambda stop: trader.serve(settings, stop),
-                    "notifier": lambda stop: notifier.serve(settings, stop)})
+        workers: dict[str, Serve] = {
+            "market-data": lambda stop: runner.serve(settings, stop),
+            "trader": lambda stop: trader.serve(settings, stop),
+            "notifier": lambda stop: notifier.serve(settings, stop),
+            "news": lambda stop: news.serve(settings, stop)}
+        if settings.x_bearer_token is not None:
+            workers["x-sentiment"] = lambda stop: social.serve(settings, stop)
+        return cls(workers)
 
     def start(self) -> None:
         self._tasks = [asyncio.create_task(self._keep(n)) for n in self.workers]
