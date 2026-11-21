@@ -23,9 +23,10 @@ from nexus_security import CredentialCipher, KeyRing
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from nexus_api import binance_ban
 from nexus_api.connection import explain
 
-CACHE_SECONDS = 15
+CACHE_SECONDS = 60
 
 
 def select_credential(s: Session, user_id: int, market: str) -> models.ExchangeCredential | None:
@@ -105,7 +106,8 @@ async def spot_snapshot(api_key: str, secret: str, *, environment: str, pairs: l
         balances = [{"asset": a, "free": str(bal["free"].get(a) or 0),
                      "locked": str(bal["used"].get(a) or 0), "total": str(t)}
                     for a, t in (bal.get("total") or {}).items() if t]
-        orders = await client.fetch_open_orders()
+        # Per symbol (weight 6 each) instead of all symbols at once (weight 80).
+        orders = [o for pair in pairs for o in await client.fetch_open_orders(pair)]
         trades: list[dict[str, Any]] = []
         for pair in pairs:
             for t in await client.fetch_my_trades(pair, limit=20):
@@ -141,6 +143,11 @@ async def account_view(market: str, s: Session, user_id: int, settings: Settings
     cached = await redis.get(cache_key)
     if cached:
         return {**base, **json.loads(cached), "cached": True}
+    banned = await binance_ban.active_ban(redis, environment)
+    if banned is not None:
+        return {**base, "ok": False, "error": binance_ban.ban_message(banned),
+                "banned_until": banned.isoformat(), "fetched_at": utcnow().isoformat(),
+                "cached": False}
     api_key, secret = decrypt(cred, settings)
     try:
         if market == "futures":
@@ -152,6 +159,10 @@ async def account_view(market: str, s: Session, user_id: int, settings: Settings
                                        cafile=settings.extra_ca_file)
         payload: dict[str, Any] = {"ok": True, "data": data, "fetched_at": utcnow().isoformat()}
     except Exception as exc:
-        payload = {"ok": False, "error": explain(exc), "fetched_at": utcnow().isoformat()}
+        error = explain(exc)
+        until = await binance_ban.record_ban(redis, environment, f"{exc} {exc.__cause__ or ''}")
+        if until is not None:
+            error = binance_ban.ban_message(until)
+        payload = {"ok": False, "error": error, "fetched_at": utcnow().isoformat()}
     await redis.set(cache_key, json.dumps(payload), ex=CACHE_SECONDS)
     return {**base, **payload, "cached": False}

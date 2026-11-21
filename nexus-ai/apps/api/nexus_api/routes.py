@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
+from nexus_api import binance_ban
 from nexus_api.auth import check_totp
 from nexus_api.deps import Viewer, csrf_guard, current_viewer, db, owner, redis_dep, ser, settings_dep
 
@@ -501,6 +502,7 @@ def list_credentials(s: Session = Depends(db),
 
 @router.post("/security/credentials/{cred_id}/test", dependencies=[Depends(owner)])
 async def test_credential(cred_id: int, s: Session = Depends(db),
+                          redis: Any = Depends(redis_dep),
                           viewer: Viewer = Depends(current_viewer),
                           settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
     """Real signed, read-only Binance calls with the stored key. Places no orders."""
@@ -519,8 +521,21 @@ async def test_credential(cred_id: int, s: Session = Depends(db),
     api_key = cipher.decrypt(cred.api_key_encrypted, context={**ctx, "field": "api_key"})
     secret = cipher.decrypt(cred.api_secret_encrypted, context={**ctx, "field": "api_secret"})
     markets = list((cred.permissions or {}).get("markets") or ["futures"])
+    env_name = connection.ENV_NAMES.get(cred.environment, cred.environment)
+    banned = await binance_ban.active_ban(redis, env_name)
+    if banned is not None:
+        # No call during a ban (it would extend it); the stored last check is kept.
+        msg = binance_ban.ban_message(banned)
+        return {"credential": _cred_view(s, cred),
+                "result": {"ok": False, "environment": env_name, "checked_at":
+                           utcnow().isoformat(), **{m: {"ok": False, "error": msg}
+                                                     for m in markets}}}
     result = await connection.probe(api_key, secret, environment=cred.environment,
                                     markets=markets, cafile=settings.extra_ca_file)
+    for m in markets:
+        until = await binance_ban.record_ban(redis, env_name, str(result[m].get("error") or ""))
+        if until is not None:
+            result[m]["error"] = binance_ban.ban_message(until)
     cred.permissions = {**(cred.permissions or {}), "last_check": result}
     if result["ok"]:
         cred.last_verified_at = utcnow()
@@ -764,6 +779,9 @@ async def credential_order_test(cred_id: int, market: Literal["futures", "spot"]
                             "the order test runs only on demo or testnet keys, never production")
     if market not in ((cred.permissions or {}).get("markets") or []):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"this key has no {market} access")
+    banned = await binance_ban.active_ban(redis, env)
+    if banned is not None:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, binance_ban.ban_message(banned))
     if not await redis.set(f"nexus:order_test:{cred_id}", "1", nx=True, ex=120):
         raise HTTPException(status.HTTP_409_CONFLICT, "an order test is already running")
     api_key, secret = decrypt(cred, settings)

@@ -208,3 +208,16 @@ trading on Render can use live data once background workers are approved.
   (`symbols=[...]`), also for request-time clients (spot account view, spot probe, spot
   order test) via `load_binance_spot_markets`. Local peak with an empty DB and an active
   trader: 435 MB -> 244 MB.
+
+## 2026-11-21: Binance IP ban (-1003) on Render Frankfurt
+
+* The Spot page showed Binance -1003 "IP(74.220.51.139) banned until 2026-11-23 06:38 UTC".
+  That is Render's shared Frankfurt egress IP; it was reported at 10:15 UTC, before the
+  paper workers were switched on, and NEXUS logged no rate-limit errors of its own.
+* `nexus_api.binance_ban`: a reported ban is stored in Redis per environment; the account
+  views, the connection test and the order test make no Binance calls until it ends
+  (calls during a ban extend it). Account view cache 15 s -> 60 s; open orders fetched per
+  symbol (weight 6 each) instead of all symbols (weight 80).
+* Shared egress IPs mean other Render customers' traffic counts toward the same Binance
+  limits; a paid instance does not change the egress IP. A dedicated IP (e.g. a VPS) is the
+  durable fix if bans recur. The production key's IP whitelist must match the egress IP.

@@ -261,6 +261,7 @@ def test_live_account_views(client: TestClient, monkeypatch: pytest.MonkeyPatch)
     from nexus_api import account
 
     login(client)
+    monkeypatch.setattr(account, "CACHE_SECONDS", 2)
     r = client.get("/api/v1/account/futures")
     assert r.status_code == 200 and r.json()["connected"] is False
 
@@ -287,6 +288,27 @@ def test_live_account_views(client: TestClient, monkeypatch: pytest.MonkeyPatch)
     assert calls == ["testnet"]  # cached: Binance called once
     spot = client.get("/api/v1/account/spot").json()
     assert spot["connected"] is False  # key has futures access only
+
+    # A Binance IP ban is remembered: no further calls until it ends.
+    import ccxt.async_support as ccxt_async
+    from nexus_common.timeutil import utcnow
+
+    until_ms = int((utcnow().timestamp() + 7200) * 1000)
+
+    async def banned_futures(*a: Any, **k: Any) -> dict[str, Any]:
+        calls.append("banned")
+        raise ccxt_async.DDoSProtection(
+            f'binance {{"code":-1003,"msg":"Way too many requests; IP banned until {until_ms}."}}')
+
+    monkeypatch.setattr(account, "futures_snapshot", banned_futures)
+    import time
+    time.sleep(2.1)  # let the cached success expire
+    first = client.get("/api/v1/account/futures").json()
+    assert first["ok"] is False and "temporarily blocked" in first["error"]
+    time.sleep(2.1)
+    second = client.get("/api/v1/account/futures").json()
+    assert second["ok"] is False and "banned_until" in second
+    assert calls.count("banned") == 1  # Binance was not called again during the ban
     assert client.get("/api/v1/account/margin").status_code == 422
 
 
