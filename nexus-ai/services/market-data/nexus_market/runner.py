@@ -127,6 +127,10 @@ class MarketDataService:
                              bars=res.stored, gaps=len(res.gaps))
         if self.settings.minute_candles:
             stored += await self.poll_minutes()
+        if stored > 500:                       # a history page or more was parsed
+            from nexus_common.memory import release
+
+            release()
         return stored
 
     async def poll_minutes(self) -> int:
@@ -228,7 +232,12 @@ class MarketDataService:
                         n += derive(s, pid, target)
             return n
 
-        return await asyncio.to_thread(run)
+        n = await asyncio.to_thread(run)
+        if n:
+            from nexus_common.memory import release
+
+            release()
+        return n
 
     async def prune_minutes(self) -> None:
         from nexus_market.derived import prune_minutes

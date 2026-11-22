@@ -123,3 +123,23 @@ Started at the deployment of this fix (paper trading, live trading off). Checked
 * memory and restarts of the service.
 
 Results: see the section appended below.
+
+## Deployment check (+6 min, 22 Nov 16:37-16:49 UTC)
+
+* Deploy `dep-dc1hj7h42hec73fv1phg` live at 16:37 UTC; migrations 0010 and 0011 applied.
+* **Root cause confirmed by Binance's own numbers.** Binance's `X-MBX-USED-WEIGHT-1M`
+  header for this server's IP read **3,697 to 5,869 of 6,000** in the first minutes, while
+  NEXUS itself sent a handful of requests of weight 2. Other users of the shared IP use most
+  of the limit. At 16:37:55 the IP reached 5,869 (98%); the gate paused NEXUS until the next
+  minute (16:38:01) by itself, before Binance had to refuse anything.
+* WebSocket: connection deferred 3 s because of that pause, then connected at 16:38:02
+  (14 streams: books and closed candles for BTC and ETH).
+* Start-up: the trader's first attempt hit the pause and restarted 5 s later (by design:
+  nothing sent); one notifier restart on a Redis connection timeout.
+* No circuit opened (no 429/418) and no Telegram alert in the first 12 minutes.
+* Futures data stays paused until the earlier ban ends (~08:54 UTC 23 Nov).
+* Memory: ~434 MB steady (limit 512 MB), up from ~290 MB before; a one-time 480 MB peak at
+  start-up. Measured locally, the 1-minute candle pipeline adds ~34 MB; the rest is most
+  likely the one-time derivation of 120 days of history plus memory the allocator kept.
+  Fix committed (bounded derivation windows, memory returned to the OS after large jobs);
+  to be deployed if the +1 h checkpoint shows memory rising.

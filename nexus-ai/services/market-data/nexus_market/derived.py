@@ -26,6 +26,7 @@ from sqlalchemy.orm import Session
 from nexus_market.analytics import detect_gaps
 
 MINUTE_TIMEFRAMES = ("1m", "3m")
+MAX_SOURCE_ROWS = 3000        # source bars per derive() call (memory bound)
 QUALITY_WINDOW_BARS = 1000
 STALE_FACTOR = 2            # stale when the newest closed bar is > 2 bars + grace late
 STALE_GRACE = timedelta(minutes=3)
@@ -37,18 +38,34 @@ def derive(s: Session, pair_id: int, target: str, *, now: datetime | None = None
     source = DERIVED_TIMEFRAMES[target]
     step = timedelta(seconds=TIMEFRAME_SECONDS[target])
     latest = repo.latest_candle_time(s, pair_id, target)
-    start = latest if latest is not None else None
-    rows = repo.load_candles(s, pair_id, source, start=start)
-    if not rows:
+    newest = s.scalar(select(func.max(models.MarketCandle.open_time)).where(
+        models.MarketCandle.pair_id == pair_id, models.MarketCandle.timeframe == source,
+        models.MarketCandle.is_closed.is_(True)))
+    if newest is None:
         return 0
-    candles = [Candle(r.open_time, r.open, r.high, r.low, r.close, r.volume) for r in rows]
-    built = aggregate_candles(candles, source_seconds=TIMEFRAME_SECONDS[source],
-                              target_seconds=TIMEFRAME_SECONDS[target])
+    start = latest
+    if start is None:
+        start = s.scalar(select(func.min(models.MarketCandle.open_time)).where(
+            models.MarketCandle.pair_id == pair_id, models.MarketCandle.timeframe == source,
+            models.MarketCandle.is_closed.is_(True)))
+    assert start is not None
+    span = max(timedelta(seconds=TIMEFRAME_SECONDS[source] * MAX_SOURCE_ROWS), 2 * step)
     cutoff = now or utcnow()
-    built = [c for c in built if c.open_time + step <= cutoff]   # closed buckets only
-    if not built:
-        return 0
-    return repo.upsert_candles(s, pair_id, target, built, source=f"derived:{source}")
+    # At most MAX_SOURCE_ROWS source bars in memory at a time (512 MB host). A window with no
+    # complete bucket (a gap in the source) is skipped so the job never gets stuck.
+    while start <= newest:
+        rows = repo.load_candles(s, pair_id, source, start=start, end=start + span)
+        candles = [Candle(r.open_time, r.open, r.high, r.low, r.close, r.volume) for r in rows]
+        built = aggregate_candles(candles, source_seconds=TIMEFRAME_SECONDS[source],
+                                  target_seconds=TIMEFRAME_SECONDS[target])
+        built = [c for c in built if c.open_time + step <= cutoff]   # closed buckets only
+        newer = [c for c in built if latest is None or c.open_time > latest]
+        if newer or start + span > newest:
+            if not built:
+                return 0
+            return repo.upsert_candles(s, pair_id, target, built, source=f"derived:{source}")
+        start += span - step          # overlap one bucket: none is split between windows
+    return 0
 
 
 @dataclass(frozen=True)

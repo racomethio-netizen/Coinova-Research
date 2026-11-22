@@ -357,3 +357,28 @@ async def test_startup_during_a_binance_pause_still_streams_known_pairs(
     assert svc.pairs == {("binance", "BTC/USDT"): pid}
     assert client.count("load_markets") == 0                     # nothing sent during the pause
     assert svc.binance_stream().symbols == ["BTC/USDT"]
+
+
+
+def test_derivation_is_chunked_and_crosses_long_gaps(factory: sessionmaker[Session],
+                                                    monkeypatch: pytest.MonkeyPatch) -> None:
+    from nexus_market import derived
+
+    monkeypatch.setattr(derived, "MAX_SOURCE_ROWS", 10)            # tiny windows
+    pid = _pair(factory)
+    # 1h bars: day 1 complete, then a 3-day gap, then day 5 complete.
+    _bars(factory, pid, "1h", 3600, 24)
+    rows = [repo.CandleRow(T0 + timedelta(days=4, hours=h), D(1), D(2), D(1), D(1), D(1))
+            for h in range(24)]
+    with transaction(factory) as s:
+        repo.upsert_candles(s, pid, "1h", rows)
+    now = T0 + timedelta(days=6)
+    written = 0
+    for _ in range(30):                                            # repeated job runs
+        with transaction(factory) as s:
+            written += derived.derive(s, pid, "6h", now=now)
+    with transaction(factory) as s:
+        bars = repo.load_candles(s, pid, "6h")
+    assert [b.open_time for b in bars] == (
+        [T0 + timedelta(hours=6 * i) for i in range(4)]
+        + [T0 + timedelta(days=4, hours=6 * i) for i in range(4)])
