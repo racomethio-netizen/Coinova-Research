@@ -320,3 +320,18 @@ trading on Render can use live data once background workers are approved.
 * Not simulated: queue position for resting orders beyond the visible-size rule; funding
   (spot has none; futures paper path remains future work).
 * Tests: 538 pass. Next: Phase 5 (derivatives data: OI history, basis, liquidations).
+
+## 2026-11-22: Phase 5 (derivatives data)
+
+* `nexus_market.derivatives` worker (inline, every 5 min, public endpoints, no key):
+  funding, mark/index basis, open interest + 25 h hourly history (1h/24h change),
+  accounts and top-trader long/short ratios, taker buy/sell ratio -> Redis
+  `nexus:derivatives:{SYMBOL}`. Liquidations from the public `!forceOrder@arr` stream
+  (reconnect with capped backoff), per-minute buckets -> 1h/24h longs/shorts liquidated
+  (USDT, lower bound). Restricted locations are reported, never worked around (this dev
+  container is refused; the Frankfurt server is the live check).
+* Intelligence reads the stored snapshot (falls back to a direct funding/OI fetch);
+  Derivatives agent now uses basis, OI vs price, ratios and liquidations; the
+  Intelligence page shows them (the stale "HTTP 451" label is gone).
+* Tests: 542 pass (documented formats, liquidation windows, a real local websocket with
+  a dropped connection, agent rules).

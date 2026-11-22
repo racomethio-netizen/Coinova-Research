@@ -61,6 +61,27 @@ async def fetch_derivatives(client: httpx.AsyncClient, symbol: str) -> dict[str,
                 "futures_data_note": f"futures data unavailable ({why}); not estimated"}
 
 
+async def stored_or_fetched_derivatives(redis: Any, client: httpx.AsyncClient,
+                                        symbol: str) -> dict[str, Any]:
+    """Prefer the derivatives worker's snapshot (OI history, basis, ratios,
+    liquidations); fall back to a direct funding/OI fetch."""
+    raw = await redis.get(f"nexus:derivatives:{symbol.replace('/', '')}")
+    snap = json.loads(raw) if raw else None
+    if snap and not snap.get("error"):
+        keep = ("funding_rate", "open_interest", "open_interest_value", "oi_change_1h",
+                "oi_change_24h", "basis", "mark_price", "index_price",
+                "accounts_long_short_ratio", "accounts_long_short_ratio_24h_ago",
+                "top_traders_position_ratio", "taker_buy_sell_ratio", "liquidations")
+        return {**{k: snap.get(k) for k in keep},
+                "futures_data_note": f"Binance USD-M public data, {snap.get('as_of', '')[:16]} UTC"}
+    out = await fetch_derivatives(client, symbol)
+    if snap and snap.get("error"):
+        out["futures_data_note"] += f"; derivatives worker: {snap['error'][:120]}"
+    if snap and snap.get("liquidations"):
+        out["liquidations"] = snap["liquidations"]
+    return out
+
+
 def _f(x: Any, digits: int = 6) -> float | None:
     try:
         v = float(x)
@@ -239,7 +260,8 @@ async def market_intelligence(pairs: list[str], base: str, *, redis: Any, news_r
             results.append(analyze(pair, frames, book, None if pair == "BTC/USDT" else btc,
                                    now=now, news_risk=news_risk, kill_switch=kill_switch,
                                    order_quote=order_quote,
-                                   derivatives=await fetch_derivatives(client, pair)))
+                                   derivatives=await stored_or_fetched_derivatives(
+                                       redis, client, pair)))
     payload = {"generated_at": now.isoformat(), "source": base, "min_score": MIN_SCORE,
                "pairs": results}
     await redis.set("nexus:intelligence", json.dumps(payload, default=str), ex=CACHE_SECONDS)

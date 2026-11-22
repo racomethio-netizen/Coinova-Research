@@ -25,6 +25,7 @@ WORKERS: dict[str, list[str]] = {
     "trader": ["-m", "nexus_execution.trader"],
     "notifier": ["-m", "nexus_notify.service"],
     "news": ["-m", "nexus_news.service"],
+    "derivatives": ["-m", "nexus_market.derivatives"],
     "x-sentiment": ["-m", "nexus_social.service"],
 }
 
@@ -104,7 +105,7 @@ class InlineWorkers:
     @classmethod
     def for_settings(cls, settings: Settings) -> InlineWorkers:
         from nexus_execution import trader
-        from nexus_market import runner
+        from nexus_market import derivatives, runner
         from nexus_news import service as news
         from nexus_notify import service as notifier
         from nexus_social import service as social
@@ -113,7 +114,8 @@ class InlineWorkers:
             "market-data": lambda stop: runner.serve(settings, stop),
             "trader": lambda stop: trader.serve(settings, stop),
             "notifier": lambda stop: notifier.serve(settings, stop),
-            "news": lambda stop: news.serve(settings, stop)}
+            "news": lambda stop: news.serve(settings, stop),
+            "derivatives": lambda stop: derivatives.serve(settings, stop)}
         if settings.x_bearer_token is not None:
             workers["x-sentiment"] = lambda stop: social.serve(settings, stop)
         return cls(workers)

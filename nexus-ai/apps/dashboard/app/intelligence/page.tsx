@@ -56,8 +56,12 @@ export default function IntelligencePage() {
               <Stat label="Book imbalance" value={p.order_book ? num(p.order_book.imbalance) : DASH} hint={p.order_book ? `spread ${num(p.order_book.spread_bps, 3)} bps` : undefined} />
               <Stat label="Volatility rank (ATR)" value={pct(p.atr_percentile, 0)} />
               <Stat label="Liquidity sweep (12h)" value={p.liquidity_sweep_low_12h ? "below lows" : p.liquidity_sweep_high_12h ? "above highs" : "none"} />
-              <Stat label="Funding / open interest" value={DASH} hint="unavailable (HTTP 451)" />
+              <Stat label="Funding rate (8h)" value={p.funding_rate == null ? DASH : pct(p.funding_rate, 4)} hint={p.basis == null ? undefined : `perp basis ${pct(p.basis, 3)}`} />
+              <Stat label="Open interest" value={p.open_interest_value == null ? (p.open_interest == null ? DASH : num(p.open_interest, 0)) : `${num(p.open_interest_value / 1e6, 1)}M USDT`} hint={p.oi_change_24h == null ? undefined : `24h ${pct(p.oi_change_24h, 1)} · 1h ${pct(p.oi_change_1h, 1)}`} />
+              <Stat label="Long/short (top traders)" value={p.top_traders_position_ratio == null ? DASH : num(p.top_traders_position_ratio)} hint={p.accounts_long_short_ratio == null ? undefined : `accounts ${num(p.accounts_long_short_ratio)} (weak signal)`} />
+              <Stat label="Liquidations 1h (longs / shorts)" value={p.liquidations ? `${num(p.liquidations.longs_liquidated_1h / 1e3, 0)}k / ${num(p.liquidations.shorts_liquidated_1h / 1e3, 0)}k` : DASH} hint={p.liquidations ? "USDT, lower bound" : "feed not available"} />
             </div>
+            {p.futures_data_note && <p className="-mt-2 mb-3 text-xs text-muted">Derivatives: {p.futures_data_note}</p>}
             <div className="mb-4 grid gap-3 lg:grid-cols-2">{p.hypotheses.map((h: Any) => <Hypothesis key={h.side} h={h} />)}</div>
             <Table rows={Object.entries(p.timeframes).map(([tf, v]: [string, Any]) => ({ tf, ...v }))} empty="—" columns={[
               { key: "tf", label: "TF" },

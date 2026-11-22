@@ -146,30 +146,74 @@ def quant_agent(market: dict[str, Any] | None, strategies: list[dict[str, Any]])
 
 # ------------------------------------------------------------------ derivatives
 def derivatives_agent(market: dict[str, Any] | None) -> AgentReport:
-    """Funding and open interest; basis, liquidations and long/short ratios are not
-    collected yet and are reported as unavailable, never guessed."""
+    """Funding, basis, open interest trend, positioning ratios and liquidations. Missing
+    pieces are reported as unavailable, never guessed."""
     if not market or market.get("error"):
         return unavailable("derivatives", "no market analysis")
-    fr, oi = market.get("funding_rate"), market.get("open_interest")
-    warn = ["basis, liquidation and long/short data not collected yet"]
+    fr = market.get("funding_rate")
     if fr is None:
         return AgentReport("derivatives", "unavailable", 0, 0.0,
-                           warnings=[market.get("futures_data_note") or "funding unavailable",
-                                     *warn])
+                           warnings=[market.get("futures_data_note") or "funding unavailable"])
     ev = [f"last funding rate {fr:+.4%} per 8h"]
     contra: list[str] = []
-    score = 0
+    warn: list[str] = []
+    score = 0.0
     if fr > 0.0005:
         contra.append("high positive funding: crowded longs pay to hold, squeeze risk down")
-        score = -25
+        score -= 25
     elif fr < -0.0005:
         contra.append("negative funding: crowded shorts, squeeze risk up")
-        score = 25
+        score += 25
     else:
         ev.append("funding near neutral: no crowding signal")
-    if oi is not None:
-        ev.append(f"open interest {oi:,.0f} contracts (no history yet, so no trend)")
-    return AgentReport("derivatives", _view(score), score, 0.4, ev, contra, warn)
+    basis = market.get("basis")
+    if basis is not None:
+        ev.append(f"perp basis {basis:+.3%} vs index")
+        if abs(basis) > 0.002:
+            contra.append(f"stretched basis {basis:+.2%}: leverage-driven pricing")
+    else:
+        warn.append("basis not available")
+    oi24, price24 = market.get("oi_change_24h"), market.get("change_24h")
+    if oi24 is not None:
+        ev.append(f"open interest {oi24:+.1%} in 24h")
+        if price24 is not None:
+            if oi24 > 0.05 and price24 > 0:
+                ev.append("rising price with rising open interest: new longs entering")
+                score += 10
+            elif oi24 > 0.05 and price24 < 0:
+                ev.append("falling price with rising open interest: new shorts entering")
+                score -= 10
+            elif oi24 < -0.05:
+                ev.append("open interest falling: positions closing, weaker conviction")
+    else:
+        warn.append("open-interest history not available")
+    top = market.get("top_traders_position_ratio")
+    if top is not None:
+        ev.append(f"top-trader long/short position ratio {top:.2f}")
+    acc = market.get("accounts_long_short_ratio")
+    if acc is not None:
+        ev.append(f"accounts long/short ratio {acc:.2f} (counts accounts, weak signal)")
+        if acc > 3:
+            contra.append("retail accounts heavily long: crowded")
+    taker = market.get("taker_buy_sell_ratio")
+    if taker is not None:
+        ev.append(f"taker buy/sell volume ratio {taker:.2f} (1h)")
+    liq = market.get("liquidations") or {}
+    if liq:
+        ll, sl = liq.get("longs_liquidated_1h"), liq.get("shorts_liquidated_1h")
+        ev.append(f"liquidations 1h: longs {ll:,.0f} / shorts {sl:,.0f} USDT (lower bound)")
+        if ll and sl is not None and ll > 3 * max(sl, 1) and ll > 1_000_000:
+            contra.append("long liquidation cascade in the last hour")
+            score -= 15
+        if sl and ll is not None and sl > 3 * max(ll, 1) and sl > 1_000_000:
+            ev.append("short squeeze in the last hour")
+            score += 10
+    else:
+        warn.append("liquidation feed not available")
+    pieces = sum(x is not None for x in (basis, oi24, top, acc, taker)) + bool(liq)
+    conf = round(0.3 + 0.1 * pieces, 2)
+    return AgentReport("derivatives", _view(score), _clip(score), min(conf, 0.8), ev, contra,
+                       warn)
 
 
 # ------------------------------------------------------------------ sentiment
