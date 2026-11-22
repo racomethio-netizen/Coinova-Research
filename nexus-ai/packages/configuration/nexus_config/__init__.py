@@ -1,7 +1,9 @@
 """Centralized, validated configuration for every NEXUS AI process."""
 
 from nexus_config.settings import (
+    DERIVED_TIMEFRAMES,
     LIVE_TRADING_ACK_PHRASE,
+    TIMEFRAME_SECONDS,
     AppEnv,
     ExchangeCode,
     RiskSettings,
@@ -12,7 +14,9 @@ from nexus_config.settings import (
 )
 
 __all__ = [
+    "DERIVED_TIMEFRAMES",
     "LIVE_TRADING_ACK_PHRASE",
+    "TIMEFRAME_SECONDS",
     "AppEnv",
     "ExchangeCode",
     "RiskSettings",

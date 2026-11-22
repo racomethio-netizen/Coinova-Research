@@ -12,7 +12,7 @@ from itertools import pairwise
 
 import pytest
 from nexus_common.timeutil import utcnow
-from nexus_config import ExchangeCode, Settings, Timeframe
+from nexus_config import DERIVED_TIMEFRAMES, ExchangeCode, Settings, Timeframe
 from nexus_exchange import ExchangeAdapter
 from nexus_exchange.factory import build_from_settings
 
@@ -50,7 +50,11 @@ async def test_ticker_and_order_book(adapter: ExchangeAdapter) -> None:
         assert ticker.last is not None and ticker.last > 0
 
 
-@pytest.mark.parametrize("tf", list(Timeframe))
+# Timeframes NEXUS fetches from exchanges (the others are derived from stored bars).
+FETCHED = [tf for tf in Timeframe if tf.value not in DERIVED_TIMEFRAMES]
+
+
+@pytest.mark.parametrize("tf", FETCHED)
 async def test_closed_candles(adapter: ExchangeAdapter, tf: Timeframe) -> None:
     now = utcnow()
     candles = await adapter.fetch_closed_candles("BTC/USDT", tf, limit=100)

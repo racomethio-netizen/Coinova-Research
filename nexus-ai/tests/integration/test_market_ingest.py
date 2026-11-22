@@ -113,3 +113,113 @@ async def test_health_transitions(factory: sessionmaker[Session], redis: Any) ->
     with transaction(factory) as s:
         kinds = [e.event_type for e in repo.recent_system_events(s)]
     assert kinds[:2] == ["exchange_up", "exchange_down"]
+
+
+# ---------------------------------------------------------------- Phase B: derived TFs
+def _pair(factory: sessionmaker[Session]) -> int:
+    with transaction(factory) as s:
+        return repo.upsert_trading_pair(
+            s, exchange_id=repo.exchange_id(s, "binance"), symbol="BTC/USDT",
+            exchange_symbol="BTCUSDT", base="BTC", quote="USDT", price_tick=D("0.01"),
+            amount_step=D("0.00001"), min_amount=None, min_notional=None, maker_fee=None,
+            taker_fee=None, synced_at=T0)
+
+
+def _bars(factory: sessionmaker[Session], pid: int, tf: str, step_s: int, n: int,
+          missing: set[int] = frozenset()) -> None:  # type: ignore[assignment]
+    rows = [repo.CandleRow(T0 + timedelta(seconds=i * step_s), D(100 + i), D(101 + i),
+                           D(99 + i), D("100.5") + i, D(1)) for i in range(n) if i not in missing]
+    with transaction(factory) as s:
+        repo.upsert_candles(s, pid, tf, rows)
+
+
+def test_derived_timeframes_use_complete_closed_groups_only(
+        factory: sessionmaker[Session]) -> None:
+    from nexus_market.derived import derive
+
+    pid = _pair(factory)
+    _bars(factory, pid, "1h", 3600, 24, missing={7})            # 1 day of 1h, 07:00 missing
+    now = T0 + timedelta(hours=24)
+    with transaction(factory) as s:
+        assert derive(s, pid, "6h", now=now) == 3                # 06-12 bucket incomplete
+        c6 = repo.load_candles(s, pid, "6h")
+    assert [c.open_time.hour for c in c6] == [0, 12, 18]
+    first = c6[0]
+    assert (first.open, first.high, first.low, first.close, first.volume) == (
+        D(100), D(106), D(99), D("105.5"), D(6))
+    with transaction(factory) as s:
+        assert derive(s, pid, "2h", now=now) == 11               # 06-08 incomplete
+        assert derive(s, pid, "12h", now=now) == 1               # 00-12 incomplete
+        assert derive(s, pid, "6h", now=now) == 1                # incremental: last bucket only
+        assert len(repo.load_candles(s, pid, "6h")) == 3         # idempotent, no duplicates
+    # A still-forming bucket is never written.
+    with transaction(factory) as s:
+        assert derive(s, pid, "12h", now=T0 + timedelta(hours=23, minutes=59)) == 0
+
+
+def test_three_minute_bars_from_one_minute_are_epoch_aligned(
+        factory: sessionmaker[Session]) -> None:
+    from nexus_market.derived import derive
+
+    pid = _pair(factory)
+    _bars(factory, pid, "1m", 60, 10)                            # 00:00..00:09
+    with transaction(factory) as s:
+        assert derive(s, pid, "3m", now=T0 + timedelta(minutes=10)) == 3
+        bars = repo.load_candles(s, pid, "3m")
+    assert [int(c.open_time.timestamp()) % 180 for c in bars] == [0, 0, 0]
+    assert bars[-1].open_time == T0 + timedelta(minutes=6)
+
+
+def test_data_quality_report_counts_gaps_and_staleness(factory: sessionmaker[Session]) -> None:
+    from nexus_market.derived import quality_report
+
+    pid = _pair(factory)
+    _bars(factory, pid, "1h", 3600, 24, missing={5, 6, 7})
+    with transaction(factory) as s:
+        fresh = quality_report(s, [("binance", "BTC/USDT"), ("binance", "NOPE/USDT")],
+                               ["1h", "15m"], now=T0 + timedelta(hours=24, minutes=1))
+        late = quality_report(s, [("binance", "BTC/USDT")], ["1h"],
+                              now=T0 + timedelta(hours=30))
+    h1, m15 = fresh
+    assert (h1.present, h1.window_bars, h1.missing, h1.largest_gap_bars) == (21, 24, 3, 3)
+    assert h1.stale is False and h1.age_seconds == 60 and h1.coverage == round(21 / 24, 4)
+    assert m15.newest is None and m15.stale is True               # no data = stale
+    assert late[0].stale is True
+    assert len(fresh) == 2                                        # unknown pair skipped
+
+
+def test_minute_retention_prunes_only_old_minute_bars(factory: sessionmaker[Session]) -> None:
+    from nexus_market.derived import prune_minutes
+
+    pid = _pair(factory)
+    _bars(factory, pid, "1m", 60, 5)
+    _bars(factory, pid, "1h", 3600, 5)
+    with transaction(factory) as s:
+        assert prune_minutes(s, 30, now=T0 + timedelta(days=31)) == 5
+        assert repo.load_candles(s, pid, "1m") == []
+        assert len(repo.load_candles(s, pid, "1h")) == 5
+
+
+async def test_minute_polling_is_gradual_and_limited_to_traded_pairs(
+        factory: sessionmaker[Session], redis: Any) -> None:
+    from nexus_config import Settings
+    from nexus_market import runner
+
+    client = FakeCcxtClient()
+    calls: list[str] = []
+
+    def serve(symbol: str, tf: str, since: int | None, limit: int) -> list[list[float]]:
+        calls.append(tf)
+        start = -(-(since or 0) // 60_000) * 60_000       # Binance: whole minutes >= since
+        return [[start + i * 60_000, 1, 1, 1, 1, 1] for i in range(limit)]
+
+    client.responses["fetch_ohlcv"] = serve
+    adapter = CcxtSpotAdapter("binance", client, CAPABILITIES[ExchangeCode.BINANCE])
+    await adapter.load_markets()
+    svc = runner.MarketDataService.__new__(runner.MarketDataService)
+    svc.settings = Settings(enabled_exchanges=["binance"], trading_pairs=["BTC/USDT"])
+    svc.factory, svc.redis, svc.adapters = factory, redis, {"binance": adapter}
+    svc.pairs = {("binance", "BTC/USDT"): _pair(factory)}
+    stored = await svc.poll_minutes()
+    assert calls == ["1m"] * runner.MINUTE_PAGES_PER_POLL       # a few pages, not 30 days
+    assert stored == runner.MINUTE_PAGES_PER_POLL * CAPABILITIES[ExchangeCode.BINANCE].ohlcv_page_limit

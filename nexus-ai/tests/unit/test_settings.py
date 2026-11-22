@@ -176,3 +176,14 @@ def test_cooldown_and_correlation_cannot_be_switched_off() -> None:
         RiskSettings(max_correlated_exposure="0.6")
     r = RiskSettings(cooldown_after_stop_minutes=240, correlation_threshold=0.6)
     assert r.cooldown_after_stop_minutes == 240
+
+
+def test_every_timeframe_has_seconds_and_derived_sources_divide_evenly() -> None:
+    from nexus_config import DERIVED_TIMEFRAMES, TIMEFRAME_SECONDS, Timeframe
+
+    assert [t.value for t in Timeframe] == list(TIMEFRAME_SECONDS)
+    for target, source in DERIVED_TIMEFRAMES.items():
+        assert TIMEFRAME_SECONDS[target] % TIMEFRAME_SECONDS[source] == 0
+    from nexus_db.models import TIMEFRAMES
+
+    assert tuple(TIMEFRAME_SECONDS) == TIMEFRAMES

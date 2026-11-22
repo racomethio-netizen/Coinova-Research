@@ -34,7 +34,7 @@ export default function Markets() {
           </select>
           <label className="sr-only" htmlFor="tf">Timeframe</label>
           <select id="tf" className={SEL} value={tf} onChange={(e) => setTf(e.target.value)}>
-            {["5m", "15m", "1h", "4h"].map((x) => <option key={x}>{x}</option>)}
+            {["1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d"].map((x) => <option key={x}>{x}</option>)}
           </select>
         </div>
       </PageHeader>

@@ -41,15 +41,28 @@ class ExchangeCode(StrEnum):
 
 
 class Timeframe(StrEnum):
+    M1 = "1m"
+    M3 = "3m"
     M5 = "5m"
     M15 = "15m"
+    M30 = "30m"
     H1 = "1h"
+    H2 = "2h"
     H4 = "4h"
+    H6 = "6h"
+    H12 = "12h"
     D1 = "1d"
 
     @property
     def seconds(self) -> int:
-        return {"5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}[self.value]
+        return TIMEFRAME_SECONDS[self.value]
+
+
+TIMEFRAME_SECONDS = {"1m": 60, "3m": 180, "5m": 300, "15m": 900, "30m": 1800, "1h": 3600,
+                     "2h": 7200, "4h": 14400, "6h": 21600, "12h": 43200, "1d": 86400}
+# Timeframes built from stored CLOSED bars instead of extra exchange calls: a bar is
+# written only when every constituent source bar exists (never padded or estimated).
+DERIVED_TIMEFRAMES = {"3m": "1m", "30m": "15m", "2h": "1h", "6h": "1h", "12h": "1h"}
 
 
 # Exact phrase the owner must set to acknowledge live-trading risk. This is one of
@@ -193,6 +206,9 @@ class Settings(BaseSettings):
     binance_public_ws_url: str | None = "wss://data-stream.binance.vision/ws"
     # Candle history to backfill on first start (Kraken is capped at 720 bars anyway).
     market_backfill_days: int = 120
+    # 1-minute candles for the traded pairs (and 3m derived from them), kept this many days.
+    minute_candles: bool = True
+    minute_retention_days: int = Field(default=30, ge=1, le=90)
     # Optional CA bundle replacing certifi's for exchange HTTPS (TLS-inspecting proxies).
     # Certificate verification is never disabled.
     extra_ca_file: str | None = None

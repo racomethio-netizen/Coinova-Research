@@ -36,6 +36,7 @@ from nexus_market.stream import ReconnectingStream
 
 log = get_logger("nexus.market")
 BOOK_TTL_SECONDS = 20
+MINUTE_PAGES_PER_POLL = 3     # up to 1,500 one-minute bars per pair per poll
 
 
 class MarketDataService:
@@ -102,7 +103,61 @@ class MarketDataService:
                 if initial:
                     log.info("backfilled", exchange=code, symbol=symbol, timeframe=tf.value,
                              bars=res.stored, gaps=len(res.gaps))
+        if self.settings.minute_candles:
+            stored += await self.poll_minutes()
         return stored
+
+    async def poll_minutes(self) -> int:
+        """1m candles for the traded pairs, kept ``minute_retention_days``. History is
+        filled a few pages per poll (not in one burst: the egress IP is shared)."""
+        from nexus_config import Timeframe
+
+        stored = 0
+        start = utcnow() - timedelta(days=self.settings.minute_retention_days)
+        for (code, symbol), pid in self.pairs.items():
+            if symbol not in self.settings.trading_pairs or await self._paused():
+                continue
+            try:
+                res = await backfill(self.adapters[code], self.factory, pair_id=pid,
+                                     symbol=symbol, timeframe=Timeframe.M1, start=start,
+                                     max_pages=MINUTE_PAGES_PER_POLL)
+            except ExchangeError as exc:
+                log.warning("candle_poll_failed", exchange=code, symbol=symbol,
+                            timeframe="1m", error=str(exc)[:200])
+                await self._note(exc)
+                continue
+            stored += res.stored
+        return stored
+
+    async def derive_timeframes(self) -> int:
+        """3m/30m/2h/6h/12h from stored closed bars (no exchange calls)."""
+        from nexus_config import DERIVED_TIMEFRAMES
+
+        from nexus_market.derived import derive
+
+        targets = [t for t in DERIVED_TIMEFRAMES
+                   if self.settings.minute_candles or DERIVED_TIMEFRAMES[t] != "1m"]
+
+        def run() -> int:
+            n = 0
+            for pid in self.pairs.values():
+                for target in targets:
+                    with transaction(self.factory) as s:
+                        n += derive(s, pid, target)
+            return n
+
+        return await asyncio.to_thread(run)
+
+    async def prune_minutes(self) -> None:
+        from nexus_market.derived import prune_minutes
+
+        def run() -> int:
+            with transaction(self.factory) as s:
+                return prune_minutes(s, self.settings.minute_retention_days)
+
+        removed = await asyncio.to_thread(run)
+        if removed:
+            log.info("minute_candles_pruned", rows=removed)
 
     async def snapshot_books(self) -> None:
         if await self._paused():
@@ -191,6 +246,8 @@ class MarketDataService:
             asyncio.create_task(self._every(30, self.poll_candles, "candles")),
             asyncio.create_task(self._every(300, self.snapshot_books, "books")),
             asyncio.create_task(self._every(60, monitor.check_once, "health")),
+            asyncio.create_task(self._every(60, self.derive_timeframes, "derived")),
+            asyncio.create_task(self._every(3600, self.prune_minutes, "retention")),
             *(asyncio.create_task(s.run(self.stop)) for s, _ in streams),
         ]
         await self.stop.wait()

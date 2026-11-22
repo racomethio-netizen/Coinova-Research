@@ -125,7 +125,9 @@ async def exchanges(s: Session = Depends(db), redis: Any = Depends(redis_dep)) -
     return out
 
 
-TF_SECONDS = {"5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}
+TF_SECONDS = {"1m": 60, "3m": 180, "5m": 300, "15m": 900, "30m": 1800, "1h": 3600,
+              "2h": 7200, "4h": 14400, "6h": 21600, "12h": 43200, "1d": 86400}
+TimeframeParam = Literal["1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d"]
 
 
 async def _public_get(settings: Settings, path: str, params: dict[str, Any],
@@ -143,9 +145,27 @@ async def _public_get(settings: Settings, path: str, params: dict[str, Any],
         return r.json()
 
 
+@router.get("/markets/data-quality")
+def data_quality(s: Session = Depends(db),
+                 settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Coverage, gaps and freshness of every stored candle series (from the database)."""
+    from nexus_config import TIMEFRAME_SECONDS
+    from nexus_market.derived import QUALITY_WINDOW_BARS, quality_report
+
+    tfs = [tf for tf in TIMEFRAME_SECONDS
+           if settings.minute_candles or tf not in ("1m", "3m")]
+    pairs = [(e.value, sym) for e in settings.enabled_exchanges for sym in settings.trading_pairs]
+    rows = quality_report(s, pairs, tfs)
+    return {"window_bars": QUALITY_WINDOW_BARS, "series": [r.as_dict() for r in rows],
+            "stale": sum(1 for r in rows if r.stale),
+            "note": "Duplicates are impossible by construction (one row per pair, "
+                    "timeframe and open time). Derived timeframes are built only from "
+                    "complete sets of closed source bars; a gap stays a gap."}
+
+
 @router.get("/markets/candles")
 async def candles(exchange: str, symbol: str,
-                  timeframe: Literal["5m", "15m", "1h", "4h", "1d"] = "1h",
+                  timeframe: TimeframeParam = "1h",
                   limit: int = Query(300, ge=10, le=1000), s: Session = Depends(db),
                   redis: Any = Depends(redis_dep),
                   settings: Settings = Depends(settings_dep)) -> dict[str, Any]:

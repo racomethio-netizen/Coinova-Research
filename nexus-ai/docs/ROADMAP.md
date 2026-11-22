@@ -473,3 +473,16 @@ trading on Render can use live data once background workers are approved.
 * Owner step: A4 (NEXUS_DEPLOYMENT_GUIDE.md).
 * Next: Phase B (market data: 30m/2h/6h/12h resampled, 1m/3m for BTC/ETH, data-quality
   report).
+
+## 2026-11-22: deep upgrade Phase B (market data)
+
+* Completed: timeframes 1m, 3m, 30m, 2h, 6h, 12h (migration 0011); 1m polled for traded
+  pairs with 30-day retention, filled gradually; 3m/30m/2h/6h/12h derived from stored
+  closed bars (`nexus_market/derived.py`); Data quality page and
+  `/api/v1/markets/data-quality`; chart timeframe selector extended; NEXUS_ARCHITECTURE.md.
+* Settings: `NEXUS_MINUTE_CANDLES` (default true), `NEXUS_MINUTE_RETENTION_DAYS` (30).
+  Storage estimate on Supabase: about 20-25 MB for 30 days of 1m + 3m for two pairs.
+* Tested: 631 passed; e2e 13 + 2 pre-existing failures.
+* Not deployed (Binance back-off until ~08:54 UTC 23 Nov). After deploy: watch the Data
+  quality page fill (30 days of 1m history fill in about 8 minutes: 3,000 bars per pair every 30 s).
+* Next: B3 live trade stream (optional), then Phase C (technical analysis indicators).

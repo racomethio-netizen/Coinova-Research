@@ -4,6 +4,22 @@ How to run: `scripts/test.sh` with `NEXUS_TEST_DATABASE_URL` and `NEXUS_TEST_RED
 (Postgres and Redis test databases; integration tests are skipped without them). Browser
 tests: `scripts/e2e.sh` (see the script header).
 
+## 2026-11-22: Phase B (market data: timeframes, data quality)
+
+| Suite | Result |
+|---|---|
+| Lint, types (132 files), `alembic check` (migration 0011) | pass |
+| Unit + integration | **631 passed**, 0 failed (31 deselected: real-network exchange tests) |
+| Browser e2e | 13 passed, 2 failed (the same pre-existing "validation results" failure) |
+
+New tests (7): derived bars only from complete closed groups (a missing 1h bar removes
+its 2h/6h/12h bucket, a still-forming bucket is never written, re-running writes no
+duplicates); 3m bars are epoch-aligned like Binance; the data-quality report counts
+missing bars, the largest gap, coverage and staleness (no data = stale); retention
+removes only old 1m/3m bars; 1m polling fetches a few pages per poll (no startup burst)
+and only for traded pairs; every timeframe has a duration and matches the database
+constraint. The data-quality route requires sign-in.
+
 ## 2026-11-22: deep upgrade Phase A (A3 modes, A4 database role, A5 weight budget, A6 restarts)
 
 | Suite | Result |

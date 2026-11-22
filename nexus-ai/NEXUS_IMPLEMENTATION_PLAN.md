@@ -30,9 +30,10 @@ owner mandate; one new migration per schema change; Decimal for money.
 
 ## Phase B: market data
 
-* B1 Timeframes 30m, 2h, 6h, 12h (resampled from stored bars, no extra API calls); 1m and
+* B1 (done 22 Nov) Timeframes 30m, 2h, 6h, 12h (resampled from stored bars, no extra API calls); 1m and
   3m for BTC/ETH only, 30-day rolling retention.
-* B2 Data-quality report per pair/timeframe (gaps, duplicates, stale) on the data page.
+* B2 (done 22 Nov) Data-quality report per pair/timeframe (gaps, duplicates, stale) on the data page.
+* B3 Live trade (tick) stream for BTC/ETH with bounded memory: not started.
 
 ## Phase C: technical analysis
 
