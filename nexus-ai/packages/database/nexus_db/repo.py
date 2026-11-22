@@ -201,3 +201,37 @@ def operating_mode_db_state(session: Session) -> dict[str, Any] | None:
         return None
     return {**(row.details or {}), "actor": row.actor,
             "at": row.created_at.isoformat() if row.created_at else None}
+
+
+def first_gap(session: Session, pair_id: int, timeframe: str, start: datetime,
+              end: datetime, step_seconds: int) -> datetime | None:
+    """Open time of the first MISSING closed bar in [start, end), or None if complete.
+    ``start`` is rounded up to the bar grid (epoch-aligned, as Binance)."""
+    from datetime import UTC
+    from datetime import datetime as _dt
+    from datetime import timedelta as _td
+
+    from sqlalchemy import text as _text
+
+    step = _td(seconds=step_seconds)
+    ts = start.timestamp()
+    aligned = _dt.fromtimestamp(-(-ts // step_seconds) * step_seconds, tz=UTC)
+    if aligned + step > end:
+        return None
+    row = session.execute(_text("""
+        WITH t AS (
+          SELECT open_time, lead(open_time) OVER (ORDER BY open_time) AS nxt
+          FROM market_candles
+          WHERE pair_id = :p AND timeframe = :tf AND is_closed AND open_time >= :s
+            AND open_time < :e)
+        SELECT (SELECT min(open_time) FROM t) AS first,
+               (SELECT min(open_time) FROM t
+                 WHERE nxt - open_time > make_interval(secs => :step)) AS gap_after
+    """), {"p": pair_id, "tf": timeframe, "s": aligned, "e": end, "step": step_seconds}).one()
+    first: datetime | None = row.first
+    gap_after: datetime | None = row.gap_after
+    if first is None or first > aligned:
+        return aligned
+    if gap_after is not None:
+        return gap_after + step
+    return None

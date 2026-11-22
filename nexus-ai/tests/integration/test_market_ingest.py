@@ -382,3 +382,59 @@ def test_derivation_is_chunked_and_crosses_long_gaps(factory: sessionmaker[Sessi
     assert [b.open_time for b in bars] == (
         [T0 + timedelta(hours=6 * i) for i in range(4)]
         + [T0 + timedelta(days=4, hours=6 * i) for i in range(4)])
+
+
+def test_first_gap_finds_leading_and_inner_holes(factory: sessionmaker[Session]) -> None:
+    pid = _pair(factory)
+    _bars(factory, pid, "1h", 3600, 10, missing={0, 1, 6})
+    with transaction(factory) as s:
+        end = T0 + timedelta(hours=10)
+        assert repo.first_gap(s, pid, "1h", T0, end, 3600) == T0                 # leading
+        assert repo.first_gap(s, pid, "1h", T0 + timedelta(hours=2), end, 3600) == \
+            T0 + timedelta(hours=6)                                              # inner
+        assert repo.first_gap(s, pid, "1h", T0 + timedelta(hours=7), end, 3600) is None
+        assert repo.first_gap(s, pid, "1h", T0 + timedelta(minutes=90), end, 3600) == \
+            T0 + timedelta(hours=6)                                  # start rounded up
+
+
+async def test_gap_repair_fills_old_holes_behind_a_fresh_stream_bar(
+        factory: sessionmaker[Session], redis: Any) -> None:
+    from nexus_common.timeutil import utcnow
+    from nexus_config import Settings
+    from nexus_market import runner
+
+    now = utcnow().replace(second=0, microsecond=0)
+    start = now - timedelta(days=1)
+    served: list[int] = []
+    never_existed = int((start + timedelta(minutes=30)).timestamp() * 1000)
+
+    def serve(symbol: str, tf: str, since: int | None, limit: int) -> list[list[float]]:
+        served.append(since or 0)
+        t0 = -(-(since or 0) // 60_000) * 60_000
+        return [[t, 1, 1, 1, 1, 1] for t in range(t0, t0 + limit * 60_000, 60_000)
+                if t != never_existed and t < int(now.timestamp() * 1000) - 60_000]
+
+    client = FakeCcxtClient()
+    client.responses["fetch_ohlcv"] = serve
+    adapter = CcxtSpotAdapter("binance", client, CAPABILITIES[ExchangeCode.BINANCE])
+    await adapter.load_markets()
+    svc = runner.MarketDataService.__new__(runner.MarketDataService)
+    svc.settings = Settings(enabled_exchanges=["binance"], trading_pairs=["BTC/USDT"],
+                            timeframes=[], minute_candles=True, minute_retention_days=1)
+    svc.factory, svc.redis, svc.adapters = factory, redis, {"binance": adapter}
+    pid = _pair(factory)
+    svc.pairs = {("binance", "BTC/USDT"): pid}
+    with transaction(factory) as s:                     # the stream wrote the newest bar
+        repo.upsert_candles(s, pid, "1m", [repo.CandleRow(now - timedelta(minutes=2), D(1),
+                                                          D(1), D(1), D(1), D(1))])
+    for _ in range(3):
+        await svc.repair_gaps()
+    with transaction(factory) as s:
+        n = len(repo.load_candles(s, pid, "1m"))
+        gap = repo.first_gap(s, pid, "1m", start + timedelta(minutes=1), now - timedelta(minutes=1),
+                             60)
+    assert n >= 1400                                    # the day is filled
+    assert gap == start + timedelta(minutes=30)          # only the bar Binance never had
+    calls = len(served)
+    await svc.repair_gaps()                             # the cursor moved past that hole
+    assert len(served) == calls

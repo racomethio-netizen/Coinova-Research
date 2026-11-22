@@ -156,6 +156,61 @@ class MarketDataService:
             stored += res.stored
         return stored
 
+    async def repair_gaps(self) -> int:
+        """Fill holes in stored history (the stream writes the newest bar, so the regular
+        poll never looks back). A Redis cursor per series moves past each repaired span, so
+        bars Binance itself never had (exchange outages) are not requested again and again;
+        it resets every 6 hours to re-scan from the start of the window."""
+        from nexus_config import Timeframe
+        from nexus_db import repo
+
+        series = [(tf, self.settings.market_backfill_days) for tf in self.settings.timeframes]
+        if self.settings.minute_candles:
+            series.insert(0, (Timeframe.M1, self.settings.minute_retention_days))
+        horizon = await self._rest_horizon()
+        filled = 0
+        for (code, symbol), pid in self.pairs.items():
+            for tf, days in series:
+                if await self._paused():
+                    return filled
+                key = f"nexus:md:gapcursor:{pid}:{tf.value}"
+                raw = await self.redis.get(key)
+                start = utcnow() - timedelta(days=days)
+                if raw:
+                    from datetime import datetime as _dt
+
+                    start = max(start, _dt.fromisoformat(raw.decode() if isinstance(raw, bytes)
+                                                         else raw))
+
+                def find(start: Any = start, tf: Any = tf, pid: int = pid) -> Any:
+                    with transaction(self.factory) as s:
+                        return repo.first_gap(s, pid, tf.value, start, horizon, tf.seconds)
+
+                gap = await asyncio.to_thread(find)
+                if gap is None:
+                    await self.redis.set(key, horizon.isoformat(), ex=6 * 3600)
+                    continue
+                try:
+                    res = await backfill(self.adapters[code], self.factory, pair_id=pid,
+                                         symbol=symbol, timeframe=tf, start=gap, now=horizon,
+                                         max_pages=MINUTE_PAGES_PER_POLL, from_start=True)
+                except ExchangeError as exc:
+                    log.warning("gap_repair_failed", symbol=symbol, timeframe=tf.value,
+                                error=str(exc)[:200])
+                    await self._note(exc)
+                    continue
+                filled += res.stored
+                span = timedelta(seconds=tf.seconds * self.adapters[code].capabilities
+                                 .ohlcv_page_limit * MINUTE_PAGES_PER_POLL)
+                await self.redis.set(key, min(gap + span, horizon).isoformat(), ex=6 * 3600)
+                log.info("gap_repaired", symbol=symbol, timeframe=tf.value,
+                         from_=gap.isoformat(), bars=res.stored)
+        if filled > 500:
+            from nexus_common.memory import release
+
+            release()
+        return filled
+
     async def ws_fresh(self) -> bool:
         """True while the Binance stream is connected and delivered data recently."""
         from nexus_market.binance_ws import STATE_KEY
@@ -361,6 +416,7 @@ class MarketDataService:
             asyncio.create_task(self._every(300, self.snapshot_books, "books")),
             asyncio.create_task(self._every(60, monitor.check_once, "health")),
             asyncio.create_task(self._every(60, self.derive_timeframes, "derived")),
+            asyncio.create_task(self._every(300, self.repair_gaps, "gap-repair")),
             asyncio.create_task(self._every(3600, self.prune_minutes, "retention")),
             *(asyncio.create_task(s.run(self.stop)) for s, _ in streams),
         ]
