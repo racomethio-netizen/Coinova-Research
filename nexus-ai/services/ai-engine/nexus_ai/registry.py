@@ -83,3 +83,37 @@ def activate(s: Session, model_id: int, *, actor: str, now: datetime) -> None:
     repo.record_audit(s, actor=actor, action="model_activated", target_type="ai_model",
                       target_id=str(model_id), details={"name": row.name, "version": row.version})
     s.flush()
+
+
+ROLLBACK_ACTORS = ("user:", "system:model-health")
+
+
+def rollback(s: Session, name: str, *, actor: str, reason: str,
+             now: datetime) -> models.AiModel | None:
+    """Retire the active version of ``name`` and re-activate the most recently promoted
+    earlier version (it passed validation when it was promoted). Allowed for the owner and
+    for the model-health monitor (a rollback only returns to a previously validated model;
+    it can never promote an unvalidated one). Returns the re-activated row, or None when
+    there is no earlier version (then nothing is active: no model is better than a bad one).
+    """
+    if not actor.startswith(ROLLBACK_ACTORS):
+        raise PermissionError("rollback needs the owner or the model-health monitor")
+    current = s.scalar(select(models.AiModel).where(models.AiModel.name == name,
+                                                    models.AiModel.status == "active"))
+    if current is None:
+        raise ValueError(f"no active version of {name}")
+    previous = s.scalar(select(models.AiModel).where(
+        models.AiModel.name == name, models.AiModel.status == "retired",
+        models.AiModel.promoted_at.is_not(None), models.AiModel.artifact_sha256.is_not(None),
+        models.AiModel.id != current.id).order_by(models.AiModel.promoted_at.desc()).limit(1))
+    current.status = "retired"
+    s.flush()
+    if previous is not None:
+        previous.status, previous.promoted_at = "active", now
+    repo.record_audit(s, actor=actor, action="model_rolled_back", target_type="ai_model",
+                      target_id=str(current.id),
+                      details={"name": name, "from_version": current.version,
+                               "to_version": previous.version if previous else None,
+                               "reason": reason})
+    s.flush()
+    return previous

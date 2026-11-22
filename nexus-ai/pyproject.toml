@@ -31,6 +31,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Offline model research only (never installed on the 512 MB production host; production
+# runs inference of an activated model, and no model is active).
+research = [
+  "lightgbm==4.7.0",
+  "catboost==1.2.10",
+  "hmmlearn==0.3.3",
+]
 dev = [
   "pytest==9.2.0",
   "pytest-asyncio==1.4.1",
@@ -99,5 +106,6 @@ explicit_package_bases = true
 exclude = ["tests/", "migrations/"]
 
 [[tool.mypy.overrides]]
-module = ["ccxt.*", "sklearn.*", "xgboost.*", "pandas.*", "defusedxml.*"]
+module = ["ccxt.*", "sklearn.*", "xgboost.*", "pandas.*", "defusedxml.*", "lightgbm.*",
+          "catboost.*", "hmmlearn.*", "scipy.*"]
 ignore_missing_imports = true
