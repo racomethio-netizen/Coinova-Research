@@ -56,6 +56,31 @@ EMA20. Grid: ratio_min {0.55, 0.60}, stop_atr {1.5, 2.5}, target_atr {3, 4.5}, u
   2026-11-22 (24 h retention); a test needs months of stored history first.
 * **Statistical strategies**: none proposed until a hypothesis exists with its own data.
 
-## Results
+## Results (single run, 2026-11-22, after this file was committed as 05def09)
 
-(appended after the single run)
+Data coverage (1h bars, both symbols): 17,522 bars; funding_24h 17,522; taker_buy_ratio
+17,201 (the free perpetual kline archive ends 2026-10-31).
+
+| Strategy | OOS trades | Expectancy / trade | Profit factor | Win rate | Positive windows | t-stat | Result |
+|---|---|---|---|---|---|---|---|
+| A vwap_reclaim | 64 | -0.45% | 0.41 | 30% | 22% | -3.39 | **FAIL** |
+| B volatility_expansion | 294 | -0.32% | 0.69 | 34% | 33% | -2.71 | **FAIL** |
+| C mtf_confluence | 166 | -0.25% | 0.71 | 39% | 22% | -1.93 | **FAIL** |
+| D funding_squeeze | 41 | -0.40% | 0.34 | 17% | 0% | -2.63 | **FAIL** |
+| E taker_flow | 144 | -0.24% | 0.72 | 40% | 22% | -1.77 | **FAIL** |
+
+By regime (expectancy per trade): A range -0.32% (37), down -0.62% (17), up -0.67% (10);
+B range -0.20% (136), down -0.08% (25), up -0.48% (133); C range -0.16% (100), up -0.40%
+(66); D range -0.26% (17), down -0.47% (15), up -0.54% (9); E range **+0.22% (45)**,
+down -1.32% (12), up -0.33% (87).
+
+All five fail every gate. Nothing is enabled. E's range-regime slice passes the per-regime
+gates in isolation, but the strategy failed as a whole, and with 15 regime slices tested a
+single positive one is about what chance alone produces. It is NOT used. If pursued, it is
+a new hypothesis ("taker-flow continuation in range regimes only") to be pre-registered
+and judged on data after 2026-11-22 (paper trading), never on this sample again.
+
+Across Phase 6 and the 2026-11-21 validation, 11 rule-based spot strategies have now
+failed out-of-sample on the same two years after realistic costs. The honest conclusion:
+simple technical, flow and funding rules on BTC/ETH spot do not beat 0.3% round-trip
+costs in this period. "No trade" remains the correct default.

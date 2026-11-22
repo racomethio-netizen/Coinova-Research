@@ -335,3 +335,16 @@ trading on Render can use live data once background workers are approved.
   Intelligence page shows them (the stale "HTTP 451" label is gone).
 * Tests: 542 pass (documented formats, liquidation windows, a real local websocket with
   a dropped connection, agent rules).
+
+## 2026-11-22: Phase 6 (strategy library, pre-registered)
+
+* Pre-registered (commit 05def09, before any run): A vwap_reclaim, B volatility_expansion,
+  C mtf_confluence (candle strategies, live-capable, migration 0007 seeds them disabled),
+  D funding_squeeze, E taker_flow (research-only: need funding / perp taker-buy columns).
+* Single run on 2 years of Binance data: ALL FIVE FAIL (expectancy -0.24% to -0.45% per
+  trade, profit factor 0.34-0.72). E's range-regime slice (+0.22%, 45 trades) is treated
+  as likely chance (15 slices tested); not used. Full table in the pre-registration doc.
+* Not testable now: order-book imbalance (no history; E is the flow proxy) and
+  liquidation events (Binance archive 404; live collection keeps 24 h only).
+* 11 rule-based spot strategies have now failed out-of-sample. No strategy is enabled.
+* Tests: 552 pass; alembic check clean.

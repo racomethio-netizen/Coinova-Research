@@ -186,6 +186,14 @@ ALL_STRATEGIES: dict[str, type[Strategy]] = {
                         PullbackToSupport, LiquiditySweepReversal)}
 
 
+def _add_phase6() -> None:
+    from nexus_strategies.library_v2 import CANDLE_STRATEGIES
+    ALL_STRATEGIES.update(CANDLE_STRATEGIES)
+
+
+_add_phase6()
+
+
 # --- Regime matrix -----------------------------------------------------------------------
 # A strategy may trade in a regime only if its out-of-sample edge in that regime passed the
 # same gates as the whole strategy (see `allowed_regimes`). Nothing is combined blindly.

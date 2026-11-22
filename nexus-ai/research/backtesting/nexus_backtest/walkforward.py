@@ -31,6 +31,17 @@ GRIDS: dict[str, dict[str, list[float]]] = {
                          "touch_atr": [0.3, 0.5], "use_exit": [0, 1]},
     "liquidity_sweep_reversal": {"stop_atr": [0.2, 0.5], "target_atr": [2.0, 3.0],
                                  "use_exit": [0, 1]},
+    # Phase 6 (pre-registered 2026-11-22, docs/research/2026-11-22-phase6-preregistration.md)
+    "vwap_reclaim": {"below_bars": [4, 8], "vol_z_min": [0.5, 1.5], "stop_atr": [1.5, 2.5],
+                     "target_atr": [3.0, 4.5], "use_exit": [0, 1]},
+    "volatility_expansion": {"squeeze_pct": [0.1, 0.2], "stop_atr": [1.5, 2.5],
+                             "target_atr": [3.0, 5.0], "use_exit": [0, 1]},
+    "mtf_confluence": {"h_rsi_max": [65, 75], "stop_atr": [1.5, 2.5],
+                       "target_atr": [3.0, 4.5], "use_exit": [0, 1]},
+    "funding_squeeze": {"funding_max": [-0.00005, -0.0001], "stop_atr": [1.5, 2.5],
+                        "target_atr": [3.0, 4.5], "use_exit": [0, 1]},
+    "taker_flow": {"ratio_min": [0.55, 0.60], "stop_atr": [1.5, 2.5],
+                   "target_atr": [3.0, 4.5], "use_exit": [0, 1]},
 }
 
 

@@ -302,7 +302,8 @@ class Strategy(Base):
     __table_args__ = (
         CheckConstraint(
             in_list("code", ("trend_following", "momentum", "breakout", "mean_reversion",
-                              "pullback_support", "liquidity_sweep_reversal")),
+                              "pullback_support", "liquidity_sweep_reversal",
+                              "vwap_reclaim", "volatility_expansion", "mtf_confluence")),
             name="code_valid",
         ),
     )
