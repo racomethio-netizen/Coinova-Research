@@ -159,3 +159,34 @@ def kill_switch_db_state(session: Session) -> dict[str, Any] | None:
         return None
     return {"reason": (row.details or {}).get("reason"), "actor": row.actor,
             "at": row.created_at.isoformat() if row.created_at else None, "restored": True}
+
+
+RISK_FLOOR_ACTION = "risk_state_floor_set"
+RISK_STATE_ACTION = "risk_state_changed"
+
+
+def risk_floor_db_state(session: Session, mode: str) -> str | None:
+    """The owner's minimum risk state for ``mode`` (latest audit row by a user), or None."""
+    from sqlalchemy import select as _select
+
+    rows = session.scalars(_select(m.AuditLog).where(m.AuditLog.action == RISK_FLOOR_ACTION,
+                                                     m.AuditLog.actor.like("user:%"))
+                           .order_by(m.AuditLog.id.desc()).limit(50))
+    for row in rows:
+        d = row.details or {}
+        if d.get("mode") == mode:
+            state = d.get("state")
+            return str(state) if state else None
+    return None
+
+
+def last_risk_state(session: Session, portfolio_id: int) -> dict[str, Any] | None:
+    """The most recent recorded risk-state transition of a portfolio."""
+    from sqlalchemy import select as _select
+
+    row = session.scalar(_select(m.AuditLog).where(
+        m.AuditLog.action == RISK_STATE_ACTION, m.AuditLog.target_type == "portfolio",
+        m.AuditLog.target_id == str(portfolio_id)).order_by(m.AuditLog.id.desc()).limit(1))
+    if row is None:
+        return None
+    return {**(row.details or {}), "at": row.created_at.isoformat() if row.created_at else None}

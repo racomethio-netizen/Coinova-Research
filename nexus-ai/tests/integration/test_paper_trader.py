@@ -79,6 +79,8 @@ async def engine_setup(migrated_engine: Engine, redis: Any) -> AsyncIterator[tup
         return True, "test fixture: analysis gate bypassed"
 
     eng._decision_gate = _bypass_gate  # type: ignore[method-assign]
+    # Candle freshness is covered by test_stale_candles_put_risk_state_in_no_new_trades.
+    eng._market_data_stale = lambda: False  # type: ignore[method-assign]
     yield eng, factory, state, redis
     truncate(migrated_engine, "trades, orders, positions, balances, risk_events, "
                               "performance_snapshots, trading_signals, portfolios, trading_pairs, "
@@ -726,3 +728,165 @@ async def test_forward_taker_records_trades_once_and_gaps(
     finally:
         with migrated_engine.begin() as c:
             c.execute(text("TRUNCATE forward_test_events"))
+
+
+# ---------------------------------------------------------------- Phase A: risk state
+async def _risk_state(redis: Any) -> dict[str, Any]:
+    raw = await redis.get("nexus:risk:state:paper")
+    assert raw is not None
+    return dict(json.loads(raw))
+
+
+def _transitions(factory: Any) -> list[dict[str, Any]]:
+    with transaction(factory) as s:
+        rows = s.scalars(select(models.AuditLog).where(
+            models.AuditLog.action == "risk_state_changed").order_by(models.AuditLog.id)).all()
+        return [dict(r.details) for r in rows]
+
+
+async def test_stale_candles_put_risk_state_in_no_new_trades(
+        engine_setup: tuple[Any, ...]) -> None:
+    eng, factory, _, redis = engine_setup
+    del eng._market_data_stale                     # use the real freshness check
+    eng.bootstrap()
+    await eng.cycle()                              # no candles at all = stale
+    st = await _risk_state(redis)
+    assert st["state"] == "NO_NEW_TRADES" and "market data stale" in st["reasons"]
+    assert not st["entries_allowed"]
+    with transaction(factory) as s:
+        pid = repo.pair_id(s, "binance", "BTC/USDT")
+        bar = utcnow().replace(second=0, microsecond=0) - timedelta(minutes=10)
+        repo.upsert_candles(s, pid, "5m", [repo.CandleRow(bar, D(1), D(1), D(1), D(1), D(1))])
+    await eng.cycle()
+    assert (await _risk_state(redis))["state"] == "NORMAL"
+    await eng.cycle()                              # unchanged: no extra audit row
+    assert [(t["from"], t["to"]) for t in _transitions(factory)] == [
+        (None, "NO_NEW_TRADES"), ("NO_NEW_TRADES", "NORMAL")]
+
+
+async def test_risk_state_blocks_signals_and_survives_restart(
+        engine_setup: tuple[Any, ...]) -> None:
+    eng, factory, _, redis = engine_setup
+    eng.bootstrap()
+    with transaction(factory) as s:               # owner floor, durable in the audit log
+        repo.record_audit(s, actor="user:1", action="risk_state_floor_set",
+                          details={"mode": "paper", "state": "CLOSE_ONLY", "reason": "test"})
+    await eng.cycle()
+    assert (await _risk_state(redis))["state"] == "CLOSE_ONLY"
+    await eng.handle_signal(1, signal(), await eng.valuation(), D(10_000), D(10_000), D(10_000))
+    status, reason = await _decision(factory)
+    assert status == "rejected" and "risk state CLOSE_ONLY" in reason
+    # A restarted trader re-derives the same state and does not log a fake transition.
+    fresh = TradingEngine(eng.settings, factory, redis, eng.adapters, eng.broker, eng.books)
+    fresh._market_data_stale = lambda: False  # type: ignore[method-assign]
+    fresh.bootstrap()
+    await fresh.cycle()
+    assert fresh.risk_status.state.value == "CLOSE_ONLY"
+    assert len(_transitions(factory)) == 1
+    # A floor written by a non-user actor is ignored (only the owner sets it).
+    with transaction(factory) as s:
+        repo.record_audit(s, actor="system:x", action="risk_state_floor_set",
+                          details={"mode": "paper", "state": "NORMAL"})
+    await fresh.cycle()
+    assert fresh.risk_status.state.value == "CLOSE_ONLY"
+
+
+async def test_reconciliation_mismatch_means_close_only_and_cancels_entries(
+        engine_setup: tuple[Any, ...]) -> None:
+    from nexus_execution.reconcile import ReconResult, ReconStatus
+
+    eng, _factory, _, redis = engine_setup
+    eng.bootstrap()
+
+    async def mismatch(*_: Any, **__: Any) -> ReconResult:
+        return ReconResult(ReconStatus.MISMATCH, utcnow())
+
+    cancelled: list[str] = []
+
+    async def record_cancel(reason: str) -> None:
+        cancelled.append(reason)
+
+    eng.reconciler.run = mismatch  # type: ignore[method-assign]
+    eng._cancel_entries = record_cancel  # type: ignore[method-assign]
+    await eng.cycle()
+    st = await _risk_state(redis)
+    assert st["state"] == "CLOSE_ONLY"
+    assert "exchange balances lower than the internal ledger" in st["reasons"]
+    assert cancelled == ["risk state CLOSE_ONLY"]
+
+
+class _FakeAccount:
+    def __init__(self) -> None:
+        self.balances: dict[str, Any] = {}
+        self.fail = False
+        self.calls = 0
+
+    async def fetch_balances(self) -> dict[str, Any]:
+        from nexus_exchange.errors import ExchangeError
+
+        self.calls += 1
+        if self.fail:
+            raise ExchangeError("timeout")
+        return self.balances
+
+
+async def test_live_balance_reconciliation(engine_setup: tuple[Any, ...]) -> None:
+    from nexus_exchange.models import AssetBalance
+    from nexus_execution.reconcile import BalanceReconciler, ReconStatus
+
+    _, factory, _, redis = engine_setup
+    with transaction(factory) as s:
+        owner = s.scalar(select(models.User.id))
+        p = models.Portfolio(user_id=owner, name="main", mode="live", quote_currency="USDT")
+        s.add(p)
+        s.flush()
+        pid = p.id
+        s.add(models.Balance(portfolio_id=pid, mode="live",
+                             exchange_id=repo.exchange_id(s, "binance"), asset="USDT",
+                             free=D(100), locked=D(0), source="internal", synced_at=utcnow()))
+    acct = _FakeAccount()
+    rec = BalanceReconciler(factory, redis, "live", {"binance": acct},  # type: ignore[dict-item]
+                            interval=60)
+
+    acct.balances = {"USDT": AssetBalance("USDT", D(120), D(0)),
+                     "BNB": AssetBalance("BNB", D("0.5"), D(0))}
+    ok = await rec.run(pid)
+    assert ok.status is ReconStatus.OK and ok.unmanaged == {"binance:USDT": "20",
+                                                            "binance:BNB": "0.5"}
+    assert (await rec.run(pid)) is ok and acct.calls == 1      # throttled between runs
+
+    acct.balances = {"USDT": AssetBalance("USDT", D(60), D(0))}
+    bad = await rec.run(pid, force=True)
+    assert bad.status is ReconStatus.MISMATCH and bad.blocks_entries
+    assert bad.mismatches[0].asset == "USDT" and D(bad.mismatches[0].shortfall) == D(40)
+
+    acct.fail = True
+    down = await rec.run(pid, force=True)
+    assert down.status is ReconStatus.UNAVAILABLE and down.blocks_entries
+
+    acct.fail = False
+    await redis.set("nexus:binance:ban:production", "2026-11-23T06:38:00+00:00")
+    banned = await rec.run(pid, force=True)
+    assert banned.status is ReconStatus.UNAVAILABLE and "banned" in (banned.detail or "")
+    assert acct.calls == 3                                     # no call while banned
+
+    with transaction(factory) as s:
+        internal = s.scalar(select(models.Balance.free).where(
+            models.Balance.portfolio_id == pid, models.Balance.source == "internal"))
+        reported = dict(s.execute(select(models.Balance.asset, models.Balance.free).where(
+            models.Balance.portfolio_id == pid, models.Balance.source == "exchange")).all())
+        actions = list(s.scalars(select(models.AuditLog.action).where(
+            models.AuditLog.actor == "system:reconcile").order_by(models.AuditLog.id)))
+    assert internal == D(100), "reconciliation never edits the ledger"
+    assert reported == {"USDT": D(60), "BNB": D(0)}
+    # One audit row per status CHANGE (unavailable -> unavailable is not repeated).
+    assert actions == ["balance_reconciliation_ok", "balance_reconciliation_mismatch",
+                       "balance_reconciliation_unavailable"]
+    assert json.loads(await redis.get("nexus:reconcile:live"))["status"] == "unavailable"
+
+
+async def test_paper_reconciliation_is_not_applicable(engine_setup: tuple[Any, ...]) -> None:
+    eng, _, _, _redis = engine_setup
+    eng.bootstrap()
+    res = await eng.reconciler.run(eng.portfolio_id)
+    assert res.status.value == "not_applicable" and not res.blocks_entries

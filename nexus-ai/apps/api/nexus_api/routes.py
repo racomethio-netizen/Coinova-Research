@@ -506,6 +506,57 @@ async def security(s: Session = Depends(db), redis: Any = Depends(redis_dep),
 Market = Literal["spot", "futures"]
 
 
+class RiskFloorBody(BaseModel):
+    mode: Literal["paper", "live"]
+    state: Literal["NORMAL", "REDUCED_RISK", "NO_NEW_TRADES", "CLOSE_ONLY"]
+    reason: str = Field(min_length=5, max_length=500)
+    totp: str | None = Field(default=None, max_length=6)
+
+
+@router.get("/risk/state", dependencies=[Depends(owner)])
+async def risk_state(s: Session = Depends(db), redis: Any = Depends(redis_dep)) -> dict[str, Any]:
+    """Current risk state per mode as derived by the trader (refreshed every cycle), the
+    owner's minimum state, the last recorded transition, and balance reconciliation."""
+    from nexus_execution.reconcile import STATUS_KEY
+    from nexus_execution.trader import RISK_STATE_KEY
+
+    out: dict[str, Any] = {}
+    for mode in ("paper", "live"):
+        raw = await redis.get(RISK_STATE_KEY.format(mode=mode))
+        recon = await redis.get(STATUS_KEY.format(mode=mode))
+        port = s.scalar(select(models.Portfolio.id).where(models.Portfolio.mode == mode,
+                                                          models.Portfolio.name == "main"))
+        out[mode] = {
+            "current": json.loads(raw) if raw else None,
+            "owner_floor": repo.risk_floor_db_state(s, mode) or "NORMAL",
+            "last_transition": repo.last_risk_state(s, port) if port else None,
+            "reconciliation": json.loads(recon) if recon else None,
+        }
+    return out
+
+
+@router.post("/risk/state/floor", dependencies=[Depends(owner)])
+async def set_risk_floor(body: RiskFloorBody, s: Session = Depends(db),
+                         redis: Any = Depends(redis_dep),
+                         viewer: Viewer = Depends(current_viewer),
+                         settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Set the minimum risk state. Making it stricter is always allowed; relaxing it in
+    live mode needs 2FA. Conditions the trader detects (loss limits, kill switch,
+    reconciliation) still apply on top: the floor can only add restrictions."""
+    from nexus_risk.state import SEVERITY, RiskState
+
+    current = RiskState(repo.risk_floor_db_state(s, body.mode) or "NORMAL")
+    target = RiskState(body.state)
+    if SEVERITY[target] < SEVERITY[current] and body.mode == "live":
+        await check_totp(viewer, body.totp, settings, redis)
+    repo.record_audit(s, actor=viewer.actor, action=repo.RISK_FLOOR_ACTION,
+                      user_id=viewer.user.id,
+                      details={"mode": body.mode, "state": target.value,
+                               "previous": current.value, "reason": body.reason})
+    return {"mode": body.mode, "owner_floor": target.value,
+            "note": "Applied by the trader on its next cycle (about 30 s)."}
+
+
 class CredentialBody(BaseModel):
     exchange: Literal["binance", "kraken", "coinbase"]
     label: str = Field(min_length=1, max_length=64)

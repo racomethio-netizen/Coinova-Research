@@ -112,3 +112,10 @@ are fixed). Every statement below was checked today unless marked *not verified*
 | High (research) | No strategy or model with an edge after costs |
 | Medium | Missing timeframes, indicators, models and fusion listed in 4.14; X unverified |
 | Low | CSP `unsafe-inline`; Redis non-persistent (mitigated) |
+
+## 6. Status updates
+
+* 2026-11-22 (Phase A): live balance reconciliation and the persisted risk-state machine
+  are built and tested (NEXUS_TEST_REPORT.md). Found while building it: the live internal
+  ledger starts empty, so a live trader could not buy anything until an owner-confirmed
+  starting balance exists (added to plan item A3).

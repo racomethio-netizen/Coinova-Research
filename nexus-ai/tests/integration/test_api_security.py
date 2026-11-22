@@ -57,7 +57,8 @@ def login(c: TestClient, email: str = "owner@example.test", **kw: Any) -> Any:
 GET_ROUTES = ["/api/v1/overview", "/api/v1/portfolio", "/api/v1/exchanges", "/api/v1/signals",
               "/api/v1/positions", "/api/v1/orders", "/api/v1/trades", "/api/v1/performance",
               "/api/v1/strategies", "/api/v1/models", "/api/v1/risk", "/api/v1/system",
-              "/api/v1/security", "/api/v1/markets/books", "/api/v1/auth/me"]
+              "/api/v1/security", "/api/v1/markets/books", "/api/v1/auth/me",
+              "/api/v1/risk/state"]
 
 
 @pytest.mark.parametrize("path", GET_ROUTES)
@@ -492,3 +493,29 @@ def test_news_settings_overview_context_and_report_metrics(client: TestClient) -
         assert secret not in text
     ctx = client.get("/api/v1/overview/context").json()
     assert ctx["risk_status"]["news_blocks_entries"] is True and ctx["regimes"] == []
+
+
+def test_risk_state_floor_stricter_is_easy_relaxing_live_needs_totp(client: TestClient) -> None:
+    login(client)
+    state = client.get("/api/v1/risk/state").json()
+    assert state["paper"]["owner_floor"] == "NORMAL" and state["live"]["current"] is None
+    r = client.post("/api/v1/risk/state/floor", json={"mode": "live", "state": "CLOSE_ONLY",
+                                                     "reason": "investigating"}, headers=CSRF)
+    assert r.status_code == 200 and r.json()["owner_floor"] == "CLOSE_ONLY"
+    assert client.get("/api/v1/risk/state").json()["live"]["owner_floor"] == "CLOSE_ONLY"
+    relax = {"mode": "live", "state": "NORMAL", "reason": "all checked"}
+    r = client.post("/api/v1/risk/state/floor", json=relax, headers=CSRF)
+    assert r.status_code == 403 and "two-factor" in r.json()["detail"]
+    secret = _enable_totp(client)
+    r = client.post("/api/v1/risk/state/floor", json={**relax, "totp": _code(secret, 1)},
+                    headers=CSRF)
+    assert r.status_code == 200
+    # EMERGENCY_STOP is the kill switch, not a floor; unknown states are refused.
+    bad = client.post("/api/v1/risk/state/floor", json={"mode": "paper",
+                                                       "state": "EMERGENCY_STOP",
+                                                       "reason": "nope nope"}, headers=CSRF)
+    assert bad.status_code == 422
+    login(client, "viewer@example.test")
+    denied = client.post("/api/v1/risk/state/floor", json={"mode": "paper", "state": "NORMAL",
+                                                          "reason": "viewer try"}, headers=CSRF)
+    assert denied.status_code == 403

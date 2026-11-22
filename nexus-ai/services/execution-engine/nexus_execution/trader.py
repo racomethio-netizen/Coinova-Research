@@ -14,6 +14,7 @@ Paper mode uses real order books and is labeled ``paper`` everywhere.
 from __future__ import annotations
 
 import asyncio
+import json
 import signal as signals
 import time
 from dataclasses import dataclass
@@ -36,8 +37,22 @@ from nexus_market.analytics import book_metrics
 from nexus_risk.allocator import VenueState, choose_buy_venue
 from nexus_risk.exits import ExitState, partial_take_profit, trailing_stop
 from nexus_risk.kill_switch import KillSwitch
-from nexus_risk.limits import MarketCheck, RiskSnapshot, evaluate_portfolio, evaluate_trade
+from nexus_risk.limits import (
+    MarketCheck,
+    RiskSnapshot,
+    evaluate_portfolio,
+    evaluate_trade,
+    loss_fraction,
+)
 from nexus_risk.sizing import SizingInput, size_position
+from nexus_risk.state import (
+    RiskInputs,
+    RiskState,
+    RiskStatus,
+    cancels_entries,
+    derive,
+    entries_allowed,
+)
 from nexus_risk.streak import DEFAULT_POLICY, risk_multiplier
 from nexus_strategies import ALL_STRATEGIES, Signal, Strategy
 from nexus_strategies.frames import to_frame
@@ -55,6 +70,7 @@ from nexus_execution.order_manager import (
     OrderManager,
     fund_paper_portfolio,
 )
+from nexus_execution.reconcile import BalanceReconciler
 
 log = get_logger("nexus.trader")
 BOOK_MAX_AGE = 15.0
@@ -65,6 +81,10 @@ PARTIAL_R = Decimal("1")
 PARTIAL_FRACTION = Decimal("0.5")
 TRAIL_ATR = Decimal("2")
 TRAIL_TIMEFRAME = "1h"
+# Market data is stale when the newest CLOSED 5m bar of a traded pair ended more than
+# this long ago (bars close every 5 minutes; ingest polls every minute).
+DATA_STALE_AFTER = timedelta(minutes=15)
+RISK_STATE_KEY = "nexus:risk:state:{mode}"
 
 
 class BookCache:
@@ -131,6 +151,9 @@ class TradingEngine:
         self.stop = asyncio.Event()
         self._last_snapshot: datetime | None = None
         self._seen_bars: dict[tuple[str, str], datetime] = {}
+        self.reconciler = BalanceReconciler(factory, redis, self.mode, adapters)
+        self.risk_status = RiskStatus(RiskState.NORMAL, (), Decimal(1))
+        self._recorded_state: str | None = None
 
     # ------------------------------------------------------------------ bootstrap
     def bootstrap(self) -> int:
@@ -397,6 +420,11 @@ class TradingEngine:
         signal_id = self._record_signal(strat_id, sig)
         if signal_id is None:
             return  # already processed (idempotent)
+        if not entries_allowed(self.risk_status.state):
+            await self._decide(sig, signal_id, "rejected",
+                               f"risk state {self.risk_status.state.value}: "
+                               + "; ".join(self.risk_status.reasons))
+            return
         block = (await self._news_block() or await self._x_block(sig.symbol)
                  or self._regime_block(strat_id, sig) or self._cooldown_block(sig.symbol))
         if block is not None:
@@ -408,7 +436,7 @@ class TradingEngine:
             open_positions=v.open_positions, pending_entries=self._pending_entries(),
             exposure=v.exposure, held_assets=v.held_assets,
             kill_switch=await self._kill_active(), unreconciled_orders=unknown,
-            balances_reconciled=v.complete, as_of=utcnow())
+            balances_reconciled=v.complete and not self._recon_blocks(), as_of=utcnow())
         base = sig.symbol.split("/")[0]
         venues = await self.venues(sig.symbol)
         best = min((vs for vs in venues if vs.best_ask), key=lambda vs: vs.best_ask or 0,
@@ -447,7 +475,9 @@ class TradingEngine:
         target_px = entry + (target - entry_ref)
         sizing = size_position(SizingInput(
             equity=v.equity, cash_available=venue.cash_available(), entry_price=entry,
-            stop_price=stop_px, risk_per_trade=self.settings.risk.risk_per_trade * streak_mult,
+            stop_price=stop_px,
+            risk_per_trade=self.settings.risk.risk_per_trade
+            * min(streak_mult, self.risk_status.risk_multiplier),
             fee_rate=venue.taker_fee, slippage_rate=self.settings.paper_slippage_bps / 10_000,
             exposure_now=v.exposure, max_exposure=self.settings.risk.max_portfolio_exposure,
             asset_exposure_now=ZERO,
@@ -782,16 +812,7 @@ class TradingEngine:
     async def kill_actions(self) -> None:
         """While engaged: cancel every resting ENTRY order of this portfolio, and close open
         positions if the owner requested it (one IOC sell per position per cycle)."""
-        with transaction(self.factory) as s:
-            ids = list(s.scalars(select(models.Order.id).where(
-                models.Order.portfolio_id == self.portfolio_id,
-                models.Order.purpose == "entry",
-                models.Order.status.in_(("submitted", "open", "partially_filled")))))
-        for oid in ids:
-            try:
-                await self.orders.cancel(oid, "kill switch engaged")
-            except Exception as exc:  # reconcile next cycle; never resubmit
-                log.error("kill_cancel_failed", order_id=oid, error=type(exc).__name__)
+        await self._cancel_entries("kill switch engaged")
         if await self.redis.get(close_all_key(self.mode)):
             open_left = await self.close_all_positions()
             if open_left == 0:
@@ -800,6 +821,18 @@ class TradingEngine:
                     repo.record_audit(s, actor="system:kill_switch",
                                       action="kill_switch_positions_closed",
                                       details={"mode": self.mode})
+
+    async def _cancel_entries(self, reason: str) -> None:
+        with transaction(self.factory) as s:
+            ids = list(s.scalars(select(models.Order.id).where(
+                models.Order.portfolio_id == self.portfolio_id,
+                models.Order.purpose == "entry",
+                models.Order.status.in_(("submitted", "open", "partially_filled")))))
+        for oid in ids:
+            try:
+                await self.orders.cancel(oid, reason)
+            except Exception as exc:  # reconcile next cycle; never resubmit
+                log.error("entry_cancel_failed", order_id=oid, error=type(exc).__name__)
 
     async def close_all_positions(self) -> int:
         """Place a reduce-only style IOC sell for each open position (bounded slippage).
@@ -839,7 +872,8 @@ class TradingEngine:
         await self.orders.reconcile_unknown()
         await self.orders.refresh_open()
         await self.orders.cancel_stale(timedelta(minutes=5))
-        if await self._kill_active():
+        kill = await self._kill_active()
+        if kill:
             await self.kill_actions()
         await self.manage_exits()
         v = await self.valuation()
@@ -858,15 +892,97 @@ class TradingEngine:
             with transaction(self.factory) as s:
                 repo.record_audit(s, actor="system:risk", action="kill_switch_engaged",
                                   details={"reason": reason})
+        recon = await self.reconciler.run(self.portfolio_id or 0)
+        status = await self.update_risk_state(v, day0, week0, peak, kill=kill,
+                                              shutdown=port.shutdown,
+                                              reconciliation=recon.status.value)
+        if cancels_entries(status.state) and not kill:
+            await self._cancel_entries(f"risk state {status.state.value}")
         from nexus_common.botstate import BotState, get_state
 
         state = await get_state(self.redis)
-        if state is BotState.RUNNING:
+        if state is BotState.RUNNING and entries_allowed(status.state):
             await self.evaluate_entries(v, day0, week0, peak)
         else:
-            log.info("entries_paused", state=state.value)
+            log.info("entries_paused", state=state.value, risk_state=status.state.value)
         await self.redis.set(events.heartbeat_key(f"trader:{self.mode}"), utcnow().isoformat(),
                              ex=300)
+
+    # ------------------------------------------------------------------ risk state
+    def _recon_blocks(self) -> bool:
+        last = self.reconciler.last
+        return last is not None and last.blocks_entries
+
+    def _market_data_stale(self) -> bool:
+        """True when any traded pair lacks a recent CLOSED 5m bar on the signal venue."""
+        now = utcnow()
+        with transaction(self.factory) as s:
+            for symbol in self.settings.trading_pairs:
+                try:
+                    pid = repo.pair_id(s, self.settings.signal_exchange, symbol)
+                except Exception:
+                    return True
+                newest = s.scalar(select(func.max(models.MarketCandle.open_time)).where(
+                    models.MarketCandle.pair_id == pid, models.MarketCandle.timeframe == "5m",
+                    models.MarketCandle.is_closed.is_(True)))
+                if newest is None or now - (newest + timedelta(minutes=5)) > DATA_STALE_AFTER:
+                    return True
+        return False
+
+    def _owner_floor(self) -> RiskState:
+        """Owner's minimum state from the audit log; unreadable = NO_NEW_TRADES."""
+        try:
+            with transaction(self.factory) as s:
+                raw = repo.risk_floor_db_state(s, self.mode)
+        except Exception as exc:
+            log.error("risk_floor_unreadable", error=type(exc).__name__)
+            return RiskState.NO_NEW_TRADES
+        try:
+            return RiskState(raw) if raw else RiskState.NORMAL
+        except ValueError:
+            return RiskState.NO_NEW_TRADES
+
+    async def update_risk_state(self, v: Valuation, day0: Decimal, week0: Decimal,
+                                peak: Decimal, *, kill: bool, shutdown: bool,
+                                reconciliation: str) -> RiskStatus:
+        limits = self.settings.risk
+        daily, weekly = loss_fraction(day0, v.equity), loss_fraction(week0, v.equity)
+        drawdown = loss_fraction(peak, v.equity)
+        streak_mult, _ = await self._streak()
+        status = derive(RiskInputs(
+            kill_switch=kill or await self._kill_active(), drawdown_shutdown=shutdown,
+            daily_loss_hit=daily >= limits.daily_loss_limit,
+            weekly_loss_hit=weekly >= limits.weekly_loss_limit,
+            loss_warning=(daily >= limits.daily_loss_limit * Decimal("0.8")
+                          or weekly >= limits.weekly_loss_limit * Decimal("0.8")
+                          or drawdown >= limits.max_drawdown * Decimal("0.8")),
+            streak_multiplier=streak_mult, unknown_orders=self._count_unknown(),
+            positions_unmarkable=not v.complete,
+            market_data_stale=self._market_data_stale(),
+            reconciliation=reconciliation, owner_floor=self._owner_floor()))
+        self.risk_status = status
+        payload = {**status.as_dict(), "mode": self.mode, "at": utcnow().isoformat()}
+        await self.redis.set(RISK_STATE_KEY.format(mode=self.mode), json.dumps(payload),
+                             ex=600)
+        if self._recorded_state is None:
+            with transaction(self.factory) as s:
+                last = repo.last_risk_state(s, self.portfolio_id or 0)
+            self._recorded_state = (last or {}).get("to")
+        if status.state.value != self._recorded_state:
+            with transaction(self.factory) as s:
+                repo.record_audit(s, actor="system:risk", action=repo.RISK_STATE_ACTION,
+                                  target_type="portfolio", target_id=str(self.portfolio_id),
+                                  details={"mode": self.mode, "from": self._recorded_state,
+                                           "to": status.state.value,
+                                           "reasons": list(status.reasons)})
+            await self.notify({"type": "risk_warning", "mode": self.mode,
+                               "event": f"risk state {status.state.value}",
+                               "severity": "warning" if entries_allowed(status.state)
+                               else "error", "equity": str(v.equity)})
+            log.warning("risk_state_changed", frm=self._recorded_state, to=status.state.value,
+                        reasons=list(status.reasons))
+            self._recorded_state = status.state.value
+        return status
 
     async def _risk_event(self, kind: str, severity: str, v: Valuation) -> None:
         key = f"nexus:risk_event:{self.mode}:{kind}:{utcnow().date()}"

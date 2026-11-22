@@ -25,6 +25,9 @@ order whose outcome is unknown; never invent data.
 | Worker crash | Supervised workers restart with capped backoff | `unit/test_workers.py::test_inline_restarts_crashes_and_stops_cleanly` |
 | AI service unavailable | Missing analysis, X data or derivatives = "unavailable" and NO TRADE; X being unconfigured never blocks or enables trading | `integration/test_api_security.py::test_agent_proposals_say_no_trade_without_data_and_reviews_empty`, `unit/test_social.py::test_trader_x_gate_blocks_only_listed_coins_and_ignores_missing_data` |
 | News misinformation | A single low-credibility X post is "unconfirmed" with fake-news risk and never blocks or triggers anything; news can only pause entries | `unit/test_social.py::test_single_low_credibility_rumor_is_unconfirmed_and_never_blocks`, `integration/test_paper_trader.py::test_news_block_stops_entries` |
+| Stale market data | Newest closed 5m bar of a traded pair ended > 15 min ago: risk state NO_NEW_TRADES until fresh data arrives | `integration/test_paper_trader.py::test_stale_candles_put_risk_state_in_no_new_trades` |
+| Balances differ from the exchange (live) | Exchange holds less than the ledger: CLOSE_ONLY, resting entries cancelled, audit + alert, ledger untouched; fetch failure or ban: NO_NEW_TRADES | `integration/test_paper_trader.py::test_live_balance_reconciliation`, `integration/test_paper_trader.py::test_reconciliation_mismatch_means_close_only_and_cancels_entries` |
+| Restart with a restricted risk state | The state is re-derived from durable inputs; no fake transition is logged | `integration/test_paper_trader.py::test_risk_state_blocks_signals_and_survives_restart` |
 
 ## Known limits
 

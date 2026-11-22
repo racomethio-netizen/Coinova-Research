@@ -441,3 +441,22 @@ trading on Render can use live data once background workers are approved.
 * Tested: `scripts/test.sh` with test Postgres + Redis: 576 passed (integration included).
 * Not deployed (docs only; Binance futures back-off until ~08:54 UTC 23 Nov).
 * Next: on owner approval ("Phase A"), start A1 live balance reconciliation.
+
+## 2026-11-22: deep upgrade Phase A (A1 + A2)
+
+* Completed:
+  * A1 live balance reconciliation (`nexus_execution/reconcile.py`), wired into the trader
+    (blocks entries on mismatch or unavailable).
+  * A2 persisted risk-state machine (`nexus_risk/state.py`): NORMAL / REDUCED_RISK /
+    NO_NEW_TRADES / CLOSE_ONLY / EMERGENCY_STOP, durable owner floor, transitions in the
+    audit log, API `/risk/state` and `/risk/state/floor`, Risk page card.
+  * NEXUS_RISK_POLICY.md, NEXUS_TEST_REPORT.md.
+* Behaviour change in paper: entries now also stop when market data is stale, and run at
+  half risk when a loss limit is 80% used. No strategy is enabled, so nothing trades today.
+* Tested: 606 passed (integration included); e2e 11 passed, 2 pre-existing failures (no
+  AI-model rows in the e2e database).
+* Not deployed yet: wait until the Binance futures back-off ends (~08:54 UTC 23 Nov), then
+  run the nexus-ai sync command and watch the Render deploy and the Risk page.
+* Still open in Phase A: A3 four modes, A4 least-privilege DB role (owner approval), A5
+  request-weight budget, A6 restart-during-execution tests. Live ledger seeding (the live
+  ledger starts empty, so live could not buy anything) is a new item, added to A3.

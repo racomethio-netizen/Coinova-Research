@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { Badge, Button, Card, Field, Loading, PageHeader, Stat, Table, statusTone } from "@/components/ui";
 import { DASH, num, pct, time } from "@/lib/format";
 import { useApi, useMode } from "@/lib/hooks";
+import { RiskStateCard } from "@/components/riskstate";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
@@ -39,6 +40,7 @@ export default function Risk() {
             <Stat label="Current drawdown" value={pct(data.current?.drawdown)} tone={Number(data.current?.drawdown ?? 0) > 0.03 ? "warn" : undefined} />
             <Stat label="Current exposure" value={pct(data.current?.exposure_pct)} hint={data.current ? `equity ${num(data.current.equity)}` : undefined} />
           </div>
+          <RiskStateCard mode={mode === "live" ? "live" : "paper"} />
           <Card title="Emergency kill switch" actions={<Badge tone={data.kill_switch ? "bad" : "good"}>{data.kill_switch ? "ENGAGED" : "clear"}</Badge>}>
             {data.kill_switch && <p className="mb-3 text-sm text-down">Engaged by {data.kill_switch.actor} at {time(data.kill_switch.at)}: {data.kill_switch.reason}</p>}
             <div className="grid gap-3 md:grid-cols-3">

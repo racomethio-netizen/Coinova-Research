@@ -78,3 +78,11 @@ test("kill switch can be engaged from the risk page", async ({ page }, info) => 
   await expect(page.getByText("ENGAGED", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Clear kill switch" })).toBeVisible();
 });
+
+test("risk page shows the risk state and balance check", async ({ page }) => {
+  await login(page);
+  await page.goto("/risk/");
+  await expect(page.getByText(/Risk state \(paper\)/)).toBeVisible();
+  await expect(page.getByText("Exchange balance check")).toBeVisible();
+  await expect(page.getByLabel("Minimum state", { exact: true })).toBeVisible();
+});
