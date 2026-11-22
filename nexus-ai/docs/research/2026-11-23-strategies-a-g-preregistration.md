@@ -49,6 +49,55 @@ round-trip cost away (`Strategy.compute`).
 * Short versions of A-G: spot is long-only and futures are disabled.
 * "Mean reversion probability" (D): needs a model (Phase D); not approximated by a rule.
 
-## Results
+## Results (single run, 2026-11-22 17:00-17:20 UTC, after this file was committed as 880e6e3)
 
-Appended below after the single run.
+Data: primary 2022-11-14..2024-11-13 from data.binance.vision (all 200 monthly archives
+verified against Binance's SHA-256 checksums; 5m coverage 210,512 of 210,528 bars per
+symbol, the 16 missing bars are Binance outages and stay missing). Secondary: the
+2024-11-14..2026-11-14 research database. Expectancy is the mean net return per trade
+after fees and slippage.
+
+### Primary (decides)
+
+| Strategy | OOS trades | Expectancy | Profit factor | Win rate | Positive windows | t-stat | Result |
+|---|---|---|---|---|---|---|---|
+| A trend_supertrend | 84 | -0.26% | 0.73 | 30% | 44% | -1.27 | **FAIL** |
+| B breakout_retest | 47 | -0.08% | 0.88 | 34% | 38% | -0.36 | **FAIL** |
+| C momentum_rv | 55 | -0.16% | 0.69 | 36% | 44% | -1.27 | **FAIL** |
+| D mean_reversion_vwap | 0 | - | - | - | - | - | **FAIL** (no trades) |
+| E vwap_trend | 230 | -0.30% | 0.51 | 33% | 0% | -4.89 | **FAIL** |
+| F sweep_reclaim | 85 | -0.29% | 0.36 | 26% | 12% | -4.17 | **FAIL** |
+| G market_structure | 328 | -0.27% | 0.72 | 30% | 33% | -2.54 | **FAIL** |
+
+By regime (expectancy, trades): A range -0.35% (38), up -0.19% (46); B range -0.07% (24),
+up -0.09% (23); C up -0.16% (55); E range -0.38% (110), down -0.14% (8), up -0.24% (112);
+F range -0.07% (25), down -0.34% (40), up -0.47% (20); G range -0.59% (151), down +0.22%
+(39), up -0.07% (138).
+
+### Secondary (reported only)
+
+| Strategy | OOS trades | Expectancy | Profit factor | Positive windows | t-stat | Result |
+|---|---|---|---|---|---|---|
+| A trend_supertrend | 108 | +0.14% | 1.17 | 56% | 0.68 | FAIL (t-stat) |
+| B breakout_retest | 49 | -0.63% | 0.24 | 12% | -4.62 | FAIL |
+| C momentum_rv | 75 | -0.33% | 0.44 | 11% | -3.28 | FAIL |
+| D mean_reversion_vwap | 0 | - | - | - | - | FAIL (no trades) |
+| E vwap_trend | 249 | -0.38% | 0.37 | 0% | -7.22 | FAIL |
+| F sweep_reclaim | 69 | -0.38% | 0.24 | 12% | -5.28 | FAIL |
+| G market_structure | 362 | -0.27% | 0.72 | 11% | -2.55 | FAIL |
+
+### Conclusion
+
+All seven fail on the primary period; nothing is enabled. Notes, not used to change
+anything:
+
+* D never traded: with the oversold trigger (close under the lower band, RSI < 30, VWAP
+  z <= -1.5) the 15m ADX is almost always above 25, and the VWAP target is usually closer
+  than the 0.9% minimum edge (3x costs). At the loosest grid point it produced 5 raw
+  setups in two years, 2 after the cost check. The rule was too strict by design; changing
+  it now would be a new, untested hypothesis.
+* A was mildly positive on the secondary (already mined) period but negative on the unseen
+  primary period: the pattern did not persist, which is exactly what this design checks.
+* G's down-trend slice (+0.22%, 39 trades) and A's secondary range slice (+0.67%, 45) are
+  single slices out of dozens tested; they are what chance produces and are not used.
+* Costs matter: most strategies' gross edge is smaller than the 0.30% round trip.

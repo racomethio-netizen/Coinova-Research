@@ -4,6 +4,19 @@ How to run: `scripts/test.sh` with `NEXUS_TEST_DATABASE_URL` and `NEXUS_TEST_RED
 (Postgres and Redis test databases; integration tests are skipped without them). Browser
 tests: `scripts/e2e.sh` (see the script header).
 
+## 2026-11-23: strategy modules A-G
+
+| Suite | Result |
+|---|---|
+| Lint, types (139 files), `alembic check` (migration 0012) | pass |
+| Unit + integration | **718 passed**, 0 failed |
+| Pre-registered walk-forward (research, not a code test) | all 7 FAIL on unseen 2022-2024 data; see NEXUS_BACKTEST_REPORT.md |
+
+New tests (10): every A-G strategy is causal (results unchanged when later data is
+added) and produces stops below and targets above the close; every grid combination is a
+valid parameter set; market-structure enters on a held retest of the broken high and not
+on a failed one; breakout entries are retests above the broken level.
+
 ## 2026-11-22: Phase C (technical analysis, multi-timeframe)
 
 | Suite | Result |

@@ -508,3 +508,18 @@ trading on Render can use live data once background workers are approved.
   final checkpoint.
 * Next: Phase D (machine learning: purged k-fold with embargo, multi-target labels, MTF
   features, LightGBM/HMM/Isolation Forest, model registry).
+
+## 2026-11-23: strategy modules A-G (brief Phase 4)
+
+* Built `nexus_strategies/library_v3.py` (A trend_supertrend, B breakout_retest,
+  C momentum_rv, D mean_reversion_vwap, E vwap_trend, F sweep_reclaim, G market_structure),
+  seeded disabled (migration 0012), tested (causality, grids, scenarios).
+* Pre-registered (880e6e3) and validated once on UNSEEN data (2022-11..2024-11, Binance
+  archives, checksums verified) plus the old period: all 7 FAIL. Results appended to
+  docs/research/2026-11-23-strategies-a-g-preregistration.md; summary in
+  NEXUS_BACKTEST_REPORT.md. Nothing enabled.
+* Research data: local database `nexus_holdout` (2022-11-14..2024-11-13). Runner:
+  `python -m nexus_backtest.strategies_ag --db URL --label L --out FILE`.
+* After the next deploy, copy the A-G validation results to the production strategy rows
+  so the Strategies page shows them as failed.
+* Next: Phase D (machine learning), judged by net out-of-sample trading performance.

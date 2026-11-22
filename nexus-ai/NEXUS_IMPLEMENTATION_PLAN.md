@@ -41,6 +41,10 @@ owner mandate; one new migration per schema change; Decimal for money.
   RSI divergence, equal highs/lows. Each validated against a reference calculation in tests.
 * C2 (done 22 Nov; feeding them to models is D1) Multi-timeframe agreement score (causal, aligned on bar close) as features.
 
+## Strategy modules A-G (brief Phase 4): done 23 Nov
+
+Built, tested and validated once on unseen 2022-2024 data: all 7 FAIL (NEXUS_BACKTEST_REPORT.md).
+
 ## Phase D: machine learning (offline training)
 
 * D1 Purged k-fold with embargo for every model; multi-target labels (direction after
