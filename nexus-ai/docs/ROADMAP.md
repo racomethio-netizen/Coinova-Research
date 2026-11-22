@@ -523,3 +523,12 @@ trading on Render can use live data once background workers are approved.
 * After the next deploy, copy the A-G validation results to the production strategy rows
   so the Strategies page shows them as failed.
 * Next: Phase D (machine learning), judged by net out-of-sample trading performance.
+
+## 2026-11-23: Phase E (signal fusion, strategy selector)
+
+* `nexus_decision/selector.py` and `fusion.py`; the trader's regime gate now also requires
+  the selector's robust evidence; API `/decision/fusion`; dashboard Trade candidates page.
+* With every strategy failed and no validated model, fusion returns NO_TRADE for BTC and
+  ETH with the reason; this is the intended outcome until something passes.
+* Tests: 14 unit (selector rules, fusion decisions, blockers, context-not-votes, model
+  veto) + 1 trader integration (thin regime evidence rejected).

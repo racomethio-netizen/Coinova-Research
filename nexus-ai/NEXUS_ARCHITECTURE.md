@@ -53,6 +53,22 @@ shared by every caller; no synthetic data in production.
 * API `/analysis/technical`, `/analysis/mtf`; dashboard page Technical analysis.
 * All analysis is causal and tested for it; none of it trades by itself.
 
+## Signal fusion and strategy selection (Phase E)
+
+* `nexus_decision/selector.py`: a strategy may act in a regime only with out-of-sample
+  evidence: passed validation, regime in its allowed regimes, >= 30 trades in that regime,
+  profit factor >= 1.15, and a positive ROBUST expectancy (mean - 1 standard error). Recent
+  forward results can only remove a strategy. Used by the trader (regime gate) and the
+  fusion engine.
+* `nexus_decision/fusion.py`: one LONG / SHORT / WAIT / NO_TRADE per pair. Only eligible
+  strategies or an activated validated model create a trade; indicators, timeframes, order
+  book, funding, BTC and news are context (reasons, conflicts, blockers), never extra votes.
+  Probability = measured out-of-sample win rate (with n) or a calibrated model; no
+  arbitrary scores. Structured fields: strategy, timeframe, entry type, entry, stop, target,
+  reward/risk, probability and its source, expected return, regime, expiry, model and
+  feature version, reasons, conflicts, blockers, and every source considered.
+* API `/decision/fusion`; dashboard page Trade candidates.
+
 ## Decision path for an entry
 
 strategy signal (validated strategies only) -> news / X / regime / cooldown gates ->

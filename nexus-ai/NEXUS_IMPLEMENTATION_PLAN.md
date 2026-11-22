@@ -57,9 +57,9 @@ Built, tested and validated once on unseen 2022-2024 data: all 7 FAIL (NEXUS_BAC
 
 ## Phase E: decision layer
 
-* E1 Signal fusion: strategies + models + context -> LONG / SHORT / WAIT / NO TRADE with a
+* E1 (done 23 Nov) Signal fusion: strategies + models + context -> LONG / SHORT / WAIT / NO TRADE with a
   calibrated probability and reasons; the Risk Manager keeps the final veto.
-* E2 Strategy selector by regime with minimum sample-size rules (no strategy is selected
+* E2 (done 23 Nov) Strategy selector by regime with minimum sample-size rules (no strategy is selected
   without a validated edge in that regime).
 
 ## Phase F: execution

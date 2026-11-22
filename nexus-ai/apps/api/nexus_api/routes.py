@@ -223,6 +223,23 @@ async def multi_timeframe(symbol: str = "BTC/USDT", base: TimeframeParam = "5m",
     return out
 
 
+@router.get("/decision/fusion")
+async def decision_fusion(s: Session = Depends(db), redis: Any = Depends(redis_dep),
+                          settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """One explained LONG / SHORT / WAIT / NO_TRADE per pair from validated sources only,
+    with the strategy selector's verdict for every strategy. Advisory and read-only."""
+    from nexus_api import fusion_view
+
+    key = "nexus:decision:fusion"
+    cached = await redis.get(key)
+    if cached:
+        return dict(json.loads(cached))
+    values = await fusion_view.redis_inputs(redis, settings)
+    out = await asyncio.to_thread(fusion_view.compute, s, values, settings)
+    await redis.set(key, json.dumps(out, default=str), ex=60)
+    return out
+
+
 @router.get("/markets/data-quality")
 def data_quality(s: Session = Depends(db),
                  settings: Settings = Depends(settings_dep)) -> dict[str, Any]:

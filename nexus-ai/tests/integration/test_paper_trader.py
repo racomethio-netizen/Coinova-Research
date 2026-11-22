@@ -70,7 +70,10 @@ async def engine_setup(migrated_engine: Engine, redis: Any) -> AsyncIterator[tup
                          extra_slippage=D("0.0005"))
     with transaction(factory) as s:   # validated in trend_up only (Phase 2 regime gate)
         for st in s.scalars(select(models.Strategy)):
-            st.parameters = {"validation": {"passed": True, "allowed_regimes": ["trend_up"]}}
+            st.parameters = {"validation": {
+                "passed": True, "allowed_regimes": ["trend_up"],
+                "regime_edges": {"trend_up": {"n": 60, "expectancy": 0.004, "std": 0.01,
+                                              "profit_factor": 1.5, "win_rate": 0.45}}}}
     eng = TradingEngine(settings, factory, redis, {"binance": adapter}, broker, books)
     # These tests cover order lifecycle, not market analysis: the analysis gate is bypassed
     # here. test_decision_gate_* exercises the real gate, which must refuse without history.
@@ -992,3 +995,20 @@ async def test_binance_pause_never_trades_and_recovery_has_no_duplicate_orders(
     await eng.handle_signal(1, later, await eng.valuation(), D(10_000), D(10_000), D(10_000))
     await eng.cycle()
     assert n_orders() == 1                      # the repeated signal placed nothing new
+
+
+async def test_selector_rejects_a_passed_strategy_with_thin_regime_evidence(
+        engine_setup: tuple[Any, ...]) -> None:
+    eng, factory, _, _ = engine_setup
+    eng.bootstrap()
+    with transaction(factory) as s:
+        for st in s.scalars(select(models.Strategy)):
+            st.parameters = {"validation": {
+                "passed": True, "allowed_regimes": ["trend_up"],
+                "regime_edges": {"trend_up": {"n": 12, "expectancy": 0.01, "std": 0.01,
+                                              "profit_factor": 2.0}}}}
+    await eng.handle_signal(1, signal(), await eng.valuation(), D(10_000), D(10_000), D(10_000))
+    status, reason = await _decision(factory)
+    assert status == "rejected" and "strategy selector" in reason and "12 out-of-sample" in reason
+    with transaction(factory) as s:
+        assert s.scalar(select(func.count()).select_from(models.Order)) == 0

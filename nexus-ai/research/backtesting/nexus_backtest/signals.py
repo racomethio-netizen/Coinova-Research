@@ -83,4 +83,5 @@ def edge_stats(study: pd.DataFrame) -> dict[str, float | int | None]:
     return {"n": len(study), "win_rate": float(study.win.mean()),
             "expectancy": float(study.ret.mean()),
             "profit_factor": float(gains / losses) if losses > 0 else None,
-            "median_ret": float(study.ret.median())}
+            "median_ret": float(study.ret.median()),
+            "std": float(study.ret.std()) if len(study) > 1 else None}

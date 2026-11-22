@@ -554,6 +554,13 @@ class TradingEngine:
         if sig.regime not in allowed:
             return (f"regime {sig.regime} is outside the strategy's validated regimes "
                     f"({', '.join(allowed) or 'none'})")
+        # Strategy selector (Phase E): enough out-of-sample trades in this regime and a
+        # positive ROBUST expectancy, not just a passed flag.
+        from nexus_decision.selector import assess
+
+        verdict = assess(row.code if row else str(strat_id), val, sig.regime)
+        if not verdict.eligible:
+            return "strategy selector: " + "; ".join(verdict.reasons)
         return None
 
     def _cooldown_block(self, symbol: str) -> str | None:
