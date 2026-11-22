@@ -303,7 +303,10 @@ class Strategy(Base):
         CheckConstraint(
             in_list("code", ("trend_following", "momentum", "breakout", "mean_reversion",
                               "pullback_support", "liquidity_sweep_reversal",
-                              "vwap_reclaim", "volatility_expansion", "mtf_confluence")),
+                              "vwap_reclaim", "volatility_expansion", "mtf_confluence",
+                              "trend_supertrend", "breakout_retest", "momentum_rv",
+                              "mean_reversion_vwap", "vwap_trend", "sweep_reclaim",
+                              "market_structure")),
             name="code_valid",
         ),
     )

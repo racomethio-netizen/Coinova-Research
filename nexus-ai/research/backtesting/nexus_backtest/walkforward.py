@@ -45,6 +45,14 @@ GRIDS: dict[str, dict[str, list[float]]] = {
 }
 
 
+def _add_v3_grids() -> None:
+    from nexus_strategies.library_v3 import V3_GRIDS
+    GRIDS.update(V3_GRIDS)
+
+
+_add_v3_grids()
+
+
 @dataclass(frozen=True)
 class Gates:
     min_trades: int = 30
