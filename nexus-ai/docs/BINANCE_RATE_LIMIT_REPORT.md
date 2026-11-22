@@ -143,3 +143,18 @@ Results: see the section appended below.
   likely the one-time derivation of 120 days of history plus memory the allocator kept.
   Fix committed (bounded derivation windows, memory returned to the OS after large jobs);
   to be deployed if the +1 h checkpoint shows memory rising.
+
+## +1 h checkpoint (22 Nov 17:46 UTC, 70 minutes after the deploy)
+
+* Pauses (`binance_circuit_open`): **0**. WebSocket: connected since 16:38:02, **no
+  disconnects**. Telegram alerts: **none**. Crashes/loop errors: none after start-up.
+* Binance REST requests since 16:48: a handful per hour (2 `bookTicker` and 6 `klines` at
+  17:02-17:03 for the hourly forward tests), all HTTP 200. No candle polling was needed:
+  176 closed bars arrived over the WebSocket in the last 70 minutes and were stored.
+* IP weight reported by Binance in this hour: 47 to 780 of 6,000 (other users of the IP were
+  quieter than at 16:37, when it was 3,700-5,900).
+* Memory: flat at 434 MB (no growth). Orders: 0, signals: 0, duplicate client order IDs: 0.
+* Found: the 1-minute history is not being filled (4,076 bars instead of ~86,000). The
+  stream writes the newest bar first and the REST filler only continues from the newest
+  stored bar, so older holes are never revisited. Trading does not use 1m bars; a gap-repair
+  fix is committed and will ship with the next deploy (after this test).
