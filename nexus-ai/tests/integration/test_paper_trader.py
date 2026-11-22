@@ -634,3 +634,53 @@ async def test_redis_outage_fails_closed(engine_setup: tuple[Any, ...]) -> None:
         await eng.handle_signal(1, signal(), v, day0, week0, peak)
     with transaction(factory) as s:
         assert s.scalar(select(models.Order)) is None   # nothing was sent
+
+
+# ------------------------------------------------------------------ forward carry paper test
+async def test_carry_paper_step_entry_funding_idempotence_gap_and_restart(
+        migrated_engine: Engine) -> None:
+    import httpx
+    from nexus_market import carry_paper as cp
+
+    factory = make_session_factory(migrated_engine)
+    state = {"down": False, "funding": []}
+    t0 = datetime(2026, 11, 22, 12, 5, tzinfo=UTC)
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        if state["down"] and "fapi" in str(req.url):
+            return httpx.Response(451, text="Service unavailable from a restricted location")
+        if req.url.path.endswith("/ticker/bookTicker"):
+            px = "60000" if "BTC" in str(req.url) else "3000"
+            return httpx.Response(200, json={"bidPrice": px, "askPrice": px})
+        if req.url.path.endswith("/fundingRate"):
+            start = int(req.url.params["startTime"])
+            return httpx.Response(200, json=[f for f in state["funding"]
+                                             if f["fundingTime"] >= start])
+        return httpx.Response(404)
+
+    try:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            ledger = cp.Ledger(factory)
+            await cp.step(ledger, client, t0)
+            t_f = int((t0 + timedelta(hours=4)).timestamp() * 1000)
+            state["funding"] = [{"fundingTime": t_f, "fundingRate": "0.0001",
+                                 "markPrice": "60000"}]
+            await cp.step(cp.Ledger(factory), client, t0 + timedelta(hours=5))   # "restart"
+            await cp.step(cp.Ledger(factory), client, t0 + timedelta(hours=6))   # same funding again
+            state["down"] = True
+            await cp.step(ledger, client, t0 + timedelta(hours=7))
+        with transaction(factory) as s:
+            rows = s.scalars(select(models.CarryPaperEvent)
+                             .order_by(models.CarryPaperEvent.id)).all()
+            kinds = [(r.symbol, r.kind) for r in rows]
+        assert kinds.count(("BTCUSDT", "entry")) == 1 and kinds.count(("ETHUSDT", "entry")) == 1
+        assert kinds.count(("BTCUSDT", "funding")) == 1          # applied once only
+        assert kinds.count(("BTCUSDT", "gap")) == 1 and kinds.count(("ETHUSDT", "gap")) == 1
+        latest = cp.Ledger(factory).latest()
+        assert latest["BTCUSDT"].funding == D("0.25")             # 2500/60000 BTC x 60000 x 0.0001
+        rep = cp.report([{"id": r.id, "kind": r.kind, "symbol": r.symbol, "at": r.at,
+                          "data": r.data} for r in rows], t0 + timedelta(hours=8))
+        assert rep["started"] and rep["gap_hours"] == 2 and D(rep["funding_received"]) > 0
+    finally:
+        with migrated_engine.begin() as c:
+            c.execute(text("TRUNCATE carry_paper_events"))

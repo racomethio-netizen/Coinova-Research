@@ -390,3 +390,16 @@ trading on Render can use live data once background workers are approved.
 * Next research ideas (each must be pre-registered and judged on NEW data, e.g. by paper
   trading from now on): always-on funding carry; taker-flow in range regimes; persisting
   hourly liquidation summaries to enable a liquidation study later.
+
+## 2026-11-22: forward paper test of always-on funding carry (started)
+
+* Pre-registered BEFORE start: docs/research/2026-11-22-carry-forward-paper-preregistration.md
+  (commit 135d2ee). 10,000 USDT virtual, BTC+ETH, long spot + short perp of equal notional,
+  real Binance quotes and real settled funding, 5% rebalance band, exit-price marks net of
+  exit costs, gaps recorded not estimated. One decision at day 90: annualised >= 4%, max
+  DD <= 2%, positive weeks >= 60%, gaps < 5%.
+* `nexus_market.carry_paper` (inline worker, hourly at :02), append-only ledger table
+  `carry_paper_events` (migration 0008: RLS on, anon/authenticated revoked, UPDATE/DELETE
+  blocked by trigger), GET /research/carry-paper, page Strategy Center -> Funding carry test.
+* Tests: 568 pass (delta neutrality, funding sign, rebalance, idempotent funding, restart,
+  gap on 451).

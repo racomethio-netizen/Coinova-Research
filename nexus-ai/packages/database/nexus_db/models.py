@@ -650,3 +650,25 @@ class AuditLog(Base):
     details: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
     ip_address: Mapped[str | None] = mapped_column(INET)
     created_at: Mapped[created_at]
+
+
+class CarryPaperEvent(Base):
+    """Append-only ledger of the forward funding-carry paper test (pre-registered
+    2026-11-22): entry, settled funding, rebalances, hourly marks and data gaps. Each row
+    carries the full position state after the event, so the test survives restarts."""
+
+    __tablename__ = "carry_paper_events"
+    __table_args__ = (
+        CheckConstraint(in_list("kind", ("entry", "funding", "rebalance", "mark", "gap")),
+                        name="kind_valid"),
+        UniqueConstraint("run", "symbol", "kind", "at", name="one_event_per_time"),
+        Index("ix_carry_paper_events_run_at", "run", "at"),
+    )
+
+    id: Mapped[bigint_pk]
+    run: Mapped[str] = mapped_column(String(32))
+    symbol: Mapped[str] = mapped_column(String(16))
+    kind: Mapped[str] = mapped_column(String(12))
+    at: Mapped[datetime]
+    data: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
+    created_at: Mapped[created_at]

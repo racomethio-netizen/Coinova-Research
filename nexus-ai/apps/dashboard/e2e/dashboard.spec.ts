@@ -12,6 +12,7 @@ const PAGES: [string, string][] = [
   ["/connection/", "Binance connection"], ["/spot/", "Spot trading"], ["/futures/", "Futures trading"], ["/telegram/", "Telegram settings"], ["/backtests/", "Backtesting"], ["/intelligence/", "AI intelligence"],
   ["/proposals/", "AI trade proposals"], ["/social/", "X sentiment"], ["/paper/", "Paper trading"],
   ["/live/", "Live trading"], ["/news/", "News"], ["/settings/", "Settings"],
+  ["/carry/", "Funding carry test"],
 ];
 
 async function login(page: Page) {

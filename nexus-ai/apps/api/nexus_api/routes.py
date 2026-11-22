@@ -1048,6 +1048,26 @@ async def overview_context(s: Session = Depends(db), redis: Any = Depends(redis_
     }
 
 
+@router.get("/research/carry-paper")
+def carry_paper_status(s: Session = Depends(db)) -> dict[str, Any]:
+    """Forward paper test of always-on funding carry (pre-registered 2026-11-22)."""
+    from datetime import UTC
+    from datetime import datetime as _dt
+
+    from nexus_market.carry_paper import RUN, report
+
+    rows = s.scalars(select(models.CarryPaperEvent).where(models.CarryPaperEvent.run == RUN)
+                     .order_by(models.CarryPaperEvent.id)).all()
+    events = [{"id": r.id, "kind": r.kind, "symbol": r.symbol, "at": r.at, "data": r.data}
+              for r in rows]
+    out = report(events, _dt.now(UTC))
+    out["recent_events"] = [{"at": ser(r.at), "symbol": r.symbol, "kind": r.kind,
+                             "detail": {k: v for k, v in r.data.items() if k != "state"}}
+                            for r in rows if r.kind in ("entry", "funding", "rebalance", "gap")][-30:]
+    out["preregistration"] = "docs/research/2026-11-22-carry-forward-paper-preregistration.md"
+    return out
+
+
 BINANCE_PINGS = {
     "spot (live)": "https://api.binance.com/api/v3/ping",
     "futures (live)": "https://fapi.binance.com/fapi/v1/ping",
