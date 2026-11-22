@@ -47,11 +47,11 @@ Built, tested and validated once on unseen 2022-2024 data: all 7 FAIL (NEXUS_BAC
 
 ## Phase D: machine learning (offline training)
 
-* D1 Purged k-fold with embargo for every model; multi-target labels (direction after
+* D1 (done 23 Nov) Purged k-fold with embargo for every model; multi-target labels (direction after
   costs, triple barrier).
-* D2 Add LightGBM; HMM regime model; Isolation Forest anomaly flag (pinned versions, only
+* D2 (done 23 Nov; research-only extra) Add LightGBM; HMM regime model; Isolation Forest anomaly flag (pinned versions, only
   if they install in the memory budget; otherwise offline CLI only).
-* D3 Model registry: version, data range, metrics, sha256, rollback. Retraining is a CLI the
+* D3 (done 23 Nov: rollback added; result: no model passes, NEXUS_MODEL_REPORT.md) Model registry: version, data range, metrics, sha256, rollback. Retraining is a CLI the
   owner runs; promotion only through existing gates. Results written to NEXUS_MODEL_REPORT.md
   whatever they are (a failed model is reported as failed).
 

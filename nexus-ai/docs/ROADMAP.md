@@ -532,3 +532,18 @@ trading on Render can use live data once background workers are approved.
   ETH with the reason; this is the intended outcome until something passes.
 * Tests: 14 unit (selector rules, fusion decisions, blockers, context-not-votes, model
   veto) + 1 trader integration (thin regime evidence rejected).
+
+## 2026-11-23: Phase D (machine learning)
+
+* Built (nexus_ai): multi-target labels, f2 features, purged k-fold + embargo, model
+  families (logit, XGBoost, LightGBM, CatBoost; the last two are the `research` extra),
+  time-ordered calibration, Isolation Forest OOD, causal HMM, trading-first evaluation,
+  abstaining walk-forward (`research.py`, runner `phase_d.py`), registry rollback.
+* Pre-registered (d05b90e) and run once: all configurations FAIL (0 trades; AUC ~0.51-0.52;
+  negative Brier skill). Volatility expansion is predictable (AUC 0.76-0.81). Results in the
+  pre-registration and NEXUS_MODEL_REPORT.md. Nothing validated or activated.
+* Runner: `python -m nexus_ai.phase_d --db URL --label L --features f2 --out FILE`
+  (needs `pip install .[research]`).
+* Next candidates (each needs its own pre-registration): volatility forecasts for risk
+  sizing; maker-execution study; Phase F execution (post-only, stop-limit) and the testnet
+  run.
