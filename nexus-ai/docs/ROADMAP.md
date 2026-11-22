@@ -367,3 +367,26 @@ trading on Render can use live data once background workers are approved.
   too) with no errors or horizontal overflow; "validation results are shown honestly"
   fails only because the local e2e database has no AI model rows (pre-existing data
   dependency of that test, not a regression).
+
+## 2026-11-22: Phase 8 (failure recovery) and programme summary
+
+* New trader-level tests: daily loss limit, restart with an open position, crash through
+  the stop (exits at market, flagged as a risk failure), high-volatility regime, database
+  outage mid-run (loop survives, no orders), Redis outage (fails closed). All passed
+  without code changes. docs/FAILURE_MODES.md maps all Step 14 scenarios to behaviour and
+  tests (every referenced test verified to exist).
+* Tests: 561 pass.
+
+### State after the 8 phases (audit docs/AUDIT-2026-11-21.md)
+
+* Done: durable kill switch + actions; paper risk profile; regime/correlation/cooldown
+  gates; six agents + independent Risk Manager + trade review; realistic paper fills +
+  execution quality; derivatives data; 5 more pre-registered strategies (all fail);
+  15-section dashboard + WebSocket; failure-mode tests.
+* Not done / owner decisions: no validated strategy (11 failed) -> nothing trades; X needs
+  a Bearer token + credits; liquidation history needs months of stored data (only 24 h
+  kept today); Render free plan + shared IP (Binance -1003 risk) -> a dedicated-IP host is
+  the durable fix; futures live execution stays disabled.
+* Next research ideas (each must be pre-registered and judged on NEW data, e.g. by paper
+  trading from now on): always-on funding carry; taker-flow in range regimes; persisting
+  hourly liquidation summaries to enable a liquidation study later.

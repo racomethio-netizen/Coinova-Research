@@ -519,3 +519,118 @@ async def test_report_has_expectancy_averages_and_guarded_sharpe(
     assert r["avg_loss"] is not None and D(r["avg_loss"]) < 0 and r["avg_win"] is None
     assert D(r["expectancy"]) == D(r["avg_loss"])
     assert r["sharpe"] is None and "30+" in r["sharpe_note"]   # too little history
+
+
+# ------------------------------------------------------------------ Phase 8: failure recovery
+async def test_daily_loss_limit_blocks_new_entries(engine_setup: tuple[Any, ...]) -> None:
+    eng, factory, _, _ = engine_setup
+    eng.bootstrap()
+    v = await eng.valuation()
+    # The day started 1.2% higher than equity now: the 1% daily limit is breached.
+    day0 = v.equity * D("1.012")
+    await eng.handle_signal(1, signal(), v, day0, day0, day0)
+    status, reason = await _decision(factory)
+    assert status == "rejected" and "daily loss" in reason
+    with transaction(factory) as s:
+        assert s.scalar(select(models.Order)) is None
+
+
+async def test_restart_with_open_position_keeps_protecting_it(
+        engine_setup: tuple[Any, ...]) -> None:
+    from nexus_execution.trader import TradingEngine
+
+    eng, factory, state, redis = engine_setup
+    await _enter(eng, factory)
+    # Simulated restart: a brand-new engine on the same database and exchange state.
+    fresh = TradingEngine(eng.settings, factory, redis, eng.adapters, eng.orders.broker,
+                          eng.books)
+    assert fresh.bootstrap() == eng.portfolio_id
+    state.update(bid=58_900.0, ask=58_901.0)          # stop is 59,000
+    await fresh.cycle()
+    with transaction(factory) as s:
+        pos = s.scalar(select(models.Position))
+        assert pos is not None and pos.status == "closed" and pos.exit_reason == "stop_loss"
+
+
+async def test_crash_through_the_stop_exits_at_market_and_is_flagged(
+        engine_setup: tuple[Any, ...]) -> None:
+    from nexus_agents import review_trade
+
+    eng, factory, state, _ = engine_setup
+    await _enter(eng, factory)
+    state.update(bid=50_000.0, ask=50_010.0)          # gap 15% below the 59,000 stop
+    await eng.cycle()
+    with transaction(factory) as s:
+        pos = s.scalar(select(models.Position))
+        assert pos is not None and pos.status == "closed"
+        orders = s.scalars(select(models.Order).order_by(models.Order.id)).all()
+        entry, exits = orders[0], [o for o in orders if o.purpose == "exit"]
+        planned = entry.filled_amount * (entry.average_fill_price - D(59_000))
+        assert -pos.realized_pnl > planned * 2          # gap loss exceeds the plan
+        review = review_trade(
+            {"id": pos.id, "realized_pnl": str(pos.realized_pnl), "exit_reason": pos.exit_reason},
+            {"average_fill_price": str(entry.average_fill_price),
+             "expected_price": str(entry.expected_price),
+             "filled_amount": str(entry.filled_amount), "details": entry.details},
+            [{"average_fill_price": str(x.average_fill_price),
+              "expected_price": str(x.expected_price)} for x in exits],
+            slippage_bps_assumed=D(5))
+    assert "risk failure" in review["labels"]
+
+
+async def test_high_volatility_regime_is_never_traded(engine_setup: tuple[Any, ...]) -> None:
+    eng, factory, _, _ = engine_setup
+    eng.bootstrap()
+    v = await eng.valuation()
+    day0, week0, peak = eng.period_starts(v.equity, utcnow())
+    wild = Signal("momentum", "BTC/USDT", "15m", datetime(2026, 6, 1, 12, tzinfo=UTC), 60_000,
+                  59_000, 62_000, 0.6, "high_vol", {"params": {}})
+    await eng.handle_signal(1, wild, v, day0, week0, peak)
+    status, reason = await _decision(factory)
+    assert status == "rejected" and "high_vol" in reason
+
+
+async def test_database_outage_mid_run_is_survived_without_orders(
+        engine_setup: tuple[Any, ...], monkeypatch: pytest.MonkeyPatch) -> None:
+    import asyncio
+
+    from sqlalchemy.exc import OperationalError
+
+    eng, factory, _, _ = engine_setup
+    eng.bootstrap()
+    calls = {"n": 0}
+    real_cycle = eng.cycle
+
+    async def flaky_cycle() -> None:
+        calls["n"] += 1
+        if calls["n"] <= 2:
+            raise OperationalError("SELECT 1", {}, Exception("connection refused"))
+        await real_cycle()
+        eng.stop.set()
+
+    monkeypatch.setattr(eng, "cycle", flaky_cycle)
+    await asyncio.wait_for(eng.run(0.01), timeout=10)
+    assert calls["n"] == 3                              # kept running, then recovered
+    with transaction(factory) as s:
+        assert s.scalar(select(models.Order)) is None
+
+
+async def test_redis_outage_fails_closed(engine_setup: tuple[Any, ...]) -> None:
+    eng, factory, _, _ = engine_setup
+    eng.bootstrap()
+    v = await eng.valuation()
+    day0, week0, peak = eng.period_starts(v.equity, utcnow())
+
+    class Down:
+        def __getattr__(self, name: str) -> Any:
+            async def fail(*a: Any, **k: Any) -> Any:
+                raise ConnectionError("redis down")
+            return fail
+
+    eng.redis = Down()  # type: ignore[assignment]
+    eng.kill._redis = eng.redis
+    assert await eng._kill_active() is True            # kill switch unreadable = engaged
+    with pytest.raises(ConnectionError):
+        await eng.handle_signal(1, signal(), v, day0, week0, peak)
+    with transaction(factory) as s:
+        assert s.scalar(select(models.Order)) is None   # nothing was sent
