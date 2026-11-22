@@ -486,3 +486,13 @@ trading on Render can use live data once background workers are approved.
 * Not deployed (Binance back-off until ~08:54 UTC 23 Nov). After deploy: watch the Data
   quality page fill (30 days of 1m history fill in about 8 minutes: 3,000 bars per pair every 30 s).
 * Next: B3 live trade stream (optional), then Phase C (technical analysis indicators).
+
+## 2026-11-22: Binance rate-limit / reconnect-loop fix
+
+* Root cause, audit, fix and tests: docs/BINANCE_RATE_LIMIT_REPORT.md.
+* Central gate for every Binance REST call (circuit breaker, single probe, jittered
+  exponential back-off, budget, cache, stats); one combined WebSocket for books and closed
+  candles; passive health; debounced Telegram alerts; System page card; `/system/binance`.
+* Tested: 654 passed; storm simulation; real Binance stream verified from this environment.
+* Deployed together with Phases A and B for the 24-hour paper stability test (live off).
+* Next: collect the 24 h results (+1 h, +6 h, +12 h, +24 h) into the report.

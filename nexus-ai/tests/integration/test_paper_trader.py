@@ -964,3 +964,31 @@ async def test_crash_between_submit_and_record_in_trader_cycle_recovers(
         orders = s.scalars(select(models.Order)).all()
         assert len(orders) == 1 and orders[0].status == "filled"
         assert s.scalar(select(func.count()).select_from(models.Trade)) >= 1
+
+
+# ---------------------------------------------------------------- rate-limit fix
+async def test_binance_pause_never_trades_and_recovery_has_no_duplicate_orders(
+        engine_setup: tuple[Any, ...]) -> None:
+    from nexus_common import binance_guard as g
+
+    eng, factory, _, redis = engine_setup
+    eng.bootstrap()
+    eng.books.redis = redis                     # no stream book in Redis: REST path, gated
+    await redis.set(g._key("spot"), (utcnow() + timedelta(minutes=5)).isoformat())
+    v = await eng.valuation()
+    await eng.handle_signal(1, signal(), v, D(10_000), D(10_000), D(10_000))
+    status, reason = await _decision(factory)
+    assert status == "rejected" and "market data stale or missing" in reason
+
+    def n_orders() -> int:
+        with transaction(factory) as s:
+            return int(s.scalar(select(func.count()).select_from(models.Order)) or 0)
+
+    assert n_orders() == 0
+    await redis.delete(g._key("spot"))          # Binance answers again
+    later = Signal("momentum", "BTC/USDT", "15m", datetime(2026, 6, 1, 12, 15, tzinfo=UTC),
+                   60_000, 59_000, 62_000, 0.6, "trend_up", {"params": {}})
+    await eng.handle_signal(1, later, await eng.valuation(), D(10_000), D(10_000), D(10_000))
+    await eng.handle_signal(1, later, await eng.valuation(), D(10_000), D(10_000), D(10_000))
+    await eng.cycle()
+    assert n_orders() == 1                      # the repeated signal placed nothing new

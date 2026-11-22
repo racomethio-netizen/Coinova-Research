@@ -235,9 +235,9 @@ class CcxtSpotAdapter(ExchangeAdapter):
         # thousands of markets (~100 MB per client); NEXUS uses a handful.
         self.keep_symbols = keep_symbols
         self.excluded_markets: dict[str, str] = {}
-        # Called with Binance's used request weight after each call (set by the owner of
-        # the adapter, e.g. to feed nexus_common.binance_guard.note_weight).
-        self.weight_hook: Callable[[int], Awaitable[None]] | None = None
+        # Central Binance rate-limit gate (nexus_common.binance_guard.CcxtGate), set by the
+        # owner of the adapter. Every call asks it first and reports the outcome.
+        self.gate: Any = None
 
     def ccxt_markets(self) -> list[dict[str, Any]]:
         """Loaded raw ccxt markets, for seeding another client (e.g. a stream client)."""
@@ -250,34 +250,52 @@ class CcxtSpotAdapter(ExchangeAdapter):
         self, fn: Callable[..., Awaitable[T]], *args: Any, during_submit: bool = False,
         client_order_id: str | None = None, **kwargs: Any,
     ) -> T:
+        gate, method = self.gate, getattr(fn, "__name__", "call")
+        weight, probe = 0, False
+        if gate is not None:
+            from nexus_common.binance_guard import BinanceBackoff
+
+            weight = gate.weight(method, args)
+            try:
+                probe = await gate.acquire(method, weight)
+            except BinanceBackoff as exc:
+                # Not sent at all: a definitive pre-submission failure, never "unknown".
+                raise RateLimited(str(exc), exchange=self.code) from exc
+        started = time.monotonic()
         try:
             result = await fn(*args, **kwargs)
-        except ExchangeError:
-            raise
         except asyncio.CancelledError:
+            if gate is not None:
+                await self._report(method, weight, None, "cancelled", started, probe)
             if during_submit and client_order_id:
                 raise OrderStateUnknown("submission cancelled in flight",
                                         client_order_id=client_order_id,
                                         exchange=self.code) from None
             raise
+        except ExchangeError:
+            if gate is not None:
+                await self._report(method, weight, None, "", started, probe)
+            raise
         except Exception as exc:
+            if gate is not None:
+                await self._report(method, weight, _status_of(exc), f"{exc}"[:500], started,
+                                   probe)
             raise map_ccxt_error(exc, exchange=self.code, during_submit=during_submit,
                                  client_order_id=client_order_id) from exc
-        await self._report_weight()
+        if gate is not None:
+            await self._report(method, weight, 200, "", started, probe)
         return result
 
-    async def _report_weight(self) -> None:
-        if self.weight_hook is None:
-            return
-        from nexus_common.binance_guard import used_weight
-
-        used = used_weight(getattr(self._client, "last_response_headers", None))
-        if used is not None:
-            try:
-                await self.weight_hook(used)
-            except Exception as exc:  # monitoring must never break a call
-                logging.getLogger("nexus.exchange").warning("weight_hook_failed: %s",
-                                                            type(exc).__name__)
+    async def _report(self, method: str, weight: int, status: int | None, text: str,
+                      started: float, probe: bool) -> None:
+        try:
+            await self.gate.report(
+                method, weight, status=status,
+                headers=getattr(self._client, "last_response_headers", None), text=text,
+                ms=(time.monotonic() - started) * 1000, probe=probe)
+        except Exception as exc:  # monitoring must never break a call
+            logging.getLogger("nexus.exchange").warning("gate_report_failed: %s",
+                                                        type(exc).__name__)
 
     # ---------------------------------------------------------------- metadata
     async def load_markets(self, *, reload: bool = False) -> dict[str, MarketRules]:
@@ -487,6 +505,19 @@ class CcxtSpotAdapter(ExchangeAdapter):
 
     async def close(self) -> None:
         await self._client.close()
+
+
+def _status_of(exc: BaseException) -> int | None:
+    """HTTP status implied by a ccxt exception: 418/429 for rate limits, None when no
+    answer arrived (network), 400 when the exchange answered with an error."""
+    import ccxt
+
+    text = str(exc)
+    if isinstance(exc, (ccxt.DDoSProtection, ccxt.RateLimitExceeded)):
+        return 418 if "418" in text else 429
+    if isinstance(exc, ccxt.NetworkError):
+        return None
+    return 400
 
 
 def _with_client_id(snap: OrderSnapshot, client_order_id: str) -> OrderSnapshot:

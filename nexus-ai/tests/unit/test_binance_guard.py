@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime, timedelta
-from typing import Any
 
 import httpx
 import pytest
@@ -17,21 +16,13 @@ from nexus_common.binance_guard import (
     until_from,
 )
 
+from tests.memredis import MemRedis
+
 NOW = datetime(2026, 11, 22, 12, 0, tzinfo=UTC)
 
 
-class R:
-    def __init__(self, broken: bool = False) -> None:
-        self.kv: dict[str, Any] = {}
-        self.broken = broken
-
-    async def get(self, k: str) -> Any:
-        if self.broken:
-            raise ConnectionError("down")
-        return self.kv.get(k)
-
-    async def set(self, k: str, v: Any, ex: int | None = None) -> None:
-        self.kv[k] = v
+class R(MemRedis):
+    pass
 
 
 def test_until_from_parses_binance_refusals() -> None:

@@ -5,6 +5,7 @@ Credentials are passed only to the ccxt client and are never logged or repr'd.
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 import ccxt.async_support as ccxt_async
@@ -31,6 +32,11 @@ class CcxtFuturesTransport:
         if cafile:
             config["cafile"] = cafile  # verification stays on
         self._client = ccxt_async.binanceusdm(config)
+        if environment == "production":
+            from nexus_common.binance_guard import CcxtGate, default_redis
+
+            if default_redis() is not None:
+                self.gate = CcxtGate(default_redis(), "futures")
         if environment == "demo":
             self._client.enable_demo_trading(True)
         elif environment == "testnet":
@@ -42,6 +48,9 @@ class CcxtFuturesTransport:
                 if key.startswith("fapi"):
                     urls["api"][key] = url
 
+    # Central Binance rate-limit gate (nexus_common.binance_guard.CcxtGate) or None.
+    gate: Any = None
+
     def __repr__(self) -> str:
         return "CcxtFuturesTransport(<credentials hidden>)"
 
@@ -49,7 +58,25 @@ class CcxtFuturesTransport:
         if not name.startswith("fapi"):
             raise PermissionError(f"only fapi endpoints are allowed, got {name}")
         method = getattr(self._client, name)
-        return await method(params)
+        if self.gate is None:
+            return await method(params)
+        from nexus_common.binance_guard import endpoint_weight, status_of_exception
+
+        weight = endpoint_weight("futures", name, params)
+        probe = await self.gate.acquire(name, weight)   # BinanceBackoff: nothing is sent
+        started = time.monotonic()
+        try:
+            result = await method(params)
+        except Exception as exc:
+            await self.gate.report(name, weight, status=status_of_exception(exc),
+                                   headers=self._client.last_response_headers,
+                                   text=str(exc)[:500], ms=(time.monotonic() - started) * 1000,
+                                   probe=probe)
+            raise
+        await self.gate.report(name, weight, status=200,
+                               headers=self._client.last_response_headers, text="",
+                               ms=(time.monotonic() - started) * 1000, probe=probe)
+        return result
 
     async def close(self) -> None:
         await self._client.close()

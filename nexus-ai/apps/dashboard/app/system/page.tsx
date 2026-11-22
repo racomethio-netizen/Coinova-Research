@@ -3,6 +3,7 @@
 import { Badge, Card, Loading, PageHeader, Stat, Table, statusTone } from "@/components/ui";
 import { time } from "@/lib/format";
 import { useApi } from "@/lib/hooks";
+import { BinanceGateCard } from "@/components/binancegate";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
@@ -21,6 +22,7 @@ export default function SystemPage() {
             <Stat label="Signals" value={data.counts.signals} />
             <Stat label="Server time" value={<span className="text-sm">{time(data.server_time)}</span>} />
           </div>
+          <BinanceGateCard />
           <Card title="Heartbeats">
             <ul className="grid gap-2 text-sm md:grid-cols-2">
               {Object.entries(data.heartbeats as Record<string, string | null>).map(([k, v]) => (

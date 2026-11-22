@@ -53,7 +53,7 @@ async def _get(client: httpx.AsyncClient, path: str, params: dict[str, Any],
                redis: Any = None) -> Any:
     from nexus_common.binance_guard import guarded_get
 
-    r = await guarded_get(client, redis, f"{FAPI}{path}", params)
+    r = await guarded_get(client, redis, f"{FAPI}{path}", params, cache_ttl=60)
     if _restricted(r):
         raise PermissionError("Binance refuses this server's location for futures data")
     r.raise_for_status()

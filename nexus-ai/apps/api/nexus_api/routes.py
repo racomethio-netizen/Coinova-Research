@@ -138,11 +138,24 @@ async def _public_get(settings: Settings, path: str, params: dict[str, Any],
     base = settings.binance_public_api_url or "https://api.binance.com/api/v3"
     async with httpx.AsyncClient(timeout=15, trust_env=True) as client:
         try:
-            r = await guarded_get(client, redis, f"{base}/{path}", params)
+            r = await guarded_get(client, redis, f"{base}/{path}", params, cache_ttl=10)
         except BinanceBackoff as exc:
             raise httpx.HTTPError(str(exc)) from exc
         r.raise_for_status()
         return r.json()
+
+
+@router.get("/system/binance")
+async def binance_status(redis: Any = Depends(redis_dep)) -> dict[str, Any]:
+    """Rate-limit gate (circuit state, last-hour requests by endpoint and status, recent
+    events) and the live WebSocket stream state."""
+    from nexus_common.binance_guard import status as gate_status
+    from nexus_market.binance_ws import STATE_KEY
+
+    out = await gate_status(redis)
+    raw = await redis.get(STATE_KEY)
+    out["websocket"] = json.loads(raw) if raw else None
+    return out
 
 
 @router.get("/markets/data-quality")

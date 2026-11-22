@@ -77,6 +77,7 @@ from nexus_execution.reconcile import BalanceReconciler
 
 log = get_logger("nexus.trader")
 BOOK_MAX_AGE = 15.0
+WS_BOOK_MAX_AGE = 5.0      # stream books update every second
 HISTORY_BARS = 600
 MAX_EXIT_SLIPPAGE = Decimal("0.005")
 # Exit management: sell half at +1R once, then trail the rest at 2 x ATR(14, 1h).
@@ -91,7 +92,9 @@ RISK_STATE_KEY = "nexus:risk:state:{mode}"
 
 
 class BookCache:
-    """Fresh REST order books (depth for fill simulation), cached a few seconds."""
+    """Order books for valuation, exits and fill simulation. The live WebSocket book
+    (published to Redis by the market-data worker, top 20 levels) is used first; REST
+    (through the rate-limit gate) only when the stream has no fresh book."""
 
     def __init__(self, adapters: dict[str, ExchangeAdapter], ttl: float = 5.0,
                  redis: Any = None) -> None:
@@ -103,6 +106,13 @@ class BookCache:
         hit = self._cache.get(key)
         if hit and time.monotonic() - hit[0] < self.ttl:
             return hit[1]
+        if self.redis is not None:
+            from nexus_market.runner import read_ws_book
+
+            ws = await read_ws_book(self.redis, exchange, symbol, max_age=WS_BOOK_MAX_AGE)
+            if ws is not None:
+                self._cache[key] = (time.monotonic(), ws)
+                return ws
         if self.redis is not None and exchange == "binance":
             from nexus_common.binance_guard import blocked
 
@@ -1049,6 +1059,9 @@ async def serve(settings: Settings, stop: asyncio.Event) -> None:
     engine = make_engine(settings.database_url.get_secret_value())
     factory = make_session_factory(engine)
     redis = connect_redis(settings.redis_url.get_secret_value())
+    from nexus_common.binance_guard import set_default_redis
+
+    set_default_redis(redis)
     if settings.trading_mode is TradingMode.LIVE:
         from nexus_execution.live_gate import build_live_broker, credentialed_adapters
         with transaction(factory) as s:

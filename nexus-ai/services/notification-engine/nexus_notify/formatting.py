@@ -44,9 +44,12 @@ def format_event(p: dict[str, Any]) -> str | None:
         return (f"{icon} {m}<b>Risk limit</b> {_e(p.get('event'))} ({_e(p.get('severity'))})\n"
                 f"equity {_e(p.get('equity'))}")
     if kind == "exchange_disconnected":
-        return f"{icon} <b>{_e(p.get('exchange'))} unreachable</b>\n{_e(p.get('detail'))}"
+        extra = f"\n{_e(p.get('summary'))}" if p.get("summary") else ""
+        return (f"{icon} <b>{_e(p.get('exchange'))} unreachable</b>\n"
+                f"{_e(p.get('detail'))}{extra}")
     if kind == "exchange_connected":
-        return f"{icon} <b>{_e(p.get('exchange'))} reconnected</b>"
+        extra = f"\n{_e(p.get('summary'))}" if p.get("summary") else ""
+        return f"{icon} <b>{_e(p.get('exchange'))} reconnected</b>{extra}"
     if kind == "emergency_shutdown":
         return (f"{icon} <b>EMERGENCY SHUTDOWN: kill switch engaged</b>\n"
                 f"reason: {_e(p.get('reason'))}\nby: {_e(p.get('actor'))}\n"

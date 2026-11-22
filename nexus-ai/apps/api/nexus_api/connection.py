@@ -68,7 +68,9 @@ async def probe_spot(api_key: str, secret: str, *, environment: str,
                               "aiohttp_trust_env": True}
     if cafile:
         config["cafile"] = cafile
-    client = ccxt_async.binance(config)
+    from nexus_common.binance_guard import gate_client
+
+    client = gate_client(ccxt_async.binance(config), environment=environment)
     if environment == "demo":
         client.enable_demo_trading(True)
     elif environment == "testnet":

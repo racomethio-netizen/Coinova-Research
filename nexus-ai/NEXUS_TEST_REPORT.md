@@ -4,6 +4,27 @@ How to run: `scripts/test.sh` with `NEXUS_TEST_DATABASE_URL` and `NEXUS_TEST_RED
 (Postgres and Redis test databases; integration tests are skipped without them). Browser
 tests: `scripts/e2e.sh` (see the script header).
 
+## 2026-11-22: Binance rate-limit fix (docs/BINANCE_RATE_LIMIT_REPORT.md)
+
+| Suite | Result |
+|---|---|
+| Lint, types (133 files), `alembic check` | pass |
+| Unit + integration | **654 passed**, 0 failed (31 deselected: real-network exchange tests) |
+| Browser e2e | 13 passed, 2 failed (the same pre-existing "validation results" failure) |
+| Real Binance WebSocket (data-stream.binance.vision, from this environment) | connected; ~3 messages/s; real BTC/ETH books; closed 1m bars delivered at the minute |
+
+New tests (22): gate circuit breaker, probe, back-off and jitter, budget, cache, statistics,
+gated raw clients (11); WebSocket stream reconnects, stale detection, ban-aware
+connecting, attempt budget, message isolation (5); 429 storm simulation with 6 services
+(1); flapping alert debounce, stream-first candles, passive health, stream books, start-up
+during a pause (4); no trading during a pause and no duplicate order after recovery (1).
+
+Bugs found by these tests and fixed before deployment: concurrent refusals of requests
+already in flight escalated the back-off six steps at once (now one failure per circuit
+opening, decided atomically in Redis).
+
+Pending: the 24-hour production stability test (results appended to the report).
+
 ## 2026-11-22: Phase B (market data: timeframes, data quality)
 
 | Suite | Result |

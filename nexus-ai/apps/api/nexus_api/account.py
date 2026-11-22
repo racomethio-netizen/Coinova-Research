@@ -95,7 +95,9 @@ async def spot_snapshot(api_key: str, secret: str, *, environment: str, pairs: l
                                           "warnOnFetchOpenOrdersWithoutSymbol": False}}
     if cafile:
         config["cafile"] = cafile
-    client = ccxt_async.binance(config)
+    from nexus_common.binance_guard import gate_client
+
+    client = gate_client(ccxt_async.binance(config), environment=environment)
     if environment == "demo":
         client.enable_demo_trading(True)
     elif environment == "testnet":

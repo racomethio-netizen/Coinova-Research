@@ -34,6 +34,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.engine = make_engine(settings.database_url.get_secret_value())
         app.state.factory = make_session_factory(app.state.engine)
         app.state.redis = connect_redis(settings.redis_url.get_secret_value())
+        from nexus_common.binance_guard import set_default_redis
+
+        set_default_redis(app.state.redis)
         log.info("api_started", **settings.safe_summary())
         from nexus_api.workers import WorkerSupervisor, keep_awake
 

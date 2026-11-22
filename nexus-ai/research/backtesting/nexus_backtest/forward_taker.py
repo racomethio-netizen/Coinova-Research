@@ -52,7 +52,8 @@ def klines_frame(rows: list[list[Any]], now: datetime) -> pd.DataFrame:
 async def _klines(client: httpx.AsyncClient, base: str, symbol: str, interval: str,
                   limit: int, redis: Any = None) -> list[list[Any]]:
     r = await guarded_get(client, redis, f"{base}/klines",
-                          {"symbol": symbol, "interval": interval, "limit": limit})
+                          {"symbol": symbol, "interval": interval, "limit": limit},
+                          cache_ttl=120)
     if r.status_code == 451 or "restricted location" in r.text[:300].lower():
         raise PermissionError("Binance refuses this server's location")
     r.raise_for_status()

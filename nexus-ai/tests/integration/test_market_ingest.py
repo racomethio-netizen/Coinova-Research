@@ -95,7 +95,8 @@ async def test_health_transitions(factory: sessionmaker[Session], redis: Any) ->
     client = FakeCcxtClient()
     client.responses["fetch_time"] = 1
     adapter = CcxtSpotAdapter("kraken", client, CAPABILITIES[ExchangeCode.KRAKEN])
-    mon = HealthMonitor([adapter], factory, redis, failures_before_down=2)
+    mon = HealthMonitor([adapter], factory, redis, failures_before_down=2,
+                        down_alert_after=0, up_alert_after=0)
     await mon.check_once()
     assert mon.state["kraken"] is True
     client.errors["fetch_time"] = cx.ExchangeNotAvailable("down")
@@ -223,3 +224,136 @@ async def test_minute_polling_is_gradual_and_limited_to_traded_pairs(
     stored = await svc.poll_minutes()
     assert calls == ["1m"] * runner.MINUTE_PAGES_PER_POLL       # a few pages, not 30 days
     assert stored == runner.MINUTE_PAGES_PER_POLL * CAPABILITIES[ExchangeCode.BINANCE].ohlcv_page_limit
+
+
+# ---------------------------------------------------------------- rate-limit fix
+async def test_flapping_venue_sends_one_alert_and_one_recovery_summary(
+        factory: sessionmaker[Session], redis: Any) -> None:
+    """The Telegram flood (unreachable/reconnected every few minutes) becomes one alert and
+    one recovery message; the health key still follows every change at once."""
+    from nexus_exchange.models import HealthStatus
+
+    now = {"t": 0.0}
+    seq: list[bool] = []
+
+    async def passive(code: str) -> HealthStatus:
+        ok = seq.pop(0)
+        return HealthStatus(code, ok, None, T0, None if ok else "paused by Binance")
+
+    client = FakeCcxtClient()
+    adapter = CcxtSpotAdapter("binance", client, CAPABILITIES[ExchangeCode.BINANCE])
+    mon = HealthMonitor([adapter], factory, redis, passive=passive, failures_before_down=1,
+                        clock=lambda: now["t"])
+    # 1 h of 60 s checks: down 3 min, up 2 min, repeated (like the screenshot), then stable.
+    pattern = ([False] * 3 + [True] * 2) * 10 + [True] * 10
+    seq.extend(pattern)
+    health_changes = 0
+    last = None
+    for _ in pattern:
+        await mon.check_once()
+        ok = json.loads(await redis.get(events.health_key("binance")))["ok"]
+        health_changes += ok != last
+        last = ok
+        now["t"] += 60
+    notes = [events.decode(f) for _, f in await redis.xrange(events.NOTIFY_STREAM)]
+    kinds = [n["type"] for n in notes]
+    assert kinds == ["exchange_disconnected", "exchange_connected"]
+    assert "10 interruption(s)" in notes[1]["summary"]
+    assert health_changes > 15                                  # trading saw every change
+
+
+async def test_live_stream_means_no_rest_for_just_closed_bars_and_passive_health(
+        factory: sessionmaker[Session], redis: Any) -> None:
+    from nexus_common import binance_guard as g
+    from nexus_common.timeutil import utcnow
+    from nexus_config import Settings
+    from nexus_market import runner
+    from nexus_market.binance_ws import STATE_KEY
+
+    calls: list[str] = []
+    client = FakeCcxtClient()
+
+    def serve(symbol: str, tf: str, since: int | None, limit: int) -> list[list[float]]:
+        calls.append(tf)
+        return []
+
+    client.responses["fetch_ohlcv"] = serve
+    adapter = CcxtSpotAdapter("binance", client, CAPABILITIES[ExchangeCode.BINANCE])
+    adapter.gate = g.CcxtGate(redis, "spot")
+    await adapter.load_markets()
+    svc = runner.MarketDataService.__new__(runner.MarketDataService)
+    svc.settings = Settings(enabled_exchanges=["binance"], trading_pairs=["BTC/USDT"],
+                            timeframes=["5m"], minute_candles=False)
+    svc.factory, svc.redis, svc.adapters = factory, redis, {"binance": adapter}
+    pid = _pair(factory)
+    svc.pairs = {("binance", "BTC/USDT"): pid}
+    now = utcnow()
+    last_open = now.replace(second=0, microsecond=0) - timedelta(minutes=now.minute % 5 + 10)
+    _bars(factory, pid, "5m", 300, 1)                           # old history start
+    with transaction(factory) as s:                             # newest stored bar
+        repo.upsert_candles(s, pid, "5m", [repo.CandleRow(last_open, D(1), D(1), D(1), D(1),
+                                                          D(1))])
+    # Stream live and fresh: the bar that closed < 90 s ago is left to the stream.
+    await redis.set(STATE_KEY, json.dumps({"connected": True,
+                                           "last_message_at": utcnow().isoformat()}))
+    assert await svc.ws_fresh() is True
+    horizon = await svc._rest_horizon()
+    assert (utcnow() - horizon).total_seconds() >= 89
+    st = await svc.passive_health("binance")
+    assert st is not None and st.ok and st.detail is None
+    # REST paused by Binance while the stream is fine: healthy, with an explanation.
+    await redis.set(g._key("spot"), (utcnow() + timedelta(minutes=5)).isoformat())
+    st = await svc.passive_health("binance")
+    assert st is not None and st.ok and "live stream OK" in (st.detail or "")
+    # Stream down and REST paused: unhealthy with the reason; no ping is sent.
+    await redis.delete(STATE_KEY)
+    st = await svc.passive_health("binance")
+    assert st is not None and not st.ok and "paused this server's IP" in (st.detail or "")
+    calls.clear()
+    await svc.poll_candles()
+    assert calls == []                                          # paused: nothing sent
+
+
+async def test_order_books_come_from_the_stream_not_rest(redis: Any) -> None:
+    from nexus_common.timeutil import utcnow
+    from nexus_execution.trader import BookCache
+    from nexus_market import runner
+
+    client = FakeCcxtClient()
+    adapter = CcxtSpotAdapter("binance", client, CAPABILITIES[ExchangeCode.BINANCE])
+    await adapter.load_markets()
+    svc = runner.MarketDataService.__new__(runner.MarketDataService)
+    svc.redis = redis
+    await svc.publish_book("binance", "BTC/USDT", {
+        "bids": [["100.5", "2"], ["100.4", "3"]], "asks": [["100.6", "1"]]})
+    cache = BookCache({"binance": adapter}, ttl=0, redis=redis)
+    book = await cache.get("binance", "BTC/USDT")
+    assert book is not None and book.best_bid == D("100.5") and len(book.bids) == 2
+    assert not any(n == "fetch_order_book" for n, _ in client.calls)
+    # A stale stream book is not used.
+    raw = json.loads(await redis.get(events.book_key("binance", "BTC/USDT")))
+    raw["ts"] = (utcnow() - timedelta(seconds=30)).isoformat()
+    await redis.set(events.book_key("binance", "BTC/USDT"), json.dumps(raw))
+    assert await runner.read_ws_book(redis, "binance", "BTC/USDT", max_age=5) is None
+
+
+async def test_startup_during_a_binance_pause_still_streams_known_pairs(
+        factory: sessionmaker[Session], redis: Any) -> None:
+    from nexus_common import binance_guard as g
+    from nexus_common.timeutil import utcnow
+    from nexus_config import Settings
+    from nexus_market import runner
+
+    pid = _pair(factory)                                          # known from an earlier start
+    await redis.set(g._key("spot"), (utcnow() + timedelta(minutes=5)).isoformat())
+    client = FakeCcxtClient()
+    adapter = CcxtSpotAdapter("binance", client, CAPABILITIES[ExchangeCode.BINANCE])
+    adapter.gate = g.CcxtGate(redis, "spot")
+    svc = runner.MarketDataService.__new__(runner.MarketDataService)
+    svc.settings = Settings(enabled_exchanges=["binance"], trading_pairs=["BTC/USDT"])
+    svc.factory, svc.redis, svc.adapters = factory, redis, {"binance": adapter}
+    svc.pairs = {}
+    await svc.bootstrap()
+    assert svc.pairs == {("binance", "BTC/USDT"): pid}
+    assert client.count("load_markets") == 0                     # nothing sent during the pause
+    assert svc.binance_stream().symbols == ["BTC/USDT"]

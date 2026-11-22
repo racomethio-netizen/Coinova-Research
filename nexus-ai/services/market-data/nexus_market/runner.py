@@ -1,10 +1,12 @@
 """Market-data service process: ``python -m nexus_market.runner``.
 
 1. Sync pair metadata for every enabled exchange.
-2. Backfill closed candles for every pair/timeframe.
-3. Loop: incremental candle polling (publishes closed-candle events), periodic order
-   book snapshots to Postgres, exchange health checks, and WebSocket top-of-book
-   streams cached in Redis (short TTL, so stale prices disappear on their own).
+2. Backfill closed candles for every pair/timeframe (REST, only bars that are missing).
+3. Loop: one combined Binance WebSocket delivers order books (top 20 levels) and closed
+   candles in real time; REST is used only to fill candle gaps (a bar that is overdue and
+   did not arrive on the stream). Every REST call goes through the central rate-limit gate
+   (nexus_common.binance_guard). Order book snapshots for Postgres come from the stream.
+   Venue health is passive (stream freshness and the gate), not a ping loop.
 """
 
 from __future__ import annotations
@@ -37,6 +39,10 @@ from nexus_market.stream import ReconnectingStream
 log = get_logger("nexus.market")
 BOOK_TTL_SECONDS = 20
 MINUTE_PAGES_PER_POLL = 3     # up to 1,500 one-minute bars per pair per poll
+# While the WebSocket is live, a closed bar is expected from the stream; REST only fetches
+# bars still missing this long after they closed.
+WS_GRACE = timedelta(seconds=90)
+WS_FRESH_SECONDS = 30
 
 
 class MarketDataService:
@@ -59,6 +65,20 @@ class MarketDataService:
                 continue
             for symbol, pid in synced.items():
                 self.pairs[(code, symbol)] = pid
+        # Pairs already known from an earlier start: usable without any REST call (e.g. when
+        # Binance has the IP paused at start-up, the live stream still starts).
+        from nexus_db import repo
+
+        with transaction(self.factory) as s:
+            for code in self.adapters:
+                for symbol in self.settings.trading_pairs:
+                    if (code, symbol) in self.pairs:
+                        continue
+                    try:
+                        self.pairs[(code, symbol)] = repo.pair_id(s, code, symbol)
+                        log.info("pair_from_database", exchange=code, symbol=symbol)
+                    except LookupError:
+                        continue
         log.info("pairs_synced", count=len(self.pairs))
 
     async def _paused(self) -> bool:
@@ -82,11 +102,13 @@ class MarketDataService:
         if await self._paused():
             return 0
         start = utcnow() - timedelta(days=self.settings.market_backfill_days)
+        horizon = await self._rest_horizon()
         for (code, symbol), pid in self.pairs.items():
             for tf in self.settings.timeframes:
                 try:
                     res = await backfill(self.adapters[code], self.factory, pair_id=pid,
-                                         symbol=symbol, timeframe=tf, start=start)
+                                         symbol=symbol, timeframe=tf, start=start,
+                                         now=horizon)
                 except ExchangeError as exc:
                     log.warning("candle_poll_failed", exchange=code, symbol=symbol,
                                 timeframe=tf.value, error=str(exc)[:200])
@@ -114,13 +136,14 @@ class MarketDataService:
 
         stored = 0
         start = utcnow() - timedelta(days=self.settings.minute_retention_days)
+        horizon = await self._rest_horizon()
         for (code, symbol), pid in self.pairs.items():
             if symbol not in self.settings.trading_pairs or await self._paused():
                 continue
             try:
                 res = await backfill(self.adapters[code], self.factory, pair_id=pid,
                                      symbol=symbol, timeframe=Timeframe.M1, start=start,
-                                     max_pages=MINUTE_PAGES_PER_POLL)
+                                     max_pages=MINUTE_PAGES_PER_POLL, now=horizon)
             except ExchangeError as exc:
                 log.warning("candle_poll_failed", exchange=code, symbol=symbol,
                             timeframe="1m", error=str(exc)[:200])
@@ -128,6 +151,65 @@ class MarketDataService:
                 continue
             stored += res.stored
         return stored
+
+    async def ws_fresh(self) -> bool:
+        """True while the Binance stream is connected and delivered data recently."""
+        from nexus_market.binance_ws import STATE_KEY
+
+        try:
+            raw = await self.redis.get(STATE_KEY)
+        except Exception:
+            return False
+        if not raw:
+            return False
+        st = json.loads(raw)
+        last = st.get("last_message_at")
+        if not st.get("connected") or not last:
+            return False
+        from datetime import datetime
+
+        return (utcnow() - datetime.fromisoformat(last)).total_seconds() < WS_FRESH_SECONDS
+
+    async def passive_health(self, code: str) -> Any:
+        """Binance health without a ping: the live stream, else the rate-limit gate.
+        None = unknown (the monitor falls back to an active check, which is gated too)."""
+        if code != "binance":
+            return None
+        from nexus_common.binance_guard import blocked
+        from nexus_exchange.models import HealthStatus
+
+        until = await blocked(self.redis, "spot")
+        if await self.ws_fresh():
+            note = (f"REST paused by Binance until {until:%H:%M} UTC; live stream OK"
+                    if until else None)
+            return HealthStatus(code, True, None, utcnow(), note)
+        if until is not None:
+            return HealthStatus(code, False, None, utcnow(),
+                                f"Binance paused this server's IP until {until:%H:%M} UTC "
+                                "(request-weight limit on the shared hosting IP)")
+        return None
+
+    async def _rest_horizon(self) -> Any:
+        """'Now' for REST gap filling: with a live stream, bars closed in the last
+        WS_GRACE are left to the stream (no duplicate REST request)."""
+        now = utcnow()
+        return now - WS_GRACE if await self.ws_fresh() else now
+
+    async def store_ws_candle(self, symbol: str, tf: str, candle: Any) -> None:
+        pid = self.pairs.get(("binance", symbol))
+        if pid is None:
+            return
+        from nexus_db import repo
+
+        def save() -> None:
+            with transaction(self.factory) as s:
+                repo.upsert_candles(s, pid, tf, [candle], source="ws")
+
+        await asyncio.to_thread(save)
+        await self.redis.xadd(events.CANDLE_STREAM, events.encode({
+            "exchange": "binance", "symbol": symbol, "timeframe": tf,
+            "open_time": candle.open_time.isoformat()}),
+            maxlen=events.STREAM_MAXLEN, approximate=True)
 
     async def derive_timeframes(self) -> int:
         """3m/30m/2h/6h/12h from stored closed bars (no exchange calls)."""
@@ -160,11 +242,13 @@ class MarketDataService:
             log.info("minute_candles_pruned", rows=removed)
 
     async def snapshot_books(self) -> None:
-        if await self._paused():
-            return
         for (code, symbol), pid in self.pairs.items():
+            book = await read_ws_book(self.redis, code, symbol, max_age=10)
+            if book is None:
+                if await self._paused():
+                    return
             try:
-                book = await self.adapters[code].fetch_order_book(symbol, depth=50)
+                book = book or await self.adapters[code].fetch_order_book(symbol, depth=50)
             except ExchangeError as exc:
                 log.warning("book_snapshot_failed", exchange=code, symbol=symbol, error=str(exc))
                 await self._note(exc)
@@ -191,18 +275,23 @@ class MarketDataService:
         bids, asks = raw.get("bids") or [], raw.get("asks") or []
         if not bids or not asks:
             return
-        bid, ask = Decimal(repr(bids[0][0])), Decimal(repr(asks[0][0]))
+        levels_b = [[str(p), str(q)] for p, q, *_ in bids[:20]]
+        levels_a = [[str(p), str(q)] for p, q, *_ in asks[:20]]
+        bid, ask = Decimal(levels_b[0][0]), Decimal(levels_a[0][0])
         if bid >= ask:
             log.warning("crossed_ws_book", exchange=code, symbol=symbol)
             return
         await self.redis.set(events.book_key(code, symbol), json.dumps({
-            "bid": str(bid), "ask": str(ask), "bid_size": str(bids[0][1]),
-            "ask_size": str(asks[0][1]), "ts": utcnow().isoformat(), "source": "ws"}),
-            ex=BOOK_TTL_SECONDS)
+            "bid": str(bid), "ask": str(ask), "bid_size": levels_b[0][1],
+            "ask_size": levels_a[0][1], "ts": utcnow().isoformat(), "source": "ws",
+            "bids": levels_b, "asks": levels_a}), ex=BOOK_TTL_SECONDS)
 
-    def ws_streams(self) -> list[tuple[ReconnectingStream[Any], Any]]:
-        out = []
+    def ws_streams(self) -> list[tuple[Any, Any]]:
+        out: list[tuple[Any, Any]] = []
         for code, adapter in self.adapters.items():
+            if code == "binance":
+                out.append((self.binance_stream(), None))
+                continue
             seed = adapter.ccxt_markets() if isinstance(adapter, CcxtSpotAdapter) else None
             client = build_ws_client(ExchangeCode(code), self.settings, markets=seed)
             for (c, symbol) in self.pairs:
@@ -223,6 +312,21 @@ class MarketDataService:
                                                on_state=on_state), client))
         return out
 
+    def binance_stream(self) -> Any:
+        from nexus_market.binance_ws import BinanceMarketStream
+
+        tfs = [tf.value for tf in self.settings.timeframes]
+        if self.settings.minute_candles and "1m" not in tfs:
+            tfs.insert(0, "1m")
+        symbols = [s for (c, s) in self.pairs if c == "binance"]
+
+        async def on_book(symbol: str, bids: list[list[str]], asks: list[list[str]]) -> None:
+            await self.publish_book("binance", symbol, {"bids": bids, "asks": asks})
+
+        return BinanceMarketStream(symbols, tfs, self.redis, on_book=on_book,
+                                   on_kline=self.store_ws_candle,
+                                   ws_url=self.settings.binance_public_ws_url)
+
     async def _every(self, seconds: float, fn: Any, name: str) -> None:
         while not self.stop.is_set():
             try:
@@ -240,7 +344,8 @@ class MarketDataService:
         await self.bootstrap()
         total = await self.poll_candles(initial=True)
         log.info("backfill_complete", bars=total)
-        monitor = HealthMonitor(list(self.adapters.values()), self.factory, self.redis)
+        monitor = HealthMonitor(list(self.adapters.values()), self.factory, self.redis,
+                                passive=self.passive_health)
         streams = self.ws_streams()
         tasks = [
             asyncio.create_task(self._every(30, self.poll_candles, "candles")),
@@ -255,9 +360,31 @@ class MarketDataService:
             t.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
         for _, client in streams:
-            await client.close()
+            if client is not None:
+                await client.close()
         for adapter in self.adapters.values():
             await adapter.close()
+
+
+async def read_ws_book(redis: Any, code: str, symbol: str, *,
+                       max_age: float) -> OrderBook | None:
+    """The stream's order book from Redis (top 20 levels) if it is fresh enough."""
+    from datetime import datetime
+
+    try:
+        raw = await redis.get(events.book_key(code, symbol))
+    except Exception:
+        return None
+    if not raw:
+        return None
+    d = json.loads(raw)
+    if not d.get("bids") or not d.get("asks"):
+        return None
+    ts = datetime.fromisoformat(d["ts"])
+    if (utcnow() - ts).total_seconds() > max_age:
+        return None
+    return OrderBook(symbol, tuple((Decimal(p), Decimal(q)) for p, q in d["bids"]),
+                     tuple((Decimal(p), Decimal(q)) for p, q in d["asks"]), ts)
 
 
 async def _relay(src: asyncio.Event, dst: asyncio.Event) -> None:
@@ -269,6 +396,9 @@ async def serve(settings: Settings, stop: asyncio.Event) -> None:
     """Run until ``stop`` is set (used by main() and by the API's inline worker mode)."""
     engine = make_engine(settings.database_url.get_secret_value())
     redis = connect_redis(settings.redis_url.get_secret_value())
+    from nexus_common.binance_guard import set_default_redis
+
+    set_default_redis(redis)
     service = MarketDataService(settings, make_session_factory(engine), redis)
     relay = asyncio.create_task(_relay(stop, service.stop))
     try:

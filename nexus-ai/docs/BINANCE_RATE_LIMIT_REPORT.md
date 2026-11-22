@@ -1,0 +1,125 @@
+# Binance rate-limit and reconnect loop: investigation and fix
+
+Date: 2026-11-22. Status: fixed in code and tested; 24-hour production stability test
+started at deployment (results appended below when complete).
+
+## Symptom
+
+Telegram showed "binance unreachable: RateLimited" followed by "binance reconnected", over
+and over (for example 15:05, 15:11, 15:18, 15:25, 15:27, 15:36 UTC on 22 Nov).
+
+## Evidence (production logs, Render service nexus-ai-fra, 22 Nov 12:00-16:10 UTC)
+
+| Time (UTC) | What Binance answered | NEXUS caller |
+|---|---|---|
+| 12:05:30 | 418, `-1003 Way too much request weight used; IP banned until 12:05:58` | candle poll (5m) |
+| 13:00:15 | 418, banned until 13:01:57 | candle poll |
+| 15:05:01 | 418, banned until 15:09:57 | candle poll |
+| 15:17:22 | 418, banned until 15:24:58 | order-book snapshot |
+| 15:27:23 | 418, banned until 15:35:59 | order-book snapshot |
+
+Each "unreachable" message followed one of these bans; each "reconnected" followed its end.
+
+## Root cause
+
+1. **The IP, not NEXUS's own volume, was over Binance's limit.** From its polling
+   schedule NEXUS used roughly 10 request weight per minute (an estimate: Binance's usage
+   header was not logged before this fix; it is now). Binance allows 6,000 per IP. The bans arrived on the FIRST
+   request after quiet periods, with no 429 warnings first. On Render's free plan the
+   outgoing IP is shared with other customers; their traffic counts against the same
+   per-IP limit. NEXUS cannot see or control that traffic.
+2. **NEXUS made bans worse and noisier:**
+   * The health monitor pinged Binance (`/api/v3/time`) every 60 s **without checking the
+     shared back-off**, so it kept calling during bans. Binance escalates bans for clients
+     that keep calling.
+   * The WebSocket order books (ccxt.pro diff-depth streams) download a REST order-book
+     snapshot on every (re)subscription, outside the back-off.
+   * The trader and the 5-minute book snapshots used REST order books although a live
+     stream existed.
+   * Request-time API calls (account pages, connection test) and the futures transport
+     were not covered by the shared back-off.
+   * A single refusal produced an alert and the next success a "reconnected" alert, with no
+     debounce, hence the flood.
+   * The back-off had no circuit breaker: when a ban ended, every waiting caller resumed at
+     once.
+
+## Audit: every Binance request
+
+| Caller | Before | After |
+|---|---|---|
+| Live prices (books) | ccxt.pro diff-depth WS + REST snapshot per (re)subscribe | one combined WS, `@depth20` partial book: no REST at all |
+| Candles 1m-1d | REST poll every 30 s (only when a bar was due) | WS `@kline_<tf>` closed bars; REST only for bars still missing 90 s after closing (gaps) |
+| Trader books (valuation, exits, paper fills) | REST depth 50 per symbol | stream book from Redis (20 levels, <= 5 s old); REST via the gate only if none |
+| Book snapshots to Postgres (5 min) | REST depth 50 | stream book; REST only if none |
+| Health check | `/time` ping every 60 s, even during bans | passive: stream freshness + gate state; ping only when both are unknown, through the gate |
+| Derivatives (funding, mark/index, OI, ratios) every 5 min | httpx with back-off | gate + 60 s shared cache |
+| Carry / taker forward tests (hourly) | httpx with back-off | gate + shared cache (5 s quotes, 120 s klines) |
+| Dashboard fallbacks, AI intelligence page | httpx with back-off | gate + 10 s / 30 s shared cache |
+| Account pages, connection test (signed) | raw ccxt, no back-off | gated client proxy (production keys) |
+| Futures account transport | no back-off | gate (scope futures) |
+| Exchange metadata (start-up) | ccxt `load_markets` | through the gate (weight 20) |
+
+## Fix: architecture
+
+* **Central gate** (`packages/common/nexus_common/binance_guard.py`): every REST request
+  calls `acquire` (circuit check, half-open probe lock, per-minute weight budget) and
+  `report` (status, Binance's `X-MBX-USED-WEIGHT-1M`, statistics, circuit transitions).
+  State is in Redis, so all workers and the API share it. Unreadable state = do not call.
+* **Circuit breaker**: CLOSED -> OPEN on 429/418 until max(Binance's stated time + 1-5 s
+  jitter, exponential back-off 30 s x 2^(n-1) +-20% jitter, capped at 1 h) -> HALF-OPEN:
+  exactly one probe request (Redis lock); success closes and resets, failure re-opens for
+  longer. Refusals of requests that were already in flight when the circuit opened do not
+  escalate the back-off (found by the storm simulation).
+* **Budget**: NEXUS uses at most 1,200 of the IP's 6,000 spot weight per minute (480 of
+  2,400 futures); at 80% IP usage reported by Binance, everyone pauses until the next
+  minute.
+* **WebSocket first** (`services/market-data/nexus_market/binance_ws.py`): one combined
+  connection for books and klines; heartbeat via Binance's pings (auto-pong); silence >30 s
+  = reconnect; reconnect back-off 2 s doubling to 5 min with jitter; at most 20 connection
+  attempts per 5 minutes; no connecting while Binance has the IP paused. Verified against
+  the real Binance stream (data-stream.binance.vision): books every second and closed 1m
+  bars at the minute.
+* **Deduplication**: identical REST requests from any worker share one response (Redis
+  cache with a short TTL, one in-flight request per process).
+* **Health and alerts** (`nexus_market/health.py`): passive health; the trading health
+  flag still changes immediately (entries stop at once), but Telegram gets one "down"
+  message after 2 minutes down (at most one per 30 minutes) and one "recovered" message
+  after 5 stable minutes, with the number of interruptions and total downtime. Every
+  transition is still recorded in System events.
+* **Visibility**: System page card "Binance connection and request budget" (circuit state,
+  pause end, last-hour requests and weight by endpoint and status, IP weight used, stream
+  state, recent pauses); every request logged as `binance_request` (endpoint, weight,
+  status, ms, IP used weight, failures, circuit, probe).
+
+## Safety
+
+* A request refused by the gate is never sent, so an order can never be left in an unknown
+  state by the gate: it is a definitive pre-submission failure.
+* No prices = no trading: with no fresh stream book and REST paused, the trader has no book
+  and rejects entries ("market data stale or missing").
+* Strategies, risk management, database records and paper trading are unchanged. Live
+  trading stays off.
+
+## Tests
+
+| Test | What it proves |
+|---|---|
+| `unit/test_binance_gate.py` (11) | jittered exponential back-off and cap; Binance weights; open -> half-open -> single probe -> closed; failed probe re-opens longer; in-flight success does not close; "banned until" honoured; budget; unreadable Redis = no call; statistics; concurrent identical requests -> one call; gated raw client |
+| `unit/test_binance_ws.py` (5) | streams/URL; books and only closed klines dispatched; reconnect after server close, refused connect and silence, with jittered growing back-off that resets after success; no connecting during a ban; connection-attempt budget; a bad message does not drop the connection |
+| `integration/test_rate_limit_soak.py` | 6 services hammering a fake Binance that answers 429 for 3 s: at most one in-flight request per service hits the refusal, then only spaced single probes (<= 5 in 3 s instead of ~600 requests), automatic recovery, no burst |
+| `integration/test_market_ingest.py` (3 new) | a flapping venue (10 interruptions in an hour) sends exactly one alert and one recovery summary while the trading health flag follows every change; with a live stream no REST call for just-closed bars; passive health reasons; books from the stream, stale stream books ignored |
+| `integration/test_paper_trader.py` (1 new) | during a pause nothing is traded; after recovery a repeated signal produces exactly one order |
+
+## 24-hour production stability test
+
+Started at the deployment of this fix (paper trading, live trading off). Checked at about
++1 h, +6 h, +12 h and +24 h from the production logs and the System page:
+
+* count of `binance_circuit_open` events and their causes;
+* NEXUS request weight per hour by endpoint vs the IP weight Binance reports;
+* WebSocket reconnects and their reasons;
+* Telegram alerts sent;
+* orders created (must be 0 while no strategy is enabled; never duplicated);
+* memory and restarts of the service.
+
+Results: see the section appended below.

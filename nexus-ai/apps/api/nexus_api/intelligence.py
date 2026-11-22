@@ -47,7 +47,7 @@ async def _get(client: httpx.AsyncClient, redis: Any, url: str,
     from nexus_common.binance_guard import BinanceBackoff, guarded_get
 
     try:
-        r: httpx.Response = await guarded_get(client, redis, url, params)
+        r: httpx.Response = await guarded_get(client, redis, url, params, cache_ttl=30)
     except BinanceBackoff as exc:
         raise httpx.HTTPError(str(exc)) from exc
     return r

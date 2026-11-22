@@ -126,8 +126,10 @@ def rebalance(leg: Leg, q: Quote) -> Decimal:
 
 # ------------------------------------------------------------------ data
 async def fetch_quote(client: httpx.AsyncClient, symbol: str, redis: Any = None) -> Quote:
-    s = await guarded_get(client, redis, f"{SPOT_API}/ticker/bookTicker", {"symbol": symbol})
-    p = await guarded_get(client, redis, f"{FAPI}/ticker/bookTicker", {"symbol": symbol})
+    s = await guarded_get(client, redis, f"{SPOT_API}/ticker/bookTicker", {"symbol": symbol},
+                        cache_ttl=5)
+    p = await guarded_get(client, redis, f"{FAPI}/ticker/bookTicker", {"symbol": symbol},
+                        cache_ttl=5)
     for r in (s, p):
         if r.status_code == 451 or "restricted location" in r.text[:300].lower():
             raise PermissionError("Binance refuses this server's location")
