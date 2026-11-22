@@ -684,3 +684,44 @@ async def test_carry_paper_step_entry_funding_idempotence_gap_and_restart(
     finally:
         with migrated_engine.begin() as c:
             c.execute(text("TRUNCATE carry_paper_events"))
+
+
+async def test_forward_taker_records_trades_once_and_gaps(
+        migrated_engine: Engine, redis: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    import httpx
+    from nexus_backtest import forward_taker as ft
+
+    factory = make_session_factory(migrated_engine)
+    trade = {"signal_time": "2026-11-23T10:00:00+00:00", "entry_time": "2026-11-23T11:00:00+00:00",
+             "exit_time": "2026-11-23T15:00:00+00:00", "entry": 100.0, "exit": 102.0,
+             "stop": 95.0, "target": 103.0, "ret": 0.0185, "outcome": "target",
+             "regime": "range"}
+
+    async def fake_load(client: Any, symbol: str, now: datetime) -> dict[str, Any]:
+        import pandas as pd
+        idx = pd.DatetimeIndex([pd.Timestamp("2026-11-23T16:00:00+00:00")])
+        f = pd.DataFrame({"open": [1.0], "high": [1.0], "low": [1.0], "close": [1.0],
+                          "volume": [1.0]}, index=idx)
+        return {"5m": f, "1h": f, "4h": f}
+
+    monkeypatch.setattr(ft, "load", fake_load)
+    monkeypatch.setattr(ft, "evaluate", lambda frames: ([trade], []))
+    try:
+        async with httpx.AsyncClient() as client:
+            await ft.step(factory, redis, client)
+            await ft.step(factory, redis, client)            # same trade again: not duplicated
+
+            async def refused(*a: Any, **k: Any) -> Any:
+                raise PermissionError("Binance refuses this server's location")
+            monkeypatch.setattr(ft, "load", refused)
+            st = await ft.step(factory, redis, client)
+        assert st["symbols"]["BTCUSDT"]["ok"] is False
+        with transaction(factory) as s:
+            rows = s.scalars(select(models.ForwardTestEvent)).all()
+        kinds = sorted((r.symbol, r.kind) for r in rows)
+        assert kinds == [("BTCUSDT", "gap"), ("BTCUSDT", "trade"),
+                         ("ETHUSDT", "gap"), ("ETHUSDT", "trade")]
+        assert await redis.get(ft.STATUS_KEY) is not None
+    finally:
+        with migrated_engine.begin() as c:
+            c.execute(text("TRUNCATE forward_test_events"))

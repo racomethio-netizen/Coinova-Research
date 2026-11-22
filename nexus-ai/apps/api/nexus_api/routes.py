@@ -1068,6 +1068,25 @@ def carry_paper_status(s: Session = Depends(db)) -> dict[str, Any]:
     return out
 
 
+@router.get("/research/taker-forward")
+async def taker_forward_status(s: Session = Depends(db),
+                               redis: Any = Depends(redis_dep)) -> dict[str, Any]:
+    """Forward paper test of taker flow in range regimes (pre-registered 2026-11-22)."""
+    from datetime import UTC
+    from datetime import datetime as _dt
+
+    from nexus_backtest.forward_taker import RUN, STATUS_KEY, summary
+
+    rows = s.scalars(select(models.ForwardTestEvent).where(models.ForwardTestEvent.run == RUN)
+                     .order_by(models.ForwardTestEvent.at)).all()
+    trades = [{**r.data, "symbol": r.symbol} for r in rows if r.kind == "trade"]
+    gaps = sum(1 for r in rows if r.kind == "gap")
+    raw = await redis.get(STATUS_KEY)
+    return {**summary(trades, gaps, _dt.now(UTC)), "trades_list": trades[-50:],
+            "status": json.loads(raw) if raw else None,
+            "preregistration": "docs/research/2026-11-22-taker-range-forward-preregistration.md"}
+
+
 BINANCE_PINGS = {
     "spot (live)": "https://api.binance.com/api/v3/ping",
     "futures (live)": "https://fapi.binance.com/fapi/v1/ping",

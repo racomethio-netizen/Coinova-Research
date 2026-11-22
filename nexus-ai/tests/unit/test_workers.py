@@ -23,7 +23,7 @@ def test_paper_mode_builds_both_workers():
     sup = WorkerSupervisor.from_settings(_settings(run_workers=True, trading_mode="paper"))
     assert sup is not None
     assert set(sup.commands) == {"market-data", "trader", "notifier", "news", "derivatives",
-                                 "carry-paper"}
+                                 "carry-paper", "forward-taker"}
 
 
 def test_restarts_a_crashed_worker_and_stops_cleanly():
@@ -46,7 +46,7 @@ def test_inline_mode_selected():
         _settings(run_workers=True, trading_mode="paper", workers_mode="inline"))
     assert isinstance(sup, InlineWorkers)
     assert set(sup.workers) == {"market-data", "trader", "notifier", "news", "derivatives",
-                                 "carry-paper"}
+                                 "carry-paper", "forward-taker"}
 
 
 def test_inline_restarts_crashes_and_stops_cleanly():

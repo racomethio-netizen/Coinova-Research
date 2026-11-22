@@ -672,3 +672,24 @@ class CarryPaperEvent(Base):
     at: Mapped[datetime]
     data: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
     created_at: Mapped[created_at]
+
+
+class ForwardTestEvent(Base):
+    """Append-only ledger for pre-registered forward paper tests of trading rules:
+    completed paper trades (key = signal time) and data gaps (key = hour)."""
+
+    __tablename__ = "forward_test_events"
+    __table_args__ = (
+        CheckConstraint(in_list("kind", ("trade", "gap")), name="kind_valid"),
+        UniqueConstraint("run", "symbol", "kind", "key", name="one_event_per_key"),
+        Index("ix_forward_test_events_run_at", "run", "at"),
+    )
+
+    id: Mapped[bigint_pk]
+    run: Mapped[str] = mapped_column(String(32))
+    symbol: Mapped[str] = mapped_column(String(16))
+    kind: Mapped[str] = mapped_column(String(12))
+    key: Mapped[str] = mapped_column(String(40))
+    at: Mapped[datetime]
+    data: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
+    created_at: Mapped[created_at]

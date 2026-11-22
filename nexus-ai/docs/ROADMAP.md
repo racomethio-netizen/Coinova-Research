@@ -403,3 +403,16 @@ trading on Render can use live data once background workers are approved.
   blocked by trigger), GET /research/carry-paper, page Strategy Center -> Funding carry test.
 * Tests: 568 pass (delta neutrality, funding sign, rebalance, idempotent funding, restart,
   gap on 451).
+
+## 2026-11-22: forward paper test of taker flow in range regimes (started)
+
+* Pre-registered BEFORE start (commit b2de25d, 12:05 UTC):
+  docs/research/2026-11-22-taker-range-forward-preregistration.md. Frozen params
+  (ratio_min 0.55, stop 2.5 ATR, target 3 ATR, no strategy exit, 48 h max hold), unchanged
+  research code (TakerFlow + study_signals), range-regime signals only, live Binance spot
+  klines + perpetual taker-buy share. Decision once at 30 completed trades (~10-12 months)
+  or 18 months (then inconclusive if < 30): mean > 0, PF >= 1.15, t >= 1.
+* `nexus_backtest.forward_taker` inline worker (hourly at :03); append-only
+  `forward_test_events` table (migration 0009, RLS, revoked API roles, UPDATE/DELETE
+  trigger); GET /research/taker-forward; page Strategy Center -> Taker flow test.
+* Tests: 572 pass.
