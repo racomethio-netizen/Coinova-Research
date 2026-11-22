@@ -75,7 +75,11 @@ class Viewer:
 
 async def current_viewer(request: Request, redis: Any = Depends(redis_dep),
                          s: Session = Depends(db)) -> Viewer:
-    token = request.cookies.get(SESSION_COOKIE)
+    return await viewer_from_token(request.cookies.get(SESSION_COOKIE), redis, s)
+
+
+async def viewer_from_token(token: str | None, redis: Any, s: Session) -> Viewer:
+    """Session cookie -> signed-in viewer (shared by HTTP routes and the WebSocket)."""
     if not token:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "not signed in")
     raw = await redis.get(_key(token))

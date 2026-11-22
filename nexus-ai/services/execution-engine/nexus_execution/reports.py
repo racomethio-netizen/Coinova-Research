@@ -14,6 +14,32 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 
+def _sharpe(s: Session, portfolio_id: int, min_days: int = 30) -> dict[str, Any]:
+    """Annualised Sharpe of daily equity returns (risk-free 0). Reported only with at least
+    ``min_days`` daily points, and always with a caveat."""
+    import math
+    from itertools import pairwise
+
+    snaps = s.execute(select(models.PerformanceSnapshot.captured_at,
+                             models.PerformanceSnapshot.equity)
+                      .where(models.PerformanceSnapshot.portfolio_id == portfolio_id)
+                      .order_by(models.PerformanceSnapshot.captured_at)).all()
+    daily: dict[Any, float] = {}
+    for at, eq in snaps:
+        daily[at.date()] = float(eq)                       # last snapshot of each day
+    vals = list(daily.values())
+    rets = [b / a - 1 for a, b in pairwise(vals) if a > 0]
+    caveat = ("Sharpe needs many independent periods; under ~90 days it is very noisy, "
+              "and paper fills are simulated.")
+    if len(rets) < min_days:
+        return {"sharpe": None, "sharpe_days": len(rets),
+                "sharpe_note": f"needs {min_days}+ days of history ({len(rets)} so far). {caveat}"}
+    mean = sum(rets) / len(rets)
+    sd = math.sqrt(sum((r - mean) ** 2 for r in rets) / (len(rets) - 1))
+    return {"sharpe": None if sd == 0 else str(round(mean / sd * math.sqrt(365), 2)),
+            "sharpe_days": len(rets), "sharpe_note": caveat}
+
+
 def portfolio_report(s: Session, portfolio_id: int) -> dict[str, Any]:
     p = s.get(models.Portfolio, portfolio_id)
     if p is None:
@@ -61,6 +87,11 @@ def portfolio_report(s: Session, portfolio_id: int) -> dict[str, Any]:
         "current_drawdown": opt(last.drawdown) if last else None,
         "orders_by_status": orders,
         "avg_slippage_bps": (str(sum(slip_bps, ZERO) / len(slip_bps)) if slip_bps else None),
+        "avg_win": str(gross_win / len(wins)) if wins else None,
+        "avg_loss": str(-gross_loss / len(losses)) if losses else None,
+        "expectancy": (str(sum((x.realized_pnl for x in closed), ZERO) / len(closed))
+                       if closed else None),
+        **_sharpe(s, p.id),
         "as_of": last.captured_at.isoformat() if last else None,
     }
 

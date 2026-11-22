@@ -5,6 +5,7 @@ import { CandleChart, type CandleRow } from "@/components/charts";
 import { Badge, Card, Loading, PageHeader, Table } from "@/components/ui";
 import { DASH, num, qty, time } from "@/lib/format";
 import { useApi } from "@/lib/hooks";
+import { useStream } from "@/lib/stream";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
@@ -16,7 +17,9 @@ export default function Markets() {
   const [symbol, setSymbol] = useState("BTC/USDT");
   const [tf, setTf] = useState("1h");
   const candles = useApi<{ candles: CandleRow[]; source?: string }>(`/markets/candles?exchange=${exchange}&symbol=${encodeURIComponent(symbol)}&timeframe=${tf}&limit=300`, 60000);
-  const books = useApi<Any[]>("/markets/books", 3000);
+  const { tick, connected } = useStream();
+  const polled = useApi<Any[]>(connected ? null : "/markets/books", 3000);
+  const books = { data: connected && tick ? tick.books : polled.data };
   return (
     <>
       <PageHeader title="Live markets" subtitle="Closed candles and top of book from Binance (database and streams when the market-data service runs, otherwise Binance public data)">
@@ -41,6 +44,7 @@ export default function Markets() {
           {candles.data && (candles.data.candles.length ? <><CandleChart candles={candles.data.candles} label={`${symbol} ${tf} candles on ${exchange}`} /><p className="mt-2 text-xs text-muted">Source: {candles.data.source ?? "database"} · closed candles only</p></> : <p className="py-6 text-center text-sm text-muted">No candles stored for this market yet.</p>)}
         </Card>
         <Card title="Top of book (live)">
+          <p className="mb-2 text-xs text-muted">{connected ? "Live stream: updates every 2 s" : "Live stream unavailable: refreshing every 3 s"}</p>
           <Table rows={books.data} empty="No live books. Is the market-data service running?" columns={[
             { key: "exchange", label: "Exchange" }, { key: "symbol", label: "Pair" },
             { key: "bid", label: "Bid", numeric: true, render: (b: Any) => num(b.book?.bid) },

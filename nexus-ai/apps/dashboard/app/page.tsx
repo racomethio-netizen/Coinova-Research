@@ -12,6 +12,7 @@ export default function Overview() {
   const { mode } = useMode();
   const { data, error, loading } = useApi<Any>(`/overview?mode=${mode}`, 15000);
   const r = data?.report;
+  const ctx = useApi<Any>("/overview/context", 30000).data;
   return (
     <>
       <PageHeader title="Overview" subtitle={r?.title ?? `${mode.toUpperCase()} portfolio`} />
@@ -33,7 +34,35 @@ export default function Overview() {
             <Stat label="Max drawdown" value={pct(r?.max_drawdown)} tone={Number(r?.max_drawdown ?? 0) > 0.03 ? "warn" : undefined} />
             <Stat label="Profit factor" value={num(r?.profit_factor)} />
             <Stat label="Open trades" value={String(data.open_positions)} />
+            <Stat label="Exposure" value={num(r?.exposure)} hint={r?.equity && r?.exposure ? `${pct(Number(r.exposure) / Number(r.equity), 1)} of equity` : undefined} />
+            <Stat label="Current drawdown" value={pct(r?.current_drawdown)} tone={Number(r?.current_drawdown ?? 0) > 0.03 ? "warn" : undefined} />
+            <Stat label="Expectancy / trade" value={num(r?.expectancy)} tone={signed(r?.expectancy)} />
+            <Stat label="Average win / loss" value={r?.avg_win || r?.avg_loss ? `${num(r?.avg_win)} / ${num(r?.avg_loss)}` : DASH} />
+            <Stat label="Sharpe (daily, annualised)" value={r?.sharpe ?? DASH} hint={r?.sharpe_note ? (r.sharpe == null ? `needs 30+ days (${r.sharpe_days ?? 0} so far)` : "noisy under ~90 days") : undefined} />
           </div>
+          {ctx && (
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card title="Market regime">
+                {ctx.regimes.length ? (
+                  <ul className="space-y-1 text-sm">{ctx.regimes.map((g: Any) => <li key={g.symbol} className="flex justify-between"><span>{g.symbol}</span><Badge tone={g.regime === "high_vol" ? "warn" : "info"}>{g.regime ?? "unknown"}</Badge></li>)}</ul>
+                ) : <p className="text-sm text-muted">{ctx.regimes_note}</p>}
+              </Card>
+              <Card title="X sentiment">
+                {ctx.sentiment.length ? (
+                  <ul className="space-y-1 text-sm">{ctx.sentiment.map((c: Any) => <li key={c.coin} className="flex justify-between"><span>{c.coin}</span><span className="num">{c.score == null ? DASH : (c.score > 0 ? `+${c.score}` : c.score)} · {c.label}</span></li>)}</ul>
+                ) : <p className="text-sm text-muted">Not configured or no data yet.</p>}
+              </Card>
+              <Card title="Risk status" actions={<Badge tone={ctx.risk_status.kill_switch || ctx.risk_status.news_blocks_entries || Object.keys(ctx.risk_status.x_blocks).length ? "warn" : "good"}>{ctx.risk_status.kill_switch ? "kill switch" : ctx.risk_status.news_blocks_entries ? "entries paused" : "normal"}</Badge>}>
+                <ul className="space-y-1 text-sm">
+                  <li className="flex justify-between"><span>Kill switch</span><span>{ctx.risk_status.kill_switch ? "ENGAGED" : "clear"}</span></li>
+                  <li className="flex justify-between"><span>Bot</span><span>{ctx.risk_status.bot_state}</span></li>
+                  <li className="flex justify-between"><span>News risk</span><span className="num">{ctx.risk_status.news_risk == null ? "unknown" : num(ctx.risk_status.news_risk, 2)}</span></li>
+                  <li className="flex justify-between"><span>X entry blocks</span><span>{Object.keys(ctx.risk_status.x_blocks).join(", ") || "none"}</span></li>
+                  <li className="flex justify-between"><span>Live trading</span><span>{ctx.risk_status.live_trading_blockers ? "off" : "permitted"}</span></li>
+                </ul>
+              </Card>
+            </div>
+          )}
           <BotControl />
           <div className="grid gap-4 md:grid-cols-2">
             <Card title="Exchange status">

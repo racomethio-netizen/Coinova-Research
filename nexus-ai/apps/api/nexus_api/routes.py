@@ -976,6 +976,78 @@ async def x_sentiment(redis: Any = Depends(redis_dep),
             "Open the Intelligence page to load market context (cached 30 s)."}
 
 
+@router.get("/news")
+async def news(redis: Any = Depends(redis_dep),
+               settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Latest public news items with the keyword impact used for the news-risk gate."""
+    from nexus_news.service import KEY as NEWS_KEY
+
+    raw = await redis.get(NEWS_KEY)
+    data = json.loads(raw) if raw else None
+    return {"available": data is not None, "threshold": settings.news_block_threshold,
+            "blocks_entries": data is None or data.get("score") is None
+            or float(data["score"]) > settings.news_block_threshold,
+            **(data or {"message": "news monitor has not reported (entries are blocked "
+                                   "until it does)"})}
+
+
+@router.get("/settings/summary")
+def settings_summary(settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Effective configuration (no secrets). Changes are made on the server, not here."""
+    r = settings.risk
+    return {"config": settings.safe_summary(),
+            "risk_extra": {"max_correlated_exposure": str(r.max_correlated_exposure),
+                           "correlation_threshold": r.correlation_threshold,
+                           "cooldown_after_stop_minutes": r.cooldown_after_stop_minutes,
+                           "max_asset_concentration": str(r.max_asset_concentration)},
+            "paper_simulation": {"latency_ms": settings.paper_latency_ms,
+                                 "book_participation": str(settings.paper_book_participation),
+                                 "max_book_age_seconds": settings.paper_max_book_age_seconds,
+                                 "outage_rate": settings.paper_outage_rate,
+                                 "fee_bps": str(settings.paper_fee_bps),
+                                 "slippage_bps": str(settings.paper_slippage_bps),
+                                 "initial_capital": str(settings.paper_initial_capital)},
+            "x": {"configured": settings.x_bearer_token is not None,
+                  "coins": list(settings.x_coins), "refresh_minutes": settings.x_refresh_minutes,
+                  "daily_budget_usd": str(settings.x_daily_budget_usd)},
+            "news_block_threshold": settings.news_block_threshold,
+            "live_trading_blockers": settings.live_trading_config_problems(),
+            "how_to_change": "Server environment variables (Render: nexus-ai-fra -> "
+                             "Environment). Absolute risk ceilings cannot be exceeded."}
+
+
+@router.get("/overview/context")
+async def overview_context(s: Session = Depends(db), redis: Any = Depends(redis_dep),
+                           settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Market regime per pair, X sentiment, news and risk status for the Overview."""
+    from nexus_common.botstate import get_state
+    from nexus_social.service import RISK as X_RISK
+    from nexus_social.service import SNAPSHOT as X_SNAPSHOT
+
+    intel = await redis.get("nexus:intelligence")
+    pairs = json.loads(intel).get("pairs", []) if intel else []
+    xs = await redis.get(X_SNAPSHOT)
+    xb = await redis.get(X_RISK)
+    news_score = await _news_risk(redis)
+    blocks = (json.loads(xb).get("blocks") or {}) if xb else {}
+    return {
+        "regimes": [{"symbol": p.get("symbol"), "regime": p.get("regime"),
+                     "direction": p.get("direction")} for p in pairs if not p.get("error")],
+        "regimes_note": None if intel else "open AI analysis to refresh market regimes",
+        "sentiment": [{"coin": c["coin"], "score": c["score"], "label": c["label"],
+                       "confidence": c["confidence"]}
+                      for c in (json.loads(xs).get("coins") or [])] if xs else [],
+        "risk_status": {
+            "kill_switch": await _kill_status(s, redis) is not None,
+            "bot_state": (await get_state(redis)).value,
+            "news_risk": news_score, "news_threshold": settings.news_block_threshold,
+            "news_blocks_entries": news_score is None
+            or news_score > settings.news_block_threshold,
+            "x_blocks": blocks,
+            "live_trading_blockers": len(settings.live_trading_config_problems())},
+    }
+
+
 BINANCE_PINGS = {
     "spot (live)": "https://api.binance.com/api/v3/ping",
     "futures (live)": "https://fapi.binance.com/fapi/v1/ping",

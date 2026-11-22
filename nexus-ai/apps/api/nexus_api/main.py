@@ -68,9 +68,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     from nexus_api.auth import router as auth_router
     from nexus_api.routes import router as api_router
+    from nexus_api.stream import ws_router
 
     app.include_router(auth_router)
     app.include_router(api_router)
+    app.include_router(ws_router)
 
     @app.middleware("http")
     async def security_headers(request: Any, call_next: Any) -> Any:

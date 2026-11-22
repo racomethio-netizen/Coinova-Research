@@ -6,13 +6,26 @@ import { useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
 import { ModeProvider, useMode } from "@/lib/hooks";
 
-export const NAV: [string, string][] = [
-  ["/", "Overview"], ["/spot/", "Spot trading"], ["/futures/", "Futures trading"], ["/intelligence/", "AI intelligence"], ["/proposals/", "AI proposals"], ["/social/", "X sentiment"], ["/portfolio/", "Portfolio"], ["/exchanges/", "Exchanges"],
-  ["/markets/", "Live markets"], ["/signals/", "AI signals"], ["/positions/", "Open positions"],
-  ["/orders/", "Order history"], ["/trades/", "Trade history"], ["/performance/", "Performance"], ["/backtests/", "Backtesting"],
-  ["/strategies/", "Strategies"], ["/models/", "AI models"], ["/risk/", "Risk management"],
-  ["/connection/", "Binance connection"], ["/telegram/", "Telegram"], ["/system/", "System"], ["/security/", "Security"],
+// Fifteen sections; each section's first link is its landing page.
+export const SECTIONS: [string, [string, string][]][] = [
+  ["Overview", [["/", "Overview"]]],
+  ["Live Markets", [["/markets/", "Live markets"]]],
+  ["AI Analysis", [["/intelligence/", "Market analysis"], ["/proposals/", "Trade proposals"], ["/signals/", "Signals"], ["/models/", "AI models"]]],
+  ["Strategy Center", [["/strategies/", "Strategies"]]],
+  ["Paper Trading", [["/paper/", "Paper trading"]]],
+  ["Live Trading", [["/live/", "Live trading"], ["/spot/", "Spot account"], ["/futures/", "Futures account"]]],
+  ["Portfolio", [["/portfolio/", "Portfolio"], ["/positions/", "Open positions"], ["/exchanges/", "Exchanges"]]],
+  ["Risk Center", [["/risk/", "Risk center"]]],
+  ["X Intelligence", [["/social/", "X sentiment"]]],
+  ["News", [["/news/", "News"]]],
+  ["Trade History", [["/trades/", "Trades"], ["/orders/", "Orders"]]],
+  ["Performance Analytics", [["/performance/", "Performance"]]],
+  ["Backtesting", [["/backtests/", "Backtesting"]]],
+  ["Settings", [["/settings/", "Settings"], ["/connection/", "Binance connection"], ["/telegram/", "Telegram"], ["/security/", "Security"]]],
+  ["System Health", [["/system/", "System health"]]],
 ];
+
+export const NAV: [string, string][] = SECTIONS.flatMap(([, links]) => links);
 
 function ModeBanner() {
   const { mode } = useMode();
@@ -63,16 +76,30 @@ function Frame({ children }: { children: ReactNode }) {
               <div className="text-xs text-muted">Spot trading system</div>
             </div>
           </div>
-          <nav aria-label="Main">
-            <ul className="space-y-0.5">
-              {NAV.map(([href, label]) => {
-                const active = href === "/" ? path === "/" : path?.startsWith(href);
+          <nav aria-label="Main" className="max-h-[calc(100vh-6rem)] overflow-y-auto">
+            <ul className="space-y-1">
+              {SECTIONS.map(([section, links]) => {
+                const isActive = (href: string) => (href === "/" ? path === "/" : !!path?.startsWith(href));
+                const sectionActive = links.some(([h]) => isActive(h));
+                const [landing] = links[0];
                 return (
-                  <li key={href}>
-                    <Link href={href} onClick={() => setOpen(false)} aria-current={active ? "page" : undefined}
-                      className={`block rounded-lg px-3 py-2 text-sm ${active ? "bg-elevated font-medium text-text" : "text-muted hover:bg-elevated hover:text-text"}`}>
-                      {label}
+                  <li key={section}>
+                    <Link href={landing} onClick={() => setOpen(false)} aria-current={isActive(landing) ? "page" : undefined}
+                      className={`block rounded-lg px-3 py-2 text-sm ${sectionActive ? "bg-elevated font-medium text-text" : "text-muted hover:bg-elevated hover:text-text"}`}>
+                      {section}
                     </Link>
+                    {sectionActive && links.length > 1 && (
+                      <ul className="mt-0.5 space-y-0.5 border-l border-line pl-2 ml-3">
+                        {links.slice(1).map(([href, label]) => (
+                          <li key={href}>
+                            <Link href={href} onClick={() => setOpen(false)} aria-current={isActive(href) ? "page" : undefined}
+                              className={`block rounded px-2 py-1 text-xs ${isActive(href) ? "font-medium text-text" : "text-muted hover:text-text"}`}>
+                              {label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </li>
                 );
               })}

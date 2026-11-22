@@ -348,3 +348,22 @@ trading on Render can use live data once background workers are approved.
   liquidation events (Binance archive 404; live collection keeps 24 h only).
 * 11 rule-based spot strategies have now failed out-of-sample. No strategy is enabled.
 * Tests: 552 pass; alembic check clean.
+
+## 2026-11-22: Phase 7 (dashboard)
+
+* Navigation: 15 sections (Overview, Live Markets, AI Analysis, Strategy Center, Paper
+  Trading, Live Trading, Portfolio, Risk Center, X Intelligence, News, Trade History,
+  Performance Analytics, Backtesting, Settings, System Health); existing pages grouped
+  under them, none removed.
+* New pages: Paper trading, Live trading (gate status), News (items + impact), Settings
+  (effective config, no secrets, live blockers).
+* Overview: exposure, current drawdown, expectancy, average win/loss, Sharpe (daily,
+  annualised; shown only with 30+ days and always with a caveat), market regime, X
+  sentiment, risk status. GET /overview/context, /news, /settings/summary.
+* WebSocket /api/v1/ws/stream: owner session + same-origin check (cross-site WebSocket
+  hijacking), read-only push every 2 s (books, kill switch, bot state); Live Markets uses
+  it and falls back to polling.
+* Tests: 555 pass. Browser e2e (desktop + 360 px): 9 pass incl. every page (new ones
+  too) with no errors or horizontal overflow; "validation results are shown honestly"
+  fails only because the local e2e database has no AI model rows (pre-existing data
+  dependency of that test, not a regression).

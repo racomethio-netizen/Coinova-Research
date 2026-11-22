@@ -504,3 +504,18 @@ async def test_execution_quality_report(engine_setup: tuple[Any, ...]) -> None:
     assert q["entry"]["orders"] == 1 and q["entry"]["fill_rate"] == "1.0000"
     assert q["exit"]["orders"] == 1 and q["exit"]["slippage_bps_avg"] is not None
     assert q["entry"]["missed"] == 0 and q["entry"]["unknown"] == 0
+
+
+async def test_report_has_expectancy_averages_and_guarded_sharpe(
+        engine_setup: tuple[Any, ...]) -> None:
+    from nexus_execution.reports import portfolio_report
+
+    eng, factory, state, _ = engine_setup
+    await _enter(eng, factory)
+    state.update(bid=58_900.0, ask=58_901.0)
+    await eng.cycle()
+    with transaction(factory) as s:
+        r = portfolio_report(s, eng.portfolio_id)
+    assert r["avg_loss"] is not None and D(r["avg_loss"]) < 0 and r["avg_win"] is None
+    assert D(r["expectancy"]) == D(r["avg_loss"])
+    assert r["sharpe"] is None and "30+" in r["sharpe_note"]   # too little history

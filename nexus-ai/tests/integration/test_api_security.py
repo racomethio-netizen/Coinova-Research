@@ -455,3 +455,40 @@ def test_execution_quality_endpoint_shows_simulation_settings(client: TestClient
     login(client)
     r = client.get("/api/v1/execution/quality?mode=paper").json()
     assert r["simulation"]["latency_ms"] == 250 and r["simulation"]["outage_rate"] == 0.0
+
+
+def test_websocket_stream_requires_owner_session_and_same_origin(client: TestClient) -> None:
+    from starlette.websockets import WebSocketDisconnect
+
+    host = "testserver"
+    good = {"origin": f"http://{host}"}
+    with pytest.raises(WebSocketDisconnect):                      # not signed in
+        with client.websocket_connect("/api/v1/ws/stream", headers=good) as ws:
+            ws.receive_json()
+    login(client)
+    with pytest.raises(WebSocketDisconnect):                      # cross-site origin
+        with client.websocket_connect("/api/v1/ws/stream",
+                                      headers={"origin": "https://evil.example"}) as ws:
+            ws.receive_json()
+    with pytest.raises(WebSocketDisconnect):                      # no origin at all
+        with client.websocket_connect("/api/v1/ws/stream") as ws:
+            ws.receive_json()
+    with client.websocket_connect("/api/v1/ws/stream", headers=good) as ws:
+        tick = ws.receive_json()
+    assert tick["type"] == "tick" and tick["kill_switch"] is False
+    assert {b["symbol"] for b in tick["books"]} >= {"BTC/USDT"}
+
+
+def test_news_settings_overview_context_and_report_metrics(client: TestClient) -> None:
+    login(client)
+    n = client.get("/api/v1/news").json()
+    assert n["available"] is False and n["blocks_entries"] is True        # fails closed
+    st = client.get("/api/v1/settings/summary")
+    assert st.status_code == 200
+    body = st.json()
+    assert body["live_trading_blockers"] and body["paper_simulation"]["latency_ms"] == 250
+    text = st.text.lower()
+    for secret in ("password", "secret_value", "bearer", "encryption_keys\": \""):
+        assert secret not in text
+    ctx = client.get("/api/v1/overview/context").json()
+    assert ctx["risk_status"]["news_blocks_entries"] is True and ctx["regimes"] == []

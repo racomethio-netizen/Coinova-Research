@@ -31,8 +31,16 @@ async def refresh_once(redis: Any, client: httpx.AsyncClient) -> dict[str, Any]:
     items, errors = await fetch_items(client)
     now = utcnow()
     risk = score_items(items, now=now, errors=errors)
+    from nexus_news.scoring import _weight
+
+    recent = sorted((i for i in items if i.published is not None),
+                    key=lambda i: i.published or now, reverse=True)[:40]
     payload = {"score": risk.score, "matched": list(risk.matched),
-               "unknown_sources": list(risk.unknown_sources), "as_of": now.isoformat()}
+               "unknown_sources": list(risk.unknown_sources), "as_of": now.isoformat(),
+               "items": [{"source": i.source, "title": i.title[:300], "link": i.link,
+                          "published": i.published.isoformat() if i.published else None,
+                          "impact": _weight(i.title)[0], "keyword": _weight(i.title)[1]}
+                         for i in recent]}
     await redis.set(KEY, json.dumps(payload), ex=TTL_SECONDS)
     log.info("news_refreshed", score=risk.score, items=len(items), unknown=list(errors))
     return payload

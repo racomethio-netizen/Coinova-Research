@@ -10,6 +10,8 @@ const PAGES: [string, string][] = [
   ["/strategies/", "Strategy configuration"], ["/models/", "AI model monitoring"],
   ["/risk/", "Risk management"], ["/system/", "System monitoring"], ["/security/", "Security settings"],
   ["/connection/", "Binance connection"], ["/spot/", "Spot trading"], ["/futures/", "Futures trading"], ["/telegram/", "Telegram settings"], ["/backtests/", "Backtesting"], ["/intelligence/", "AI intelligence"],
+  ["/proposals/", "AI trade proposals"], ["/social/", "X sentiment"], ["/paper/", "Paper trading"],
+  ["/live/", "Live trading"], ["/news/", "News"], ["/settings/", "Settings"],
 ];
 
 async function login(page: Page) {
