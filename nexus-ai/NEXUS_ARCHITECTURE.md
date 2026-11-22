@@ -35,6 +35,24 @@ Rules: closed bars only; duplicates impossible (one row per pair, timeframe and 
 time); gaps detected and logged, never filled; Binance back-off and request-weight budget
 shared by every caller; no synthetic data in production.
 
+## Technical analysis (Phase C)
+
+* `nexus_strategies/indicators.py` (base) and `nexus_strategies/ta.py` (extended):
+  EMA 9/20/21/50/100/200, SMA, ADX/DMI, Supertrend, Ichimoku (no Chikou: look-ahead),
+  RSI, RSI divergence, MACD, ROC, momentum, Stochastic RSI, CCI, ATR, historical
+  volatility, Bollinger (+width), Keltner, ATR percentile, expansion/contraction, OBV,
+  MFI, relative volume, volume SMA and z-score, volume-price divergence, candle body/wick
+  shares, pivots (previous day), range/consolidation, breakout, retest, failed breakout,
+  equal highs/lows, wick rejection.
+* `nexus_analysis`: swings, HH/HL/LH/LL structure, BOS/CHoCH, support/resistance,
+  supply/demand zones, liquidity sweeps, correlation (existing); `technical.py` snapshot;
+  `mtf.py` multi-timeframe states (1m-1d) aligned on closed bars with agreement scores,
+  higher-timeframe confirmation and conflict flag.
+* Order-book analytics (spread, depth, imbalance, fill estimates):
+  `nexus_market/analytics.py`.
+* API `/analysis/technical`, `/analysis/mtf`; dashboard page Technical analysis.
+* All analysis is causal and tested for it; none of it trades by itself.
+
 ## Decision path for an entry
 
 strategy signal (validated strategies only) -> news / X / regime / cooldown gates ->

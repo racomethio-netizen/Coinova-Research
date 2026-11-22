@@ -10,7 +10,7 @@ import { ModeProvider, useMode } from "@/lib/hooks";
 export const SECTIONS: [string, [string, string][]][] = [
   ["Overview", [["/", "Overview"]]],
   ["Live Markets", [["/markets/", "Live markets"], ["/data-quality/", "Data quality"]]],
-  ["AI Analysis", [["/intelligence/", "Market analysis"], ["/proposals/", "Trade proposals"], ["/signals/", "Signals"], ["/models/", "AI models"]]],
+  ["AI Analysis", [["/intelligence/", "Market analysis"], ["/technical/", "Technical analysis"], ["/proposals/", "Trade proposals"], ["/signals/", "Signals"], ["/models/", "AI models"]]],
   ["Strategy Center", [["/strategies/", "Strategies"], ["/carry/", "Funding carry test"], ["/taker-test/", "Taker flow test"]]],
   ["Paper Trading", [["/paper/", "Paper trading"]]],
   ["Live Trading", [["/live/", "Live trading"], ["/spot/", "Spot account"], ["/futures/", "Futures account"]]],

@@ -496,3 +496,15 @@ trading on Render can use live data once background workers are approved.
 * Tested: 654 passed; storm simulation; real Binance stream verified from this environment.
 * Deployed together with Phases A and B for the 24-hour paper stability test (live off).
 * Next: collect the 24 h results (+1 h, +6 h, +12 h, +24 h) into the report.
+
+## 2026-11-22: deep upgrade Phase C (technical analysis)
+
+* Completed: `nexus_strategies/ta.py` (extended indicators), `nexus_analysis/technical.py`,
+  `nexus_analysis/mtf.py`, API `/analysis/technical` and `/analysis/mtf`, dashboard
+  Technical analysis page. Timeframe table extended to 1m-1d.
+* Tested: 693 passed; e2e 13 + 2 pre-existing failures; real BTC candles checked.
+* Not deployed yet: the 24 h Binance stability test runs on production until 16:45 UTC
+  23 Nov; a deploy now would restart the service in the middle of it. Deploy after the
+  final checkpoint.
+* Next: Phase D (machine learning: purged k-fold with embargo, multi-target labels, MTF
+  features, LightGBM/HMM/Isolation Forest, model registry).

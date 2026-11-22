@@ -4,6 +4,29 @@ How to run: `scripts/test.sh` with `NEXUS_TEST_DATABASE_URL` and `NEXUS_TEST_RED
 (Postgres and Redis test databases; integration tests are skipped without them). Browser
 tests: `scripts/e2e.sh` (see the script header).
 
+## 2026-11-22: Phase C (technical analysis, multi-timeframe)
+
+| Suite | Result |
+|---|---|
+| Lint, types (136 files) | pass |
+| Unit + integration | **693 passed**, 0 failed |
+| Browser e2e | 13 passed, 2 failed (the same pre-existing "validation results" failure) |
+| Real Binance candles (BTCUSDT 5m-1d, public data API) | snapshot and MTF states computed; values plausible (RSI, ADX, pivots, structure) |
+
+New tests (38): every new indicator and the per-timeframe state are prefix-invariant (no
+look-ahead, 22 indicators x 3 cut points); DMI, ROC, momentum, OBV, relative volume,
+historical volatility, CCI, MFI, Stochastic RSI, Keltner and Ichimoku match independent
+loop-based reference implementations; Supertrend flips on a reversal; candle shares,
+pivots and wick rejection by hand; equal highs on the confirmation bar; RSI divergence;
+breakout retest and failure; multi-timeframe alignment uses only closed bars of the other
+timeframe (exact bar checked); the MTF frame is prefix-invariant and scores stay in [-1, 1];
+conflict flag; JSON snapshots with missing history shown as missing; volatility
+annualized by bar length; API routes on stored candles.
+
+Bugs found and fixed: MFI produced its first value one bar early (counted the first bar,
+which has no direction); historical volatility was annualized as if bars were days (found
+on real BTC data: 15% shown instead of ~74% for 1h bars).
+
 ## 2026-11-22: Binance rate-limit fix (docs/BINANCE_RATE_LIMIT_REPORT.md)
 
 | Suite | Result |

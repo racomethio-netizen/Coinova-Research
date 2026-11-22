@@ -58,7 +58,8 @@ GET_ROUTES = ["/api/v1/overview", "/api/v1/portfolio", "/api/v1/exchanges", "/ap
               "/api/v1/positions", "/api/v1/orders", "/api/v1/trades", "/api/v1/performance",
               "/api/v1/strategies", "/api/v1/models", "/api/v1/risk", "/api/v1/system",
               "/api/v1/security", "/api/v1/markets/books", "/api/v1/auth/me",
-              "/api/v1/risk/state", "/api/v1/markets/data-quality", "/api/v1/system/binance"]
+              "/api/v1/risk/state", "/api/v1/markets/data-quality", "/api/v1/system/binance",
+              "/api/v1/analysis/technical", "/api/v1/analysis/mtf"]
 
 
 @pytest.mark.parametrize("path", GET_ROUTES)
@@ -553,3 +554,43 @@ def test_operating_mode_easy_to_lower_live_locked_and_ledger_needs_live_portfoli
     assert client.post("/api/v1/settings/operating-mode",
                        json={"mode": "PAPER_TRADING", "reason": "viewer try"},
                        headers=CSRF).status_code == 403
+
+
+def test_technical_analysis_routes_on_stored_candles(client: TestClient,
+                                                     migrated_engine: Engine) -> None:
+    from datetime import timedelta
+    from decimal import Decimal as D
+
+    import numpy as np
+    from nexus_common.timeutil import utcnow
+    from nexus_db import make_session_factory, repo
+
+    factory = make_session_factory(migrated_engine)
+    rng = np.random.default_rng(1)
+    with transaction(factory) as s:
+        pid = repo.upsert_trading_pair(
+            s, exchange_id=repo.exchange_id(s, "binance"), symbol="BTC/USDT",
+            exchange_symbol="BTCUSDT", base="BTC", quote="USDT", price_tick=D("0.01"),
+            amount_step=D("0.00001"), min_amount=None, min_notional=None, maker_fee=None,
+            taker_fee=None, synced_at=utcnow())
+        start = utcnow().replace(minute=0, second=0, microsecond=0) - timedelta(hours=400)
+        price, rows = 60_000.0, []
+        for i in range(400):
+            nxt = price * float(np.exp(rng.normal(0, 0.004)))
+            rows.append(repo.CandleRow(start + timedelta(hours=i), D(str(round(price, 2))),
+                                       D(str(round(max(price, nxt) * 1.001, 2))),
+                                       D(str(round(min(price, nxt) * 0.999, 2))),
+                                       D(str(round(nxt, 2))), D("10")))
+            price = nxt
+        repo.upsert_candles(s, pid, "1h", rows)
+    try:
+        login(client)
+        tech = client.get("/api/v1/analysis/technical?symbol=BTC/USDT&timeframe=1h").json()
+        assert tech["bars"] == 400 and tech["trend"]["ema_200"] is not None
+        assert tech["momentum"]["rsi"] is not None and tech["limitations"]
+        mtf = client.get("/api/v1/analysis/mtf?symbol=BTC/USDT&base=1h").json()
+        assert set(mtf["timeframes"]) == {"1h"} and "5m" in mtf["missing_timeframes"]
+        assert mtf["scores"]["trend_agreement"] is not None
+        assert client.get("/api/v1/analysis/mtf?symbol=DOGE/USDT").status_code == 404
+    finally:
+        truncate(migrated_engine, "market_candles, trading_pairs")

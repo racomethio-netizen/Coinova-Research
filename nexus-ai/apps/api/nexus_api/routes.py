@@ -6,6 +6,7 @@ Monetary values are returned as exact decimal strings. Missing data is ``null``.
 
 from __future__ import annotations
 
+import asyncio
 import json
 from decimal import Decimal
 from typing import Any, Literal
@@ -155,6 +156,70 @@ async def binance_status(redis: Any = Depends(redis_dep)) -> dict[str, Any]:
     out = await gate_status(redis)
     raw = await redis.get(STATE_KEY)
     out["websocket"] = json.loads(raw) if raw else None
+    return out
+
+
+def _frames(s: Session, exchange: str, symbol: str, tfs: tuple[str, ...],
+            limit: int = 600) -> dict[str, Any]:
+    from nexus_strategies.frames import to_frame
+
+    pid = repo.pair_id(s, exchange, symbol)
+    return {tf: to_frame(repo.load_candles(s, pid, tf, limit=limit)) for tf in tfs}
+
+
+@router.get("/analysis/technical")
+async def technical(symbol: str = "BTC/USDT", timeframe: TimeframeParam = "1h",
+                    s: Session = Depends(db), redis: Any = Depends(redis_dep),
+                    settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Indicator snapshot of the latest CLOSED bar (stored candles; nothing estimated)."""
+    from nexus_analysis.technical import technical_snapshot
+
+    key = f"nexus:analysis:technical:{symbol}:{timeframe}"
+    cached = await redis.get(key)
+    if cached:
+        return dict(json.loads(cached))
+    if symbol not in settings.trading_pairs:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"{symbol} is not a configured pair")
+    try:
+        frames = _frames(s, settings.signal_exchange, symbol, (timeframe, "1d"))
+    except LookupError:
+        return {"symbol": symbol, "timeframe": timeframe, "bars": 0,
+                "insufficient_history": True, "note": "no stored candles yet"}
+    snap = await asyncio.to_thread(technical_snapshot, frames[timeframe], frames["1d"])
+    out = {"symbol": symbol, "timeframe": timeframe, "exchange": settings.signal_exchange,
+           **snap}
+    await redis.set(key, json.dumps(out, default=str), ex=30)
+    return out
+
+
+@router.get("/analysis/mtf")
+async def multi_timeframe(symbol: str = "BTC/USDT", base: TimeframeParam = "5m",
+                          s: Session = Depends(db), redis: Any = Depends(redis_dep),
+                          settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Per-timeframe trend/momentum/volatility/structure states aligned on the base bar
+    (closed bars only) and agreement scores. Features, not trading rules."""
+    from nexus_analysis.mtf import MTF_TIMEFRAMES, mtf_snapshot
+
+    key = f"nexus:analysis:mtf:{symbol}:{base}"
+    cached = await redis.get(key)
+    if cached:
+        return dict(json.loads(cached))
+    tfs = tuple(dict.fromkeys((*MTF_TIMEFRAMES, base)))
+    if symbol not in settings.trading_pairs:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"{symbol} is not a configured pair")
+    try:
+        frames = _frames(s, settings.signal_exchange, symbol, tfs)
+    except LookupError:
+        frames = {}
+    frames = {tf: f for tf, f in frames.items() if not f.empty}
+    if base not in frames:
+        return {"symbol": symbol, "base_timeframe": base, "as_of": None, "timeframes": {},
+                "scores": {}, "note": f"no stored {base} candles yet"}
+    snap = await asyncio.to_thread(mtf_snapshot, frames, base)
+    out = {"symbol": symbol, "exchange": settings.signal_exchange, **snap,
+           "missing_timeframes": [tf for tf in MTF_TIMEFRAMES if tf not in frames],
+           "note": "Scores are inputs for validated rules, not trade signals by themselves."}
+    await redis.set(key, json.dumps(out, default=str), ex=30)
     return out
 
 

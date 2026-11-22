@@ -37,9 +37,9 @@ owner mandate; one new migration per schema change; Decimal for money.
 
 ## Phase C: technical analysis
 
-* C1 Indicators: Supertrend, Ichimoku, Stochastic RSI, CCI, ROC, OBV, MFI, Keltner, pivots,
+* C1 (done 22 Nov) Indicators: Supertrend, Ichimoku, Stochastic RSI, CCI, ROC, OBV, MFI, Keltner, pivots,
   RSI divergence, equal highs/lows. Each validated against a reference calculation in tests.
-* C2 Multi-timeframe agreement score (causal, aligned on bar close) as features.
+* C2 (done 22 Nov; feeding them to models is D1) Multi-timeframe agreement score (causal, aligned on bar close) as features.
 
 ## Phase D: machine learning (offline training)
 
