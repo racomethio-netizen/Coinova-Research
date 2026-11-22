@@ -70,8 +70,9 @@ TRAIL_TIMEFRAME = "1h"
 class BookCache:
     """Fresh REST order books (depth for fill simulation), cached a few seconds."""
 
-    def __init__(self, adapters: dict[str, ExchangeAdapter], ttl: float = 5.0) -> None:
-        self.adapters, self.ttl = adapters, ttl
+    def __init__(self, adapters: dict[str, ExchangeAdapter], ttl: float = 5.0,
+                 redis: Any = None) -> None:
+        self.adapters, self.ttl, self.redis = adapters, ttl, redis
         self._cache: dict[tuple[str, str], tuple[float, OrderBook]] = {}
 
     async def get(self, exchange: str, symbol: str) -> OrderBook | None:
@@ -79,10 +80,19 @@ class BookCache:
         hit = self._cache.get(key)
         if hit and time.monotonic() - hit[0] < self.ttl:
             return hit[1]
+        if self.redis is not None and exchange == "binance":
+            from nexus_common.binance_guard import blocked
+
+            if await blocked(self.redis, "spot") is not None:
+                return None        # Binance asked us to back off: no prices = no trading
         try:
             book = await self.adapters[exchange].fetch_order_book(symbol, depth=50)
         except ExchangeError as exc:
             log.warning("book_unavailable", exchange=exchange, symbol=symbol, error=str(exc)[:200])
+            if self.redis is not None and exchange == "binance":
+                from nexus_common.binance_guard import note_exception
+
+                await note_exception(self.redis, "spot", exc)
             return None
         if (utcnow() - book.timestamp).total_seconds() > BOOK_MAX_AGE:
             return None
@@ -907,7 +917,7 @@ async def serve(settings: Settings, stop: asyncio.Event) -> None:
         adapters = {e.value: build_from_settings(e, settings) for e in settings.enabled_exchanges}
     for a in adapters.values():
         await a.load_markets()
-    books = BookCache(adapters)
+    books = BookCache(adapters, redis=redis)
     if settings.trading_mode is TradingMode.LIVE:
         with transaction(factory) as s:
             broker: Broker = await build_live_broker(settings, s, redis, adapters)

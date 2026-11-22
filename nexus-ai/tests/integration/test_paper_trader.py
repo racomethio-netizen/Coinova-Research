@@ -697,7 +697,8 @@ async def test_forward_taker_records_trades_once_and_gaps(
              "stop": 95.0, "target": 103.0, "ret": 0.0185, "outcome": "target",
              "regime": "range"}
 
-    async def fake_load(client: Any, symbol: str, now: datetime) -> dict[str, Any]:
+    async def fake_load(client: Any, symbol: str, now: datetime,
+                        redis: Any = None) -> dict[str, Any]:
         import pandas as pd
         idx = pd.DatetimeIndex([pd.Timestamp("2026-11-23T16:00:00+00:00")])
         f = pd.DataFrame({"open": [1.0], "high": [1.0], "low": [1.0], "close": [1.0],

@@ -416,3 +416,17 @@ trading on Render can use live data once background workers are approved.
   `forward_test_events` table (migration 0009, RLS, revoked API roles, UPDATE/DELETE
   trigger); GET /research/taker-forward; page Strategy Center -> Taker flow test.
 * Tests: 572 pass.
+
+## 2026-11-22: Binance public-API bans caused partly by NEXUS; shared back-off added
+
+* Logs: spot data API 429 "6000 weight/min" at 11:33 UTC and 418 IP bans (spot and
+  futures) from 11:33 to 12:12, while market-data, derivatives, trader books, intelligence
+  and the new forward tests kept calling (each call during a ban can extend it), plus a
+  burst on every deploy restart (many deploys today). The shared Render egress IP adds
+  other customers' weight. NEXUS was a significant cause, not only the shared IP.
+* Fix: `nexus_common.binance_guard`: one Redis back-off per API (spot, futures) honouring
+  Retry-After and "banned until"; every public-data caller checks it first and records
+  refusals (derivatives, carry test, taker test, intelligence, market-data polls, trader
+  book fetches, API fallbacks). Unreadable state = do not call. Tests: 576 pass.
+* Impact on the forward tests: banned hours are recorded as gaps (never estimated) and
+  count toward their pre-registered gap limits. A dedicated-IP host remains the durable fix.

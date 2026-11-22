@@ -16,6 +16,7 @@ from typing import Any
 
 import httpx
 import pandas as pd
+from nexus_common.binance_guard import BinanceBackoff, guarded_get
 from nexus_common.logging import get_logger
 from nexus_common.timeutil import utcnow
 from nexus_strategies.library_v2 import TakerFlow
@@ -49,9 +50,9 @@ def klines_frame(rows: list[list[Any]], now: datetime) -> pd.DataFrame:
 
 
 async def _klines(client: httpx.AsyncClient, base: str, symbol: str, interval: str,
-                  limit: int) -> list[list[Any]]:
-    r = await client.get(f"{base}/klines", params={"symbol": symbol, "interval": interval,
-                                                   "limit": limit})
+                  limit: int, redis: Any = None) -> list[list[Any]]:
+    r = await guarded_get(client, redis, f"{base}/klines",
+                          {"symbol": symbol, "interval": interval, "limit": limit})
     if r.status_code == 451 or "restricted location" in r.text[:300].lower():
         raise PermissionError("Binance refuses this server's location")
     r.raise_for_status()
@@ -59,11 +60,12 @@ async def _klines(client: httpx.AsyncClient, base: str, symbol: str, interval: s
     return rows
 
 
-async def load(client: httpx.AsyncClient, symbol: str, now: datetime) -> dict[str, pd.DataFrame]:
-    m5 = klines_frame(await _klines(client, SPOT_API, symbol, "5m", 1000), now)
-    h1 = klines_frame(await _klines(client, SPOT_API, symbol, "1h", 1000), now)
-    h4 = klines_frame(await _klines(client, SPOT_API, symbol, "4h", 500), now)
-    perp = klines_frame(await _klines(client, FAPI, symbol, "1h", 1000), now)
+async def load(client: httpx.AsyncClient, symbol: str, now: datetime,
+               redis: Any = None) -> dict[str, pd.DataFrame]:
+    m5 = klines_frame(await _klines(client, SPOT_API, symbol, "5m", 1000, redis), now)
+    h1 = klines_frame(await _klines(client, SPOT_API, symbol, "1h", 1000, redis), now)
+    h4 = klines_frame(await _klines(client, SPOT_API, symbol, "4h", 500, redis), now)
+    perp = klines_frame(await _klines(client, FAPI, symbol, "1h", 1000, redis), now)
     h1["taker_buy_ratio"] = (perp["taker"] / perp["volume"].where(perp["volume"] > 0)
                              ).reindex(h1.index)
     return {"5m": m5.drop(columns="taker"), "1h": h1.drop(columns="taker"),
@@ -102,7 +104,7 @@ async def step(factory: Any, redis: Any, client: httpx.AsyncClient,
     status: dict[str, Any] = {"at": now.isoformat(), "symbols": {}}
     for sym in SYMBOLS:
         try:
-            frames = await load(client, sym, now)
+            frames = await load(client, sym, now, redis)
             done, open_ = evaluate(frames)
             new = 0
             for tr in done:
@@ -122,7 +124,8 @@ async def step(factory: Any, redis: Any, client: httpx.AsyncClient,
             status["symbols"][sym] = {"ok": True, "new_trades": new, "open": open_,
                                       "regime_now": None if regime is None else str(regime),
                                       "last_bar": frames["5m"].index[-1].isoformat()}
-        except (httpx.HTTPError, PermissionError, KeyError, ValueError, IndexError) as exc:
+        except (httpx.HTTPError, PermissionError, KeyError, ValueError, IndexError,
+                BinanceBackoff) as exc:
             reason = f"{type(exc).__name__}: {str(exc)[:200]}"
             hour = now.replace(minute=0, second=0, microsecond=0)
             try:

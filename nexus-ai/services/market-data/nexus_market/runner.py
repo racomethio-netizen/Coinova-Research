@@ -57,8 +57,26 @@ class MarketDataService:
                 self.pairs[(code, symbol)] = pid
         log.info("pairs_synced", count=len(self.pairs))
 
+    async def _paused(self) -> bool:
+        """True while Binance asked us to back off (shared with every other caller)."""
+        from nexus_common.binance_guard import blocked
+
+        until = await blocked(self.redis, "spot")
+        if until is not None:
+            log.info("binance_backoff_active", until=until.isoformat())
+        return until is not None
+
+    async def _note(self, exc: BaseException) -> None:
+        from nexus_common.binance_guard import note_exception
+
+        until = await note_exception(self.redis, "spot", exc)
+        if until is not None:
+            log.warning("binance_backoff_recorded", until=until.isoformat())
+
     async def poll_candles(self, *, initial: bool = False) -> int:
         stored = 0
+        if await self._paused():
+            return 0
         start = utcnow() - timedelta(days=self.settings.market_backfill_days)
         for (code, symbol), pid in self.pairs.items():
             for tf in self.settings.timeframes:
@@ -68,6 +86,9 @@ class MarketDataService:
                 except ExchangeError as exc:
                     log.warning("candle_poll_failed", exchange=code, symbol=symbol,
                                 timeframe=tf.value, error=str(exc)[:200])
+                    await self._note(exc)
+                    if await self._paused():
+                        return stored
                     continue
                 stored += res.stored
                 if res.stored and not initial and res.last is not None:
@@ -81,11 +102,16 @@ class MarketDataService:
         return stored
 
     async def snapshot_books(self) -> None:
+        if await self._paused():
+            return
         for (code, symbol), pid in self.pairs.items():
             try:
                 book = await self.adapters[code].fetch_order_book(symbol, depth=50)
             except ExchangeError as exc:
                 log.warning("book_snapshot_failed", exchange=code, symbol=symbol, error=str(exc))
+                await self._note(exc)
+                if await self._paused():
+                    return
                 continue
             metrics = book_metrics(book)
             if metrics is None:

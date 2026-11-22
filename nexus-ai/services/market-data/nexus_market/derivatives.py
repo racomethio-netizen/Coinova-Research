@@ -20,6 +20,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import httpx
+from nexus_common.binance_guard import BinanceBackoff
 from nexus_common.logging import get_logger
 from nexus_common.timeutil import utcnow
 
@@ -48,8 +49,11 @@ def _restricted(r: httpx.Response) -> bool:
     return r.status_code == 451 or "restricted location" in r.text[:300].lower()
 
 
-async def _get(client: httpx.AsyncClient, path: str, params: dict[str, Any]) -> Any:
-    r = await client.get(f"{FAPI}{path}", params=params)
+async def _get(client: httpx.AsyncClient, path: str, params: dict[str, Any],
+               redis: Any = None) -> Any:
+    from nexus_common.binance_guard import guarded_get
+
+    r = await guarded_get(client, redis, f"{FAPI}{path}", params)
     if _restricted(r):
         raise PermissionError("Binance refuses this server's location for futures data")
     r.raise_for_status()
@@ -92,16 +96,17 @@ def parse_snapshot(native: str, premium: dict[str, Any], oi_now: dict[str, Any],
     }
 
 
-async def fetch_snapshot(client: httpx.AsyncClient, symbol: str) -> dict[str, Any]:
+async def fetch_snapshot(client: httpx.AsyncClient, symbol: str,
+                         redis: Any = None) -> dict[str, Any]:
     native = symbol.replace("/", "")
     hp = {"symbol": native, "period": "1h", "limit": 25}
     premium, oi_now, oi_hist, acc, top, taker = await asyncio.gather(
-        _get(client, "/fapi/v1/premiumIndex", {"symbol": native}),
-        _get(client, "/fapi/v1/openInterest", {"symbol": native}),
-        _get(client, "/futures/data/openInterestHist", hp),
-        _get(client, "/futures/data/globalLongShortAccountRatio", hp),
-        _get(client, "/futures/data/topLongShortPositionRatio", hp),
-        _get(client, "/futures/data/takerlongshortRatio", hp))
+        _get(client, "/fapi/v1/premiumIndex", {"symbol": native}, redis),
+        _get(client, "/fapi/v1/openInterest", {"symbol": native}, redis),
+        _get(client, "/futures/data/openInterestHist", hp, redis),
+        _get(client, "/futures/data/globalLongShortAccountRatio", hp, redis),
+        _get(client, "/futures/data/topLongShortPositionRatio", hp, redis),
+        _get(client, "/futures/data/takerlongshortRatio", hp, redis))
     return parse_snapshot(native, premium, oi_now, oi_hist, acc, top, taker)
 
 
@@ -194,8 +199,8 @@ async def serve(settings: Any, stop: asyncio.Event, *, interval: float = 300) ->
                 for pair in settings.trading_pairs:
                     native = pair.replace("/", "")
                     try:
-                        snap = await fetch_snapshot(client, pair)
-                    except (httpx.HTTPError, PermissionError, ValueError) as exc:
+                        snap = await fetch_snapshot(client, pair, redis)
+                    except (httpx.HTTPError, PermissionError, ValueError, BinanceBackoff) as exc:
                         snap = {"symbol": native, "as_of": utcnow().isoformat(),
                                 "error": f"{type(exc).__name__}: {str(exc)[:200]}"}
                         log.warning("derivatives_fetch_failed", symbol=native,

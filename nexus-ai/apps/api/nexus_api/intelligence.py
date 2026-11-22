@@ -41,20 +41,33 @@ FUTURES_UNAVAILABLE = "futures data not fetched; not estimated"
 FAPI = "https://fapi.binance.com/fapi/v1"
 
 
-async def fetch_derivatives(client: httpx.AsyncClient, symbol: str) -> dict[str, Any]:
+async def _get(client: httpx.AsyncClient, redis: Any, url: str,
+               params: dict[str, Any]) -> httpx.Response:
+    """Binance public GET through the shared back-off (no calls while paused)."""
+    from nexus_common.binance_guard import BinanceBackoff, guarded_get
+
+    try:
+        r: httpx.Response = await guarded_get(client, redis, url, params)
+    except BinanceBackoff as exc:
+        raise httpx.HTTPError(str(exc)) from exc
+    return r
+
+
+async def fetch_derivatives(client: httpx.AsyncClient, symbol: str,
+                            redis: Any = None) -> dict[str, Any]:
     """Last funding rate and open interest (contracts) from Binance's public futures API."""
     native = symbol.replace("/", "")
     try:
-        p = await client.get(f"{FAPI}/premiumIndex", params={"symbol": native})
+        p = await _get(client, redis, f"{FAPI}/premiumIndex", {"symbol": native})
         p.raise_for_status()
-        oi = await client.get(f"{FAPI}/openInterest", params={"symbol": native})
+        oi = await _get(client, redis, f"{FAPI}/openInterest", {"symbol": native})
         oi.raise_for_status()
         return {"funding_rate": _f(p.json().get("lastFundingRate"), 8),
                 "open_interest": _f(oi.json().get("openInterest"), 3),
                 "futures_data_note": "Binance USD-M perpetual (fapi.binance.com)"}
     except httpx.HTTPError as exc:
         code = getattr(getattr(exc, "response", None), "status_code", None)
-        why = f"HTTP {code}" if code else type(exc).__name__
+        why = f"HTTP {code}" if code else (str(exc)[:120] or type(exc).__name__)
         if code == 451:
             why += ": Binance refuses this server's location"
         return {"funding_rate": None, "open_interest": None,
@@ -74,7 +87,7 @@ async def stored_or_fetched_derivatives(redis: Any, client: httpx.AsyncClient,
                 "top_traders_position_ratio", "taker_buy_sell_ratio", "liquidations")
         return {**{k: snap.get(k) for k in keep},
                 "futures_data_note": f"Binance USD-M public data, {snap.get('as_of', '')[:16]} UTC"}
-    out = await fetch_derivatives(client, symbol)
+    out = await fetch_derivatives(client, symbol, redis)
     if snap and snap.get("error"):
         out["futures_data_note"] += f"; derivatives worker: {snap['error'][:120]}"
     if snap and snap.get("liquidations"):
@@ -109,15 +122,15 @@ def klines_frame(rows: list[list[Any]], now: datetime) -> pd.DataFrame:
 
 
 async def fetch(client: httpx.AsyncClient, base: str, symbol: str,
-                now: datetime) -> tuple[dict[str, pd.DataFrame], OrderBook]:
+                now: datetime, redis: Any = None) -> tuple[dict[str, pd.DataFrame], OrderBook]:
     native = symbol.replace("/", "")
     frames: dict[str, pd.DataFrame] = {}
     for tf in ("5m", *TIMEFRAMES):
-        r = await client.get(f"{base}/klines", params={"symbol": native, "interval": tf,
-                                                       "limit": 1000})
+        r = await _get(client, redis, f"{base}/klines",
+                       {"symbol": native, "interval": tf, "limit": 1000})
         r.raise_for_status()
         frames[tf] = klines_frame(r.json(), now)
-    r = await client.get(f"{base}/depth", params={"symbol": native, "limit": 100})
+    r = await _get(client, redis, f"{base}/depth", {"symbol": native, "limit": 100})
     r.raise_for_status()
     d = r.json()
     book = OrderBook(symbol=symbol,
@@ -249,7 +262,7 @@ async def market_intelligence(pairs: list[str], base: str, *, redis: Any, news_r
         btc: dict[str, pd.DataFrame] | None = None
         for pair in sorted(pairs, key=lambda p: p != "BTC/USDT"):
             try:
-                frames, book = await fetch(client, base, pair, now)
+                frames, book = await fetch(client, base, pair, now, redis)
             except httpx.HTTPError as exc:
                 code = getattr(getattr(exc, "response", None), "status_code", None)
                 results.append({"symbol": pair, "error": f"market data unavailable "

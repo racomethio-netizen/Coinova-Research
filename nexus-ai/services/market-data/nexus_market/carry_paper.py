@@ -15,6 +15,7 @@ from decimal import Decimal
 from typing import Any
 
 import httpx
+from nexus_common.binance_guard import BinanceBackoff, guarded_get
 from nexus_common.logging import get_logger
 from nexus_common.timeutil import utcnow
 
@@ -124,9 +125,9 @@ def rebalance(leg: Leg, q: Quote) -> Decimal:
 
 
 # ------------------------------------------------------------------ data
-async def fetch_quote(client: httpx.AsyncClient, symbol: str) -> Quote:
-    s = await client.get(f"{SPOT_API}/ticker/bookTicker", params={"symbol": symbol})
-    p = await client.get(f"{FAPI}/ticker/bookTicker", params={"symbol": symbol})
+async def fetch_quote(client: httpx.AsyncClient, symbol: str, redis: Any = None) -> Quote:
+    s = await guarded_get(client, redis, f"{SPOT_API}/ticker/bookTicker", {"symbol": symbol})
+    p = await guarded_get(client, redis, f"{FAPI}/ticker/bookTicker", {"symbol": symbol})
     for r in (s, p):
         if r.status_code == 451 or "restricted location" in r.text[:300].lower():
             raise PermissionError("Binance refuses this server's location")
@@ -136,9 +137,10 @@ async def fetch_quote(client: httpx.AsyncClient, symbol: str) -> Quote:
                  Decimal(pj["bidPrice"]), Decimal(pj["askPrice"]))
 
 
-async def fetch_funding(client: httpx.AsyncClient, symbol: str, after_ms: int) -> list[dict[str, Any]]:
-    r = await client.get(f"{FAPI}/fundingRate", params={"symbol": symbol,
-                                                       "startTime": after_ms + 1, "limit": 100})
+async def fetch_funding(client: httpx.AsyncClient, symbol: str, after_ms: int,
+                        redis: Any = None) -> list[dict[str, Any]]:
+    r = await guarded_get(client, redis, f"{FAPI}/fundingRate",
+                          {"symbol": symbol, "startTime": after_ms + 1, "limit": 100})
     if r.status_code == 451 or "restricted location" in r.text[:300].lower():
         raise PermissionError("Binance refuses this server's location")
     r.raise_for_status()
@@ -181,7 +183,8 @@ class Ledger:
             return False
 
 
-async def step(ledger: Ledger, client: httpx.AsyncClient, now: datetime | None = None) -> dict[str, Any]:
+async def step(ledger: Ledger, client: httpx.AsyncClient, now: datetime | None = None,
+               redis: Any = None) -> dict[str, Any]:
     """One hourly pass: enter if needed, apply new settled funding, rebalance if outside
     the band, then record a mark. A data failure records a gap; nothing is estimated."""
     now = (now or utcnow()).replace(second=0, microsecond=0)
@@ -190,12 +193,12 @@ async def step(ledger: Ledger, client: httpx.AsyncClient, now: datetime | None =
     summary: dict[str, Any] = {}
     for sym in SYMBOLS:
         try:
-            q = await fetch_quote(client, sym)
+            q = await fetch_quote(client, sym, redis)
             leg = state.get(sym)
             if leg is None:
                 leg = enter(q, int(now.timestamp() * 1000))
                 ledger.append(sym, "entry", now, {"quote": _q(q), "state": leg.to_json()})
-            for f in await fetch_funding(client, sym, leg.last_funding_ms):
+            for f in await fetch_funding(client, sym, leg.last_funding_ms, redis):
                 at_ms = int(f["fundingTime"])
                 mark = Decimal(str(f.get("markPrice") or q.perp_mid))
                 pay = apply_funding(leg, Decimal(str(f["fundingRate"])), mark, at_ms)
@@ -210,7 +213,7 @@ async def step(ledger: Ledger, client: httpx.AsyncClient, now: datetime | None =
             ledger.append(sym, "mark", hour, {"quote": _q(q), "equity": str(eq),
                                               "state": leg.to_json()})
             summary[sym] = str(eq)
-        except (httpx.HTTPError, PermissionError, KeyError, ValueError) as exc:
+        except (httpx.HTTPError, PermissionError, KeyError, ValueError, BinanceBackoff) as exc:
             reason = f"{type(exc).__name__}: {str(exc)[:200]}"
             ledger.append(sym, "gap", hour, {"reason": reason})
             log.warning("carry_paper_gap", symbol=sym, error=reason)
@@ -224,15 +227,17 @@ def _q(q: Quote) -> dict[str, str]:
 
 
 async def serve(settings: Any, stop: asyncio.Event, *, interval: float = 3600) -> None:
+    from nexus_common.redisutil import connect as connect_redis
     from nexus_db import make_engine, make_session_factory
 
     engine = make_engine(settings.database_url.get_secret_value())
     ledger = Ledger(make_session_factory(engine))
+    redis = connect_redis(settings.redis_url.get_secret_value())
     try:
         async with httpx.AsyncClient(timeout=15, trust_env=True) as client:
             while not stop.is_set():
                 try:
-                    await step(ledger, client)
+                    await step(ledger, client, redis=redis)
                 except Exception as exc:  # keep the test running; the gap shows the failure
                     log.error("carry_paper_failed", error=f"{type(exc).__name__}: {exc}"[:300])
                 now = utcnow()
@@ -243,6 +248,7 @@ async def serve(settings: Any, stop: asyncio.Event, *, interval: float = 3600) -
                 except TimeoutError:
                     pass
     finally:
+        await redis.aclose()
         engine.dispose()
 
 

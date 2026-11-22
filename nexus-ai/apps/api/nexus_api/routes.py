@@ -127,12 +127,17 @@ async def exchanges(s: Session = Depends(db), redis: Any = Depends(redis_dep)) -
 TF_SECONDS = {"5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}
 
 
-async def _public_get(settings: Settings, path: str, params: dict[str, Any]) -> Any:
+async def _public_get(settings: Settings, path: str, params: dict[str, Any],
+                      redis: Any = None) -> Any:
     import httpx
+    from nexus_common.binance_guard import BinanceBackoff, guarded_get
 
     base = settings.binance_public_api_url or "https://api.binance.com/api/v3"
     async with httpx.AsyncClient(timeout=15, trust_env=True) as client:
-        r = await client.get(f"{base}/{path}", params=params)
+        try:
+            r = await guarded_get(client, redis, f"{base}/{path}", params)
+        except BinanceBackoff as exc:
+            raise httpx.HTTPError(str(exc)) from exc
         r.raise_for_status()
         return r.json()
 
@@ -141,6 +146,7 @@ async def _public_get(settings: Settings, path: str, params: dict[str, Any]) -> 
 async def candles(exchange: str, symbol: str,
                   timeframe: Literal["5m", "15m", "1h", "4h", "1d"] = "1h",
                   limit: int = Query(300, ge=10, le=1000), s: Session = Depends(db),
+                  redis: Any = Depends(redis_dep),
                   settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
     """Stored closed candles; for Binance, falls back to Binance's public klines (closed
     bars only) when nothing fresh is stored, e.g. while no market-data worker runs."""
@@ -163,7 +169,8 @@ async def candles(exchange: str, symbol: str,
 
     try:
         raw = await _public_get(settings, "klines", {"symbol": symbol.replace("/", ""),
-                                                     "interval": timeframe, "limit": limit + 1})
+                                                     "interval": timeframe, "limit": limit + 1},
+                                redis)
     except httpx.HTTPError as exc:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY,
                             f"Binance public data unavailable ({type(exc).__name__})") from exc
@@ -191,7 +198,7 @@ async def books(redis: Any = Depends(redis_dep),
             if data is None and ex.value == "binance":
                 try:
                     t = await _public_get(settings, "ticker/bookTicker",
-                                          {"symbol": sym.replace("/", "")})
+                                          {"symbol": sym.replace("/", "")}, redis)
                     data = {"bid": t["bidPrice"], "ask": t["askPrice"], "bid_size": t["bidQty"],
                             "ask_size": t["askQty"], "ts": utcnow().isoformat()}
                     source = "binance public API (REST)"
