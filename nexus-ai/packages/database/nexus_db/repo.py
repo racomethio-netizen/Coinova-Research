@@ -190,3 +190,14 @@ def last_risk_state(session: Session, portfolio_id: int) -> dict[str, Any] | Non
     if row is None:
         return None
     return {**(row.details or {}), "at": row.created_at.isoformat() if row.created_at else None}
+
+
+def operating_mode_db_state(session: Session) -> dict[str, Any] | None:
+    """Latest owner choice of operating mode (audit log), or None if never set."""
+    row = session.scalar(select(m.AuditLog).where(m.AuditLog.action == "operating_mode_set",
+                                                  m.AuditLog.actor.like("user:%"))
+                         .order_by(m.AuditLog.id.desc()).limit(1))
+    if row is None:
+        return None
+    return {**(row.details or {}), "actor": row.actor,
+            "at": row.created_at.isoformat() if row.created_at else None}

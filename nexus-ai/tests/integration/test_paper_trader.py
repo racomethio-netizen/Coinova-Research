@@ -21,7 +21,7 @@ from nexus_execution.brokers import PaperBroker
 from nexus_execution.trader import BookCache, TradingEngine
 from nexus_risk.kill_switch import KillSwitch
 from nexus_strategies import Signal
-from sqlalchemy import Engine, select, text
+from sqlalchemy import Engine, func, select, text
 
 from tests.exchange.fakes import FakeCcxtClient
 from tests.integration.conftest import truncate
@@ -890,3 +890,77 @@ async def test_paper_reconciliation_is_not_applicable(engine_setup: tuple[Any, .
     eng.bootstrap()
     res = await eng.reconciler.run(eng.portfolio_id)
     assert res.status.value == "not_applicable" and not res.blocks_entries
+
+
+# ---------------------------------------------------------------- Phase A3: operating modes
+def _set_mode(factory: Any, mode: str, actor: str = "user:1") -> None:
+    with transaction(factory) as s:
+        repo.record_audit(s, actor=actor, action="operating_mode_set", details={"mode": mode})
+
+
+async def test_signals_only_mode_records_verdict_without_orders(
+        engine_setup: tuple[Any, ...]) -> None:
+    eng, factory, _, _ = engine_setup
+    eng.bootstrap()
+    _set_mode(factory, "SIGNALS_ONLY")
+    await eng.cycle()
+    assert eng.operating_mode.value == "SIGNALS_ONLY"
+    await eng.handle_signal(1, signal(), await eng.valuation(), D(10_000), D(10_000), D(10_000))
+    status, reason = await _decision(factory)
+    assert status == "approved" and reason.startswith("SIGNALS_ONLY: passed all checks")
+    with transaction(factory) as s:
+        assert s.scalar(select(func.count()).select_from(models.Order)) == 0
+
+
+async def test_analysis_only_mode_does_not_evaluate_entries_and_bad_values_fail_closed(
+        engine_setup: tuple[Any, ...]) -> None:
+    eng, factory, _, redis = engine_setup
+    eng.bootstrap()
+    from nexus_common.botstate import BotState, set_state
+
+    await set_state(redis, BotState.RUNNING, actor="user:1", reason="test")
+    calls: list[int] = []
+
+    async def spy(*_: Any) -> None:
+        calls.append(1)
+
+    eng.evaluate_entries = spy  # type: ignore[method-assign]
+    await eng.cycle()
+    assert calls == [1]                                    # default PAPER_TRADING evaluates
+    _set_mode(factory, "ANALYSIS_ONLY")
+    await eng.cycle()
+    assert calls == [1] and eng.operating_mode.value == "ANALYSIS_ONLY"
+    _set_mode(factory, "PAPER_TRADING", actor="system:x")  # not the owner: ignored
+    await eng.cycle()
+    assert calls == [1]
+    _set_mode(factory, "bogus")                            # unrecognised: fail closed
+    await eng.cycle()
+    assert calls == [1] and eng.operating_mode.value == "ANALYSIS_ONLY"
+
+
+async def test_crash_between_submit_and_record_in_trader_cycle_recovers(
+        engine_setup: tuple[Any, ...]) -> None:
+    """End to end on the paper broker: a placed order left pending_submit by a crash is
+    recovered by a fresh trader without placing it twice."""
+    eng, factory, _, redis = engine_setup
+    eng.bootstrap()
+    original = eng.orders._apply
+
+    def crash(*_: Any) -> None:
+        raise RuntimeError("killed")
+
+    eng.orders._apply = crash  # type: ignore[method-assign]
+    with pytest.raises(RuntimeError):
+        await eng.handle_signal(1, signal(), await eng.valuation(), D(10_000), D(10_000),
+                                D(10_000))
+    eng.orders._apply = original  # type: ignore[method-assign]
+    with transaction(factory) as s:
+        s.execute(text("UPDATE orders SET created_at = now() - interval '5 minutes'"))
+    fresh = TradingEngine(eng.settings, factory, redis, eng.adapters, eng.broker, eng.books)
+    fresh._market_data_stale = lambda: False  # type: ignore[method-assign]
+    fresh.bootstrap()
+    await fresh.cycle()
+    with transaction(factory) as s:
+        orders = s.scalars(select(models.Order)).all()
+        assert len(orders) == 1 and orders[0].status == "filled"
+        assert s.scalar(select(func.count()).select_from(models.Trade)) >= 1

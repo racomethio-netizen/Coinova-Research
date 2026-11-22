@@ -272,3 +272,143 @@ async def test_live_gate(factory: sessionmaker[Session]) -> None:
             ok_settings, s, redis, ["binance"])
     assert GATE_TOKEN is not None
     _ = timedelta
+
+
+# ---------------------------------------------------------------- Phase A6: restarts
+def _age_orders(f: sessionmaker[Session], minutes: int = 5) -> None:
+    with transaction(f) as s:
+        s.execute(text("UPDATE orders SET created_at = now() - make_interval(mins => :m)"),
+                  {"m": minutes})
+
+
+async def test_crash_after_submit_before_recording_is_recovered_by_client_id(
+        factory: sessionmaker[Session]) -> None:
+    """The exchange accepted and filled the order, then the process died before the
+    answer was stored. After restart: looked up by client order ID, fills applied once,
+    never resubmitted."""
+    b = ScriptedBroker()
+    b.submit_result = BrokerUpdate(OrderStatus.FILLED, "X1", (fill("t1", "60000", "0.1", "6"),))
+    om = OrderManager(factory, b)
+
+    def crash(*_: Any) -> None:
+        raise RuntimeError("process killed")
+
+    om._apply = crash  # type: ignore[method-assign]
+    with pytest.raises(RuntimeError):
+        await om.place(intent(factory))
+    oid = int(order_ids(factory)[0])
+    assert order(factory, oid).status == "pending_submit"
+    # Restart: a fresh manager. A recent pending order is left alone (could be in flight).
+    fresh = OrderManager(factory, b, settle_seconds=60)
+    assert await fresh.recover_pending() == 0
+    _age_orders(factory)
+    assert await fresh.recover_pending() == 1
+    assert order(factory, oid).status == "unknown"
+    b.find_result = b.submit_result
+    assert await fresh.reconcile_unknown() == 1
+    await fresh.reconcile_unknown()                       # idempotent
+    o = order(factory, oid)
+    assert o.status == "filled" and len(b.submits) == 1
+    with transaction(factory) as s:
+        assert s.scalar(select(func.count()).select_from(models.Trade)) == 1
+        pos = s.scalar(select(models.Position))
+        assert pos is not None and pos.quantity == D("0.1")
+    assert balances(factory)["BTC"] == (D("0.1"), D(0))
+
+
+async def test_crash_before_submit_is_rejected_and_funds_released(
+        factory: sessionmaker[Session]) -> None:
+    """The intent was saved but the process died before anything was sent: after the
+    settle delay the exchange has no such order, so it is rejected and the reserve freed."""
+    b = ScriptedBroker()
+    b.submit_result = RuntimeError("process killed")
+    om = OrderManager(factory, b, settle_seconds=60)
+    with pytest.raises(RuntimeError):
+        await om.place(intent(factory))
+    oid = int(order_ids(factory)[0])
+    assert balances(factory)["USDT"][1] > 0                  # still reserved
+    _age_orders(factory)
+    await om.recover_pending()
+    b.find_result = None
+    await om.reconcile_unknown()
+    assert order(factory, oid).status == "rejected" and len(b.submits) == 1
+    assert balances(factory)["USDT"] == (D(10_000), D(0))
+    # The pair is free again (the stuck order no longer blocks new entries).
+    b.submit_result = BrokerUpdate(OrderStatus.OPEN, "X2")
+    await om.place(intent(factory))
+
+
+async def test_failure_inside_fill_application_leaves_no_partial_state(
+        factory: sessionmaker[Session]) -> None:
+    """Fill, ledger and position are one transaction: a failure in the middle writes
+    nothing, and the next refresh applies the fill exactly once."""
+    b = ScriptedBroker()
+    om = OrderManager(factory, b)
+    oid = await om.place(intent(factory))                  # open, no fills
+    before = balances(factory)
+    original = om._update_position
+    calls = {"n": 0}
+
+    def flaky(*a: Any, **kw: Any) -> Any:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("crash between fill and position update")
+        return original(*a, **kw)
+
+    om._update_position = flaky  # type: ignore[method-assign]
+    b.refresh_result = BrokerUpdate(OrderStatus.FILLED, "X1", (fill("t1", "60000", "0.1"),))
+    with pytest.raises(RuntimeError):
+        await om.refresh_open()
+    with transaction(factory) as s:
+        assert s.scalar(select(func.count()).select_from(models.Trade)) == 0
+        assert s.scalar(select(models.Position)) is None
+    assert balances(factory) == before
+    await om.refresh_open()
+    with transaction(factory) as s:
+        assert s.scalar(select(func.count()).select_from(models.Trade)) == 1
+    assert order(factory, oid).status == "filled"
+
+
+def order_ids(f: sessionmaker[Session]) -> list[int]:
+    with transaction(f) as s:
+        return list(s.scalars(select(models.Order.id).order_by(models.Order.id)))
+
+
+# ---------------------------------------------------------------- Phase A3: live ledger
+def _live_portfolio(f: sessionmaker[Session], reported_free: D, age_min: int = 0) -> int:
+    with transaction(f) as s:
+        uid = s.scalar(select(models.User.id))
+        p = models.Portfolio(user_id=uid, name="main", mode="live")
+        s.add(p)
+        s.flush()
+        s.add(models.Balance(portfolio_id=p.id, mode="live",
+                             exchange_id=repo.exchange_id(s, "binance"), asset="USDT",
+                             free=reported_free, locked=D(0), source="exchange",
+                             synced_at=utcnow() - timedelta(minutes=age_min)))
+        return int(p.id)
+
+
+def test_live_ledger_funding_is_bounded_by_the_exchange_report(
+        factory: sessionmaker[Session]) -> None:
+    from nexus_execution.order_manager import fund_live_ledger
+
+    live = _live_portfolio(factory, D(100))
+    with transaction(factory) as s:
+        ex = repo.exchange_id(s, "binance")
+        assert fund_live_ledger(s, live, ex, "USDT", D(60)) == D(60)
+    with transaction(factory) as s, pytest.raises(ValueError, match="at most 40"):
+        fund_live_ledger(s, live, ex, "USDT", D(50))
+    with transaction(factory) as s:
+        assert fund_live_ledger(s, live, ex, "USDT", D(40)) == D(100)
+    with transaction(factory) as s, pytest.raises(PermissionError):
+        fund_live_ledger(s, pid(factory), ex, "USDT", D(1))      # a paper portfolio
+    with transaction(factory) as s, pytest.raises(ValueError, match="positive"):
+        fund_live_ledger(s, live, ex, "USDT", D(0))
+
+
+def test_live_ledger_funding_refuses_a_stale_report(factory: sessionmaker[Session]) -> None:
+    from nexus_execution.order_manager import fund_live_ledger
+
+    live = _live_portfolio(factory, D(100), age_min=30)
+    with transaction(factory) as s, pytest.raises(ValueError, match="no recent"):
+        fund_live_ledger(s, live, repo.exchange_id(s, "binance"), "USDT", D(10))

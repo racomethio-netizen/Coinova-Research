@@ -7,6 +7,7 @@ Monetary values are returned as exact decimal strings. Missing data is ``null``.
 from __future__ import annotations
 
 import json
+from decimal import Decimal
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -555,6 +556,124 @@ async def set_risk_floor(body: RiskFloorBody, s: Session = Depends(db),
                                "previous": current.value, "reason": body.reason})
     return {"mode": body.mode, "owner_floor": target.value,
             "note": "Applied by the trader on its next cycle (about 30 s)."}
+
+
+LIVE_MODE_PHRASE = "ENABLE LIVE AUTONOMOUS TRADING"
+FUND_PHRASE = "FUND LIVE LEDGER"
+
+
+class OperatingModeBody(BaseModel):
+    mode: Literal["ANALYSIS_ONLY", "SIGNALS_ONLY", "PAPER_TRADING", "LIVE_AUTONOMOUS"]
+    reason: str = Field(min_length=5, max_length=500)
+    confirm: str | None = Field(default=None, max_length=64)
+    totp: str | None = Field(default=None, max_length=6)
+
+
+async def _live_mode_blockers(s: Session, redis: Any, settings: Settings) -> list[str]:
+    """Everything that must hold before LIVE_AUTONOMOUS can be selected."""
+    from nexus_execution.live_gate import live_gate_problems
+    from nexus_execution.reconcile import STATUS_KEY
+    from nexus_execution.trader import RISK_STATE_KEY
+
+    problems = await live_gate_problems(settings, s, redis,
+                                        [e.value for e in settings.enabled_exchanges])
+    recon = await redis.get(STATUS_KEY.format(mode="live"))
+    if recon is None:
+        problems.append("no live balance reconciliation yet (live trader not running)")
+    elif json.loads(recon).get("status") != "ok":
+        problems.append(f"live balance reconciliation is {json.loads(recon).get('status')}")
+    risk = await redis.get(RISK_STATE_KEY.format(mode="live"))
+    if risk is None:
+        problems.append("live risk state not reported yet")
+    elif not json.loads(risk).get("entries_allowed"):
+        problems.append(f"live risk state is {json.loads(risk).get('state')}")
+    validated = [st for st in s.scalars(select(models.Strategy).where(models.Strategy.is_enabled))
+                 if ((st.parameters or {}).get("validation") or {}).get("passed")]
+    if not validated:
+        problems.append("no enabled strategy has passed validation")
+    port = s.scalar(select(models.Portfolio.id).where(models.Portfolio.mode == "live",
+                                                      models.Portfolio.name == "main"))
+    funded = port and s.scalar(select(func.count()).select_from(models.Balance).where(
+        models.Balance.portfolio_id == port, models.Balance.source == "internal",
+        models.Balance.free + models.Balance.locked > 0))
+    if not funded:
+        problems.append("live ledger has no funds (confirm a starting balance first)")
+    return problems
+
+
+@router.get("/settings/operating-mode", dependencies=[Depends(owner)])
+async def get_operating_mode(s: Session = Depends(db), redis: Any = Depends(redis_dep),
+                             settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    from nexus_common.opmode import OperatingMode, parse, places_orders
+
+    row = repo.operating_mode_db_state(s)
+    op = parse(row.get("mode") if row else None)
+    return {"mode": op.value, "set_by": row.get("actor") if row else None,
+            "at": row.get("at") if row else None, "reason": row.get("reason") if row else None,
+            "server_trading_mode": settings.trading_mode.value,
+            "paper_orders": places_orders(op, "paper"), "live_orders": places_orders(op, "live"),
+            "modes": [m.value for m in OperatingMode],
+            "live_blockers": await _live_mode_blockers(s, redis, settings),
+            "live_confirm_phrase": LIVE_MODE_PHRASE}
+
+
+@router.post("/settings/operating-mode", dependencies=[Depends(owner)])
+async def set_operating_mode(body: OperatingModeBody, s: Session = Depends(db),
+                             redis: Any = Depends(redis_dep),
+                             viewer: Viewer = Depends(current_viewer),
+                             settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Switching to a less active mode is always allowed. LIVE_AUTONOMOUS needs the exact
+    phrase, 2FA and every live gate passing (it is refused today by design)."""
+    from nexus_common.opmode import AUDIT_ACTION, OperatingMode
+
+    if body.mode == OperatingMode.LIVE_AUTONOMOUS.value:
+        if body.confirm != LIVE_MODE_PHRASE:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"type exactly: {LIVE_MODE_PHRASE}")
+        await check_totp(viewer, body.totp, settings, redis)
+        blockers = await _live_mode_blockers(s, redis, settings)
+        if blockers:
+            raise HTTPException(status.HTTP_409_CONFLICT,
+                                "live autonomous trading not permitted: " + "; ".join(blockers))
+    previous = repo.operating_mode_db_state(s)
+    repo.record_audit(s, actor=viewer.actor, action=AUDIT_ACTION, user_id=viewer.user.id,
+                      details={"mode": body.mode, "reason": body.reason,
+                               "previous": previous.get("mode") if previous else None})
+    return {"mode": body.mode, "note": "Applied by the trader on its next cycle (about 30 s)."}
+
+
+class FundLiveBody(BaseModel):
+    amount: Decimal = Field(gt=0)
+    asset: str = Field(default="USDT", pattern=r"^[A-Z0-9]{2,10}$")
+    confirm: str = Field(max_length=64)
+    totp: str | None = Field(default=None, max_length=6)
+
+
+@router.post("/live/ledger/fund", dependencies=[Depends(owner)])
+async def fund_live(body: FundLiveBody, s: Session = Depends(db), redis: Any = Depends(redis_dep),
+                    viewer: Viewer = Depends(current_viewer),
+                    settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Let the live trader manage part of the USDT that Binance reports as free. Bounded by
+    the latest reconciled exchange report; moves nothing on the exchange."""
+    from nexus_execution.order_manager import fund_live_ledger
+
+    if body.confirm != FUND_PHRASE:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"type exactly: {FUND_PHRASE}")
+    await check_totp(viewer, body.totp, settings, redis)
+    port = s.scalar(select(models.Portfolio.id).where(models.Portfolio.mode == "live",
+                                                      models.Portfolio.name == "main"))
+    if port is None:
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            "no live portfolio yet: the live trader creates it on first start")
+    try:
+        total = fund_live_ledger(s, port, repo.exchange_id(s, "binance"), body.asset,
+                                 body.amount)
+    except (ValueError, PermissionError) as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    repo.record_audit(s, actor=viewer.actor, action="live_ledger_funded", user_id=viewer.user.id,
+                      target_type="portfolio", target_id=str(port),
+                      details={"asset": body.asset, "amount": str(body.amount),
+                               "ledger_total": str(total)})
+    return {"asset": body.asset, "ledger_total": str(total)}
 
 
 class CredentialBody(BaseModel):

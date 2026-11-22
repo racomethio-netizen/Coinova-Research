@@ -77,3 +77,59 @@ def test_note_exception_from_ccxt_style_message() -> None:
     until = asyncio.run(note_exception(r, "spot", exc))
     assert until is not None and asyncio.run(blocked(r, "spot")) is not None
     assert asyncio.run(note_exception(R(), "spot", Exception("network error"))) is None
+
+
+# ---------------------------------------------------------------- request-weight budget
+def test_used_weight_reads_the_header_in_any_case() -> None:
+    from nexus_common.binance_guard import used_weight
+
+    assert used_weight({"X-MBX-USED-WEIGHT-1M": "1234"}) == 1234
+    assert used_weight({"x-mbx-used-weight-1m": "7"}) == 7
+    assert used_weight({"other": "1"}) is None and used_weight(None) is None
+    assert used_weight({"x-mbx-used-weight-1m": "n/a"}) is None
+
+
+async def test_weight_budget_pauses_every_caller_until_next_minute() -> None:
+    from nexus_common.binance_guard import note_weight, weight_status
+
+    r = R()
+    now = datetime(2026, 11, 22, 12, 0, 30, tzinfo=UTC)
+    assert await note_weight(r, "spot", 3000, now) is None           # 50%: warning only
+    assert await note_weight(r, "spot", 4700, now) is None           # below 80%
+    until = await note_weight(r, "spot", 4800, now)                  # 80% of 6000
+    assert until == datetime(2026, 11, 22, 12, 1, 1, tzinfo=UTC)
+    assert "spot" in "".join(r.kv)                                    # back-off recorded
+    assert await note_weight(r, "futures", 1920, now) is not None    # 80% of 2400
+    assert (await weight_status(r))["spot"] == {"used": 4800, "limit": 6000}
+    assert await note_weight(r, "spot", None, now) is None
+
+
+async def test_guarded_get_records_weight_from_headers() -> None:
+    from nexus_common.binance_guard import weight_status
+
+    r = R()
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={}, headers={"X-MBX-USED-WEIGHT-1M": "4900"})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as c:
+        await guarded_get(c, r, "https://data-api.binance.vision/api/v3/klines", {})
+    assert (await weight_status(r))["spot"]["used"] == 4900
+    assert await blocked(r, "spot") is not None                       # paused at 80%+
+
+
+async def test_ccxt_adapter_reports_weight_to_its_hook() -> None:
+    from nexus_common.binance_guard import attach_weight_hooks, weight_status
+    from nexus_config import ExchangeCode
+    from nexus_exchange import CAPABILITIES
+    from nexus_exchange.ccxt_adapter import CcxtSpotAdapter
+
+    from tests.exchange.fakes import FakeCcxtClient
+
+    client = FakeCcxtClient()
+    client.last_response_headers = {"x-mbx-used-weight-1m": "120"}
+    adapter = CcxtSpotAdapter("binance", client, CAPABILITIES[ExchangeCode.BINANCE])
+    r = R()
+    assert attach_weight_hooks({"binance": adapter, "kraken": object()}, r) == 1
+    await adapter.load_markets()
+    assert (await weight_status(r))["spot"]["used"] == 120

@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import gc
 import json
+import logging
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import replace
@@ -234,6 +235,9 @@ class CcxtSpotAdapter(ExchangeAdapter):
         # thousands of markets (~100 MB per client); NEXUS uses a handful.
         self.keep_symbols = keep_symbols
         self.excluded_markets: dict[str, str] = {}
+        # Called with Binance's used request weight after each call (set by the owner of
+        # the adapter, e.g. to feed nexus_common.binance_guard.note_weight).
+        self.weight_hook: Callable[[int], Awaitable[None]] | None = None
 
     def ccxt_markets(self) -> list[dict[str, Any]]:
         """Loaded raw ccxt markets, for seeding another client (e.g. a stream client)."""
@@ -247,7 +251,7 @@ class CcxtSpotAdapter(ExchangeAdapter):
         client_order_id: str | None = None, **kwargs: Any,
     ) -> T:
         try:
-            return await fn(*args, **kwargs)
+            result = await fn(*args, **kwargs)
         except ExchangeError:
             raise
         except asyncio.CancelledError:
@@ -259,6 +263,21 @@ class CcxtSpotAdapter(ExchangeAdapter):
         except Exception as exc:
             raise map_ccxt_error(exc, exchange=self.code, during_submit=during_submit,
                                  client_order_id=client_order_id) from exc
+        await self._report_weight()
+        return result
+
+    async def _report_weight(self) -> None:
+        if self.weight_hook is None:
+            return
+        from nexus_common.binance_guard import used_weight
+
+        used = used_weight(getattr(self._client, "last_response_headers", None))
+        if used is not None:
+            try:
+                await self.weight_hook(used)
+            except Exception as exc:  # monitoring must never break a call
+                logging.getLogger("nexus.exchange").warning("weight_hook_failed: %s",
+                                                            type(exc).__name__)
 
     # ---------------------------------------------------------------- metadata
     async def load_markets(self, *, reload: bool = False) -> dict[str, MarketRules]:

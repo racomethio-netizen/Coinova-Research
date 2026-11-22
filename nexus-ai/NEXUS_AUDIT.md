@@ -119,3 +119,9 @@ are fixed). Every statement below was checked today unless marked *not verified*
   are built and tested (NEXUS_TEST_REPORT.md). Found while building it: the live internal
   ledger starts empty, so a live trader could not buy anything until an owner-confirmed
   starting balance exists (added to plan item A3).
+* 2026-11-22 (Phase A complete in code): four operating modes, live ledger funding
+  (owner-confirmed, bounded by Binance's report), Binance request-weight budget, recovery of
+  orders interrupted mid-submission (a real gap: they stayed `pending_submit` forever), and
+  the least-privilege database role prepared. Production check: the `nexus_app` role does
+  not exist on Supabase yet, and RLS without policies would have locked it out (fixed by
+  migration 0010 + scripts/grant_app_role.sql). Switching is an owner step.

@@ -102,6 +102,36 @@ def fund_paper_portfolio(s: Session, portfolio_id: int, exchange_id: int, asset:
     row.free += amount
 
 
+def fund_live_ledger(s: Session, portfolio_id: int, exchange_id: int, asset: str,
+                     amount: Decimal, *, max_report_age: timedelta = timedelta(minutes=10)
+                     ) -> Decimal:
+    """Owner-confirmed: let a LIVE portfolio manage ``amount`` of ``asset`` that Binance
+    REPORTS as free in the account. Bounded by the latest exchange report (written by the
+    reconciler, at most ``max_report_age`` old): the ledger can never claim more than the
+    exchange holds. Returns the new internal total. Never moves funds on the exchange."""
+    p = s.get(models.Portfolio, portfolio_id)
+    if p is None or p.mode != "live":
+        raise PermissionError("only a live portfolio's ledger is funded from the exchange")
+    if amount <= 0:
+        raise ValueError("amount must be positive")
+    report = s.scalar(select(models.Balance).where(
+        models.Balance.portfolio_id == portfolio_id, models.Balance.exchange_id == exchange_id,
+        models.Balance.asset == asset, models.Balance.source == "exchange"))
+    if report is None or utcnow() - report.synced_at > max_report_age:
+        raise ValueError("no recent exchange balance report: the live trader reconciles "
+                         "balances every minute; wait for a fresh check")
+    row = _balance_row(s, portfolio_id, "live", exchange_id, asset)
+    if row.free + row.locked + amount > report.free + report.locked:
+        raise ValueError(f"the exchange reports {report.free} {asset} free; NEXUS already "
+                         f"manages {row.free + row.locked}: at most "
+                         f"{report.free + report.locked - row.free - row.locked} more")
+    if amount > report.free:
+        raise ValueError(f"only {report.free} {asset} is free on the exchange")
+    row.free += amount
+    row.synced_at = utcnow()
+    return row.free + row.locked
+
+
 # ---------------------------------------------------------------------- manager
 class OrderManager:
     def __init__(self, factory: sessionmaker[Session], broker: Broker, *, redis: Any = None,
@@ -312,6 +342,22 @@ class OrderManager:
                 log.warning("order_refresh_failed", order_id=r["id"], error=str(exc)[:200])
                 continue
             await asyncio.to_thread(self._apply, r["id"], update, False)
+        return len(rows)
+
+    async def recover_pending(self, older_than: timedelta = timedelta(minutes=2)) -> int:
+        """Orders still ``pending_submit`` after ``older_than`` were interrupted (a crash or
+        restart between saving the intent and recording the exchange's answer). They may
+        or may not have reached the exchange, so they become ``unknown`` and are resolved
+        by client order ID like any other unknown order. Never resubmitted."""
+        cutoff = utcnow() - older_than
+        rows = [r for r in await asyncio.to_thread(self._load, ("pending_submit",))
+                if r["created_at"] < cutoff]
+        for r in rows:
+            await asyncio.to_thread(self._mark_unknown, r["id"],
+                                    "interrupted before the exchange's answer was recorded")
+            await self._notify({"type": "order_state_unknown", "order_id": r["id"],
+                                "client_order_id": r["client_order_id"],
+                                "mode": self.broker.mode})
         return len(rows)
 
     async def reconcile_unknown(self) -> int:

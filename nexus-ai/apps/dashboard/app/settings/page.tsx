@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Badge, Card, Loading, PageHeader } from "@/components/ui";
 import { pct } from "@/lib/format";
 import { useApi } from "@/lib/hooks";
+import { OperatingModeCard } from "@/components/opmode";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
@@ -23,6 +24,7 @@ export default function SettingsPage() {
     <>
       <PageHeader title="Settings" subtitle="Effective configuration, read-only. No secrets are shown. Absolute risk ceilings can never be exceeded." />
       <Loading error={error} loading={loading && !data} />
+      <div className="mb-4"><OperatingModeCard /></div>
       {data && (
         <div className="space-y-4">
           <p className="rounded-lg border border-line bg-elevated p-3 text-xs text-muted">{data.how_to_change}</p>

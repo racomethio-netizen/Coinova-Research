@@ -1,7 +1,8 @@
 """Trading engine (paper or live; the broker decides). ``python -m nexus_execution.trader``
 
 Cycle (every ``interval`` seconds):
-1. Order maintenance: reconcile unknown orders, refresh open orders, cancel stale entries.
+1. Order maintenance: recover interrupted submissions, reconcile unknown orders, refresh open
+   orders, cancel stale entries.
 2. Exits for open positions: stop-loss / take-profit against the live bid.
 3. Valuation + performance snapshot; drawdown shutdown engages the kill switch.
 4. Entries: latest CLOSED-bar signals from ENABLED (validated) strategies only ->
@@ -25,6 +26,8 @@ from typing import Any
 from nexus_common import events
 from nexus_common.decimals import ZERO, floor_to_step
 from nexus_common.logging import configure_logging, get_logger
+from nexus_common.opmode import OperatingMode, places_orders, records_signals
+from nexus_common.opmode import parse as parse_opmode
 from nexus_common.redisutil import connect as connect_redis
 from nexus_common.timeutil import utcnow
 from nexus_config import Settings, TradingMode, get_settings
@@ -154,6 +157,7 @@ class TradingEngine:
         self.reconciler = BalanceReconciler(factory, redis, self.mode, adapters)
         self.risk_status = RiskStatus(RiskState.NORMAL, (), Decimal(1))
         self._recorded_state: str | None = None
+        self.operating_mode = parse_opmode(None)
 
     # ------------------------------------------------------------------ bootstrap
     def bootstrap(self) -> int:
@@ -497,6 +501,12 @@ class TradingEngine:
             return
         price = floor_to_step(entry * (1 + self.settings.paper_slippage_bps / 10_000),
                               rules.price_tick)
+        if not places_orders(self.operating_mode, self.mode):
+            # Passed every check; recorded as approved, deliberately not executed.
+            await self._decide(sig, signal_id, "approved",
+                               f"{self.operating_mode.value}: passed all checks, not executed "
+                               f"(would buy {sizing.quantity} at {price} on {venue.exchange})")
+            return
         try:
             order_id = await self.orders.place(OrderIntent(
                 portfolio_id=self.portfolio_id or 0, mode=self.mode, exchange=venue.exchange,
@@ -869,6 +879,7 @@ class TradingEngine:
 
     async def cycle(self) -> None:
         await self._sync_kill_switch()
+        await self.orders.recover_pending()
         await self.orders.reconcile_unknown()
         await self.orders.refresh_open()
         await self.orders.cancel_stale(timedelta(minutes=5))
@@ -901,10 +912,13 @@ class TradingEngine:
         from nexus_common.botstate import BotState, get_state
 
         state = await get_state(self.redis)
-        if state is BotState.RUNNING and entries_allowed(status.state):
+        self.operating_mode = self._read_operating_mode()
+        if (state is BotState.RUNNING and entries_allowed(status.state)
+                and records_signals(self.operating_mode)):
             await self.evaluate_entries(v, day0, week0, peak)
         else:
-            log.info("entries_paused", state=state.value, risk_state=status.state.value)
+            log.info("entries_paused", state=state.value, risk_state=status.state.value,
+                     operating_mode=self.operating_mode.value)
         await self.redis.set(events.heartbeat_key(f"trader:{self.mode}"), utcnow().isoformat(),
                              ex=300)
 
@@ -928,6 +942,16 @@ class TradingEngine:
                 if newest is None or now - (newest + timedelta(minutes=5)) > DATA_STALE_AFTER:
                     return True
         return False
+
+    def _read_operating_mode(self) -> OperatingMode:
+        """Owner's operating mode from the audit log; unreadable = ANALYSIS_ONLY."""
+        try:
+            with transaction(self.factory) as s:
+                row = repo.operating_mode_db_state(s)
+        except Exception as exc:
+            log.error("operating_mode_unreadable", error=type(exc).__name__)
+            return OperatingMode.ANALYSIS_ONLY
+        return parse_opmode(row.get("mode") if row else None)
 
     def _owner_floor(self) -> RiskState:
         """Owner's minimum state from the audit log; unreadable = NO_NEW_TRADES."""
@@ -1031,6 +1055,9 @@ async def serve(settings: Settings, stop: asyncio.Event) -> None:
             adapters = credentialed_adapters(settings, s)
     else:
         adapters = {e.value: build_from_settings(e, settings) for e in settings.enabled_exchanges}
+    from nexus_common.binance_guard import attach_weight_hooks
+
+    attach_weight_hooks(adapters, redis)
     for a in adapters.values():
         await a.load_markets()
     books = BookCache(adapters, redis=redis)

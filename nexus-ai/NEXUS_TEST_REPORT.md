@@ -4,6 +4,44 @@ How to run: `scripts/test.sh` with `NEXUS_TEST_DATABASE_URL` and `NEXUS_TEST_RED
 (Postgres and Redis test databases; integration tests are skipped without them). Browser
 tests: `scripts/e2e.sh` (see the script header).
 
+## 2026-11-22: deep upgrade Phase A (A3 modes, A4 database role, A5 weight budget, A6 restarts)
+
+| Suite | Result |
+|---|---|
+| Lint (ruff), types (mypy strict, 131 files), `alembic check` | pass |
+| Unit + integration + security + exchange fakes | **624 passed**, 0 failed (28 deselected: real-key exchange tests) |
+| Dashboard typecheck | pass |
+| Browser e2e (desktop + 360 px) | 13 passed, 2 failed: the same pre-existing "validation results are shown honestly" failure (no AI-model rows in the e2e database) |
+
+New tests this step (18):
+
+* A6 restarts (`integration/test_execution.py`): crash after the exchange accepted and
+  filled an order but before the answer was stored (recovered by client order ID, fills
+  applied once, never resubmitted); crash before anything was sent (rejected after the
+  settle delay, funds released, the pair unblocked); failure in the middle of applying a
+  fill (nothing partial written; the next refresh applies it once). End to end in the
+  trader: `integration/test_paper_trader.py::test_crash_between_submit_and_record_in_trader_cycle_recovers`.
+* A3 modes: `unit/test_opmode.py` (which trader may place orders; fail-closed parsing);
+  trader tests for SIGNALS_ONLY (verdict recorded, no order) and ANALYSIS_ONLY (no entry
+  evaluation; a non-owner or unrecognised value cannot enable trading); API test (lowering
+  is easy; LIVE_AUTONOMOUS needs the phrase, 2FA and every gate, and is refused today).
+* A3 live ledger: funding is bounded by the latest exchange report, refuses stale reports,
+  paper portfolios and non-positive amounts; the API refuses without a live portfolio.
+* A5 weight budget (`unit/test_binance_guard.py`): header parsing, warning at 50%, pause
+  until the next minute at 80% (spot 6000, futures 2400), weight recorded from httpx
+  responses and from the ccxt adapter hook.
+* A4 database role (`integration/test_db_roles.py`): the grant script is idempotent, keeps
+  the audit log and research ledgers append-only, and `nexus_app` can write RLS-protected
+  tables after migration 0010.
+
+Bugs found and fixed by these tests:
+
+* Orders interrupted between saving and the exchange's answer stayed `pending_submit`
+  forever (blocking the pair and locking funds). Now recovered every cycle.
+* Row-level security without policies locked the least-privilege role out of the research
+  ledgers (and would lock it out of every table on Supabase). Migration 0010 adds policies
+  for `nexus_app` only.
+
 ## 2026-11-22: deep upgrade Phase A (A1 balance reconciliation, A2 risk states)
 
 | Suite | Result |

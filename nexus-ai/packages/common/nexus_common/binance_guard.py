@@ -4,6 +4,11 @@ Binance escalates IP bans when requests keep coming during a 429/418. Every work
 API check ``blocked`` before calling Binance and ``record`` what Binance said after a
 refusal, so one refusal pauses ALL callers of that API until the stated time. The state is
 in Redis; if Redis is unreachable callers treat the API as blocked (fail closed).
+
+Request-weight budget: Binance reports the weight used by this IP in the current minute
+(``X-MBX-USED-WEIGHT-1M``). At 50% of the limit a warning is logged; at 80% every caller
+pauses until the next minute starts, so NEXUS never reaches the limit itself. The IP is
+shared on free hosting, so other tenants' usage counts too: that is why the stop is at 80%.
 """
 
 from __future__ import annotations
@@ -12,13 +17,21 @@ import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from nexus_common.logging import get_logger
 from nexus_common.timeutil import utcnow
+
+log = get_logger("nexus.binance_guard")
 
 SCOPES = ("spot", "futures")
 _UNTIL = re.compile(r"banned until (\d{10,13})")
 DEFAULT_429 = timedelta(minutes=2)
 DEFAULT_418 = timedelta(minutes=30)
 MAX_WAIT = timedelta(days=4)
+# Per-IP request weight per minute (Binance REQUEST_WEIGHT limits).
+WEIGHT_LIMITS = {"spot": 6000, "futures": 2400}
+WARN_AT = 0.5
+STOP_AT = 0.8
+WEIGHT_HEADER = "x-mbx-used-weight-1m"
 
 
 class BinanceBackoff(Exception):
@@ -77,6 +90,8 @@ async def guarded_get(client: Any, redis: Any, url: str, params: dict[str, Any])
             raise BinanceBackoff(f"Binance {scope} API paused until {until:%H:%M} UTC "
                                  "(rate limit / IP ban); not calling")
     r = await client.get(url, params=params)
+    if redis is not None:
+        await note_weight(redis, scope, used_weight(getattr(r, "headers", None)))
     if redis is not None and r.status_code in (418, 429):
         until = until_from(r.status_code, r.text[:500], r.headers.get("retry-after"))
         if until is not None:
@@ -92,3 +107,66 @@ async def note_exception(redis: Any, scope: str, exc: BaseException) -> datetime
     if until is not None and redis is not None:
         await record(redis, scope, until)
     return until
+
+
+def used_weight(headers: Any) -> int | None:
+    """The used-weight value from a response's headers (any mapping, any key case)."""
+    if not headers:
+        return None
+    for k, v in dict(headers).items():
+        if str(k).lower() == WEIGHT_HEADER:
+            try:
+                return int(str(v))
+            except ValueError:
+                return None
+    return None
+
+
+def _weight_key(scope: str) -> str:
+    return f"nexus:binance:weight:{scope}"
+
+
+async def note_weight(redis: Any, scope: str, used: int | None,
+                      now: datetime | None = None) -> datetime | None:
+    """Store the latest used weight; at STOP_AT of the limit pause every caller until the
+    next minute. Returns the pause end when one was set."""
+    if used is None or redis is None:
+        return None
+    now = now or utcnow()
+    limit = WEIGHT_LIMITS[scope]
+    try:
+        await redis.set(_weight_key(scope), str(used), ex=60)
+    except Exception:
+        return None
+    if used >= limit * STOP_AT:
+        until = now.replace(second=0, microsecond=0) + timedelta(minutes=1, seconds=1)
+        await record(redis, scope, until)
+        log.warning("binance_weight_pause", scope=scope, used=used, limit=limit,
+                    until=until.isoformat())
+        return until
+    if used >= limit * WARN_AT:
+        log.warning("binance_weight_high", scope=scope, used=used, limit=limit)
+    return None
+
+
+async def weight_status(redis: Any) -> dict[str, dict[str, int | None]]:
+    out: dict[str, dict[str, int | None]] = {}
+    for scope in SCOPES:
+        try:
+            raw = await redis.get(_weight_key(scope))
+        except Exception:
+            raw = None
+        out[scope] = {"used": int(raw) if raw else None, "limit": WEIGHT_LIMITS[scope]}
+    return out
+
+
+def attach_weight_hooks(adapters: Any, redis: Any) -> int:
+    """Feed every Binance spot adapter's used weight into the shared budget."""
+    n = 0
+    for code, adapter in dict(adapters).items():
+        if code == "binance" and hasattr(adapter, "weight_hook"):
+            async def hook(used: int) -> None:
+                await note_weight(redis, "spot", used)
+            adapter.weight_hook = hook
+            n += 1
+    return n

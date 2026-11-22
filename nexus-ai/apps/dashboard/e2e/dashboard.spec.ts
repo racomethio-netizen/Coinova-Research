@@ -86,3 +86,11 @@ test("risk page shows the risk state and balance check", async ({ page }) => {
   await expect(page.getByText("Exchange balance check")).toBeVisible();
   await expect(page.getByLabel("Minimum state", { exact: true })).toBeVisible();
 });
+
+test("settings page shows the operating mode and the live lock", async ({ page }) => {
+  await login(page);
+  await page.goto("/settings/");
+  await expect(page.getByRole("heading", { name: "Operating mode" })).toBeVisible();
+  await expect(page.getByText("Paper trading", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Live autonomous is locked until all of these are fixed:")).toBeVisible();
+});

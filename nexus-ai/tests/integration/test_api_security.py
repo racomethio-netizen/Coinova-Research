@@ -519,3 +519,37 @@ def test_risk_state_floor_stricter_is_easy_relaxing_live_needs_totp(client: Test
     denied = client.post("/api/v1/risk/state/floor", json={"mode": "paper", "state": "NORMAL",
                                                           "reason": "viewer try"}, headers=CSRF)
     assert denied.status_code == 403
+
+
+def test_operating_mode_easy_to_lower_live_locked_and_ledger_needs_live_portfolio(
+        client: TestClient) -> None:
+    login(client)
+    m = client.get("/api/v1/settings/operating-mode").json()
+    assert m["mode"] == "PAPER_TRADING" and m["set_by"] is None
+    assert m["paper_orders"] is True and m["live_orders"] is False
+    assert any("no enabled strategy" in b for b in m["live_blockers"])
+    r = client.post("/api/v1/settings/operating-mode",
+                    json={"mode": "SIGNALS_ONLY", "reason": "watch first"}, headers=CSRF)
+    assert r.status_code == 200
+    m = client.get("/api/v1/settings/operating-mode").json()
+    assert m["mode"] == "SIGNALS_ONLY" and m["set_by"].startswith("user:")
+    live = {"mode": "LIVE_AUTONOMOUS", "reason": "go live now"}
+    assert client.post("/api/v1/settings/operating-mode", json=live,
+                       headers=CSRF).status_code == 400                       # phrase
+    live["confirm"] = m["live_confirm_phrase"]
+    r = client.post("/api/v1/settings/operating-mode", json=live, headers=CSRF)
+    assert r.status_code == 403                                               # 2FA
+    secret = _enable_totp(client)
+    r = client.post("/api/v1/settings/operating-mode", json={**live, "totp": _code(secret, 1)},
+                    headers=CSRF)
+    assert r.status_code == 409 and "not permitted" in r.json()["detail"]
+    assert client.get("/api/v1/settings/operating-mode").json()["mode"] == "SIGNALS_ONLY"
+    fund = {"amount": "10", "confirm": "FUND LIVE LEDGER", "totp": _code(secret, 0)}
+    r = client.post("/api/v1/live/ledger/fund", json=fund, headers=CSRF)
+    assert r.status_code == 409 and "no live portfolio" in r.json()["detail"]
+    bad = client.post("/api/v1/live/ledger/fund", json={**fund, "confirm": "yes"}, headers=CSRF)
+    assert bad.status_code == 400
+    login(client, "viewer@example.test")
+    assert client.post("/api/v1/settings/operating-mode",
+                       json={"mode": "PAPER_TRADING", "reason": "viewer try"},
+                       headers=CSRF).status_code == 403

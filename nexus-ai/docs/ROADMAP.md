@@ -460,3 +460,16 @@ trading on Render can use live data once background workers are approved.
 * Still open in Phase A: A3 four modes, A4 least-privilege DB role (owner approval), A5
   request-weight budget, A6 restart-during-execution tests. Live ledger seeding (the live
   ledger starts empty, so live could not buy anything) is a new item, added to A3.
+
+## 2026-11-22: deep upgrade Phase A (A3 to A6)
+
+* Completed: operating modes (Settings page), live ledger funding (Live page), request
+  weight budget, interrupted-order recovery, migration 0010 (RLS policies for nexus_app),
+  scripts/grant_app_role.sql, NEXUS_DEPLOYMENT_GUIDE.md, migrations can use
+  NEXUS_MIGRATION_DATABASE_URL.
+* Tested: 624 passed; e2e 13 passed + 2 pre-existing failures.
+* Not deployed (Binance back-off until ~08:54 UTC 23 Nov). Migration 0010 is a no-op in
+  production until the nexus_app role exists.
+* Owner step: A4 (NEXUS_DEPLOYMENT_GUIDE.md).
+* Next: Phase B (market data: 30m/2h/6h/12h resampled, 1m/3m for BTC/ETH, data-quality
+  report).

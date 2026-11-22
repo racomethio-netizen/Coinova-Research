@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Badge, Card, Loading, PageHeader } from "@/components/ui";
 import { useApi } from "@/lib/hooks";
+import { FundLiveLedgerCard } from "@/components/opmode";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
@@ -25,6 +26,7 @@ export default function LiveTrading() {
             )}
             <p className="mt-3 text-xs text-muted">The owner approval (typed phrase + two-factor code) is on the <Link className="underline" href="/security/">Security</Link> page. No strategy is validated today, so even with every gate cleared the trader would place no orders.</p>
           </Card>
+          <FundLiveLedgerCard />
           <div className="grid gap-4 md:grid-cols-2">
             <Card title="Spot account"><p className="text-sm">Balances, open orders and fills read from Binance. <Link className="underline" href="/spot/">Open</Link></p></Card>
             <Card title="Futures account"><p className="text-sm">Futures stay disabled for live execution. <Link className="underline" href="/futures/">Open</Link></p></Card>

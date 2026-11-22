@@ -1,4 +1,5 @@
-"""Alembic environment. URL from NEXUS_DATABASE_URL; models from nexus_db."""
+"""Alembic environment. URL from NEXUS_MIGRATION_DATABASE_URL (schema owner) or else
+NEXUS_DATABASE_URL; models from nexus_db."""
 
 from __future__ import annotations
 
@@ -17,7 +18,9 @@ target_metadata = Base.metadata
 
 
 def _url() -> str:
-    url = os.environ.get("NEXUS_DATABASE_URL")
+    # Migrations need the schema owner; the app may run as the restricted nexus_app.
+    url = (os.environ.get("NEXUS_MIGRATION_DATABASE_URL")
+           or os.environ.get("NEXUS_DATABASE_URL"))
     if not url:
         raise RuntimeError("NEXUS_DATABASE_URL is not set")
     # Hosts such as Render give postgresql:// URLs; the installed driver is psycopg 3.

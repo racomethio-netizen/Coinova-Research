@@ -28,6 +28,8 @@ order whose outcome is unknown; never invent data.
 | Stale market data | Newest closed 5m bar of a traded pair ended > 15 min ago: risk state NO_NEW_TRADES until fresh data arrives | `integration/test_paper_trader.py::test_stale_candles_put_risk_state_in_no_new_trades` |
 | Balances differ from the exchange (live) | Exchange holds less than the ledger: CLOSE_ONLY, resting entries cancelled, audit + alert, ledger untouched; fetch failure or ban: NO_NEW_TRADES | `integration/test_paper_trader.py::test_live_balance_reconciliation`, `integration/test_paper_trader.py::test_reconciliation_mismatch_means_close_only_and_cancels_entries` |
 | Restart with a restricted risk state | The state is re-derived from durable inputs; no fake transition is logged | `integration/test_paper_trader.py::test_risk_state_blocks_signals_and_survives_restart` |
+| Restart during order execution | An order left `pending_submit` for 2 minutes becomes `unknown` and is resolved by client order ID: adopted with its fills if the exchange has it, rejected with funds released if not. Never resubmitted. Fill, ledger and position are written in one transaction | `integration/test_execution.py::test_crash_after_submit_before_recording_is_recovered_by_client_id`, `::test_crash_before_submit_is_rejected_and_funds_released`, `::test_failure_inside_fill_application_leaves_no_partial_state`, `integration/test_paper_trader.py::test_crash_between_submit_and_record_in_trader_cycle_recovers` |
+| Approaching Binance's request limit | At 80% of the per-minute weight every caller pauses until the next minute | `unit/test_binance_guard.py::test_weight_budget_pauses_every_caller_until_next_minute` |
 
 ## Known limits
 

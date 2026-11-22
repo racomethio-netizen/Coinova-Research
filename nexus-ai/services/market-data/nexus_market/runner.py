@@ -43,6 +43,9 @@ class MarketDataService:
         self.settings, self.factory, self.redis = settings, factory, redis
         self.adapters: dict[str, ExchangeAdapter] = {
             e.value: build_from_settings(e, settings) for e in settings.enabled_exchanges}
+        from nexus_common.binance_guard import attach_weight_hooks
+
+        attach_weight_hooks(self.adapters, redis)
         self.pairs: dict[tuple[str, str], int] = {}
         self.stop = asyncio.Event()
 

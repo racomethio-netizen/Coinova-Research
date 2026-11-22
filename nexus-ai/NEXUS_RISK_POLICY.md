@@ -66,6 +66,32 @@ Rules:
   (balances with source `exchange`).
 * Paper mode: not applicable (the paper ledger is the record).
 
+## Operating modes (`nexus_common/opmode.py`)
+
+| Mode | Signals recorded | Orders |
+|---|---|---|
+| Analysis only | no | none |
+| Signals only | yes, with the full risk verdict | none |
+| Paper trading (default) | yes | paper orders on real order books |
+| Live autonomous | yes | real orders, only from a trader the server started in live mode |
+
+Open positions are protected (stops, targets, trailing, kill switch) in every mode.
+Lowering the mode is always one step. Live autonomous needs the typed phrase, 2FA and
+every gate: server configuration, owner approval, kill switch clear, verified API key
+without withdrawals, balance reconciliation OK, risk state allowing entries, a validated
+strategy, and a funded live ledger. Stored in the audit log; unreadable = Analysis only.
+
+## Live ledger
+
+The live trader only uses money you explicitly assign to it: typed phrase + 2FA, at most
+the free balance Binance reported in the last 10 minutes. Nothing moves on Binance.
+
+## Binance request budget
+
+Every response reports the IP's used request weight. At 50% of the limit NEXUS logs a
+warning; at 80% every NEXUS caller pauses until the next minute. A 429/418 pauses all
+callers until the time Binance gives.
+
 ## Emergency controls
 
 * STOP TRADING: engage the kill switch (Risk page), one click, no 2FA.
