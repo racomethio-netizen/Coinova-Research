@@ -430,3 +430,14 @@ trading on Render can use live data once background workers are approved.
   book fetches, API fallbacks). Unreadable state = do not call. Tests: 576 pass.
 * Impact on the forward tests: banned hours are recorded as gaps (never estimated) and
   count toward their pre-registered gap limits. A dedicated-IP host remains the durable fix.
+
+## 2026-11-22: deep upgrade, Phase 0 (audit and plan)
+
+* Completed: `NEXUS_AUDIT.md` (14 audit questions answered from code, production DB and
+  Render logs) and `NEXUS_IMPLEMENTATION_PLAN.md` (Phases A to H, safety first).
+* Main findings: no live balance reconciliation with Binance (critical before any live
+  trading); no persisted risk-state machine; no four-mode switch; production connects as
+  the DB owner role; shared-IP Binance bans; no strategy with an edge.
+* Tested: `scripts/test.sh` with test Postgres + Redis: 576 passed (integration included).
+* Not deployed (docs only; Binance futures back-off until ~08:54 UTC 23 Nov).
+* Next: on owner approval ("Phase A"), start A1 live balance reconciliation.
