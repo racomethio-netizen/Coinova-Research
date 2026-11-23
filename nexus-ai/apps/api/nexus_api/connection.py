@@ -44,6 +44,8 @@ def explain(exc: BaseException) -> str:
 
 async def probe_futures(api_key: str, secret: str, *, environment: str,
                         cafile: str | None = None) -> dict[str, Any]:
+    if environment not in ("production", "testnet"):
+        return {"ok": False, "error": f"{environment} keys are not supported"}
     transport = CcxtFuturesTransport(api_key, secret, cafile=cafile, environment=environment)
     try:
         adapter = BinanceFuturesAdapter(transport)
@@ -70,10 +72,10 @@ async def probe_spot(api_key: str, secret: str, *, environment: str,
         config["cafile"] = cafile
     from nexus_common.binance_guard import gate_client
 
+    if environment not in ("production", "testnet"):
+        return {"ok": False, "error": f"{environment} keys are not supported"}
     client = gate_client(ccxt_async.binance(config), environment=environment)
-    if environment == "demo":
-        client.enable_demo_trading(True)
-    elif environment == "testnet":
+    if environment == "testnet":
         client.set_sandbox_mode(True)
     try:
         await load_binance_spot_markets(client, ["BTC/USDT"])
@@ -96,7 +98,9 @@ async def probe_spot(api_key: str, secret: str, *, environment: str,
         await client.close()
 
 
-# Stored value -> name used by transports and shown to the operator.
+# Stored value -> name used by transports and shown to the operator. "demo" remains only so
+# an old, revoked demo key row can still be read; demo keys are no longer supported
+# (owner decision 2026-11-23) and every probe refuses them.
 ENV_NAMES = {"production": "production", "sandbox": "testnet", "demo": "demo"}
 ENV_STORED = {v: k for k, v in ENV_NAMES.items()}
 

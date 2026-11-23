@@ -36,5 +36,6 @@ order whose outcome is unknown; never invent data.
 
 * Redis down while a signal is being handled leaves that signal row undecided (no order is
   sent; the next bar produces a new signal).
-* Live-exchange behaviour is verified against Binance demo/testnet only when the owner
-  runs the order tests; production order paths are never exercised automatically.
+* Real-exchange order behaviour is not exercised automatically. Binance Demo Trading and
+  the demo/testnet order tests were removed on 23 Nov (owner decision). The first real
+  orders would be a minimum-size round trip that the owner approves and supervises.

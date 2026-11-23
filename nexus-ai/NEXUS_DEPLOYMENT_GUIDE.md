@@ -63,6 +63,8 @@ Never paste the password into a chat; it goes only into Supabase and Render.
 
 * Paid hosting with its own outbound IP before any live trading (the free plan shares its
   IP with other users, which caused the Binance bans).
-* A Binance demo key for the testnet run (plan item F2).
+* Approval for one supervised, minimum-size real order round trip on Binance before
+  exchange-side stops are used (plan item F2). Demo keys are not used (owner decision
+  23 Nov).
 * Live trading: off. The Live autonomous mode refuses to switch on until every gate on
   the Settings page is cleared.

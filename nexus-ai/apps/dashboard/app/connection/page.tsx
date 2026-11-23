@@ -9,7 +9,7 @@ import { useApi } from "@/lib/hooks";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
 
-const EMPTY = { label: "demo", api_key: "", api_secret: "", totp: "" };
+const EMPTY = { label: "main", api_key: "", api_secret: "", totp: "" };
 
 function CheckResult({ check }: { check: Any }) {
   if (!check) return <p className="text-sm text-muted">Not tested yet.</p>;
@@ -46,12 +46,11 @@ export default function ConnectionPage() {
   const me = useApi<Any>("/auth/me");
   const creds = useApi<{ credentials: Any[] }>("/security/credentials");
   const [form, setForm] = useState(EMPTY);
-  const [environment, setEnvironment] = useState<"demo" | "testnet" | "production">("demo");
+  const [environment, setEnvironment] = useState<"testnet" | "production">("production");
   const [markets, setMarkets] = useState<string[]>(["futures"]);
   const [noWithdraw, setNoWithdraw] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
-  const [orderTest, setOrderTest] = useState<Any>(null);
 
   const run = async (key: string, fn: () => Promise<unknown>, ok: string) => {
     setMsg(null); setBusy(key);
@@ -86,22 +85,6 @@ export default function ConnectionPage() {
                   <Button tone="primary" disabled={busy !== null} onClick={() => run(`test-${c.id}`, () => api.post(`/security/credentials/${c.id}/test`), "Connection test finished.")}>
                     {busy === `test-${c.id}` ? "Testing…" : "Test connection"}
                   </Button>
-                  {c.environment !== "production" && c.markets.includes("futures") && (
-                    <Button disabled={busy !== null} onClick={() => {
-                      if (window.confirm("Run a real order test with DEMO funds? NEXUS buys the smallest BTCUSDT amount, places a stop-loss and take-profit at Binance, verifies them, then closes everything.")) {
-                        setOrderTest(null);
-                        void run(`ot-${c.id}`, async () => setOrderTest(await api.post(`/security/credentials/${c.id}/order-test`)), "Order test finished.");
-                      }
-                    }}>{busy === `ot-${c.id}` ? "Running…" : "Run futures order test"}</Button>
-                  )}
-                  {c.environment !== "production" && c.markets.includes("spot") && (
-                    <Button disabled={busy !== null} onClick={() => {
-                      if (window.confirm("Run a real SPOT order test with DEMO funds? NEXUS buys the smallest BTC amount, places a stop-loss order at Binance, verifies and cancels it, then sells back only what it bought.")) {
-                        setOrderTest(null);
-                        void run(`os-${c.id}`, async () => setOrderTest(await api.post(`/security/credentials/${c.id}/order-test?market=spot`)), "Spot order test finished.");
-                      }
-                    }}>{busy === `os-${c.id}` ? "Running…" : "Run spot order test"}</Button>
-                  )}
                   <Button tone="danger" disabled={busy !== null} onClick={() => {
                     if (window.confirm(`Disconnect "${c.label}"? The stored key is revoked and can no longer be used.`)) {
                       void run(`del-${c.id}`, () => api.del(`/security/credentials/${c.id}`), "Key disconnected.");
@@ -113,18 +96,6 @@ export default function ConnectionPage() {
           </div>
         </Card>
 
-        {orderTest && (
-          <Card title={`${orderTest.market === "spot" ? "Spot" : "Futures"} order test (${orderTest.environment ?? "demo"})`} actions={<Badge tone={orderTest.ok ? "good" : "bad"}>{orderTest.ok ? "passed" : "failed"}</Badge>}>
-            {orderTest.error && <p role="alert" className="mb-2 text-sm text-down">{orderTest.error}</p>}
-            <ol className="space-y-1 text-sm">
-              {orderTest.steps.map((x: Any, i: number) => (
-                <li key={i} className="flex flex-wrap gap-2"><Badge tone={x.ok ? "good" : "bad"}>{x.ok ? "ok" : "failed"}</Badge><span className="font-medium">{x.step}</span><span className="text-muted">{x.detail}</span></li>
-              ))}
-            </ol>
-            {orderTest.alerts?.length > 0 && <p className="mt-2 text-xs text-warn">{orderTest.alerts.join(" ")}</p>}
-          </Card>
-        )}
-
         <Card title="Connect a Binance API key">
           {!me.data?.totp_enabled && (
             <p role="alert" className="mb-3 rounded-lg border border-warn/40 bg-warn/10 p-3 text-sm text-warn">
@@ -132,14 +103,13 @@ export default function ConnectionPage() {
             </p>
           )}
           <ul className="mb-3 list-disc space-y-1 pl-5 text-xs text-muted">
-            <li>Demo keys come from Binance Demo Trading (demo.binance.com, profile → API Management) and use test funds only. Start with demo.</li>
             <li>Production keys: enable Reading plus only the trading permissions you choose. Withdrawals must be DISABLED, and restrict the key to your server&apos;s IP.</li>
             <li>Binance refuses some server locations (HTTP 451). The test result says so if that happens. NEXUS does not work around it.</li>
           </ul>
           <fieldset className="mb-3">
             <legend className="mb-1 text-xs text-muted">Environment</legend>
             <div className="flex gap-4 text-sm">
-              {(["demo", "testnet", "production"] as const).map((e) => (
+              {(["production", "testnet"] as const).map((e) => (
                 <label key={e} className="flex items-center gap-2">
                   <input type="radio" name="env" checked={environment === e} onChange={() => setEnvironment(e)} /> {e}
                 </label>

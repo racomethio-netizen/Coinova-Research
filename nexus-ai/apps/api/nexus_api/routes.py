@@ -858,7 +858,7 @@ class CredentialBody(BaseModel):
     api_secret: str = Field(min_length=8, max_length=8192)
     withdrawals_disabled_confirmed: bool
     totp: str = Field(min_length=6, max_length=6)
-    environment: Literal["testnet", "demo", "production"] = "testnet"
+    environment: Literal["testnet", "production"] = "testnet"
     markets: list[Market] = Field(default_factory=lambda: list[Market](["futures"]),
                                   min_length=1, max_length=2)
 
@@ -877,7 +877,7 @@ async def add_credential(body: CredentialBody, s: Session = Depends(db), redis: 
     cipher = CredentialCipher(ring)
     cred = models.ExchangeCredential(
         user_id=viewer.user.id, exchange_id=repo.exchange_id(s, body.exchange), label=body.label,
-        environment={"testnet": "sandbox", "demo": "demo"}.get(body.environment, "production"),
+        environment="sandbox" if body.environment == "testnet" else "production",
         api_key_encrypted=b"pending", api_secret_encrypted=b"pending",
         key_fingerprint=key_fingerprint(body.api_key), encryption_key_id=ring.primary_id,
         # Owner attestation; exchanges with an API check are re-verified in Phase 3 tooling.
@@ -904,7 +904,10 @@ def _cred_view(s: Session, c: models.ExchangeCredential) -> dict[str, Any]:
     ex = s.get(models.Exchange, c.exchange_id)
     perms = c.permissions or {}
     return {"id": c.id, "exchange": ex.code if ex else None, "label": c.label,
-            "environment": {"sandbox": "testnet", "demo": "demo"}.get(c.environment, "production"),
+            # Demo keys are no longer supported (owner decision 2026-11-23); an old one is
+            # still listed as such so it can be seen and revoked.
+            "environment": {"sandbox": "testnet", "demo": "demo (not supported)"}.get(
+                c.environment, "production"),
             "markets": perms.get("markets", []), "fingerprint": c.key_fingerprint,
             "created_at": ser(c.created_at), "last_verified_at": ser(c.last_verified_at),
             "last_check": perms.get("last_check")}
@@ -1442,8 +1445,6 @@ async def taker_forward_status(s: Session = Depends(db),
 BINANCE_PINGS = {
     "spot (live)": "https://api.binance.com/api/v3/ping",
     "futures (live)": "https://fapi.binance.com/fapi/v1/ping",
-    "spot (demo)": "https://demo-api.binance.com/api/v3/ping",
-    "futures (demo)": "https://demo-fapi.binance.com/fapi/v1/ping",
     "futures (testnet)": "https://testnet.binancefuture.com/fapi/v1/ping",
     "spot public data (mirror)": "https://data-api.binance.vision/api/v3/ping",
 }
@@ -1465,77 +1466,3 @@ async def binance_reachability() -> dict[str, Any]:
             except httpx.HTTPError as exc:
                 out[name] = {"status": None, "reachable": False, "error": type(exc).__name__}
     return {"checked_at": ser(utcnow()), "hosts": out}
-
-
-@router.post("/security/credentials/{cred_id}/order-test", dependencies=[Depends(owner)])
-async def credential_order_test(cred_id: int, market: Literal["futures", "spot"] = "futures",
-                                s: Session = Depends(db),
-                                redis: Any = Depends(redis_dep),
-                                viewer: Viewer = Depends(current_viewer),
-                                settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
-    """Real order round trip on a DEMO or TESTNET futures key (never production)."""
-    from nexus_exchange.binance_futures import BinanceFuturesAdapter
-    from nexus_exchange.binance_futures_transport import CcxtFuturesTransport
-
-    from nexus_api.account import decrypt
-    from nexus_api.connection import ENV_NAMES, explain
-    from nexus_api.ordertest import run_round_trip
-
-    cred = s.get(models.ExchangeCredential, cred_id)
-    if cred is None or cred.user_id != viewer.user.id or cred.revoked_at is not None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")
-    env = ENV_NAMES.get(cred.environment, cred.environment)
-    if env not in ("demo", "testnet"):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST,
-                            "the order test runs only on demo or testnet keys, never production")
-    if market not in ((cred.permissions or {}).get("markets") or []):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"this key has no {market} access")
-    banned = await binance_ban.active_ban(redis, env)
-    if banned is not None:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, binance_ban.ban_message(banned))
-    if not await redis.set(f"nexus:order_test:{cred_id}", "1", nx=True, ex=120):
-        raise HTTPException(status.HTTP_409_CONFLICT, "an order test is already running")
-    api_key, secret = decrypt(cred, settings)
-    if market == "spot":
-        import ccxt.async_support as ccxt_async
-
-        from nexus_api.ordertest import run_spot_round_trip
-
-        config: dict[str, Any] = {"apiKey": api_key, "secret": secret, "enableRateLimit": True,
-                                  "timeout": 10_000, "aiohttp_trust_env": True,
-                                  "options": {"adjustForTimeDifference": True}}
-        if settings.extra_ca_file:
-            config["cafile"] = settings.extra_ca_file
-        client = ccxt_async.binance(config)
-        if env == "demo":
-            client.enable_demo_trading(True)
-        else:
-            client.set_sandbox_mode(True)
-        try:
-            from nexus_exchange.factory import load_binance_spot_markets
-
-            await load_binance_spot_markets(client, ["BTC/USDT"])
-            result = await run_spot_round_trip(client)
-        except Exception as exc:
-            result = {"ok": False, "steps": [], "alerts": [], "error": explain(exc)}
-        finally:
-            await client.close()
-            await redis.delete(f"nexus:order_test:{cred_id}")
-    else:
-        transport = CcxtFuturesTransport(api_key, secret, cafile=settings.extra_ca_file,
-                                         environment=env)
-        try:
-            result = await run_round_trip(BinanceFuturesAdapter(transport))
-        except Exception as exc:
-            result = {"ok": False, "steps": [], "alerts": [], "error": explain(exc)}
-        finally:
-            await transport.close()
-            await redis.delete(f"nexus:order_test:{cred_id}")
-    result["environment"] = env
-    result["market"] = market
-    repo.record_audit(s, actor=viewer.actor, action="order_test", user_id=viewer.user.id,
-                      target_type="exchange_credential", target_id=str(cred_id),
-                      details={"ok": result["ok"], "environment": env, "market": market,
-                               "steps": [x["step"] + (" ok" if x["ok"] else " FAILED")
-                                         for x in result["steps"]]})
-    return result

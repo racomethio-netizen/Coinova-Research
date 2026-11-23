@@ -35,21 +35,21 @@ async def test_probe_combines_markets_and_marks_testnet() -> None:
     assert calls == [("futures", "testnet"), ("spot", "testnet")]
 
 
-async def test_probe_maps_demo_environment() -> None:
-    seen: list[str] = []
-
-    async def f(api_key: str, secret: str, *, environment: str, cafile: str | None = None):  # type: ignore[no-untyped-def]
-        seen.append(environment)
-        return {"ok": True}
-
-    res = await probe("k", "s", environment="demo", markets=["futures"], probes={"futures": f})
-    assert res["environment"] == "demo" and seen == ["demo"]
-
-
-def test_transport_demo_hosts() -> None:
+async def test_demo_keys_are_refused() -> None:
+    """Binance Demo Trading is not supported (owner decision 2026-11-23)."""
+    import pytest
+    from nexus_api.connection import probe_futures, probe_spot
     from nexus_exchange.binance_futures_transport import CcxtFuturesTransport
 
-    t = CcxtFuturesTransport("k" * 32, "s" * 48, environment="demo")
-    assert t._client.urls["api"]["fapiPrivateV2"].startswith("https://demo-fapi.binance.com")
+    for fn in (probe_futures, probe_spot):
+        res = await fn("k" * 32, "s" * 48, environment="demo")
+        assert res == {"ok": False, "error": "demo keys are not supported"}
+    with pytest.raises(ValueError, match="unknown environment"):
+        CcxtFuturesTransport("k" * 32, "s" * 48, environment="demo")
+
+
+def test_transport_testnet_hosts() -> None:
+    from nexus_exchange.binance_futures_transport import CcxtFuturesTransport
+
     t2 = CcxtFuturesTransport("k" * 32, "s" * 48, environment="testnet")
     assert t2._client.urls["api"]["fapiPrivateV2"].startswith("https://testnet.binancefuture.com")

@@ -4,6 +4,23 @@ How to run: `scripts/test.sh` with `NEXUS_TEST_DATABASE_URL` and `NEXUS_TEST_RED
 (Postgres and Redis test databases; integration tests are skipped without them). Browser
 tests: `scripts/e2e.sh` (see the script header).
 
+## 2026-11-23: Binance Demo Trading removed (owner decision)
+
+* Removed:
+  * the demo/testnet order-test endpoint and `ordertest.py`, with their tests
+    (`tests/unit/test_ordertest.py`, the API order-test test);
+  * the demo environment for new keys;
+  * the demo hosts from the reachability check;
+  * the demo option and order-test buttons on the Binance Connection page.
+* New tests:
+  * adding a demo key is refused (HTTP 422);
+  * both probes refuse a demo environment, and the futures transport rejects it;
+  * the order-test endpoint returns 404.
+* The repository-hygiene test now allows no `set_leverage` caller outside the futures
+  adapter.
+* Full run: `scripts/test.sh`, 785 passed (789 before: the removed order tests).
+* e2e: 13 passed, plus the same 2 known failures.
+
 ## 2026-11-23: Phase H (decision log)
 
 * `tests/unit/test_decision_log.py` covers what gets recorded and when.

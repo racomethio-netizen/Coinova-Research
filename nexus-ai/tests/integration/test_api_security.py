@@ -370,15 +370,16 @@ def test_backtests_listing_filters_by_market(client: TestClient, migrated_engine
 
 
 
-def test_demo_key_is_stored_and_listed_as_demo(client: TestClient) -> None:
+def test_demo_keys_cannot_be_added(client: TestClient) -> None:
+    """Binance Demo Trading is not supported (owner decision 2026-11-23)."""
     login(client)
     secret = _enable_totp(client)
     body = {"exchange": "binance", "label": "demo", "api_key": "DEMO-KEY-000001",
             "api_secret": "DEMO-SECRET-0002", "withdrawals_disabled_confirmed": True,
             "totp": _code(secret, 1), "environment": "demo", "markets": ["futures"]}
-    assert client.post("/api/v1/security/credentials", json=body, headers=CSRF).status_code == 200
-    row = client.get("/api/v1/security/credentials").json()["credentials"][0]
-    assert row["environment"] == "demo"
+    assert client.post("/api/v1/security/credentials", json=body,
+                       headers=CSRF).status_code == 422
+    assert client.get("/api/v1/security/credentials").json()["credentials"] == []
 
 
 def test_binance_reachability_is_owner_only(client: TestClient,
@@ -394,15 +395,10 @@ def test_binance_reachability_is_owner_only(client: TestClient,
     assert r.status_code == 200 and r.json()["hosts"] == {}
 
 
-def test_order_test_refuses_production_keys(client: TestClient) -> None:
+def test_order_test_endpoint_is_gone(client: TestClient) -> None:
     login(client)
-    secret = _enable_totp(client)
-    body = {"exchange": "binance", "label": "prod", "api_key": "PROD-KEY-0000001",
-            "api_secret": "PROD-SECRET-00002", "withdrawals_disabled_confirmed": True,
-            "totp": _code(secret, 1), "environment": "production", "markets": ["futures"]}
-    cred_id = client.post("/api/v1/security/credentials", json=body, headers=CSRF).json()["id"]
-    r = client.post(f"/api/v1/security/credentials/{cred_id}/order-test", headers=CSRF)
-    assert r.status_code == 400 and "never production" in r.text
+    assert client.post("/api/v1/security/credentials/1/order-test",
+                       headers=CSRF).status_code == 404
 
 
 def test_x_endpoints_without_a_token(client: TestClient) -> None:

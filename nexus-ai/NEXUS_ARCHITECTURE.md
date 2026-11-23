@@ -96,8 +96,10 @@ shared by every caller; no synthetic data in production.
   * a stop that would trigger immediately is refused.
 * A stop-limit's trigger state is stored on the order row, so it survives restarts.
 * The trader still exits with its own software stops and IOC orders.
-* Exchange-side protective stops and OCO orders are F2. They need a demo-key run and an
-  order-list design, because the database allows one active order per pair and side.
+* Exchange-side protective stops and OCO orders are F2 (on hold). They need an order-list
+  design, because the database allows one active order per pair and side, and a
+  supervised minimum-size real order test approved by the owner. Binance Demo Trading is
+  not used (removed 23 Nov).
 
 ## Backtesting realism (Phase G1)
 

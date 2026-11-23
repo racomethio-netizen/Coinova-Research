@@ -46,6 +46,6 @@ def test_record_then_active_per_environment():
         until = await binance_ban.record_ban(r, "production", f"banned until {future_ms}")
         assert until is not None
         assert await binance_ban.active_ban(r, "production") == until
-        assert await binance_ban.active_ban(r, "demo") is None
+        assert await binance_ban.active_ban(r, "testnet") is None
         assert await binance_ban.record_ban(r, "production", "network error") is None
     asyncio.run(go())

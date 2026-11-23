@@ -596,3 +596,15 @@ trading on Render can use live data once background workers are approved.
 * **Not deployed.** The F1, G1 and H work ship together in the next deploy, which needs the
   owner's go-ahead. Migrations 0013 and 0014 run automatically on deploy.
 * **Next:** F2 (needs the owner's Binance demo key) or deploy.
+
+## 2026-11-23: Binance Demo Trading removed (owner decision)
+
+* **Removed from the code:** demo keys, the demo/testnet order tests (API, `ordertest.py`,
+  dashboard buttons), and demo hosts. Testnet and production keys remain.
+* **Production database:** it holds one old demo key row, already revoked. It is kept,
+  shown as "demo (not supported)", and the probes refuse it. The schema is unchanged:
+  migrations stay as history and the constraint still accepts the old row.
+* **F2 on hold:** exchange-side stops and OCO can only be verified with one supervised,
+  minimum-size real order. That needs the owner's explicit approval and live permission.
+  The trader keeps its software stops.
+* **Tested:** 785 passed; e2e 13 passed, plus the same 2 known failures.

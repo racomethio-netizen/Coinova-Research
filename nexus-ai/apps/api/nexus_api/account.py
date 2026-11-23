@@ -97,10 +97,10 @@ async def spot_snapshot(api_key: str, secret: str, *, environment: str, pairs: l
         config["cafile"] = cafile
     from nexus_common.binance_guard import gate_client
 
+    if environment not in ("production", "testnet"):
+        raise ValueError(f"{environment} keys are not supported")
     client = gate_client(ccxt_async.binance(config), environment=environment)
-    if environment == "demo":
-        client.enable_demo_trading(True)
-    elif environment == "testnet":
+    if environment == "testnet":
         client.set_sandbox_mode(True)
     try:
         await load_binance_spot_markets(client, pairs)

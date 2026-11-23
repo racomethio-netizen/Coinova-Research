@@ -68,8 +68,14 @@ Built, tested and validated once on unseen 2022-2024 data: all 7 FAIL (NEXUS_BAC
   live adapters), exchange-side protective stops for live spot (OCO) where supported.
   Moved to F2: OCO and placing exchange-side stops from the trader. An OCO is two live
   sell orders on one balance, which the one-active-order-per-side database rule does not
-  allow yet (needs an order-list design), and both need a demo run before they are used.
-* F2 Testnet/demo end-to-end run (needs a new demo key from the owner).
+  allow yet (needs an order-list design), and both must be verified on Binance before they
+  are used.
+* F2 (on hold) Real-exchange verification. The owner decided on 23 Nov not to use Binance
+  Demo Trading, and its code was removed.
+  * Exchange-side stops and OCO can therefore only be verified with one supervised,
+    minimum-size real order round trip on the production key.
+  * That needs the owner's explicit approval and live permission, and is not done until then.
+  * Until then the trader keeps its software stops.
 
 ## Phase G: backtesting
 
@@ -93,7 +99,7 @@ Built, tested and validated once on unseen 2022-2024 data: all 7 FAIL (NEXUS_BAC
 
 1. A paid host with a dedicated or less-shared IP (Render Standard or similar) before any
    live trading; free hosting is fine for paper.
-2. A Binance demo key for F2.
+2. Approval for a supervised minimum-size real order test (F2); demo keys are not used.
 3. Approval to switch the production DB role (A4).
 4. X Bearer token, if X sentiment is wanted.
 5. Live trading: remains off. It is only worth discussing after a strategy passes a forward

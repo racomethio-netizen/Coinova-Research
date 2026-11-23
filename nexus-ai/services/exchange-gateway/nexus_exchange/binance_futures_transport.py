@@ -16,9 +16,9 @@ class CcxtFuturesTransport:
         self, api_key: str, secret: str, *, timeout_ms: int = 10_000, cafile: str | None = None,
         environment: str = "production",
     ) -> None:
-        """``environment``: "production", "testnet" (testnet.binancefuture.com) or "demo"
-        (Binance Demo Trading, demo-fapi.binance.com). Test funds only outside production."""
-        if environment not in ("production", "testnet", "demo"):
+        """``environment``: "production" or "testnet" (testnet.binancefuture.com, test funds
+        only). Binance Demo Trading is not supported (owner decision 2026-11-23)."""
+        if environment not in ("production", "testnet"):
             raise ValueError(f"unknown environment {environment!r}")
         config: dict[str, Any] = {
             "apiKey": api_key,
@@ -37,9 +37,7 @@ class CcxtFuturesTransport:
 
             if default_redis() is not None:
                 self.gate = CcxtGate(default_redis(), "futures")
-        if environment == "demo":
-            self._client.enable_demo_trading(True)
-        elif environment == "testnet":
+        if environment == "testnet":
             # testnet.binancefuture.com: real signed API, test funds only. ccxt's
             # set_sandbox_mode() refuses futures since Binance announced Demo Trading as the
             # successor, so the fapi hosts are pointed at the testnet directly.

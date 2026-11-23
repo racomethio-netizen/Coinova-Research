@@ -108,9 +108,10 @@ def test_no_withdrawal_or_margin_calls() -> None:
     forbidden = re.compile(r"\.(withdraw|transfer|borrow|set_leverage|set_margin_mode|"
                            r"create_margin|fetch_positions)\(")
     # Owner futures mandate: leverage is set explicitly, only to approved 2-5x tiers, through
-    # BinanceFuturesAdapter.set_leverage (which refuses anything else). The operator-triggered
-    # demo/testnet order test is the only caller allowed. Withdrawals/transfers/borrowing stay banned.
-    leverage_allowed = {"apps/api/nexus_api/ordertest.py"}
+    # BinanceFuturesAdapter.set_leverage (which refuses anything else). No caller outside it
+    # is allowed (the demo/testnet order test was removed on 2026-11-23).
+    # Withdrawals/transfers/borrowing stay banned.
+    leverage_allowed: set[str] = set()
     hits = []
     for p in source((".py",)):
         if "tests" in p.parts:
