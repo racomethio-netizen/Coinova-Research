@@ -104,3 +104,24 @@ def evaluate_trade(s: RiskSnapshot, m: MarketCheck, limits: RiskSettings) -> Ris
     if m.spread_bps is None or m.spread_bps > MAX_SPREAD_BPS:
         reasons.append(f"spread too wide or unknown ({m.spread_bps} bps)")
     return RiskDecision(not reasons, tuple(reasons), base.shutdown, base.events)
+
+
+def open_risk_block(open_risk: Decimal, new_risk: Decimal, equity: Decimal,
+                    limits: RiskSettings) -> str | None:
+    """Aggregate open risk: what the account loses if every open stop AND the new trade's
+    stop are hit. ``open_risk`` counts a position without a stop at its full cost basis."""
+    if equity <= 0:
+        return "no equity"
+    cap = limits.max_open_risk * equity
+    if open_risk + new_risk > cap:
+        return (f"aggregate open risk {open_risk + new_risk:.2f} would exceed "
+                f"{limits.max_open_risk:.2%} of equity ({cap:.2f})")
+    return None
+
+
+def position_risk(avg_entry: Decimal, stop: Decimal | None, quantity: Decimal,
+                  cost_basis: Decimal) -> Decimal:
+    """Money at risk to the stop (zero once the stop is at or above entry)."""
+    if stop is None:
+        return cost_basis
+    return max(Decimal(0), (avg_entry - stop) * quantity)

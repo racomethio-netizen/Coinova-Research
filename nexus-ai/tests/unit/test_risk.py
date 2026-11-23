@@ -200,3 +200,26 @@ class TestKillSwitch:
 
     async def test_fails_closed(self) -> None:
         assert await KillSwitch(FakeRedis(broken=True)).is_engaged() is True
+
+
+class TestOpenRisk:
+    """Aggregate open risk (owner directive Part 8: 1% of equity)."""
+
+    def test_position_risk_to_stop(self) -> None:
+        from nexus_risk.limits import position_risk
+        assert position_risk(D(100), D(98), D(5), D(500)) == D(10)
+        assert position_risk(D(100), D(101), D(5), D(500)) == D(0)      # stop above entry
+        assert position_risk(D(100), None, D(5), D(500)) == D(500)      # no stop: all at risk
+
+    def test_block_when_total_exceeds_cap(self) -> None:
+        from nexus_risk.limits import open_risk_block
+        limits = RiskSettings()                                         # 1% of equity
+        assert limits.max_open_risk == D("0.01")
+        assert open_risk_block(D(60), D(40), D(10_000), limits) is None   # exactly 100
+        reason = open_risk_block(D(60), D("40.01"), D(10_000), limits)
+        assert reason is not None and "1.00% of equity" in reason
+        assert open_risk_block(D(0), D(1), D(0), limits) == "no equity"
+
+    def test_open_risk_ceiling(self) -> None:
+        with pytest.raises(ValueError):
+            RiskSettings(max_open_risk=D("0.05"))

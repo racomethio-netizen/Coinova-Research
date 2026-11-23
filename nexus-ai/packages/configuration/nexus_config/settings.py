@@ -77,19 +77,23 @@ LIVE_TRADING_ACK_PHRASE: Final = "I accept that live trading can lose real money
 # ceilings above are unchanged except max open positions (2 -> 3). Total open risk at the
 # new defaults is 3 x 0.25% = 0.75%, lower than the previous 2 x 0.5% = 1%.
 MAX_RISK_PER_TRADE: Final = Decimal("0.01")
-# Owner mandate 2026-11-23 (multi-exchange brief, part 9): 0.25% per trade, 1% daily,
-# 2% weekly, 5% drawdown, 3 positions, 30% spot allocation. Ceilings are unchanged.
+# Owner mandate 2026-11-23 (master directive, Part 8): 0.25% per trade, 1% daily, 3% weekly,
+# 5% drawdown, 1% aggregate open risk, 3 positions, 30% spot allocation, futures 1x.
 DEFAULT_RISK_PER_TRADE: Final = Decimal("0.0025")
 MAX_DAILY_LOSS: Final = Decimal("0.02")
 DEFAULT_DAILY_LOSS: Final = Decimal("0.01")
 MAX_WEEKLY_LOSS: Final = Decimal("0.04")
-DEFAULT_WEEKLY_LOSS: Final = Decimal("0.02")
+DEFAULT_WEEKLY_LOSS: Final = Decimal("0.03")
 MAX_DRAWDOWN: Final = Decimal("0.10")
 DEFAULT_DRAWDOWN: Final = Decimal("0.05")
 MAX_OPEN_POSITIONS: Final = 3
 DEFAULT_OPEN_POSITIONS: Final = 3
 MAX_PORTFOLIO_EXPOSURE: Final = Decimal("0.50")
 DEFAULT_PORTFOLIO_EXPOSURE: Final = Decimal("0.30")    # owner: max 30% of equity in spot
+# Sum of open positions' risk to their stops plus the new trade's risk (owner directive
+# 2026-11-23, Part 8: 1% of equity). Ceiling: three positions at the 1% per-trade ceiling.
+MAX_OPEN_RISK: Final = Decimal("0.03")
+DEFAULT_OPEN_RISK: Final = Decimal("0.01")
 MIN_COOLDOWN_AFTER_STOP_MINUTES: Final = 30
 # Futures: Binance only, disabled by default, isolated margin. Leverage never changes
 # position size (size comes from risk); it only sets margin use.
@@ -107,6 +111,7 @@ class RiskSettings(BaseModel):
     max_drawdown: Decimal = DEFAULT_DRAWDOWN
     max_open_positions: int = DEFAULT_OPEN_POSITIONS
     max_portfolio_exposure: Decimal = DEFAULT_PORTFOLIO_EXPOSURE
+    max_open_risk: Decimal = DEFAULT_OPEN_RISK
     # Max share of equity in a single base asset across all exchanges.
     max_asset_concentration: Decimal = Decimal("0.25")
     # Assets whose 1h return correlation is >= correlation_threshold count as one exposure.
@@ -124,6 +129,7 @@ class RiskSettings(BaseModel):
             ("max_drawdown", self.max_drawdown, MAX_DRAWDOWN),
             ("max_open_positions", self.max_open_positions, MAX_OPEN_POSITIONS),
             ("max_portfolio_exposure", self.max_portfolio_exposure, MAX_PORTFOLIO_EXPOSURE),
+            ("max_open_risk", self.max_open_risk, MAX_OPEN_RISK),
             ("max_asset_concentration", self.max_asset_concentration, MAX_PORTFOLIO_EXPOSURE),
             ("max_correlated_exposure", self.max_correlated_exposure, MAX_PORTFOLIO_EXPOSURE),
         ]
@@ -220,6 +226,8 @@ class Settings(BaseSettings):
     # on live Binance order books). Live bot orders are not available in this build: real
     # orders go only through the main trader's live gate after the owner's activation.
     bot_mode: Literal["off", "monitor", "paper"] = "paper"
+    # Bearer token for GET /metrics (Prometheus). Unset = the endpoint does not exist.
+    metrics_token: SecretStr | None = None
     minute_retention_days: int = Field(default=30, ge=1, le=90)
     # Optional CA bundle replacing certifi's for exchange HTTPS (TLS-inspecting proxies).
     # Certificate verification is never disabled.

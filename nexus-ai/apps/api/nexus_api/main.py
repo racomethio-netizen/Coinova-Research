@@ -46,6 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         from nexus_api.workers import WorkerSupervisor, keep_awake
 
         workers = WorkerSupervisor.from_settings(settings)
+        app.state.workers = workers
         awake_stop = asyncio.Event()
         awake: asyncio.Task[None] | None = None
         if workers is not None:
@@ -102,6 +103,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: "
                 "https://fastapi.tiangolo.com; connect-src 'self'; frame-ancestors 'none'")
         return response
+
+    from nexus_api.metrics import install as install_metrics
+
+    install_metrics(app, settings)
 
     @app.get("/health/live")
     async def live() -> dict[str, str]:

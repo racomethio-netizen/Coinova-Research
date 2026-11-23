@@ -465,7 +465,7 @@ async def test_correlated_exposure_blocks_new_entry(engine_setup: tuple[Any, ...
                               pair_id=eth if isinstance(eth, int) else eth.id,
                               base_asset="ETH", status="open", quantity=D("0.06"),
                               avg_entry_price=D("60000"), cost_basis=D("3600"),
-                              opened_at=utcnow()))
+                              stop_loss=D("59900"), opened_at=utcnow()))   # 6 USDT at risk
     v = await eng.valuation()
     day0, week0, peak = eng.period_starts(v.equity, utcnow())
     await eng.handle_signal(1, signal(), v, day0, week0, peak)
@@ -1296,3 +1296,31 @@ async def test_owner_approved_bot_strategy_runs_in_the_main_trader(
         row.parameters = {**(row.parameters or {}),
                           "owner_override": {"active": False, "actor": "user:1"}}
     assert eng.enabled_strategies() == []
+
+
+async def test_aggregate_open_risk_blocks_new_entry(engine_setup: tuple[Any, ...]) -> None:
+    """Owner directive Part 8: open positions' risk to their stops plus the new trade's
+    risk may not exceed 1% of equity. An open position without a stop counts in full."""
+    eng, factory, _, _ = engine_setup
+    pid = eng.bootstrap()
+    with transaction(factory) as s:
+        ex = repo.exchange_id(s, "binance")
+        eth = repo.upsert_trading_pair(
+            s, exchange_id=ex, symbol="ETH/USDT", exchange_symbol="ETHUSDT", base="ETH",
+            quote="USDT", price_tick=D("0.01"), amount_step=D("0.0001"),
+            min_amount=D("0.0001"), min_notional=D(5), maker_fee=D("0.001"),
+            taker_fee=D("0.001"), synced_at=utcnow())
+        s.add(models.Position(portfolio_id=pid, mode="paper", exchange_id=ex,
+                              pair_id=eth if isinstance(eth, int) else eth.id,
+                              base_asset="ETH", status="open", quantity=D("0.001"),
+                              avg_entry_price=D("60000"), cost_basis=D("60"),
+                              stop_loss=D("50000"), opened_at=utcnow()))   # 10 USDT at risk
+    v = await eng.valuation()
+    day0, week0, peak = eng.period_starts(v.equity, utcnow())
+    assert eng._open_risk() == D("10.000")
+    big = eng.settings.model_copy(update={"risk": eng.settings.risk.model_copy(
+        update={"max_open_risk": D("0.003")})})                # cap 30: 10 + ~25 > 30
+    eng.settings = big
+    await eng.handle_signal(1, signal(), v, day0, week0, peak)
+    status, reason = await _decision(factory)
+    assert status == "rejected" and "aggregate open risk" in reason

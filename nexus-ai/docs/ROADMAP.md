@@ -804,3 +804,17 @@ TradingView's documentation.
 * Tests: 884 passed; e2e 15/15.
 * Next: owner key test; exchange-side stops; OKX adapter (demo first); a cross-exchange
   budget; Sentry (needs a DSN).
+
+## 2026-11-23: master directive, Phase 1 (audit, architecture, health, risk core)
+
+* docs/PLATFORM_ARCHITECTURE.md: architecture, critical risks, target architecture
+  (evolve, not rewrite), 10-phase roadmap, schema, dependency map, test strategy, ADR log.
+  docs/CHANGELOG.md started.
+* Fixed: the main risk engine lacked an aggregate open-risk limit.
+  * Now 1% of equity (`RiskSettings.max_open_risk`, ceiling 3%).
+  * The risk to every stop is counted; a position without a stop counts in full.
+  * Enforced by the trader after sizing.
+* Weekly loss default 3%.
+* `GET /metrics` for Prometheus (token-gated; no balances).
+* Tests: 889 passed.
+* Next (Phase 2 / 5): exchange-side protective stops; an OKX adapter on OKX demo trading.

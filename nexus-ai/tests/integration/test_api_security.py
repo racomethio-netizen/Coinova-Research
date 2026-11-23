@@ -663,3 +663,30 @@ def test_exchange_capability_registry_refresh(client: TestClient,
     cached = client.get("/api/v1/exchanges/capabilities").json()
     assert set(cached["exchanges"]) == {"binance", "okx", "bybit", "kraken"}
     assert _json.dumps(cached)                                        # serialisable
+
+
+def test_metrics_endpoint_needs_token_and_exposes_health_only(
+        migrated_engine: Engine, db_url: str, client: TestClient) -> None:
+    from nexus_api.metrics import HELP, render
+
+    # Without NEXUS_METRICS_TOKEN the endpoint does not exist.
+    assert client.get("/metrics").status_code == 404
+    url = os.environ["NEXUS_TEST_REDIS_URL"]
+    settings = Settings(database_url=db_url, redis_url=url,
+                        credential_encryption_keys=generate_key_entry("k1"),
+                        binance_public_api_url="http://127.0.0.1:9/api/v3",
+                        metrics_token="m" * 32)
+    with TestClient(create_app(settings)) as c:
+        assert c.get("/metrics").status_code == 401
+        assert c.get("/metrics", headers={"Authorization": "Bearer wrong"}).status_code == 401
+        r = c.get("/metrics", headers={"Authorization": "Bearer " + "m" * 32})
+        assert r.status_code == 200 and r.headers["content-type"].startswith("text/plain")
+        body = r.text
+        assert "nexus_up 1" in body
+        assert 'nexus_dependency_up{dependency="database"} 1' in body
+        assert 'nexus_dependency_up{dependency="redis"} 1' in body
+        assert 'nexus_binance_circuit_open{scope="spot"} 0' in body
+        assert "nexus_kill_switch_engaged 0" in body
+        assert "USDT" not in body or "nexus_market_data_age_seconds" in body   # no balances
+    assert render([("a", {"x": "1"}, 2.0), ("a", {"x": "2"}, 3.5)], HELP) == (
+        '# HELP a a\n# TYPE a gauge\na{x="1"} 2\na{x="2"} 3.5\n')

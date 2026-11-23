@@ -46,6 +46,8 @@ from nexus_risk.limits import (
     evaluate_portfolio,
     evaluate_trade,
     loss_fraction,
+    open_risk_block,
+    position_risk,
 )
 from nexus_risk.sizing import SizingInput, size_position
 from nexus_risk.state import (
@@ -515,6 +517,11 @@ class TradingEngine:
         if not sizing.approved:
             await self._decide(sig, signal_id, "rejected", f"sizing: {sizing.rejected_reason}")
             return
+        orisk = open_risk_block(self._open_risk(), sizing.risk_amount, v.equity,
+                                self.settings.risk)
+        if orisk is not None:
+            await self._decide(sig, signal_id, "rejected", orisk)
+            return
         corr = self._correlation_block(sig.symbol, sizing.notional, v.equity)
         if corr is not None:
             await self._decide(sig, signal_id, "rejected", corr)
@@ -578,6 +585,15 @@ class TradingEngine:
         if not verdict.eligible:
             return "strategy selector: " + "; ".join(verdict.reasons)
         return None
+
+    def _open_risk(self) -> Decimal:
+        """Risk to the stops of this portfolio's open positions (from the database)."""
+        with transaction(self.factory) as s:
+            rows = s.scalars(select(models.Position).where(
+                models.Position.portfolio_id == self.portfolio_id,
+                models.Position.status == "open")).all()
+            return sum((position_risk(p.avg_entry_price, p.stop_loss, p.quantity, p.cost_basis)
+                        for p in rows), ZERO)
 
     def _cooldown_block(self, symbol: str) -> str | None:
         """No re-entry into a pair for a while after a LOSING exit of any kind (stop-loss,
