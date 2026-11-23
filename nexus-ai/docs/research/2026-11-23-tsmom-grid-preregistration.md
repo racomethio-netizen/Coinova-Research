@@ -110,4 +110,72 @@ specification and is tested on its own.
 
 ## Results
 
-_(appended after the single run)_
+_Run once on 2026-11-23 after the pre-registration commit 97b40d4.
+* 1,586 archives downloaded; all SHA-256 checksums match (0 bad).
+* Full output: `2026-11-23-tsmom-grid-result.json`. Runner:
+  `python -m nexus_backtest.tsmom_grid`._
+
+**No configuration passes (0 of 96). As pre-registered, the hypothesis is recorded as
+FAILED and is not re-tuned.**
+
+### By direction (out of sample, 2023-01 to 2026-10, net of costs and funding)
+
+| Direction | Variant | Median Sharpe (range) | Median max drawdown | Median return by year 2023 / 2024 / 2025 / 2026 YTD |
+|---|---|---|---|---|
+| long-only | raw | 0.82 (0.46 to 0.88) | 42% | +75% / +58% / −12% / −10% |
+| long-only | risk-managed | 0.81 (0.43 to 0.99) | 31% | +50% / +31% / −4% / −9% |
+| short-only | raw | −0.36 (−0.61 to −0.19) | 65% | −32% / −27% / −12% / +7% |
+| short-only | risk-managed | −0.27 (−0.64 to 0.00) | 46% | −17% / −17% / −7% / +12% |
+| long-short | raw | 0.31 (−0.20 to 0.53) | 43% | +24% / +19% / −20% / −1% |
+| long-short | risk-managed | 0.49 (−0.10 to 0.69) | 25% | +17% / +15% / −10% / +9% |
+
+Benchmarks over the same window:
+* equal-weight hold of the 10 coins: +178%, Sharpe 0.74, max drawdown 69%;
+* BTC hold: +367%, Sharpe 1.10, max drawdown 53%.
+
+### Best out-of-sample: L14_H14 long-only, risk-managed
+
+* +109%, Sharpe 0.99, max drawdown 28%, exposure 33%.
+* Years: +55% / +29% / +5% / −1%.
+* Bootstrap p = 0.05 (Holm threshold for 96 tests about 0.0005).
+
+Gates failed: Holm significance and drawdown ≤ 25%.
+
+### Best in-sample (the pre-registered primary candidate): ENS_H1 long-only raw
+
+* In sample: Sharpe 1.97.
+* Out of sample: +125%, Sharpe 0.88, max drawdown 38%.
+* Gates failed: Holm, drawdown, and 3 of 4 years positive (2025 −10%, 2026 −11%).
+
+### What the run shows
+
+1. **Long-only TSMOM had a real tendency to work over 2023–2024 and stopped in 2025–2026.**
+   * Every long-only configuration has a positive OOS Sharpe (0.43 to 0.99).
+   * The probability of backtest overfitting is low (PBO 0.08): in-sample rankings carried
+     over.
+   * The result is robust to 2× costs.
+   * But the median long-only year is negative in both 2025 and 2026. This is exactly the
+     "edge disappearing" pattern the strategy must detect.
+2. **Statistical evidence is too weak** for 96 tests. The smallest p-value is 0.05.
+3. **Volatility targeting works as intended.** It cuts the long-only median drawdown from 42%
+   to 31% and the long-short drawdown from 43% to 25%, at about the same Sharpe.
+4. **The short side loses** in a rising market after funding, in every configuration.
+5. **Breadth.** 37 configurations fail the "not one coin" check.
+6. **Liquidation risk.**
+   * Worst single-day move against a long: −51%.
+   * Against a short: **+390% in one day**, in one of the coins.
+   * A 1× isolated short would be liquidated on such a day. This alone rules out naive
+     short TSMOM on altcoins.
+7. **Risk-adjusted, versus holding BTC:**
+   * BTC hold: Sharpe 1.10, drawdown 53%.
+   * The best momentum variants: Sharpe about 1.0 with drawdown about 30%.
+   * Momentum mainly **reduces drawdown**; it does not beat holding BTC.
+
+### Consequence
+
+* FAILED; nothing is enabled.
+* The finding matches NEXUS's Crypto Trends result: long-only trend with volatility
+  targeting cuts drawdown roughly in half. Crypto Trends is the strategy that passed and is
+  in forward paper since 24 Nov.
+* The recent decay (2025–2026) is the reason for the edge-decay monitor proposed in
+  ROADMAP.

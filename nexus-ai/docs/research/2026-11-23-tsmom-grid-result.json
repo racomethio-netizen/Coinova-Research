@@ -1,0 +1,6522 @@
+{
+ "checksums": {
+  "ok": 1586,
+  "bad": 0,
+  "no_checksum_published": 0
+ },
+ "data": {
+  "BTCUSDT": [
+   "2020-01-01 00:00:00+00:00",
+   "2026-10-31 00:00:00+00:00",
+   2496
+  ],
+  "ETHUSDT": [
+   "2020-01-01 00:00:00+00:00",
+   "2026-10-31 00:00:00+00:00",
+   2496
+  ],
+  "BNBUSDT": [
+   "2020-03-01 00:00:00+00:00",
+   "2026-10-31 00:00:00+00:00",
+   2436
+  ],
+  "SOLUSDT": [
+   "2020-10-01 00:00:00+00:00",
+   "2026-10-31 00:00:00+00:00",
+   2217
+  ],
+  "XRPUSDT": [
+   "2020-01-06 00:00:00+00:00",
+   "2026-10-31 00:00:00+00:00",
+   2486
+  ],
+  "ADAUSDT": [
+   "2020-01-31 00:00:00+00:00",
+   "2026-10-31 00:00:00+00:00",
+   2466
+  ],
+  "DOGEUSDT": [
+   "2020-08-01 00:00:00+00:00",
+   "2026-10-31 00:00:00+00:00",
+   2283
+  ],
+  "LINKUSDT": [
+   "2020-01-17 00:00:00+00:00",
+   "2026-10-31 00:00:00+00:00",
+   2480
+  ],
+  "AVAXUSDT": [
+   "2020-10-01 00:00:00+00:00",
+   "2026-10-31 00:00:00+00:00",
+   2222
+  ],
+  "LTCUSDT": [
+   "2020-01-09 00:00:00+00:00",
+   "2026-10-31 00:00:00+00:00",
+   2483
+  ]
+ },
+ "configs": {
+  "L7_H1_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 5.706558978725802,
+    "cagr": 0.9551927722152784,
+    "sharpe": 1.533537398092867,
+    "sortino": 1.9070176227375109,
+    "max_drawdown": 0.47428322174227056,
+    "calmar": 2.013971248458665,
+    "mean_daily": 0.002221499063720837
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.6896753264757871,
+    "cagr": 0.14654621461511574,
+    "sharpe": 0.5606038785579479,
+    "sortino": 0.7232740988431572,
+    "max_drawdown": 0.5653321541568954,
+    "calmar": 0.25922143917970936,
+    "mean_daily": 0.0005500527652776992
+   },
+   "oos_by_year": {
+    "2023": 0.790547208507052,
+    "2024": 0.45311000994319106,
+    "2025": -0.3195974417863998,
+    "2026": -0.04555028157328167
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.41187788335286535,
+    "cagr": 0.09409303444597739,
+    "sharpe": 0.4298064617081946,
+    "sortino": 0.5556166998374275,
+    "max_drawdown": 0.5987346953473097,
+    "calmar": 0.1571531350649332,
+    "mean_daily": 0.00042180276527769916
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.17969052723312928,
+    "cagr": 0.04402516480390628,
+    "sharpe": 0.2990441616975301,
+    "sortino": 0.38849600933304324,
+    "max_drawdown": 0.629579777754933,
+    "calmar": 0.06992785721437719,
+    "mean_daily": 0.0002935527652776993
+   },
+   "oos_costs": 0.17955,
+   "oos_funding": 0.156748785,
+   "oos_exposure": 0.4875,
+   "oos_turnover": 0.18321428571428572,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.40968668986732854
+   },
+   "p_value": 0.1791641671665667,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L7_H1_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.1623029566412844,
+    "cagr": 0.3121898019416063,
+    "sharpe": 1.305315479286624,
+    "sortino": 1.6079745797672866,
+    "max_drawdown": 0.29651086939519133,
+    "calmar": 1.052878103856348,
+    "mean_daily": 0.0008158279268455533
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.5046089317873637,
+    "cagr": 0.11238948866761223,
+    "sharpe": 0.5853391007525799,
+    "sortino": 0.7715771165392781,
+    "max_drawdown": 0.373585508785503,
+    "calmar": 0.3008400647899368,
+    "mean_daily": 0.00036102170647077446
+   },
+   "oos_by_year": {
+    "2023": 0.49843691622391506,
+    "2024": 0.3040805137794096,
+    "2025": -0.23953491044432473,
+    "2026": 0.012515042971243728
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.3252450336875332,
+    "cagr": 0.0761786268785769,
+    "sharpe": 0.43829259751504895,
+    "sortino": 0.5781662300790473,
+    "max_drawdown": 0.4079592461798267,
+    "calmar": 0.1867309727427962,
+    "mean_daily": 0.0002703539496785122
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.167172048970204,
+    "cagr": 0.041125352035429774,
+    "sharpe": 0.2911971564516689,
+    "sortino": 0.3854271230918071,
+    "max_drawdown": 0.44046743662470844,
+    "calmar": 0.09336751962999211,
+    "mean_daily": 0.00017964131660117184
+   },
+   "oos_costs": 0.12671636239156267,
+   "oos_funding": 0.08542678994474073,
+   "oos_exposure": 0.3098639996480185,
+   "oos_turnover": 0.12930241060363537,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.4605461551454026
+   },
+   "p_value": 0.17016596680663867,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L7_H1_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.8389415373832818,
+    "cagr": -0.47445835213869425,
+    "sharpe": -0.49301731764732676,
+    "sortino": -0.5542496658381996,
+    "max_drawdown": 0.9197108180908222,
+    "calmar": -0.5158777550573957,
+    "mean_daily": -0.0009891280795791206
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.6687075824210847,
+    "cagr": -0.25025723603899863,
+    "sharpe": -0.46440246126772716,
+    "sortino": -0.5335979836363333,
+    "max_drawdown": 0.7435352054106288,
+    "calmar": -0.33657752076553016,
+    "mean_daily": -0.0005396288194276963
+   },
+   "oos_by_year": {
+    "2023": -0.33022098132132494,
+    "2024": -0.3541870625557666,
+    "2025": -0.29320767109711454,
+    "2026": 0.08363092135170769
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.7232575701069398,
+    "cagr": -0.2846127796772846,
+    "sharpe": -0.5750233860942789,
+    "sortino": -0.6644478652281501,
+    "max_drawdown": 0.7737947947589401,
+    "calmar": -0.3678142856543121,
+    "mean_daily": -0.0006680788194276962
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.7688377048302178,
+    "cagr": -0.31740347276607295,
+    "sharpe": -0.6856444960353161,
+    "sortino": -0.7955226418000702,
+    "max_drawdown": 0.8004911175893799,
+    "calmar": -0.3965109240960851,
+    "mean_daily": -0.000796528819427696
+   },
+   "oos_costs": 0.17983,
+   "oos_funding": -0.06934775600000001,
+   "oos_exposure": 0.512,
+   "oos_turnover": 0.1835,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.5586177166064334
+   },
+   "p_value": 0.8634273145370925,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L7_H1_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.3934584420335483,
+    "cagr": -0.161509452363223,
+    "sharpe": -0.45907034114978795,
+    "sortino": -0.4979100431247454,
+    "max_drawdown": 0.61937726698345,
+    "calmar": -0.2607610272004681,
+    "mean_daily": -0.0003639240799507142
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.36954068322401734,
+    "cagr": -0.11331832028573485,
+    "sharpe": -0.3849114976208261,
+    "sortino": -0.454340471780686,
+    "max_drawdown": 0.49466598998626987,
+    "calmar": -0.22908047567385856,
+    "mean_daily": -0.0002514828746623639
+   },
+   "oos_by_year": {
+    "2023": -0.19990610185345492,
+    "2024": -0.26764367509082787,
+    "2025": -0.014687162165458512,
+    "2026": 0.09199218608228121
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.4391272232468979,
+    "cagr": -0.13994673029103843,
+    "sharpe": -0.512863626150793,
+    "sortino": -0.6083393281163554,
+    "max_drawdown": 0.5344319020809516,
+    "calmar": -0.26186073426028444,
+    "mean_daily": -0.0003350130826403678
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.501031985812143,
+    "cagr": -0.1657749217583251,
+    "sharpe": -0.6408412139393145,
+    "sortino": -0.7623821906315632,
+    "max_drawdown": 0.5710750525943559,
+    "calmar": -0.29028570063640613,
+    "mean_daily": -0.0004185323567209165
+   },
+   "oos_costs": 0.11656876135432107,
+   "oos_funding": -0.05094915817068014,
+   "oos_exposure": 0.29503301168820084,
+   "oos_turnover": 0.11894771566767454,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.4949445158571674
+   },
+   "p_value": 0.7866426714657069,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L7_H1_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 0.31313218948453714,
+    "cagr": 0.10073311009016117,
+    "sharpe": 0.5461119035638203,
+    "sortino": 0.6630660763196351,
+    "max_drawdown": 0.5536242688495157,
+    "calmar": 0.18195212124550508,
+    "mean_daily": 0.001232370984141717
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.36608045651295007,
+    "cagr": -0.11205212445928048,
+    "sharpe": 0.007713825127439275,
+    "sortino": 0.010335005936339571,
+    "max_drawdown": 0.6643202671397987,
+    "calmar": -0.1686718439913265,
+    "mean_daily": 1.042394585000312e-05
+   },
+   "oos_by_year": {
+    "2023": 0.2338721062947342,
+    "2024": -0.028614547097007725,
+    "2025": -0.4969373608451898,
+    "2026": 0.05135729986984017
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.5575460133362018,
+    "cagr": -0.19151352714911918,
+    "sharpe": -0.18224473508821712,
+    "sortino": -0.24535455270762002,
+    "max_drawdown": 0.7091978335212934,
+    "calmar": -0.27004245937726634,
+    "mean_daily": -0.00024627605414999696
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.6912477449107056,
+    "cagr": -0.2639046541980129,
+    "sharpe": -0.3721516740645884,
+    "sortino": -0.503051779074101,
+    "max_drawdown": 0.7718040806016695,
+    "calmar": -0.34193218309014733,
+    "mean_daily": -0.0005029760541499968
+   },
+   "oos_costs": 0.35938000000000003,
+   "oos_funding": 0.087401029,
+   "oos_exposure": 0.9994999999999998,
+   "oos_turnover": 0.36671428571428577,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.11006781664966846
+   },
+   "p_value": 0.4947010597880424,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L7_H1_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 0.6003832818789501,
+    "cagr": 0.18018885169466414,
+    "sharpe": 0.8228937771568279,
+    "sortino": 1.0988114180557151,
+    "max_drawdown": 0.16511858437154203,
+    "calmar": 1.0912693588094948,
+    "mean_daily": 0.0005295107712666774
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.3013883072304775,
+    "cagr": 0.07109381945866922,
+    "sharpe": 0.41434993962479466,
+    "sortino": 0.5947132628121482,
+    "max_drawdown": 0.2754211436109947,
+    "calmar": 0.25812767504546513,
+    "mean_daily": 0.0002596211452150399
+   },
+   "oos_by_year": {
+    "2023": 0.27818527687003236,
+    "2024": -0.03451514974052883,
+    "2025": -0.12609887354010618,
+    "2026": 0.20671671088379173
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.08990995529518298,
+    "cagr": 0.022700029903794494,
+    "sharpe": 0.21217029055093897,
+    "sortino": 0.30588270913244764,
+    "max_drawdown": 0.3121463649555267,
+    "calmar": 0.07272239068690964,
+    "mean_daily": 0.00013295561031927746
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.08737081554526116,
+    "cagr": -0.02355413522746297,
+    "sharpe": 0.0098452611862083,
+    "sortino": 0.014244055154736047,
+    "max_drawdown": 0.360325734349083,
+    "calmar": -0.0653690063797768,
+    "mean_daily": 6.1699917974066385e-06
+   },
+   "oos_costs": 0.17845282034808915,
+   "oos_funding": 0.03835724708484036,
+   "oos_exposure": 0.46967351617289493,
+   "oos_turnover": 0.18209471464090732,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.27560430215456094
+   },
+   "p_value": 0.22395520895820836,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L7_H5_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 4.682999955347082,
+    "cagr": 0.844379280450857,
+    "sharpe": 1.437830746756059,
+    "sortino": 1.840670321215751,
+    "max_drawdown": 0.5099667211185266,
+    "calmar": 1.655753690356211,
+    "mean_daily": 0.0020492615768303397
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.4572175036765127,
+    "cagr": 0.10314637376715896,
+    "sharpe": 0.4590585602816154,
+    "sortino": 0.5890185247075101,
+    "max_drawdown": 0.513115215262862,
+    "calmar": 0.2010199087827058,
+    "mean_daily": 0.00042831633785071933
+   },
+   "oos_by_year": {
+    "2023": 0.7839367531035948,
+    "2024": 0.3542432504234605,
+    "2025": -0.28090137999337117,
+    "2026": -0.16119735522452205
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.339653402630554,
+    "cagr": 0.07921692169860806,
+    "sharpe": 0.3946553091983875,
+    "sortino": 0.5071370088193012,
+    "max_drawdown": 0.5302319346848112,
+    "calmar": 0.1494005104496345,
+    "mean_daily": 0.0003682263378507193
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.23156480177933592,
+    "cagr": 0.055804483901173096,
+    "sharpe": 0.3302503470372889,
+    "sortino": 0.42500667483143134,
+    "max_drawdown": 0.5467483858059407,
+    "calmar": 0.10206611551109358,
+    "mean_daily": 0.0003081363378507193
+   },
+   "oos_costs": 0.084126,
+   "oos_funding": 0.14515904200000002,
+   "oos_exposure": 0.48769999999999997,
+   "oos_turnover": 0.08584285714285715,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.34526722746871785
+   },
+   "p_value": 0.22075584883023394,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L7_H5_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 0.9983890135855968,
+    "cagr": 0.2762465108358012,
+    "sharpe": 1.2011831894010758,
+    "sortino": 1.5185262219481925,
+    "max_drawdown": 0.2960168705341578,
+    "calmar": 0.9332120508446654,
+    "mean_daily": 0.0007372521389099471
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.31169986090336077,
+    "cagr": 0.07330000239042,
+    "sharpe": 0.42698575971077113,
+    "sortino": 0.5585042582059179,
+    "max_drawdown": 0.3734638718459544,
+    "calmar": 0.19627066475831598,
+    "mean_daily": 0.00026297395711129967
+   },
+   "oos_by_year": {
+    "2023": 0.4987112917104397,
+    "2024": 0.23009172315498283,
+    "2025": -0.19405396919015538,
+    "2026": -0.11717822621633289
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.22865773493586894,
+    "cagr": 0.05515416650918059,
+    "sharpe": 0.35113422026138474,
+    "sortino": 0.45962877747808617,
+    "max_drawdown": 0.3911189418056962,
+    "calmar": 0.14101635235191604,
+    "mean_daily": 0.00021625119518859116
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.15087083890293984,
+    "cagr": 0.03731462916450279,
+    "sharpe": 0.2752791522500381,
+    "sortino": 0.3605024324550633,
+    "max_drawdown": 0.40826918813398105,
+    "calmar": 0.09139712290082813,
+    "mean_daily": 0.00016952959702920355
+   },
+   "oos_costs": 0.06511094715726709,
+   "oos_funding": 0.08301905773078513,
+   "oos_exposure": 0.32940700231625153,
+   "oos_turnover": 0.06643974199721132,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.35126938153786985
+   },
+   "p_value": 0.2375524895020996,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L7_H5_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.8393574938770207,
+    "cagr": -0.474936947186673,
+    "sharpe": -0.6242370383886585,
+    "sortino": -0.7179742012714444,
+    "max_drawdown": 0.9158813552224235,
+    "calmar": -0.5185572830788041,
+    "mean_daily": -0.001129759589394867
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.7069263255240099,
+    "cagr": -0.2738384664629818,
+    "sharpe": -0.600369446811796,
+    "sortino": -0.7130285211085722,
+    "max_drawdown": 0.7539473687803824,
+    "calmar": -0.36320634277954267,
+    "mean_daily": -0.000655834579376905
+   },
+   "oos_by_year": {
+    "2023": -0.3295712973559667,
+    "2024": -0.38990519210704844,
+    "2025": -0.24227515272723843,
+    "2026": -0.05438282332078348
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.7305882760121484,
+    "cagr": -0.2896024707687208,
+    "sharpe": -0.6553579418470545,
+    "sortino": -0.7793100584636442,
+    "max_drawdown": 0.7685939948559711,
+    "calmar": -0.37679512552396427,
+    "mean_daily": -0.0007159045793769051
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.7523416885361642,
+    "cagr": -0.30502562160428615,
+    "sharpe": -0.7103433731104697,
+    "sortino": -0.8463249655136851,
+    "max_drawdown": 0.7827158218418915,
+    "calmar": -0.389701617231268,
+    "mean_daily": -0.000775974579376905
+   },
+   "oos_costs": 0.084098,
+   "oos_funding": -0.08093730040000002,
+   "oos_exposure": 0.5118,
+   "oos_turnover": 0.08581428571428572,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.6750110902004406
+   },
+   "p_value": 0.9218156368726255,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L7_H5_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.5211910360488599,
+    "cagr": -0.2285356557606505,
+    "sharpe": -0.7324278775265769,
+    "sortino": -0.7705814773180216,
+    "max_drawdown": 0.6862134733441669,
+    "calmar": -0.3330387184718385,
+    "mean_daily": -0.0005867072933141914
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.4716615365154011,
+    "cagr": -0.1532420951490605,
+    "sharpe": -0.5943594162704485,
+    "sortino": -0.7144714824257151,
+    "max_drawdown": 0.539554278017302,
+    "calmar": -0.2840160877088745,
+    "mean_daily": -0.00038046761324050937
+   },
+   "oos_by_year": {
+    "2023": -0.2526708782053243,
+    "2024": -0.254471487927889,
+    "2025": -0.07207991902264033,
+    "2026": 0.021940220710684688
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.5023311699771362,
+    "cagr": -0.1663417669948869,
+    "sharpe": -0.6610701483249009,
+    "sortino": -0.7954781521136369,
+    "max_drawdown": 0.5591494066857707,
+    "calmar": -0.29749073325650005,
+    "mean_daily": -0.00042316243507802253
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.5312210474931116,
+    "cagr": -0.17923905219081016,
+    "sharpe": -0.7277794796812994,
+    "sortino": -0.8766409543028599,
+    "max_drawdown": 0.5779121920608898,
+    "calmar": -0.310149283322137,
+    "mean_daily": -0.00046585593086234206
+   },
+   "oos_costs": 0.0596465511361073,
+   "oos_funding": -0.05950149459186726,
+   "oos_exposure": 0.31203983486089404,
+   "oos_turnover": 0.0608638276899054,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.6828122176293175
+   },
+   "p_value": 0.8878224355128974,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L7_H5_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 0.2931033378137222,
+    "cagr": 0.09478853646047414,
+    "sharpe": 0.4932774857734309,
+    "sortino": 0.5741907589491947,
+    "max_drawdown": 0.5224697567431061,
+    "calmar": 0.18142396806152522,
+    "mean_daily": 0.0009195019874354724
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.4841841562745334,
+    "cagr": -0.1585210521243705,
+    "sharpe": -0.19735382167333418,
+    "sortino": -0.2489090184852324,
+    "max_drawdown": 0.6515056187544278,
+    "calmar": -0.24331494243662372,
+    "mean_daily": -0.00022751824152618538
+   },
+   "oos_by_year": {
+    "2023": 0.24225744596957965,
+    "2024": -0.12694223855348385,
+    "2025": -0.41887952537244666,
+    "2026": -0.18158437086763624
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.5640943941321368,
+    "cagr": -0.19465037411289787,
+    "sharpe": -0.3015812422797858,
+    "sortino": -0.38149496271341127,
+    "max_drawdown": 0.6888645006002325,
+    "calmar": -0.2825669982170543,
+    "mean_daily": -0.00034767824152618526
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.6316359947215232,
+    "cagr": -0.22923450110336008,
+    "sharpe": -0.4058016179665798,
+    "sortino": -0.5154117957552549,
+    "max_drawdown": 0.7292502928637012,
+    "calmar": -0.31434269323797803,
+    "mean_daily": -0.00046783824152618516
+   },
+   "oos_costs": 0.16822399999999998,
+   "oos_funding": 0.0642217416,
+   "oos_exposure": 0.6971857142857143,
+   "oos_turnover": 0.17165714285714284,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.2887325610520757
+   },
+   "p_value": 0.6592681463707258,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L7_H5_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 0.35008925695237436,
+    "cagr": 0.11154965072022227,
+    "sharpe": 0.5704240824957832,
+    "sortino": 0.7329742344200668,
+    "max_drawdown": 0.22369723314897605,
+    "calmar": 0.49866352457713836,
+    "mean_daily": 0.00036464454700119533
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.1153457592326338,
+    "cagr": -0.03144763105624382,
+    "sharpe": -0.025447058590931965,
+    "sortino": -0.034054799973720754,
+    "max_drawdown": 0.32474500785396754,
+    "calmar": -0.09683791989309132,
+    "mean_daily": -1.5941527159201252e-05
+   },
+   "oos_by_year": {
+    "2023": 0.16439335562595536,
+    "2024": -0.03628390133821713,
+    "2025": -0.16719172588491016,
+    "2026": -0.05337122876039968
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.20503100759530435,
+    "cagr": -0.05806730704849472,
+    "sharpe": -0.14722692206015767,
+    "sortino": -0.19749470673649583,
+    "max_drawdown": 0.3698647094457208,
+    "calmar": -0.15699607333588106,
+    "mean_daily": -9.225132130804553e-05
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.2856857338879204,
+    "cagr": -0.08397598520361338,
+    "sharpe": -0.26904130744174426,
+    "sortino": -0.36217118831673784,
+    "max_drawdown": 0.4119959711364871,
+    "calmar": -0.20382719998927754,
+    "mean_daily": -0.00016861623550792502
+   },
+   "oos_costs": 0.10704666947123184,
+   "oos_funding": 0.03626552918676819,
+   "oos_exposure": 0.4037404795464364,
+   "oos_turnover": 0.10923129537880799,
+   "without_best_coin": {
+    "coin": "DOGEUSDT",
+    "sharpe": -0.15779503288628896
+   },
+   "p_value": 0.5180963807238552,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L7_H7_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 4.223080997263115,
+    "cagr": 0.7903482539905407,
+    "sharpe": 1.3749774487257254,
+    "sortino": 1.7273365293355987,
+    "max_drawdown": 0.49857426825024886,
+    "calmar": 1.5852166955271787,
+    "mean_daily": 0.0019751672993257607
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.49082588646158953,
+    "cagr": 0.10972374012131048,
+    "sharpe": 0.47968537313972803,
+    "sortino": 0.6156512787289715,
+    "max_drawdown": 0.4878251465931154,
+    "calmar": 0.2249243215270916,
+    "mean_daily": 0.0004384828776533183
+   },
+   "oos_by_year": {
+    "2023": 0.6989381975613798,
+    "2024": 0.42707886112313376,
+    "2025": -0.2961642612806963,
+    "2026": -0.12636493689076556
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.38473826438938996,
+    "cagr": 0.08857054083758031,
+    "sharpe": 0.42198947172594514,
+    "sortino": 0.5419278839453795,
+    "max_drawdown": 0.5038202817312523,
+    "calmar": 0.1757978867647603,
+    "mean_daily": 0.0003857685919390326
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.28619320342936394,
+    "cagr": 0.06781911417809439,
+    "sharpe": 0.3643002013812707,
+    "sortino": 0.4684946768091837,
+    "max_drawdown": 0.5193169787038074,
+    "calmar": 0.13059290752897765,
+    "mean_daily": 0.00033305430622474684
+   },
+   "oos_costs": 0.07380000000000002,
+   "oos_funding": 0.14243405242857143,
+   "oos_exposure": 0.4879387755102041,
+   "oos_turnover": 0.0753061224489796,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.3817722732813107
+   },
+   "p_value": 0.20935812837432513,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L7_H7_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 0.8873895773671487,
+    "cagr": 0.25080786923107623,
+    "sharpe": 1.1094732743525342,
+    "sortino": 1.3745458688138366,
+    "max_drawdown": 0.2971800482252659,
+    "calmar": 0.8439593126418803,
+    "mean_daily": 0.0006824558263421711
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.3367269368523318,
+    "cagr": 0.07860177944165492,
+    "sharpe": 0.4519923425715437,
+    "sortino": 0.5905113948580006,
+    "max_drawdown": 0.3500844915536595,
+    "calmar": 0.22452231200766334,
+    "mean_daily": 0.0002748812402309108
+   },
+   "oos_by_year": {
+    "2023": 0.4647819404032012,
+    "2024": 0.2576244096327065,
+    "2025": -0.20038343045477225,
+    "2026": -0.09252017239317811
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.26103384314191524,
+    "cagr": 0.06233355808214647,
+    "sharpe": 0.38352414112482996,
+    "sortino": 0.5010510631189725,
+    "max_drawdown": 0.36634066606305127,
+    "calmar": 0.17015189373329953,
+    "mean_daily": 0.00023323826342644784
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.18961846480251454,
+    "cagr": 0.04630876568943809,
+    "sharpe": 0.315048012278158,
+    "sortino": 0.4118792082407717,
+    "max_drawdown": 0.3821911919400578,
+    "calmar": 0.12116649118565002,
+    "mean_daily": 0.00019159229450235182
+   },
+   "oos_costs": 0.057998485607811456,
+   "oos_funding": 0.08403942667406912,
+   "oos_exposure": 0.3372471581419238,
+   "oos_turnover": 0.059182128171236185,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.37288108140710674
+   },
+   "p_value": 0.22475504899020196,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L7_H7_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.8408305047662556,
+    "cagr": -0.4766382604250834,
+    "sharpe": -0.6977347302121909,
+    "sortino": -0.8095386572736277,
+    "max_drawdown": 0.9194025143424291,
+    "calmar": -0.5184217499839909,
+    "mean_daily": -0.0011981048862969668
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.6988136427274327,
+    "cagr": -0.268650588215678,
+    "sharpe": -0.6062889375544408,
+    "sortino": -0.7313138785803928,
+    "max_drawdown": 0.7538552274894054,
+    "calmar": -0.35636893984323215,
+    "mean_daily": -0.0006467597253479249
+   },
+   "oos_by_year": {
+    "2023": -0.36124870635098194,
+    "2024": -0.35775589895467297,
+    "2025": -0.2549874367558155,
+    "2026": -0.014538225717857678
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.7202718653762465,
+    "cagr": -0.28260852693112615,
+    "sharpe": -0.6557723908072083,
+    "sortino": -0.7913145381058659,
+    "max_drawdown": 0.7668302809562976,
+    "calmar": -0.3685411673867275,
+    "mean_daily": -0.0006995168682050677
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.7402026312973764,
+    "cagr": -0.2963010281892774,
+    "sharpe": -0.7052584452358577,
+    "sortino": -0.8519069722858135,
+    "max_drawdown": 0.7791222149741261,
+    "calmar": -0.38030109075906304,
+    "mean_daily": -0.0007522740110622105
+   },
+   "oos_costs": 0.07386000000000001,
+   "oos_funding": -0.08367858457142859,
+   "oos_exposure": 0.5115612244897959,
+   "oos_turnover": 0.07536734693877552,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.6816364840823265
+   },
+   "p_value": 0.9168166366726654,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L7_H7_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.5364693585427184,
+    "cagr": -0.23729974174154933,
+    "sharpe": -0.7989341134880028,
+    "sortino": -0.8565864732682492,
+    "max_drawdown": 0.7026204447704887,
+    "calmar": -0.3377353214067994,
+    "mean_daily": -0.0006244649215424591
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.48998417244730197,
+    "cagr": -0.16099822193772617,
+    "sharpe": -0.6422870628773296,
+    "sortino": -0.7862017635254956,
+    "max_drawdown": 0.567009427536245,
+    "calmar": -0.2839427602417328,
+    "mean_daily": -0.0004071438829811307
+   },
+   "oos_by_year": {
+    "2023": -0.28559748129878837,
+    "2024": -0.23126147199242775,
+    "2025": -0.11352833443758559,
+    "2026": 0.047604054049846356
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.5165370691348055,
+    "cagr": -0.17261246821344778,
+    "sharpe": -0.7025728111020046,
+    "sortino": -0.8598937311788123,
+    "max_drawdown": 0.5836350442216243,
+    "calmar": -0.29575411881521885,
+    "mean_daily": -0.00044532325939206443
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.5417093509967388,
+    "cagr": -0.1840667773736785,
+    "sharpe": -0.7628671550808954,
+    "sortino": -0.9341311344120836,
+    "max_drawdown": 0.5996241072529481,
+    "calmar": -0.30697027545630506,
+    "mean_daily": -0.000483503530438161
+   },
+   "oos_costs": 0.05334666253654924,
+   "oos_funding": -0.06313535142333314,
+   "oos_exposure": 0.3197096065701288,
+   "oos_turnover": 0.05443536993525432,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.7503859810191734
+   },
+   "p_value": 0.902619476104779,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L7_H7_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 0.25175167367058515,
+    "cagr": 0.08232396333271641,
+    "sharpe": 0.4572859213317416,
+    "sortino": 0.5287409430848282,
+    "max_drawdown": 0.5128137306266356,
+    "calmar": 0.1605338516036226,
+    "mean_daily": 0.0007770624130287942
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.4448839797587332,
+    "cagr": -0.1422569756504991,
+    "sharpe": -0.19431046399361568,
+    "sortino": -0.2402986592868889,
+    "max_drawdown": 0.5913889224169988,
+    "calmar": -0.24054724439053865,
+    "mean_daily": -0.00020827684769460643
+   },
+   "oos_by_year": {
+    "2023": 0.1310075551605574,
+    "2024": -0.02408566447451088,
+    "2025": -0.4364756732089955,
+    "2026": -0.10752946138891817
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.5211314474163001,
+    "cagr": -0.17466963114988776,
+    "sharpe": -0.2927045228237025,
+    "sortino": -0.3629857553229667,
+    "max_drawdown": 0.6457183274012853,
+    "calmar": -0.2705043727856563,
+    "mean_daily": -0.00031374827626603515
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.5869145850088315,
+    "cagr": -0.20586176422189895,
+    "sharpe": -0.39109193216044413,
+    "sortino": -0.487526596414334,
+    "max_drawdown": 0.6928302187581077,
+    "calmar": -0.2971316184662159,
+    "mean_daily": -0.00041921970483746376
+   },
+   "oos_costs": 0.14766,
+   "oos_funding": 0.05875546785714286,
+   "oos_exposure": 0.6238469387755102,
+   "oos_turnover": 0.15067346938775514,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.28927416368588627
+   },
+   "p_value": 0.6504699060187963,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L7_H7_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 0.2032621275073747,
+    "cagr": 0.0673632590811375,
+    "sharpe": 0.3980593842375877,
+    "sortino": 0.48654400431401434,
+    "max_drawdown": 0.24724227117541053,
+    "calmar": 0.2724585029933874,
+    "mean_daily": 0.00025293067119277736
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.17211974723219226,
+    "cagr": -0.04805257924437467,
+    "sharpe": -0.09660902450243823,
+    "sortino": -0.12571077868669067,
+    "max_drawdown": 0.32884807919123415,
+    "calmar": -0.14612394684668595,
+    "mean_daily": -6.1309483774301e-05
+   },
+   "oos_by_year": {
+    "2023": 0.08326749342140816,
+    "2024": 0.03572762268126173,
+    "2025": -0.23140052458312588,
+    "2026": -0.03996698191261794
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.2533870917868757,
+    "cagr": -0.07335330222932757,
+    "sharpe": -0.212852869534554,
+    "sortino": -0.27758353752931786,
+    "max_drawdown": 0.38398022681778865,
+    "calmar": -0.19103406140789678,
+    "mean_daily": -0.0001350861469628066
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.3267065820058115,
+    "cagr": -0.09799192650175437,
+    "sharpe": -0.3291260112570242,
+    "sortino": -0.43082562651325895,
+    "max_drawdown": 0.44211904611682185,
+    "calmar": -0.22164149534481217,
+    "mean_daily": -0.00020888871502120857
+   },
+   "oos_costs": 0.10324045142682069,
+   "oos_funding": 0.03588800216192774,
+   "oos_exposure": 0.399290371271242,
+   "oos_turnover": 0.10534739941512315,
+   "without_best_coin": {
+    "coin": "DOGEUSDT",
+    "sharpe": -0.22739785336137883
+   },
+   "p_value": 0.5734853029394121,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L7_H14_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 4.523107252931529,
+    "cagr": 0.8259276318003395,
+    "sharpe": 1.4338489813574409,
+    "sortino": 1.8486414994382374,
+    "max_drawdown": 0.5622278203750378,
+    "calmar": 1.4690266149572586,
+    "mean_daily": 0.002011335932357897
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 1.0444371374104935,
+    "cagr": 0.20495552219733693,
+    "sharpe": 0.7387862732160014,
+    "sortino": 1.0129872184788782,
+    "max_drawdown": 0.4090665544719868,
+    "calmar": 0.5010322158013836,
+    "mean_daily": 0.0006538585785009787
+   },
+   "oos_by_year": {
+    "2023": 0.6438823090961066,
+    "2024": 0.5770499995861,
+    "2025": -0.18118845014707108,
+    "2026": -0.03689504566254853
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.9749572080886275,
+    "cagr": 0.1941423810281766,
+    "sharpe": 0.7108713670273492,
+    "sortino": 0.9749209750875958,
+    "max_drawdown": 0.41798708462424716,
+    "calmar": 0.46446980820640055,
+    "mean_daily": 0.000629151435643836
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.9078362938808748,
+    "cagr": 0.18342591175653045,
+    "sharpe": 0.6829557963964717,
+    "sortino": 0.9371512081783049,
+    "max_drawdown": 0.42677326875962673,
+    "calmar": 0.4297970964527354,
+    "mean_daily": 0.0006044442927866929
+   },
+   "oos_costs": 0.03459000000000001,
+   "oos_funding": 0.13890740514285715,
+   "oos_exposure": 0.4883010204081632,
+   "oos_turnover": 0.03529591836734695,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.6291749302925391
+   },
+   "p_value": 0.09658068386322735,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L7_H14_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.011261458510511,
+    "cagr": 0.2791368246621333,
+    "sharpe": 1.1948030294900425,
+    "sortino": 1.530242976944733,
+    "max_drawdown": 0.3561084640010558,
+    "calmar": 0.7838533842355,
+    "mean_daily": 0.0007459033492101747
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.8712688602263838,
+    "cagr": 0.1774698419526286,
+    "sharpe": 0.8605393132253482,
+    "sortino": 1.2400295595425463,
+    "max_drawdown": 0.3167184095537793,
+    "calmar": 0.5603395211622327,
+    "mean_daily": 0.0005121272608094761
+   },
+   "oos_by_year": {
+    "2023": 0.4820074339921463,
+    "2024": 0.42758150806676465,
+    "2025": -0.09505251334343434,
+    "2026": -0.022624346620316982
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.81638129379023,
+    "cagr": 0.1683661692753653,
+    "sharpe": 0.8248052194444028,
+    "sortino": 1.1886030236256706,
+    "max_drawdown": 0.3222564905144285,
+    "calmar": 0.5224601341825479,
+    "mean_daily": 0.0004908521950089103
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.7631022205823308,
+    "cagr": 0.15933263280231036,
+    "sharpe": 0.7890690521232614,
+    "sortino": 1.1374144475044634,
+    "max_drawdown": 0.32774863192951686,
+    "calmar": 0.4861427852933807,
+    "mean_daily": 0.0004695771178131464
+   },
+   "oos_costs": 0.029990199891510413,
+   "oos_funding": 0.08610874739391114,
+   "oos_exposure": 0.343404593969186,
+   "oos_turnover": 0.030602244787255525,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.7310364577895424
+   },
+   "p_value": 0.07978404319136173,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L7_H14_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.8162917337583098,
+    "cagr": -0.4495215483107514,
+    "sharpe": -0.7354584641743425,
+    "sortino": -0.9364641565879193,
+    "max_drawdown": 0.9030433514490419,
+    "calmar": -0.4977851258075705,
+    "mean_daily": -0.0011657789298831918
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.5708849631001383,
+    "cagr": -0.19794024863702098,
+    "sharpe": -0.44276404176206274,
+    "sortino": -0.5692507928982449,
+    "max_drawdown": 0.6990018982661166,
+    "calmar": -0.28317555235259645,
+    "mean_daily": -0.00043056744617979463
+   },
+   "oos_by_year": {
+    "2023": -0.3828247631824,
+    "2024": -0.28363647724480856,
+    "2025": -0.11231330999946876,
+    "2026": 0.0933823759070822
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.5854964776212858,
+    "cagr": -0.2051518925716681,
+    "sharpe": -0.46817996869371376,
+    "sortino": -0.6021930270532442,
+    "max_drawdown": 0.7064596748290963,
+    "calmar": -0.2903943422125227,
+    "mean_daily": -0.00045528887475122326
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.5996109391709492,
+    "cagr": -0.21229893687895496,
+    "sharpe": -0.4935949353700225,
+    "sortino": -0.6350226272184853,
+    "max_drawdown": 0.7137329141887254,
+    "calmar": -0.2974487131790294,
+    "mean_daily": -0.00048001030332265194
+   },
+   "oos_costs": 0.034610000000000016,
+   "oos_funding": -0.08725204657142857,
+   "oos_exposure": 0.5111989795918368,
+   "oos_turnover": 0.03531632653061226,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.5179883645726309
+   },
+   "p_value": 0.8320335932813437,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L7_H14_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.49665646987701084,
+    "cagr": -0.21483323125691367,
+    "sharpe": -0.7485284898321447,
+    "sortino": -0.9178902215265246,
+    "max_drawdown": 0.6610558703895275,
+    "calmar": -0.32498498369029394,
+    "mean_daily": -0.0005587526881680545
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.4081051646866386,
+    "cagr": -0.1277903232403702,
+    "sharpe": -0.4953299112530653,
+    "sortino": -0.6536778284028393,
+    "max_drawdown": 0.5512157913611474,
+    "calmar": -0.23183356725831558,
+    "mean_daily": -0.00030518742047769016
+   },
+   "oos_by_year": {
+    "2023": -0.263411758737917,
+    "2024": -0.21359852474725216,
+    "2025": -0.08943782376705467,
+    "2026": 0.12218857572078812
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.42520624571039245,
+    "cagr": -0.13443167875247808,
+    "sharpe": -0.5292397110794838,
+    "sortino": -0.6982072741562325,
+    "max_drawdown": 0.5604977744105453,
+    "calmar": -0.23984337653054,
+    "mean_daily": -0.00032610705634401486
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.44181435825416404,
+    "cagr": -0.1410229126805015,
+    "sharpe": -0.5631441513101644,
+    "sortino": -0.7433677856336752,
+    "max_drawdown": 0.5695882889802135,
+    "calmar": -0.24758745116229097,
+    "mean_daily": -0.00034702743701869486
+   },
+   "oos_costs": 0.029290125453435442,
+   "oos_funding": -0.07061378847631816,
+   "oos_exposure": 0.33729764619275093,
+   "oos_turnover": 0.02988788311575045,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.5954987084128296
+   },
+   "p_value": 0.8232353529294141,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L7_H14_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 0.6962345525346918,
+    "cagr": 0.20462450779644126,
+    "sharpe": 0.6255782168236034,
+    "sortino": 0.7780152196943576,
+    "max_drawdown": 0.42229579969864095,
+    "calmar": 0.48455255283728976,
+    "mean_daily": 0.0008455570024747046
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.1543343729517097,
+    "cagr": 0.038127620009800633,
+    "sharpe": 0.27482774711734204,
+    "sortino": 0.34258783632416956,
+    "max_drawdown": 0.3242596887133119,
+    "calmar": 0.11758359530009434,
+    "mean_daily": 0.00022329113232118396
+   },
+   "oos_by_year": {
+    "2023": 0.06884270670171078,
+    "2024": 0.21889871780496173,
+    "2025": -0.19521526097188713,
+    "2026": 0.10095730461988017
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.07714413509842988,
+    "cagr": 0.019563421888061594,
+    "sharpe": 0.21398425815149918,
+    "sortino": 0.2669690804193214,
+    "max_drawdown": 0.33587919508165043,
+    "calmar": 0.05824541136972128,
+    "mean_daily": 0.00017386256089261257
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.005110850895094554,
+    "cagr": 0.001329961981581862,
+    "sharpe": 0.1531439175653856,
+    "sortino": 0.19142563809000424,
+    "max_drawdown": 0.34774723743659186,
+    "calmar": 0.0038245076837579964,
+    "mean_daily": 0.00012443398946404116
+   },
+   "oos_costs": 0.06920000000000003,
+   "oos_funding": 0.051655358571428577,
+   "oos_exposure": 0.43823469387755104,
+   "oos_turnover": 0.0706122448979592,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": 0.17623420822482588
+   },
+   "p_value": 0.28754249150169964,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L7_H14_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 0.4633986443490572,
+    "cagr": 0.14356276596317863,
+    "sharpe": 0.6932798838960977,
+    "sortino": 0.8728175923480957,
+    "max_drawdown": 0.29441949834249637,
+    "calmar": 0.48761296983181784,
+    "mean_daily": 0.0004416711487751864
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.24821583289591853,
+    "cagr": 0.05950765042023498,
+    "sharpe": 0.3755011471544173,
+    "sortino": 0.4799435779229037,
+    "max_drawdown": 0.2398836431660092,
+    "calmar": 0.2480688121742977,
+    "mean_daily": 0.00022260088746089288
+   },
+   "oos_by_year": {
+    "2023": 0.044469467552180175,
+    "2024": 0.13991422492157368,
+    "2025": -0.10050771490208965,
+    "2026": 0.16553232303447474
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.1750768022733562,
+    "cagr": 0.04295908867612841,
+    "sharpe": 0.3027335404427283,
+    "sortino": 0.3869848215323617,
+    "max_drawdown": 0.24827711208010217,
+    "calmar": 0.17302879156363163,
+    "mean_daily": 0.000179484989909913
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.1062104596430351,
+    "cagr": 0.026665883369975774,
+    "sharpe": 0.22997241616329228,
+    "sortino": 0.2943839619586798,
+    "max_drawdown": 0.2565781015030659,
+    "calmar": 0.10392891370605584,
+    "mean_daily": 0.00013636314203789365
+   },
+   "oos_costs": 0.06018780865599621,
+   "oos_funding": 0.036597067074106066,
+   "oos_exposure": 0.3463674282212196,
+   "oos_turnover": 0.06141613128162879,
+   "without_best_coin": {
+    "coin": "DOGEUSDT",
+    "sharpe": 0.26332778000240076
+   },
+   "p_value": 0.24155168966206758,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": true,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H1_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 7.136060488472346,
+    "cagr": 1.0929267395307654,
+    "sharpe": 1.6268567309775086,
+    "sortino": 1.9700947624531986,
+    "max_drawdown": 0.4780221011717982,
+    "calmar": 2.286351900574518,
+    "mean_daily": 0.0024349174906753324
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 1.5668007902632302,
+    "cagr": 0.27859907438657916,
+    "sharpe": 0.8417296557227655,
+    "sortino": 1.0754557653266037,
+    "max_drawdown": 0.48063661760504306,
+    "calmar": 0.5796459615890406,
+    "mean_daily": 0.0008660456208774333
+   },
+   "oos_by_year": {
+    "2023": 0.9283955473000647,
+    "2024": 0.8690251194500958,
+    "2025": -0.23094628615339852,
+    "2026": -0.0739717573989237
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 1.2703162514636985,
+    "cagr": 0.23833115798796523,
+    "sharpe": 0.7564145189350568,
+    "sortino": 0.9692536503640868,
+    "max_drawdown": 0.499922834269252,
+    "calmar": 0.4767358913227859,
+    "mean_daily": 0.0007783956208774331
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 1.008018256245256,
+    "cagr": 0.1993221466373749,
+    "sharpe": 0.6711043923839907,
+    "sortino": 0.8622307464467854,
+    "max_drawdown": 0.5184978522043333,
+    "calmar": 0.384422318800319,
+    "mean_daily": 0.0006907456208774332
+   },
+   "oos_costs": 0.12271000000000001,
+   "oos_funding": 0.158834908,
+   "oos_exposure": 0.4894285714285714,
+   "oos_turnover": 0.12521428571428572,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.7200164801871596
+   },
+   "p_value": 0.08518296340731854,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H1_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.3595522228613732,
+    "cagr": 0.3531752809459563,
+    "sharpe": 1.4246574263703733,
+    "sortino": 1.701688267863427,
+    "max_drawdown": 0.283104175616987,
+    "calmar": 1.2475099675808698,
+    "mean_daily": 0.000902146524111138
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.8300211104798307,
+    "cagr": 0.17064726427396293,
+    "sharpe": 0.8015561112620968,
+    "sortino": 1.0184286358356698,
+    "max_drawdown": 0.3593740359245212,
+    "calmar": 0.4748458353006997,
+    "mean_daily": 0.0005034829205966476
+   },
+   "oos_by_year": {
+    "2023": 0.6178617303651226,
+    "2024": 0.40267959809167064,
+    "2025": -0.1575049757660979,
+    "2026": -0.04283045332098723
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.6704898213434345,
+    "cagr": 0.14313776100571807,
+    "sharpe": 0.6978198692041216,
+    "sortino": 0.8881304453192134,
+    "max_drawdown": 0.3778278510473405,
+    "calmar": 0.37884385867515996,
+    "mean_daily": 0.0004383117833474331
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.5248032353396967,
+    "cagr": 0.1162628111541606,
+    "sharpe": 0.5940332850697658,
+    "sortino": 0.7571380031432311,
+    "max_drawdown": 0.39574937911806674,
+    "calmar": 0.2937788845386289,
+    "mean_daily": 0.00037311784400811455
+   },
+   "oos_costs": 0.09110059302586444,
+   "oos_funding": 0.08236093222986907,
+   "oos_exposure": 0.29959445498578496,
+   "oos_turnover": 0.09295978880190249,
+   "without_best_coin": {
+    "coin": "XRPUSDT",
+    "sharpe": 0.6902177684583798
+   },
+   "p_value": 0.10477904419116177,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H1_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.7903583906857268,
+    "cagr": -0.4233062391403607,
+    "sharpe": -0.40898033968947783,
+    "sortino": -0.444610472696636,
+    "max_drawdown": 0.8966322825641715,
+    "calmar": -0.47210684621994403,
+    "mean_daily": -0.0007903582890514068
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.4606669852079539,
+    "cagr": -0.14868302953576185,
+    "sharpe": -0.1917445822049362,
+    "sortino": -0.21829593843592013,
+    "max_drawdown": 0.6088553692570993,
+    "calmar": -0.24420090064604155,
+    "mean_daily": -0.0002130621241485067
+   },
+   "oos_by_year": {
+    "2023": -0.25101530328938004,
+    "2024": -0.1655855175682699,
+    "2025": -0.1807922836453082,
+    "2026": 0.05343609293570739
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.5230604597346697,
+    "cagr": -0.17553770973536675,
+    "sharpe": -0.2708555051103577,
+    "sortino": -0.308984922275076,
+    "max_drawdown": 0.6416576343934142,
+    "calmar": -0.2735691127579428,
+    "mean_daily": -0.00030091212414850676
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.5782484261490901,
+    "cagr": -0.20155146484704223,
+    "sharpe": -0.3499854722232833,
+    "sortino": -0.4009623472039763,
+    "max_drawdown": 0.6717154601291739,
+    "calmar": -0.3000548250121904,
+    "mean_daily": -0.0003887621241485065
+   },
+   "oos_costs": 0.12299000000000002,
+   "oos_funding": -0.06733902700000001,
+   "oos_exposure": 0.5101428571428571,
+   "oos_turnover": 0.1255,
+   "without_best_coin": {
+    "coin": "DOGEUSDT",
+    "sharpe": -0.2513539791946485
+   },
+   "p_value": 0.6726654669066187,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L14_H1_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.4105901692398891,
+    "cagr": -0.16993093349913568,
+    "sharpe": -0.4407113395272797,
+    "sortino": -0.4366420574318176,
+    "max_drawdown": 0.6270269750140143,
+    "calmar": -0.2710105629751219,
+    "mean_daily": -0.0003721235836165948
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.2220128916659646,
+    "cagr": -0.06335515490265431,
+    "sharpe": -0.17050042836405757,
+    "sortino": -0.20676876882378994,
+    "max_drawdown": 0.3753326453994291,
+    "calmar": -0.16879734731102788,
+    "mean_daily": -0.00010724779441038021
+   },
+   "oos_by_year": {
+    "2023": -0.1401440757115453,
+    "2024": -0.1040503615533932,
+    "2025": -0.056282525894040036,
+    "2026": 0.07009200062990217
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.28618870937455976,
+    "cagr": -0.08414419150182839,
+    "sharpe": -0.26809733728976887,
+    "sortino": -0.3254107290164572,
+    "max_drawdown": 0.40167975014148494,
+    "calmar": -0.20948079028676456,
+    "mean_daily": -0.00016868311713545838
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.34509691036759194,
+    "cagr": -0.10448115773365163,
+    "sharpe": -0.3656676668796697,
+    "sortino": -0.44511031036056964,
+    "max_drawdown": 0.4307525404106497,
+    "calmar": -0.24255494264536784,
+    "mean_daily": -0.00023013986396632074
+   },
+   "oos_costs": 0.085563644443805,
+   "oos_funding": -0.05057413136198566,
+   "oos_exposure": 0.3020267970782083,
+   "oos_turnover": 0.08730984126918878,
+   "without_best_coin": {
+    "coin": "DOGEUSDT",
+    "sharpe": -0.24035764876191082
+   },
+   "p_value": 0.6240751849630074,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L14_H1_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.145142187424343,
+    "cagr": 0.3085113116828708,
+    "sharpe": 0.7511325061947612,
+    "sortino": 0.9162054206802411,
+    "max_drawdown": 0.524012589427306,
+    "calmar": 0.5887479001602676,
+    "mean_daily": 0.001644559201623926
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.5757469112269824,
+    "cagr": 0.12586817359422575,
+    "sharpe": 0.4881880638698309,
+    "sortino": 0.6551450572137031,
+    "max_drawdown": 0.49215451066301574,
+    "calmar": 0.25574930406440843,
+    "mean_daily": 0.0006529834967289264
+   },
+   "oos_by_year": {
+    "2023": 0.4784313451108171,
+    "2024": 0.6190559664713675,
+    "2025": -0.33673743410555756,
+    "2026": -0.007482998855370404
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.23259854996094687,
+    "cagr": 0.05603546216751787,
+    "sharpe": 0.35700193159410143,
+    "sortino": 0.4813311631184031,
+    "max_drawdown": 0.528374659304041,
+    "calmar": 0.10605251629842746,
+    "mean_daily": 0.0004774834967289266
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.03593754723586817,
+    "cagr": -0.009496554855648376,
+    "sharpe": 0.22578063277281754,
+    "sortino": 0.30593587543489914,
+    "max_drawdown": 0.5789111864156318,
+    "calmar": -0.016404165403068032,
+    "mean_daily": 0.0003019834967289268
+   },
+   "oos_costs": 0.24570000000000003,
+   "oos_funding": 0.091495881,
+   "oos_exposure": 0.9995714285714283,
+   "oos_turnover": 0.2507142857142857,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.4127207535986728
+   },
+   "p_value": 0.1783643271345731,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H1_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 0.823115719954888,
+    "cagr": 0.2356321092715319,
+    "sharpe": 1.047593687613957,
+    "sortino": 1.3856857933313176,
+    "max_drawdown": 0.1375910226834457,
+    "calmar": 1.7125543852788154,
+    "mean_daily": 0.0006502037102884985
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.6626062916446118,
+    "cagr": 0.1417287989542737,
+    "sharpe": 0.690475052962724,
+    "sortino": 0.9865403513728179,
+    "max_drawdown": 0.25683830274980624,
+    "calmar": 0.5518211163867405,
+    "mean_daily": 0.00043553007569269305
+   },
+   "oos_by_year": {
+    "2023": 0.36033037352317887,
+    "2024": 0.2860283715607219,
+    "2025": -0.13968278480799545,
+    "2026": 0.1046783977009711
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.46014394532756575,
+    "cagr": 0.10372352725645184,
+    "sharpe": 0.5432853057391845,
+    "sortino": 0.7788707847896001,
+    "max_drawdown": 0.26544671616553117,
+    "calmar": 0.3907508397721914,
+    "mean_daily": 0.0003428053305404309
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.2822618190849884,
+    "cagr": 0.06696720539692191,
+    "sharpe": 0.39614652816879276,
+    "sortino": 0.5699660079385686,
+    "max_drawdown": 0.2796908007926311,
+    "calmar": 0.23943299245860028,
+    "mean_daily": 0.0002500463409716293
+   },
+   "oos_costs": 0.13126935415867874,
+   "oos_funding": 0.04144991513430721,
+   "oos_exposure": 0.4836711952113706,
+   "oos_turnover": 0.13394832057008035,
+   "without_best_coin": {
+    "coin": "XRPUSDT",
+    "sharpe": 0.5999279859240747
+   },
+   "p_value": 0.10857828434313137,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H5_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 8.30892671477554,
+    "cagr": 1.1946204363399948,
+    "sharpe": 1.6918425592731268,
+    "sortino": 2.093209596170653,
+    "max_drawdown": 0.5397408159885213,
+    "calmar": 2.2133223965137385,
+    "mean_daily": 0.0025816061817526908
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 1.4049747948203306,
+    "cagr": 0.2570743340029038,
+    "sharpe": 0.8178413212979131,
+    "sortino": 1.0572893278830169,
+    "max_drawdown": 0.4634080179653457,
+    "calmar": 0.5547472724611515,
+    "mean_daily": 0.0008027370584058966
+   },
+   "oos_by_year": {
+    "2023": 0.934742398085731,
+    "2024": 0.6685993764887515,
+    "2025": -0.23263802321214844,
+    "2026": -0.029188242591624447
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 1.2779354040428865,
+    "cagr": 0.23941329912077758,
+    "sharpe": 0.7783288007595139,
+    "sortino": 1.0093067019635156,
+    "max_drawdown": 0.4712052733668163,
+    "calmar": 0.508087053886604,
+    "mean_daily": 0.000763957058405897
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 1.1575983487365273,
+    "cagr": 0.22199915812541526,
+    "sharpe": 0.7388139204027442,
+    "sortino": 0.9586811631720242,
+    "max_drawdown": 0.48326031531721814,
+    "calmar": 0.4593780020602193,
+    "mean_daily": 0.000725177058405897
+   },
+   "oos_costs": 0.054292,
+   "oos_funding": 0.150450578,
+   "oos_exposure": 0.48955714285714275,
+   "oos_turnover": 0.055400000000000005,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.6690313080666056
+   },
+   "p_value": 0.08098380323935213,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H5_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.5324671229286095,
+    "cagr": 0.38731533260568085,
+    "sharpe": 1.4969247082768968,
+    "sortino": 1.8750617953820532,
+    "max_drawdown": 0.27267542429054037,
+    "calmar": 1.4204262581177454,
+    "mean_daily": 0.0009744918629508239
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.9644940246312872,
+    "cagr": 0.1924897367935543,
+    "sharpe": 0.904255445972665,
+    "sortino": 1.2148707256492886,
+    "max_drawdown": 0.3341332910469097,
+    "calmar": 0.5760866754415388,
+    "mean_daily": 0.0005496137596235768
+   },
+   "oos_by_year": {
+    "2023": 0.6559851663012395,
+    "2024": 0.36637189999586117,
+    "2025": -0.12053411297192562,
+    "2026": -0.012797266163557475
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.87983490156134,
+    "cagr": 0.1788727365780367,
+    "sharpe": 0.8524351150540169,
+    "sortino": 1.1479979703749839,
+    "max_drawdown": 0.34199655164899767,
+    "calmar": 0.5230249712038608,
+    "mean_daily": 0.0005181439500595468
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.7988121657674034,
+    "cagr": 0.1654092073422111,
+    "sharpe": 0.8006119072136302,
+    "sortino": 1.0783814904564966,
+    "max_drawdown": 0.3497671330100045,
+    "calmar": 0.4729123800705421,
+    "mean_daily": 0.000486670862521478
+   },
+   "oos_costs": 0.04415343419599263,
+   "oos_funding": 0.08091792982365362,
+   "oos_exposure": 0.3125847721335959,
+   "oos_turnover": 0.0450545246897884,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.7250392263936836
+   },
+   "p_value": 0.07058588282343531,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H5_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.7153044658412644,
+    "cagr": -0.3576536715545727,
+    "sharpe": -0.3536821143249912,
+    "sortino": -0.4224999990745641,
+    "max_drawdown": 0.8607860920406787,
+    "calmar": -0.4154965732620955,
+    "mean_daily": -0.000627898222405597
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.49753834827119225,
+    "cagr": -0.16425601088594033,
+    "sharpe": -0.25778748760543513,
+    "sortino": -0.30522323737484963,
+    "max_drawdown": 0.6499273101181824,
+    "calmar": -0.25272981813315726,
+    "mean_daily": -0.0002776819264703431
+   },
+   "oos_by_year": {
+    "2023": -0.26379938321467067,
+    "2024": -0.2423275273200567,
+    "2025": -0.181271101753552,
+    "2026": 0.10023413771333112
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.5241194299581604,
+    "cagr": -0.17601536305299026,
+    "sharpe": -0.29380864862126044,
+    "sortino": -0.3483081734187733,
+    "max_drawdown": 0.6633631962748668,
+    "calmar": -0.26533784816735245,
+    "mean_daily": -0.0003164819264703432
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.5492960767761007,
+    "cagr": -0.18761007734670387,
+    "sharpe": -0.3298290662969788,
+    "sortino": -0.3919055869241349,
+    "max_drawdown": 0.6762842871056063,
+    "calmar": -0.27741303609114804,
+    "mean_daily": -0.00035528192647034303
+   },
+   "oos_costs": 0.05432,
+   "oos_funding": -0.0756795876,
+   "oos_exposure": 0.5100142857142858,
+   "oos_turnover": 0.05542857142857143,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.3576121147291205
+   },
+   "p_value": 0.7196560687862428,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L14_H5_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.37189203614877286,
+    "cagr": -0.15112424301154614,
+    "sharpe": -0.4226905351111787,
+    "sortino": -0.4627426801048519,
+    "max_drawdown": 0.5778101515220782,
+    "calmar": -0.26154653498809577,
+    "mean_daily": -0.00033235913465734556
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.28963213094863727,
+    "cagr": -0.08529810860348908,
+    "sharpe": -0.2733038192395003,
+    "sortino": -0.333223026069758,
+    "max_drawdown": 0.46399893972935535,
+    "calmar": -0.18383255068048726,
+    "mean_daily": -0.00017194590595099817
+   },
+   "oos_by_year": {
+    "2023": -0.1581664143426288,
+    "2024": -0.16240455157331646,
+    "2025": -0.0982290288709653,
+    "2026": 0.11718861596807284
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.3198235261413399,
+    "cagr": -0.09559685968343312,
+    "sharpe": -0.32259201943187504,
+    "sortino": -0.3934239513005274,
+    "max_drawdown": 0.47619180333325606,
+    "calmar": -0.2007528458370608,
+    "mean_daily": -0.0002029555015173575
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.3487380673685979,
+    "cagr": -0.1057819155128431,
+    "sharpe": -0.37188719070191667,
+    "sortino": -0.4545245608852894,
+    "max_drawdown": 0.48810720854213097,
+    "calmar": -0.21671860948087707,
+    "mean_daily": -0.00023397051037196332
+   },
+   "oos_costs": 0.04310067697132111,
+   "oos_funding": -0.05851150133101454,
+   "oos_exposure": 0.3089735247287776,
+   "oos_turnover": 0.04398028262379705,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.39189789019408144
+   },
+   "p_value": 0.6956608678264347,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L14_H5_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 2.6694045406585634,
+    "cagr": 0.5809436894648095,
+    "sharpe": 0.9997814688252066,
+    "sortino": 1.3134666484378557,
+    "max_drawdown": 0.4686077503067272,
+    "calmar": 1.2397227512446236,
+    "mean_daily": 0.0019537079593470942
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.43586581292594473,
+    "cagr": 0.09890924374002652,
+    "sharpe": 0.4361261921126136,
+    "sortino": 0.570326651274319,
+    "max_drawdown": 0.4475222483824284,
+    "calmar": 0.22101525476673958,
+    "mean_daily": 0.000525055131935554
+   },
+   "oos_by_year": {
+    "2023": 0.47346522998643525,
+    "2024": 0.3276825326635253,
+    "2025": -0.3307358796345141,
+    "2026": 0.0966856954796067
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.2881118971563117,
+    "cagr": 0.06823418540368009,
+    "sharpe": 0.371687342725494,
+    "sortino": 0.48665284412307896,
+    "max_drawdown": 0.4628900771983535,
+    "calmar": 0.14740904755761483,
+    "mean_daily": 0.00044747513193555387
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.15554430356341342,
+    "cagr": 0.03841120041277657,
+    "sharpe": 0.3072450885557687,
+    "sortino": 0.40293271203588893,
+    "max_drawdown": 0.477832644483033,
+    "calmar": 0.08038630440231566,
+    "mean_daily": 0.00036989513193555376
+   },
+   "oos_costs": 0.108612,
+   "oos_funding": 0.07477099040000001,
+   "oos_exposure": 0.7971714285714285,
+   "oos_turnover": 0.11082857142857143,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.3126959685258749
+   },
+   "p_value": 0.1897620475904819,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H5_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.1801505734770754,
+    "cagr": 0.31599551718696217,
+    "sharpe": 1.3087517871828867,
+    "sortino": 1.8106288476655024,
+    "max_drawdown": 0.18958381288451143,
+    "calmar": 1.6667853250712752,
+    "mean_daily": 0.0008248016323478115
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.510137593596997,
+    "cagr": 0.1134537029166558,
+    "sharpe": 0.585011947321291,
+    "sortino": 0.7922031743174291,
+    "max_drawdown": 0.26037815092513084,
+    "calmar": 0.4357266633684571,
+    "mean_daily": 0.0003660420008727188
+   },
+   "oos_by_year": {
+    "2023": 0.3847726071225779,
+    "2024": 0.1692777740876117,
+    "2025": -0.17054298963715953,
+    "2026": 0.1244146062639866
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.40618464900926377,
+    "cagr": 0.09294109573045817,
+    "sharpe": 0.5035361346548611,
+    "sortino": 0.682321504779068,
+    "max_drawdown": 0.2650048236430247,
+    "calmar": 0.3507147321048566,
+    "mean_daily": 0.00031510965128934856
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.3093317769409778,
+    "cagr": 0.07279448207809769,
+    "sharpe": 0.4220401966786252,
+    "sortino": 0.5725663514486778,
+    "max_drawdown": 0.28033259774616914,
+    "calmar": 0.2596718421737397,
+    "mean_daily": 0.00026414956419245126
+   },
+   "oos_costs": 0.07123164516501483,
+   "oos_funding": 0.03840084780173593,
+   "oos_exposure": 0.44244910133388965,
+   "oos_turnover": 0.0726853522091988,
+   "without_best_coin": {
+    "coin": "DOGEUSDT",
+    "sharpe": 0.4271612596902166
+   },
+   "p_value": 0.13857228554289142,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H7_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 7.804618295851736,
+    "cagr": 1.1519749176910854,
+    "sharpe": 1.6581327214678803,
+    "sortino": 2.0365943859698197,
+    "max_drawdown": 0.5543663142203914,
+    "calmar": 2.078003096763039,
+    "mean_daily": 0.00252755279748626
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 1.4839251623653604,
+    "cagr": 0.2677051469624687,
+    "sharpe": 0.8484286835094306,
+    "sortino": 1.1135216018115386,
+    "max_drawdown": 0.42299369891728933,
+    "calmar": 0.632882115378307,
+    "mean_daily": 0.0008205056304700802
+   },
+   "oos_by_year": {
+    "2023": 0.8687937422993945,
+    "2024": 0.5748795462710359,
+    "2025": -0.16933988548089696,
+    "2026": 0.016029775588988215
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 1.3706344172433615,
+    "cagr": 0.25236970257835223,
+    "sharpe": 0.8139280658916829,
+    "sortino": 1.0691390333871826,
+    "max_drawdown": 0.4301626614834715,
+    "calmar": 0.586684352630753,
+    "mean_daily": 0.0007871484876129374
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 1.2625048719419016,
+    "cagr": 0.2372189241488427,
+    "sharpe": 0.77942640374966,
+    "sortino": 1.0252783281685598,
+    "max_drawdown": 0.4372429937536194,
+    "calmar": 0.5425333911296756,
+    "mean_daily": 0.0007537913447557945
+   },
+   "oos_costs": 0.046700000000000005,
+   "oos_funding": 0.14954996171428572,
+   "oos_exposure": 0.4895204081632653,
+   "oos_turnover": 0.0476530612244898,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.7025413758210298
+   },
+   "p_value": 0.06978604279144171,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H7_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.4259682562976495,
+    "cagr": 0.36647413478025714,
+    "sharpe": 1.4342335214208979,
+    "sortino": 1.7873833245072683,
+    "max_drawdown": 0.3128897580079776,
+    "calmar": 1.1712564102878475,
+    "mean_daily": 0.000932904326944168
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 1.0415495906704693,
+    "cagr": 0.20451158864522312,
+    "sharpe": 0.9583722891188371,
+    "sortino": 1.3350750032752998,
+    "max_drawdown": 0.2963553515455277,
+    "calmar": 0.6900890690135046,
+    "mean_daily": 0.0005753630614302278
+   },
+   "oos_by_year": {
+    "2023": 0.6026690339742071,
+    "2024": 0.3146288668632955,
+    "2025": -0.06705795932465008,
+    "2026": 0.03862377479235035
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.9648559168374831,
+    "cagr": 0.1925470056387566,
+    "sharpe": 0.9127794578423076,
+    "sortino": 1.2716443430820925,
+    "max_drawdown": 0.30360659078174435,
+    "calmar": 0.6341990308674627,
+    "mean_daily": 0.0005480048882457871
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.891030051525554,
+    "cagr": 0.18069910403027745,
+    "sharpe": 0.8671805601744268,
+    "sortino": 1.209060738041956,
+    "max_drawdown": 0.31078228069283087,
+    "calmar": 0.5814330972391433,
+    "mean_daily": 0.000520642689289628
+   },
+   "oos_costs": 0.03848741923743279,
+   "oos_funding": 0.08220344405978375,
+   "oos_exposure": 0.31771079813150305,
+   "oos_turnover": 0.039272876772890604,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.7690097535280552
+   },
+   "p_value": 0.05898820235952809,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H7_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.726048607452473,
+    "cagr": -0.36630096980261007,
+    "sharpe": -0.38739359976331633,
+    "sortino": -0.46454827575799656,
+    "max_drawdown": 0.8642762932767449,
+    "calmar": -0.4238239237291204,
+    "mean_daily": -0.0006779198112708624
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.4813226887020381,
+    "cagr": -0.15730650708428107,
+    "sharpe": -0.2450107981089179,
+    "sortino": -0.29723287698104056,
+    "max_drawdown": 0.6682433994076056,
+    "calmar": -0.23540300917859047,
+    "mean_daily": -0.0002607665894331631
+   },
+   "oos_by_year": {
+    "2023": -0.29198892210607397,
+    "2024": -0.2819209432707205,
+    "2025": -0.11409373554330138,
+    "2026": 0.1515880905434419
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.5050089012263039,
+    "cagr": -0.16751354413075947,
+    "sharpe": -0.27634749841660006,
+    "sortino": -0.3359422787642691,
+    "max_drawdown": 0.6793471268507869,
+    "calmar": -0.246580190759462,
+    "mean_daily": -0.0002941237322903058
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.5276146909463715,
+    "cagr": -0.17759751470188745,
+    "sharpe": -0.30768250217195414,
+    "sortino": -0.3744424159432145,
+    "max_drawdown": 0.6900797983348261,
+    "calmar": -0.25735793908245563,
+    "mean_daily": -0.00032748087514744865
+   },
+   "oos_costs": 0.046700000000000005,
+   "oos_funding": -0.07655511314285715,
+   "oos_exposure": 0.5100510204081633,
+   "oos_turnover": 0.0476530612244898,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.34207836111436823
+   },
+   "p_value": 0.705258948210358,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L14_H7_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.3935164803288774,
+    "cagr": -0.16153772060674787,
+    "sharpe": -0.4488524055949945,
+    "sortino": -0.4872152394999617,
+    "max_drawdown": 0.5909647722175116,
+    "calmar": -0.2733457698343007,
+    "mean_daily": -0.00036007916173897114
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.30341900702191915,
+    "cagr": -0.08996004962707305,
+    "sharpe": -0.29747125568072247,
+    "sortino": -0.3703460076347823,
+    "max_drawdown": 0.49022005224477017,
+    "calmar": -0.18350952641601734,
+    "mean_daily": -0.0001864998174700382
+   },
+   "oos_by_year": {
+    "2023": -0.17675079353962686,
+    "2024": -0.19034180532297562,
+    "2025": -0.08427965883263133,
+    "2026": 0.1412366810630339
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.32975273608205835,
+    "cagr": -0.09905766425079177,
+    "sharpe": -0.3413324129821792,
+    "sortino": -0.42551927260672867,
+    "max_drawdown": 0.5007441516751121,
+    "calmar": -0.197820910977032,
+    "mean_daily": -0.00021400864153235007
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.35509548386378,
+    "cagr": -0.10806596971426674,
+    "sharpe": -0.3851945421874727,
+    "sortino": -0.48055956077559675,
+    "max_drawdown": 0.5110510964243182,
+    "calmar": -0.2114582484420328,
+    "mean_daily": -0.00024152133495515616
+   },
+   "oos_costs": 0.038485491110325745,
+   "oos_funding": -0.06049345456109306,
+   "oos_exposure": 0.311850832922437,
+   "oos_turnover": 0.03927090929625077,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.42015803103557003
+   },
+   "p_value": 0.7118576284743051,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L14_H7_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 2.4025845427792705,
+    "cagr": 0.5394483180157594,
+    "sharpe": 0.9701646666575793,
+    "sortino": 1.246516128510668,
+    "max_drawdown": 0.47431734268755676,
+    "calmar": 1.137315188517376,
+    "mean_daily": 0.0018496329862153983
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.5541359809116866,
+    "cagr": 0.12182192028421479,
+    "sharpe": 0.4839691321044123,
+    "sortino": 0.650093645536537,
+    "max_drawdown": 0.4182195165818525,
+    "calmar": 0.2912870285917712,
+    "mean_daily": 0.0005597390410369172
+   },
+   "oos_by_year": {
+    "2023": 0.37179825675870615,
+    "2024": 0.1928746237183201,
+    "2025": -0.21072231294400035,
+    "2026": 0.20330062785947067
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.41553318916349347,
+    "cagr": 0.09483082054958825,
+    "sharpe": 0.4262673874622106,
+    "sortino": 0.5732350369816321,
+    "max_drawdown": 0.42593171679156305,
+    "calmar": 0.2226432472883801,
+    "mean_daily": 0.0004930247553226317
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.289277871291032,
+    "cagr": 0.06848619748757101,
+    "sharpe": 0.36856829762076615,
+    "sortino": 0.49640509591640364,
+    "max_drawdown": 0.4357622266104614,
+    "calmar": 0.1571641443552484,
+    "mean_daily": 0.0004263104696083459
+   },
+   "oos_costs": 0.09340000000000001,
+   "oos_funding": 0.07299484857142857,
+   "oos_exposure": 0.7523265306122449,
+   "oos_turnover": 0.0953061224489796,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.3637897085815497
+   },
+   "p_value": 0.16476704659068186,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H7_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.0540750950619322,
+    "cagr": 0.2886646597411411,
+    "sharpe": 1.1978970213648463,
+    "sortino": 1.5945516183705244,
+    "max_drawdown": 0.22945924177874266,
+    "calmar": 1.2580215009142564,
+    "mean_daily": 0.0007703478695527765
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.5029531994474563,
+    "cagr": 0.11207021365118885,
+    "sharpe": 0.576944847707245,
+    "sortino": 0.7856610674228235,
+    "max_drawdown": 0.23097349004496426,
+    "calmar": 0.48520812336243363,
+    "mean_daily": 0.0003635757345902322
+   },
+   "oos_by_year": {
+    "2023": 0.28213008411754203,
+    "2024": 0.14572078812557843,
+    "2025": -0.10628162532506802,
+    "2026": 0.14481124458219985
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.4082651286959056,
+    "cagr": 0.09336244800017335,
+    "sharpe": 0.5031206302404823,
+    "sortino": 0.6854753730368615,
+    "max_drawdown": 0.2446370677402827,
+    "calmar": 0.3816365559911426,
+    "mean_daily": 0.00031711373966753956
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.3194839574799484,
+    "cagr": 0.07495695185085505,
+    "sharpe": 0.4292772623092854,
+    "sortino": 0.5854919631660882,
+    "max_drawdown": 0.2665871337763911,
+    "calmar": 0.2811724286503928,
+    "mean_daily": 0.00027062241051173543
+   },
+   "oos_costs": 0.0650446517764394,
+   "oos_funding": 0.0386692780615233,
+   "oos_exposure": 0.43501118119960663,
+   "oos_turnover": 0.06637209364942795,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": 0.4481564379938845
+   },
+   "p_value": 0.14457108578284344,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": true,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H14_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 6.526448333279374,
+    "cagr": 1.0362788022443246,
+    "sharpe": 1.554978731952673,
+    "sortino": 1.8882854695197908,
+    "max_drawdown": 0.5541192486877842,
+    "calmar": 1.8701368066500987,
+    "mean_daily": 0.0023831197725827273
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 1.4660054462428644,
+    "cagr": 0.2653143805291993,
+    "sharpe": 0.8523361123897853,
+    "sortino": 1.128449297809862,
+    "max_drawdown": 0.3527189313239214,
+    "calmar": 0.7521977330032971,
+    "mean_daily": 0.0008090390121967146
+   },
+   "oos_by_year": {
+    "2023": 0.7631415765932346,
+    "2024": 0.5168888460537471,
+    "2025": -0.05080340236547887,
+    "2026": -0.02860265075120816
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 1.381215734888714,
+    "cagr": 0.2538246833891402,
+    "sharpe": 0.8259920268236036,
+    "sortino": 1.0938859747261964,
+    "max_drawdown": 0.3583763462530982,
+    "calmar": 0.7082629365551937,
+    "mean_daily": 0.0007840354407681433
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 1.2993386455436355,
+    "cagr": 0.24243893273047323,
+    "sharpe": 0.79964754351764,
+    "sortino": 1.0595867054783736,
+    "max_drawdown": 0.36398451907280527,
+    "calmar": 0.6660693519275194,
+    "mean_daily": 0.0007590318693395718
+   },
+   "oos_costs": 0.03500500000000001,
+   "oos_funding": 0.1483148220714286,
+   "oos_exposure": 0.48945408163265314,
+   "oos_turnover": 0.03571938775510205,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.7188585708085217
+   },
+   "p_value": 0.0649870025994801,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H14_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.2358996345456252,
+    "cagr": 0.3277547041058295,
+    "sharpe": 1.2969701846875221,
+    "sortino": 1.5673018890858892,
+    "max_drawdown": 0.39605675340160507,
+    "calmar": 0.8275447932420013,
+    "mean_daily": 0.0008567967975519637
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 1.0921907125720294,
+    "cagr": 0.212230847002862,
+    "sharpe": 0.9893002243296735,
+    "sortino": 1.3970648537891281,
+    "max_drawdown": 0.2836141244058964,
+    "calmar": 0.7483084541273631,
+    "mean_daily": 0.0005924796711862561
+   },
+   "oos_by_year": {
+    "2023": 0.5450059988829543,
+    "2024": 0.29136656326124144,
+    "2025": 0.05468681147154708,
+    "2026": -0.005744396479545721
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 1.0302404304433348,
+    "cagr": 0.20276842779409954,
+    "sharpe": 0.953412509696511,
+    "sortino": 1.3461406148615986,
+    "max_drawdown": 0.2891235586053018,
+    "calmar": 0.7013210157353855,
+    "mean_daily": 0.0005710048374596114
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.970121087251502,
+    "cagr": 0.19337932947976544,
+    "sharpe": 0.9175240560957728,
+    "sortino": 1.295779886989562,
+    "max_drawdown": 0.29459009607132336,
+    "calmar": 0.6564352707666936,
+    "mean_daily": 0.0005495295390780837
+   },
+   "oos_costs": 0.030163916508219223,
+   "oos_funding": 0.08657751074830158,
+   "oos_exposure": 0.3257126168472091,
+   "oos_turnover": 0.030779506641040025,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.8479998606373924
+   },
+   "p_value": 0.04979004199160168,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H14_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.7436303830619572,
+    "cagr": -0.3809383898501083,
+    "sharpe": -0.4987995020099976,
+    "sortino": -0.6442187564060878,
+    "max_drawdown": 0.8740892770885685,
+    "calmar": -0.4358117641243059,
+    "mean_daily": -0.000818957898890232
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.4729821030121697,
+    "cagr": -0.1537943935436109,
+    "sharpe": -0.2690360297980724,
+    "sortino": -0.3449068795443698,
+    "max_drawdown": 0.655076793569062,
+    "calmar": -0.2347730755438477,
+    "mean_daily": -0.0002714516127521917
+   },
+   "oos_by_year": {
+    "2023": -0.33426344859041734,
+    "2024": -0.29715343058764343,
+    "2025": 0.026931097086704048,
+    "2026": 0.09678405256812139
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.49110689075379366,
+    "cagr": -0.16148013484390678,
+    "sharpe": -0.2937826566890657,
+    "sortino": -0.37667357841922366,
+    "max_drawdown": 0.6636791565345647,
+    "calmar": -0.24331054132705285,
+    "mean_daily": -0.00029642661275219146
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.5086089319102398,
+    "cagr": -0.16909632843920264,
+    "sharpe": -0.3185280569313697,
+    "sortino": -0.4088725233381947,
+    "max_drawdown": 0.6720672548167697,
+    "calmar": -0.2516062599795976,
+    "mean_daily": -0.0003214016127521916
+   },
+   "oos_costs": 0.03496500000000001,
+   "oos_funding": -0.07776123114285716,
+   "oos_exposure": 0.5101173469387756,
+   "oos_turnover": 0.03567857142857144,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.3574900609306051
+   },
+   "p_value": 0.7168566286742651,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L14_H14_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.36542282671797743,
+    "cagr": -0.14805415133703348,
+    "sharpe": -0.41235006517484046,
+    "sortino": -0.5065520253654364,
+    "max_drawdown": 0.5850938027763899,
+    "calmar": -0.25304344471687484,
+    "mean_daily": -0.0003242463899132217
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.29577216236771486,
+    "cagr": -0.08736598233912962,
+    "sharpe": -0.29263766638107486,
+    "sortino": -0.39987855782948983,
+    "max_drawdown": 0.4880852845717091,
+    "calmar": -0.1789973701333622,
+    "mean_daily": -0.00018099255998624966
+   },
+   "oos_by_year": {
+    "2023": -0.2032028885890914,
+    "2024": -0.1959465315354093,
+    "2025": -0.02826082131096941,
+    "2026": 0.13117759541999785
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.31653688480729747,
+    "cagr": -0.09445953787544492,
+    "sharpe": -0.327172923646326,
+    "sortino": -0.44695823219294734,
+    "max_drawdown": 0.4988857091769543,
+    "calmar": -0.18934103771238758,
+    "mean_daily": -0.00020235851633709952
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.3366902344489314,
+    "cagr": -0.10149827282162283,
+    "sharpe": -0.361705504835245,
+    "sortino": -0.49439108349769717,
+    "max_drawdown": 0.5094587721781934,
+    "calmar": -0.199227647779361,
+    "mean_daily": -0.0002237246606327299
+   },
+   "oos_costs": 0.029860146320886273,
+   "oos_funding": -0.06364215997172609,
+   "oos_exposure": 0.32334797554752853,
+   "oos_turnover": 0.03046953706212884,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.4145108078358822
+   },
+   "p_value": 0.7056588682263547,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L14_H14_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.9021082010153898,
+    "cagr": 0.45553175091018305,
+    "sharpe": 0.9102339231603928,
+    "sortino": 1.2049487185252548,
+    "max_drawdown": 0.47211271751249806,
+    "calmar": 0.9648792206029144,
+    "mean_daily": 0.001564161873692495
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.6282313454383839,
+    "cagr": 0.13552686817929183,
+    "sharpe": 0.5273008978953829,
+    "sortino": 0.7148294276009387,
+    "max_drawdown": 0.41099864544897846,
+    "calmar": 0.32975015776813843,
+    "mean_daily": 0.0005375873994445233
+   },
+   "oos_by_year": {
+    "2023": 0.22566600224061717,
+    "2024": 0.13570524114347804,
+    "2025": 0.0639956812395206,
+    "2026": 0.0993563171196743
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.5181898581004001,
+    "cagr": 0.11499854579113733,
+    "sharpe": 0.47825677182603404,
+    "sortino": 0.6492954541348723,
+    "max_drawdown": 0.4188603895835332,
+    "calmar": 0.27455101664179493,
+    "mean_daily": 0.00048760882801595186
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.4155786018150929,
+    "cagr": 0.09483997776641373,
+    "sharpe": 0.4292161058294095,
+    "sortino": 0.5836979547085557,
+    "max_drawdown": 0.4266177614946931,
+    "calmar": 0.22230667901433235,
+    "mean_daily": 0.00043763025658738035
+   },
+   "oos_costs": 0.06997,
+   "oos_funding": 0.07055359092857144,
+   "oos_exposure": 0.6281224489795919,
+   "oos_turnover": 0.07139795918367348,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.42104452365194484
+   },
+   "p_value": 0.14297140571885622,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L14_H14_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 0.9729528067735191,
+    "cagr": 0.2704995395100107,
+    "sharpe": 1.117272029196543,
+    "sortino": 1.4885067743731304,
+    "max_drawdown": 0.3055122538582624,
+    "calmar": 0.8853966938933477,
+    "mean_daily": 0.0007348098513257212
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.4654497466762091,
+    "cagr": 0.10476776151696399,
+    "sharpe": 0.5518031678055322,
+    "sortino": 0.7847224420732631,
+    "max_drawdown": 0.2622806020559618,
+    "calmar": 0.3994491422381671,
+    "mean_daily": 0.0003433897275389793
+   },
+   "oos_by_year": {
+    "2023": 0.07980907701145257,
+    "2024": 0.14564003939816428,
+    "2025": 0.07276063333483651,
+    "2026": 0.10426407811710292
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.38589668622459783,
+    "cagr": 0.08880788917574023,
+    "sharpe": 0.48770293664304676,
+    "sortino": 0.6941335228850154,
+    "max_drawdown": 0.26976192939318455,
+    "calmar": 0.32920838524364415,
+    "mean_daily": 0.00030352763175109945
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.31064816481561563,
+    "cagr": 0.0730755777702845,
+    "sharpe": 0.4236041418823313,
+    "sortino": 0.603298020970734,
+    "max_drawdown": 0.2771683747520207,
+    "calmar": 0.26365048983551737,
+    "mean_daily": 0.0002636598629519969
+   },
+   "oos_costs": 0.05579000817463735,
+   "oos_funding": 0.04053568502843097,
+   "oos_exposure": 0.408097000933672,
+   "oos_turnover": 0.05692857977003811,
+   "without_best_coin": {
+    "coin": "DOGEUSDT",
+    "sharpe": 0.4283674343119192
+   },
+   "p_value": 0.15236952609478105,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H1_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 13.39940808194775,
+    "cagr": 1.5591989437495806,
+    "sharpe": 1.8052086751316565,
+    "sortino": 2.2304991215661625,
+    "max_drawdown": 0.4802744776858,
+    "calmar": 3.2464747060109715,
+    "mean_daily": 0.0031040711601726346
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 1.1628534043812966,
+    "cagr": 0.22277442607852915,
+    "sharpe": 0.724588214727787,
+    "sortino": 0.9212394643121868,
+    "max_drawdown": 0.4688717784717932,
+    "calmar": 0.47512867335420367,
+    "mean_daily": 0.0007416009941890164
+   },
+   "oos_by_year": {
+    "2023": 0.8270161683834789,
+    "2024": 0.5875620557359491,
+    "2025": -0.13393685810651523,
+    "2026": -0.13899747065106827
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.9859075551163623,
+    "cagr": 0.1958650545573004,
+    "sharpe": 0.6649294999691343,
+    "sortino": 0.8465128966466582,
+    "max_drawdown": 0.4892618708826342,
+    "calmar": 0.4003276490848501,
+    "mean_daily": 0.0006807009941890163
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.8234079068371891,
+    "cagr": 0.16954286112616002,
+    "sharpe": 0.6052861633909155,
+    "sortino": 0.7724329471992939,
+    "max_drawdown": 0.5089759713831723,
+    "calmar": 0.3331058255371413,
+    "mean_daily": 0.0006198009941890164
+   },
+   "oos_costs": 0.08526,
+   "oos_funding": 0.17454028100000002,
+   "oos_exposure": 0.5045,
+   "oos_turnover": 0.08700000000000001,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.5980523073925218
+   },
+   "p_value": 0.11537692461507698,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H1_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.2686707304884774,
+    "cagr": 0.3345787172433494,
+    "sharpe": 1.310858715267944,
+    "sortino": 1.4718426805125566,
+    "max_drawdown": 0.31824836738722306,
+    "calmar": 1.0513132242914438,
+    "mean_daily": 0.0008719280190505794
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.654770660855633,
+    "cagr": 0.14032349484985573,
+    "sharpe": 0.6992740112145205,
+    "sortino": 0.9297884678403164,
+    "max_drawdown": 0.2658351119964757,
+    "calmar": 0.5278591447006296,
+    "mean_daily": 0.00042734827508891007
+   },
+   "oos_by_year": {
+    "2023": 0.49130868483666057,
+    "2024": 0.23487061382939367,
+    "2025": -0.012570313405908529,
+    "2026": -0.08999740787191368
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.5448022110762765,
+    "cagr": 0.12006147210572471,
+    "sharpe": 0.6187617373971118,
+    "sortino": 0.8228139336061957,
+    "max_drawdown": 0.27761085116367057,
+    "calmar": 0.4324811930169843,
+    "mean_daily": 0.0003782593726371975
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.44214686115582214,
+    "cagr": 0.1001604931895621,
+    "sharpe": 0.5382989466080721,
+    "sortino": 0.716553182099999,
+    "max_drawdown": 0.29312410028119973,
+    "calmar": 0.34169995948294996,
+    "mean_daily": 0.0003291786940639485
+   },
+   "oos_costs": 0.06940174499806948,
+   "oos_funding": 0.09071231983036139,
+   "oos_exposure": 0.31299943266315305,
+   "oos_turnover": 0.07081810714088722,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.5670631799013199
+   },
+   "p_value": 0.12157568486302739,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H1_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.5103246427665363,
+    "cagr": -0.2224120393375505,
+    "sharpe": -0.08792384212262737,
+    "sortino": -0.1091584720189218,
+    "max_drawdown": 0.7734280380735232,
+    "calmar": -0.28756655873446324,
+    "mean_daily": -0.00015212303848311502
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.5525385167349078,
+    "cagr": -0.1891378831783883,
+    "sharpe": -0.30167374813624626,
+    "sortino": -0.3414252368085106,
+    "max_drawdown": 0.6902096315123585,
+    "calmar": -0.2740296201951823,
+    "mean_daily": -0.0003402792693162903
+   },
+   "oos_by_year": {
+    "2023": -0.30582303333818706,
+    "2024": -0.26663066560936766,
+    "2025": -0.10407199406090373,
+    "2026": -0.01895348357729465
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.5890778977193577,
+    "cagr": -0.20694814689390362,
+    "sharpe": -0.3555765827593778,
+    "sortino": -0.4035122342141395,
+    "max_drawdown": 0.7086798775176886,
+    "calmar": -0.29201922258437235,
+    "mean_daily": -0.0004010792693162903
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.6226396546823536,
+    "cagr": -0.22437051375133965,
+    "sharpe": -0.40947263327323163,
+    "sortino": -0.4662708811001954,
+    "max_drawdown": 0.7260519220367112,
+    "calmar": -0.3090281933583186,
+    "mean_daily": -0.00046187926931629024
+   },
+   "oos_costs": 0.08512,
+   "oos_funding": -0.051667930000000015,
+   "oos_exposure": 0.49528571428571416,
+   "oos_turnover": 0.08685714285714285,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.3792087154671242
+   },
+   "p_value": 0.7590481903619276,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L28_H1_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 0.07559057175761397,
+    "cagr": 0.026005665297060165,
+    "sharpe": 0.22651281123878167,
+    "sortino": 0.3316344968805873,
+    "max_drawdown": 0.37978619156719895,
+    "calmar": 0.06847448873732617,
+    "mean_daily": 0.00017218944419513936
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.16426915859864344,
+    "cagr": -0.045707293011272854,
+    "sharpe": -0.0930328445348811,
+    "sortino": -0.11686719705255971,
+    "max_drawdown": 0.3747299342023258,
+    "calmar": -0.12197395734762512,
+    "mean_daily": -5.7955780826168497e-05
+   },
+   "oos_by_year": {
+    "2023": -0.11272862712912157,
+    "2024": -0.07207377983747998,
+    "2025": -0.06354795662786261,
+    "2026": 0.08395429769175555
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.21531704473411728,
+    "cagr": -0.06126009757924655,
+    "sharpe": -0.16534854946977406,
+    "sortino": -0.20803337387321003,
+    "max_drawdown": 0.39761795025472113,
+    "calmar": -0.15406773647920635,
+    "mean_daily": -0.000102986059982099
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.26325355866071054,
+    "cagr": -0.07656162302678915,
+    "sharpe": -0.2376927613176437,
+    "sortino": -0.29988279110623656,
+    "max_drawdown": 0.424228179996045,
+    "calmar": -0.18047274235177616,
+    "mean_daily": -0.00014801894159458928
+   },
+   "oos_costs": 0.06296230445760198,
+   "oos_funding": -0.038835421416099566,
+   "oos_exposure": 0.2793319424348044,
+   "oos_turnover": 0.06424724944653264,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.20168705376691995
+   },
+   "p_value": 0.5640871825634873,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L28_H1_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 7.904003684896363,
+    "cagr": 1.1605020237274966,
+    "sharpe": 1.3548849815880053,
+    "sortino": 1.9421011218870021,
+    "max_drawdown": 0.5002219842360851,
+    "calmar": 2.319974052119599,
+    "mean_daily": 0.00295194812168952
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.0940180083476716,
+    "cagr": 0.02370361531920473,
+    "sharpe": 0.2958825812049169,
+    "sortino": 0.40560484193709034,
+    "max_drawdown": 0.5495834620691367,
+    "calmar": 0.04313014665681999,
+    "mean_daily": 0.00040132172487272624
+   },
+   "oos_by_year": {
+    "2023": 0.30314686010271386,
+    "2024": 0.20864068086676002,
+    "2025": -0.18955366304259347,
+    "2026": -0.14294313600818642
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.07761658339126465,
+    "cagr": -0.020843924015136017,
+    "sharpe": 0.20610186443312584,
+    "sortino": 0.2830453462510912,
+    "max_drawdown": 0.5615489248041048,
+    "calmar": -0.03711862510004338,
+    "mean_daily": 0.00027962172487272605
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.22237538914081556,
+    "cagr": -0.06346895618988913,
+    "sharpe": 0.11636347467245153,
+    "sortino": 0.1600930742550149,
+    "max_drawdown": 0.5766988195866949,
+    "calmar": -0.1100556374215846,
+    "mean_daily": 0.00015792172487272624
+   },
+   "oos_costs": 0.17038,
+   "oos_funding": 0.12287235100000002,
+   "oos_exposure": 0.9997857142857142,
+   "oos_turnover": 0.17385714285714285,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.2105027672215465
+   },
+   "p_value": 0.2761447710457908,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H1_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.4416108901914746,
+    "cagr": 0.3695719441210541,
+    "sharpe": 1.4388269365828255,
+    "sortino": 2.045176129393837,
+    "max_drawdown": 0.2393439766807276,
+    "calmar": 1.5441038009243233,
+    "mean_daily": 0.0009390895762592141
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.4294463926257057,
+    "cagr": 0.09762624097852446,
+    "sharpe": 0.5175389649019305,
+    "sortino": 0.7779244697626478,
+    "max_drawdown": 0.24313744829091377,
+    "calmar": 0.4015269620733814,
+    "mean_daily": 0.00032817151482905524
+   },
+   "oos_by_year": {
+    "2023": 0.23108977677010323,
+    "2024": 0.16581699299394592,
+    "2025": 0.007031278362378268,
+    "2026": -0.010980608297811334
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.29176117792296585,
+    "cagr": 0.06902237499574193,
+    "sharpe": 0.40341802592660775,
+    "sortino": 0.6070789144590673,
+    "max_drawdown": 0.25336872260500043,
+    "calmar": 0.2724186880136235,
+    "mean_daily": 0.00025583016811488917
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.16737255047477295,
+    "cagr": 0.04117197748503387,
+    "sharpe": 0.2893598869010856,
+    "sortino": 0.4358740229243335,
+    "max_drawdown": 0.2634409167330938,
+    "calmar": 0.1562854320262916,
+    "mean_daily": 0.0001835137486436407
+   },
+   "oos_costs": 0.10170070655485382,
+   "oos_funding": 0.05303055608995396,
+   "oos_exposure": 0.49261307518617187,
+   "oos_turnover": 0.10377623117842226,
+   "without_best_coin": {
+    "coin": "LINKUSDT",
+    "sharpe": 0.408691641427612
+   },
+   "p_value": 0.17196560687862428,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": true,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H5_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 15.769544932844525,
+    "cagr": 1.700344516031834,
+    "sharpe": 1.866651642277555,
+    "sortino": 2.36588158797982,
+    "max_drawdown": 0.47334244857886254,
+    "calmar": 3.592207969382115,
+    "mean_daily": 0.0032716468835191537
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 1.5173225011401104,
+    "cagr": 0.27212705158303274,
+    "sharpe": 0.8331156477212918,
+    "sortino": 1.0534336087091016,
+    "max_drawdown": 0.39534130351854657,
+    "calmar": 0.68833448253723,
+    "mean_daily": 0.0008489115598416469
+   },
+   "oos_by_year": {
+    "2023": 0.7724575094160913,
+    "2024": 0.6373838477071427,
+    "2025": -0.021644234665378792,
+    "2026": -0.1134245227298939
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 1.4238998273406263,
+    "cagr": 0.2596458696072199,
+    "sharpe": 0.8065948105892551,
+    "sortino": 1.0206633054775265,
+    "max_drawdown": 0.4053529743208292,
+    "calmar": 0.640542653084655,
+    "mean_daily": 0.0008218815598416469
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 1.3339390642397402,
+    "cagr": 0.24728642157010006,
+    "sharpe": 0.7800717938395466,
+    "sortino": 0.9878351052622573,
+    "max_drawdown": 0.4151994940935205,
+    "calmar": 0.5955845926787201,
+    "mean_daily": 0.000794851559841647
+   },
+   "oos_costs": 0.037842,
+   "oos_funding": 0.16995291500000004,
+   "oos_exposure": 0.5045142857142857,
+   "oos_turnover": 0.03861428571428572,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.7333651581765934
+   },
+   "p_value": 0.07338532293541292,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H5_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.697032455175135,
+    "cagr": 0.41843145093778067,
+    "sharpe": 1.5774162815343988,
+    "sortino": 1.9739573276067341,
+    "max_drawdown": 0.3190506291556441,
+    "calmar": 1.3114891891771043,
+    "mean_daily": 0.001036541423626713
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.8631691042068173,
+    "cagr": 0.176138938882195,
+    "sharpe": 0.8368548457664484,
+    "sortino": 1.1214335771048383,
+    "max_drawdown": 0.28112442557215334,
+    "calmar": 0.6265515297139743,
+    "mean_daily": 0.000512467608743574
+   },
+   "oos_by_year": {
+    "2023": 0.4976204391215713,
+    "2024": 0.3343958566937175,
+    "2025": 0.024636812623683335,
+    "2026": -0.09009536849171618
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.8000934490141896,
+    "cagr": 0.16562557298040548,
+    "sharpe": 0.7966349225223605,
+    "sortino": 1.067481273732024,
+    "max_drawdown": 0.2876620899982535,
+    "calmar": 0.575764338573119,
+    "mean_daily": 0.0004878677469482092
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.7391463054782019,
+    "cagr": 0.1552049986977695,
+    "sharpe": 0.756413976518342,
+    "sortino": 1.0137980312064043,
+    "max_drawdown": 0.29413893706772243,
+    "calmar": 0.5276588004465221,
+    "mean_daily": 0.0004632662733375486
+   },
+   "oos_costs": 0.03446615265119776,
+   "oos_funding": 0.08965356512847024,
+   "oos_exposure": 0.3153943867249948,
+   "oos_turnover": 0.03516954352163037,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.7244298282481658
+   },
+   "p_value": 0.08398320335932813,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H5_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.36070379949104725,
+    "cagr": -0.14582740755037804,
+    "sharpe": 0.016437510842944033,
+    "sortino": 0.02131894735190151,
+    "max_drawdown": 0.7065372689674888,
+    "calmar": -0.20639733239194247,
+    "mean_daily": 2.6258338761672182e-05
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.47023264947560794,
+    "cagr": -0.1526456423826078,
+    "sharpe": -0.21389067274432016,
+    "sortino": -0.24460020106873184,
+    "max_drawdown": 0.6251509086797365,
+    "calmar": -0.2441740710334756,
+    "mean_daily": -0.00023378835908856842
+   },
+   "oos_by_year": {
+    "2023": -0.33052549258359254,
+    "2024": -0.23511472652247156,
+    "2025": 0.02477171279415913,
+    "2026": 0.009549729117714234
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.4899161497422495,
+    "cagr": -0.16096904924318622,
+    "sharpe": -0.23859183487507876,
+    "sortino": -0.2730136423280791,
+    "max_drawdown": 0.6355128357815109,
+    "calmar": -0.25329000482773467,
+    "mean_daily": -0.00026079835908856836
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.5088694055090622,
+    "cagr": -0.16921118004503022,
+    "sharpe": -0.26329040433582557,
+    "sortino": -0.30178940088379236,
+    "max_drawdown": 0.6455888934738584,
+    "calmar": -0.26210361075841837,
+    "mean_daily": -0.0002878083590885684
+   },
+   "oos_costs": 0.037814,
+   "oos_funding": -0.05624955200000001,
+   "oos_exposure": 0.49527142857142864,
+   "oos_turnover": 0.038585714285714286,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.3050568186244189
+   },
+   "p_value": 0.6866626674665067,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L28_H5_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 0.10425754464818127,
+    "cagr": 0.03555795272243345,
+    "sharpe": 0.26139584539069577,
+    "sortino": 0.3757853936806285,
+    "max_drawdown": 0.3410875467748615,
+    "calmar": 0.10424875683281352,
+    "mean_daily": 0.00018534339824561498
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.0948743083118121,
+    "cagr": -0.025653588945065753,
+    "sharpe": -0.0043820850025362975,
+    "sortino": -0.005501866748849665,
+    "max_drawdown": 0.31413909120836836,
+    "calmar": -0.08166315387997904,
+    "mean_daily": -2.6922254617144886e-06
+   },
+   "oos_by_year": {
+    "2023": -0.1308554190344008,
+    "2024": -0.0841198867302354,
+    "2025": 0.003714103571738514,
+    "2026": 0.13283904661745938
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.12329231819815556,
+    "cagr": -0.03372346540828286,
+    "sharpe": -0.041454281387903906,
+    "sortino": -0.05204992627929123,
+    "max_drawdown": 0.329625625216753,
+    "calmar": -0.10230838511449834,
+    "mean_daily": -2.5469061572712572e-05
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.15081834445773457,
+    "cagr": -0.04172657779960609,
+    "sharpe": -0.07852274715063762,
+    "sortino": -0.09868697921877034,
+    "max_drawdown": 0.3447620807133488,
+    "calmar": -0.1210300672082888,
+    "mean_daily": -4.8245121703076344e-05
+   },
+   "oos_costs": 0.03181687087004458,
+   "oos_funding": -0.04140353540435479,
+   "oos_exposure": 0.2864585488789623,
+   "oos_turnover": 0.03246619476535161,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.13398366840514905
+   },
+   "p_value": 0.4963007398520296,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L28_H5_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 13.2725902079191,
+    "cagr": 1.551235225361204,
+    "sharpe": 1.6269819863040442,
+    "sortino": 2.359602369904952,
+    "max_drawdown": 0.4293782824009713,
+    "calmar": 3.612747288211927,
+    "mean_daily": 0.0032979052222808247
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.5418984166861611,
+    "cagr": 0.11951218215996229,
+    "sharpe": 0.47654752862577926,
+    "sortino": 0.6361794095520993,
+    "max_drawdown": 0.4102487593285008,
+    "calmar": 0.29131637681386535,
+    "mean_daily": 0.0006151232007530785
+   },
+   "oos_by_year": {
+    "2023": 0.22454475170159993,
+    "2024": 0.3068946239071182,
+    "2025": 0.05252952530747046,
+    "2026": -0.08460983434767455
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.42951553980601376,
+    "cagr": 0.09764008359372989,
+    "sharpe": 0.434659948793978,
+    "sortino": 0.5812610428685813,
+    "max_drawdown": 0.41573044631612066,
+    "calmar": 0.2348639231476555,
+    "mean_daily": 0.0005610832007530783
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.32531201223883,
+    "cagr": 0.07619280702262077,
+    "sharpe": 0.39277434664008476,
+    "sortino": 0.5259563797312095,
+    "max_drawdown": 0.4211618149018216,
+    "calmar": 0.18091100457524223,
+    "mean_daily": 0.0005070432007530784
+   },
+   "oos_costs": 0.075656,
+   "oos_funding": 0.113703363,
+   "oos_exposure": 0.8559857142857143,
+   "oos_turnover": 0.0772,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": 0.37590831045602024
+   },
+   "p_value": 0.15856828634273146,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H5_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.6281799313817213,
+    "cagr": 0.4055666922422425,
+    "sharpe": 1.6104234091307725,
+    "sortino": 2.29687791613318,
+    "max_drawdown": 0.22811655871391245,
+    "calmar": 1.7778923833007465,
+    "mean_daily": 0.0010036460791767044
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.5801236341721692,
+    "cagr": 0.12668263321818296,
+    "sharpe": 0.6227308374809439,
+    "sortino": 0.8801456643603326,
+    "max_drawdown": 0.2417768804493723,
+    "calmar": 0.5239650415818402,
+    "mean_daily": 0.0004030312201102204
+   },
+   "oos_by_year": {
+    "2023": 0.16140187475496637,
+    "2024": 0.2185659169388161,
+    "2025": 0.05362925283940245,
+    "2026": 0.05967258692758781
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.49489575621924264,
+    "cagr": 0.11051277375375412,
+    "sharpe": 0.5614697440563798,
+    "sortino": 0.7942678890431027,
+    "max_drawdown": 0.24562002233936575,
+    "calmar": 0.44993389667989675,
+    "mean_daily": 0.00036344224023226264
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.4142370366718706,
+    "cagr": 0.09456936676403327,
+    "sharpe": 0.5002085238144576,
+    "sortino": 0.7082297468166819,
+    "max_drawdown": 0.24944182412832716,
+    "calmar": 0.37912393839527636,
+    "mean_daily": 0.00032384128554642234
+   },
+   "oos_costs": 0.05550976319467597,
+   "oos_funding": 0.05555896577931595,
+   "oos_exposure": 0.4575598348478424,
+   "oos_turnover": 0.0566426155047714,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": 0.5501238271727713
+   },
+   "p_value": 0.1259748050389922,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": true,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H7_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 16.051624296920917,
+    "cagr": 1.7162611727304422,
+    "sharpe": 1.8725920515686667,
+    "sortino": 2.4013265677546296,
+    "max_drawdown": 0.4497778512240259,
+    "calmar": 3.81579743880186,
+    "mean_daily": 0.003288611805002306
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 1.4375076070409079,
+    "cagr": 0.2614857375481734,
+    "sharpe": 0.8097127560274789,
+    "sortino": 1.0186130806295393,
+    "max_drawdown": 0.401522426789679,
+    "calmar": 0.6512356971909367,
+    "mean_daily": 0.0008270920127167752
+   },
+   "oos_by_year": {
+    "2023": 0.7298262702039786,
+    "2024": 0.6372915000049106,
+    "2025": -0.01595905356429894,
+    "2026": -0.12541038888215994
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 1.3604814318928256,
+    "cagr": 0.25096909891462804,
+    "sharpe": 0.7872346999776785,
+    "sortino": 0.9911176542703924,
+    "max_drawdown": 0.4098658153334621,
+    "calmar": 0.6123201533907932,
+    "mean_daily": 0.0008041562984310608
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 1.2858859635242492,
+    "cagr": 0.24053966045879505,
+    "sharpe": 0.7647569846896837,
+    "sortino": 0.9638876317382522,
+    "max_drawdown": 0.41809327816222386,
+    "calmar": 0.5753253472911936,
+    "mean_daily": 0.0007812205841453465
+   },
+   "oos_costs": 0.03211000000000001,
+   "oos_funding": 0.16931121514285716,
+   "oos_exposure": 0.5045918367346938,
+   "oos_turnover": 0.03276530612244899,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.7367085565559747
+   },
+   "p_value": 0.07738452309538092,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H7_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.743723040959909,
+    "cagr": 0.42703476931066864,
+    "sharpe": 1.6091315827550774,
+    "sortino": 2.018199582040491,
+    "max_drawdown": 0.3024539997890122,
+    "calmar": 1.4118998909208087,
+    "mean_daily": 0.0010524072553662158
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.8034989316289571,
+    "cagr": 0.16620009150264314,
+    "sharpe": 0.7980397636442566,
+    "sortino": 1.049252978676521,
+    "max_drawdown": 0.29937393633268716,
+    "calmar": 0.555158854303031,
+    "mean_daily": 0.0004896015576873703
+   },
+   "oos_by_year": {
+    "2023": 0.4826797727016856,
+    "2024": 0.32655784929528076,
+    "2025": 0.02066354590933761,
+    "2026": -0.1016207153617491
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.7502538043532321,
+    "cagr": 0.1571240267981895,
+    "sharpe": 0.7631175349553541,
+    "sortino": 1.0035268935160149,
+    "max_drawdown": 0.3047949474555033,
+    "calmar": 0.5155073209378835,
+    "mean_daily": 0.00046819466092450367
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.6985797327108545,
+    "cagr": 0.14811843656693013,
+    "sharpe": 0.7281962959220415,
+    "sortino": 0.9580580228482266,
+    "max_drawdown": 0.3101733878012948,
+    "calmar": 0.47753431594143947,
+    "mean_daily": 0.0004467883351314934
+   },
+   "oos_costs": 0.030135531685997773,
+   "oos_funding": 0.09085236787255868,
+   "oos_exposure": 0.31702229534558984,
+   "oos_turnover": 0.030750542536732425,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.7224805949091241
+   },
+   "p_value": 0.09398120375924815,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H7_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.33449843543325963,
+    "cagr": -0.13365178477239692,
+    "sharpe": 0.02776948449897016,
+    "sortino": 0.03718243333282053,
+    "max_drawdown": 0.7098417305262361,
+    "calmar": -0.18828392164731583,
+    "mean_daily": 4.333755091085469e-05
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.48374175890011495,
+    "cagr": -0.15833295233492362,
+    "sharpe": -0.23621928197490413,
+    "sortino": -0.26993376416969966,
+    "max_drawdown": 0.6275508869415588,
+    "calmar": -0.25230296957522824,
+    "mean_daily": -0.00025594476210541813
+   },
+   "oos_by_year": {
+    "2023": -0.34805265617879877,
+    "2024": -0.2319622921026081,
+    "2025": 0.03544188009807825,
+    "2026": -0.004259417639855934
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.5000472395594168,
+    "cagr": -0.16534599501708203,
+    "sharpe": -0.257381616126064,
+    "sortino": -0.29437149535074375,
+    "max_drawdown": 0.636297759892398,
+    "calmar": -0.25985632111142914,
+    "mean_daily": -0.00027886619067684666
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.5158384369943377,
+    "cagr": -0.1723009185164277,
+    "sharpe": -0.2785448365572325,
+    "sortino": -0.31896717107558714,
+    "max_drawdown": 0.6448395880824398,
+    "calmar": -0.26719965973056825,
+    "mean_daily": -0.0003017876192482753
+   },
+   "oos_costs": 0.03209,
+   "oos_funding": -0.056892550285714286,
+   "oos_exposure": 0.49519387755102046,
+   "oos_turnover": 0.03274489795918368,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.32691317777913637
+   },
+   "p_value": 0.7054589082183563,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L28_H7_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 0.08299277389669535,
+    "cagr": 0.028487835114497484,
+    "sharpe": 0.23456187952061983,
+    "sortino": 0.35236025091420936,
+    "max_drawdown": 0.37604033666531445,
+    "calmar": 0.07575739179239271,
+    "mean_daily": 0.0001632802567024883
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.11437969058122821,
+    "cagr": -0.031171987953279134,
+    "sharpe": -0.030395402625188136,
+    "sortino": -0.03826764002593477,
+    "max_drawdown": 0.32751120857248606,
+    "calmar": -0.09517838515862588,
+    "mean_daily": -1.8621669310512978e-05
+   },
+   "oos_by_year": {
+    "2023": -0.1480257541987141,
+    "2024": -0.08622762106780646,
+    "2025": 0.011982475035928086,
+    "2026": 0.1241132908835143
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.1385668614975627,
+    "cagr": -0.03814116363034825,
+    "sharpe": -0.06266915528586796,
+    "sortino": -0.0789029453569008,
+    "max_drawdown": 0.34078371233944216,
+    "calmar": -0.11192190896834071,
+    "mean_daily": -3.8394647364599927e-05
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.16208864164777947,
+    "cagr": -0.04505877647999135,
+    "sharpe": -0.09493412651925819,
+    "sortino": -0.11952957149215263,
+    "max_drawdown": 0.3537897403078285,
+    "calmar": -0.1273603254882016,
+    "mean_daily": -5.8162900384714e-05
+   },
+   "oos_costs": 0.027845108097737853,
+   "oos_funding": -0.0418327883931404,
+   "oos_exposure": 0.2884039379545396,
+   "oos_turnover": 0.028413375609936585,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.14901377483122438
+   },
+   "p_value": 0.5176964607078585,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L28_H7_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 14.383834346156394,
+    "cagr": 1.6195251035458993,
+    "sharpe": 1.6867531674167582,
+    "sortino": 2.4965902282450982,
+    "max_drawdown": 0.4183036723303434,
+    "calmar": 3.871649260269763,
+    "mean_daily": 0.003331949355913161
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.46101594826410053,
+    "cagr": 0.10389533848991506,
+    "sharpe": 0.4466858056550369,
+    "sortino": 0.5872480326688814,
+    "max_drawdown": 0.40538053196934565,
+    "calmar": 0.2562908928684604,
+    "mean_daily": 0.000571147250611357
+   },
+   "oos_by_year": {
+    "2023": 0.16468413870704368,
+    "2024": 0.3149930186779928,
+    "2025": 0.06988996602682507,
+    "2026": -0.10837090022821227
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.3701865240783988,
+    "cagr": 0.08557646574696598,
+    "sharpe": 0.41082267968789576,
+    "sortino": 0.5411384402011019,
+    "max_drawdown": 0.4100794941359207,
+    "calmar": 0.20868262610224955,
+    "mean_daily": 0.0005252901077542142
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.2849963269916649,
+    "cagr": 0.06755996187832958,
+    "sharpe": 0.3749580593081954,
+    "sortino": 0.4944373109394378,
+    "max_drawdown": 0.4147417433572723,
+    "calmar": 0.16289646017167647,
+    "mean_daily": 0.00047943296489707133
+   },
+   "oos_costs": 0.06420000000000001,
+   "oos_funding": 0.11241866485714286,
+   "oos_exposure": 0.8244795918367345,
+   "oos_turnover": 0.06551020408163266,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": 0.34617998914867176
+   },
+   "p_value": 0.16876624675064986,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H7_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.6016838649666454,
+    "cagr": 0.4005578847972524,
+    "sharpe": 1.6152140910215205,
+    "sortino": 2.3389117919801468,
+    "max_drawdown": 0.19751916480025833,
+    "calmar": 2.0279444032801446,
+    "mean_daily": 0.0009917773568205873
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.5014626698128726,
+    "cagr": 0.1117825722045267,
+    "sharpe": 0.5624042714758162,
+    "sortino": 0.7748651931460077,
+    "max_drawdown": 0.24415296882338533,
+    "calmar": 0.45783826730932625,
+    "mean_daily": 0.0003685338452361559
+   },
+   "oos_by_year": {
+    "2023": 0.10941619506487688,
+    "2024": 0.25034722939609133,
+    "2025": 0.024205061052242405,
+    "2026": 0.056823553846465646
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.43004546920771847,
+    "cagr": 0.09774615404583309,
+    "sharpe": 0.5092324238665612,
+    "sortino": 0.7023807609750392,
+    "max_drawdown": 0.2499416248991666,
+    "calmar": 0.39107593257132184,
+    "mean_daily": 0.00033373978338848906
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.36201787379427897,
+    "cagr": 0.08388542069893212,
+    "sharpe": 0.45607153822747304,
+    "sortino": 0.629398389158413,
+    "max_drawdown": 0.25568502541940885,
+    "calmar": 0.3280810855517722,
+    "mean_daily": 0.00029894345524630563
+   },
+   "oos_costs": 0.04912356910650335,
+   "oos_funding": 0.056180114555900926,
+   "oos_exposure": 0.4477033053885337,
+   "oos_turnover": 0.05012609092500342,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": 0.47644490359252
+   },
+   "p_value": 0.14937012597480503,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": true,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H14_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 11.339055681597175,
+    "cagr": 1.4236881509140136,
+    "sharpe": 1.6866434142973683,
+    "sortino": 2.1311339127012423,
+    "max_drawdown": 0.49113985501442503,
+    "calmar": 2.8987428659647243,
+    "mean_daily": 0.002987193882705098
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.8680871574937643,
+    "cagr": 0.17694755260345407,
+    "sharpe": 0.6248143461999919,
+    "sortino": 0.776878150312964,
+    "max_drawdown": 0.4554012725186152,
+    "calmar": 0.38855304822676157,
+    "mean_daily": 0.0006357533632870963
+   },
+   "oos_by_year": {
+    "2023": 0.5518377011136832,
+    "2024": 0.5033590667753804,
+    "2025": -0.04191626311368868,
+    "2026": -0.16423410151176032
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.8243223867215925,
+    "cagr": 0.16969575525153302,
+    "sharpe": 0.6081652501295522,
+    "sortino": 0.7564850254139077,
+    "max_drawdown": 0.46090536806345594,
+    "calmar": 0.36817916867518424,
+    "mean_daily": 0.0006188176490013821
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.7815817319091611,
+    "cagr": 0.1624884381477778,
+    "sharpe": 0.5915161202104934,
+    "sortino": 0.7369953476400399,
+    "max_drawdown": 0.4663539916812055,
+    "calmar": 0.34842295991079053,
+    "mean_daily": 0.0006018819347156679
+   },
+   "oos_costs": 0.023710000000000005,
+   "oos_funding": 0.1669473302857143,
+   "oos_exposure": 0.5050204081632653,
+   "oos_turnover": 0.024193877551020416,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.5808432802677631
+   },
+   "p_value": 0.133373325334933,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H14_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.362653794285992,
+    "cagr": 0.3538016850300041,
+    "sharpe": 1.3970602179384155,
+    "sortino": 1.6559604984700556,
+    "max_drawdown": 0.36117989841705955,
+    "calmar": 0.9795719157699753,
+    "mean_daily": 0.0009073141275598663
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.5464352788030149,
+    "cagr": 0.12037005252568189,
+    "sharpe": 0.6262032623906214,
+    "sortino": 0.7937423371543203,
+    "max_drawdown": 0.3215061077925355,
+    "calmar": 0.37439429487714554,
+    "mean_daily": 0.00037774662247906193
+   },
+   "oos_by_year": {
+    "2023": 0.3917645076499354,
+    "2024": 0.2655728073316459,
+    "2025": -0.0048694877309996,
+    "2026": -0.11773548066925754
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.5113956974889813,
+    "cagr": 0.11369547340171038,
+    "sharpe": 0.5990446000157191,
+    "sortino": 0.7592607923797148,
+    "max_drawdown": 0.32549003072222027,
+    "calmar": 0.349305547544528,
+    "mean_daily": 0.00036137858487845874
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.4771487150927167,
+    "cagr": 0.1070603964684087,
+    "sharpe": 0.571886725870451,
+    "sortino": 0.7254148320772964,
+    "max_drawdown": 0.32945061856574775,
+    "calmar": 0.32496644545544506,
+    "mean_daily": 0.00034501048400686375
+   },
+   "oos_costs": 0.022901935753811387,
+   "oos_funding": 0.09187758489274479,
+   "oos_exposure": 0.3175867426022971,
+   "oos_turnover": 0.02336932219776672,
+   "without_best_coin": {
+    "coin": "BNBUSDT",
+    "sharpe": 0.5751629525601221
+   },
+   "p_value": 0.14597080583883223,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H14_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.4925891803170337,
+    "cagr": -0.2126037558199727,
+    "sharpe": -0.16504692868815204,
+    "sortino": -0.2287429685486501,
+    "max_drawdown": 0.7560706113536805,
+    "calmar": -0.28119563520571667,
+    "mean_daily": -0.0002485770780397131
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.5978351275029201,
+    "cagr": -0.21138958869473368,
+    "sharpe": -0.42843758263743303,
+    "sortino": -0.4905580347577819,
+    "max_drawdown": 0.6989534428254773,
+    "calmar": -0.30243729516547474,
+    "mean_daily": -0.00044823831557837344
+   },
+   "oos_by_year": {
+    "2023": -0.41939364093550646,
+    "2024": -0.2915005634823895,
+    "2025": 0.014681668490362787,
+    "2026": -0.03649710841551812
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.6072590204898332,
+    "cagr": -0.21624974923501106,
+    "sharpe": -0.44462413502720194,
+    "sortino": -0.5091271109721272,
+    "max_drawdown": 0.7041394362493263,
+    "calmar": -0.3071121117528772,
+    "mean_daily": -0.00046516688700694466
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.6164623397706689,
+    "cagr": -0.22108009218049052,
+    "sharpe": -0.4608108912382507,
+    "sortino": -0.5280724236138854,
+    "max_drawdown": 0.7092362306204401,
+    "calmar": -0.3117157339622788,
+    "mean_daily": -0.0004820954584355162
+   },
+   "oos_costs": 0.023700000000000006,
+   "oos_funding": -0.059242906571428576,
+   "oos_exposure": 0.494765306122449,
+   "oos_turnover": 0.024183673469387757,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.5000257756528533
+   },
+   "p_value": 0.8314337132573485,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L28_H14_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.058126080371962985,
+    "cagr": -0.020877069488526634,
+    "sharpe": 0.04523686209370816,
+    "sortino": 0.07296444023002878,
+    "max_drawdown": 0.45596462758247047,
+    "calmar": -0.04578659884039051,
+    "mean_daily": 3.2417565686541444e-05
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.2746195969395512,
+    "cagr": -0.08029718247113715,
+    "sharpe": -0.270385549215214,
+    "sortino": -0.3333110036512939,
+    "max_drawdown": 0.4416163788950541,
+    "calmar": -0.18182564394926803,
+    "mean_daily": -0.00016303910347287718
+   },
+   "oos_by_year": {
+    "2023": -0.22426366946933818,
+    "2024": -0.15499929116366318,
+    "2025": 0.012803282465151833,
+    "2026": 0.09262092494326013
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.29008294440720894,
+    "cagr": -0.08544948559609822,
+    "sharpe": -0.2959129029390396,
+    "sortino": -0.36468186623013127,
+    "max_drawdown": 0.45035196492807905,
+    "calmar": -0.18973934222701672,
+    "mean_daily": -0.00017842776603220614
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.3052167285981988,
+    "cagr": -0.09057295132287069,
+    "sharpe": -0.3214400362300505,
+    "sortino": -0.3962765759518084,
+    "max_drawdown": 0.4589509879912458,
+    "calmar": -0.19734776412464836,
+    "mean_daily": -0.0001938159990206706
+   },
+   "oos_costs": 0.021551900383354052,
+   "oos_funding": -0.04307691273210919,
+   "oos_exposure": 0.29257287690419814,
+   "oos_turnover": 0.02199173508505516,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.3673971532950928
+   },
+   "p_value": 0.7048590281943611,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "L28_H14_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 7.671247814559418,
+    "cagr": 1.1404334103375025,
+    "sharpe": 1.42784025147605,
+    "sortino": 2.103847053032549,
+    "max_drawdown": 0.38778355942359866,
+    "calmar": 2.9409019093863655,
+    "mean_daily": 0.002738616804665385
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.10772621985095499,
+    "cagr": -0.029279602039127273,
+    "sharpe": 0.1551803125260933,
+    "sortino": 0.20078914917187626,
+    "max_drawdown": 0.44005548443848086,
+    "calmar": -0.06653615981286679,
+    "mean_daily": 0.00018751504770872312
+   },
+   "oos_by_year": {
+    "2023": -0.06851526491747106,
+    "2024": 0.1174195032820613,
+    "2025": 0.02893203712221548,
+    "2026": -0.16685718736279553
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.14904162871586457,
+    "cagr": -0.04120425856914545,
+    "sharpe": 0.12715660934164444,
+    "sortino": 0.16463753223620953,
+    "max_drawdown": 0.44525157095513823,
+    "calmar": -0.09254152316802723,
+    "mean_daily": 0.00015365076199443746
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.18844615051042857,
+    "cagr": -0.052983086172909255,
+    "sharpe": 0.09913228506523683,
+    "sortino": 0.12843686965001908,
+    "max_drawdown": 0.4503997231690363,
+    "calmar": -0.11763569879687637,
+    "mean_daily": 0.00011978647628015153
+   },
+   "oos_costs": 0.047410000000000015,
+   "oos_funding": 0.10770442371428571,
+   "oos_exposure": 0.7441734693877551,
+   "oos_turnover": 0.04837755102040817,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": 0.08754348024040008
+   },
+   "p_value": 0.3667266546690662,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "L28_H14_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.0295661053323237,
+    "cagr": 0.2832262983874707,
+    "sharpe": 1.217075403064099,
+    "sortino": 1.6902420753342806,
+    "max_drawdown": 0.2569750029865071,
+    "calmar": 1.102155054366677,
+    "mean_daily": 0.0007530368246962398
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.16442570745885043,
+    "cagr": 0.040486109597545505,
+    "sharpe": 0.28696867525729397,
+    "sortino": 0.38936714666106004,
+    "max_drawdown": 0.31651973424186275,
+    "calmar": 0.12791022238951075,
+    "mean_daily": 0.00018299342142050537
+   },
+   "oos_by_year": {
+    "2023": -0.018602848861761223,
+    "2024": 0.22755488105274946,
+    "2025": -0.0076199585729249675,
+    "2026": -0.026024453410819715
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.12105738078489203,
+    "cagr": 0.030240663541210466,
+    "sharpe": 0.2444518021996899,
+    "sortino": 0.33177541982244574,
+    "max_drawdown": 0.32147349798023783,
+    "calmar": 0.09406891619746979,
+    "mean_daily": 0.0001558847417423011
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.07929004324507649,
+    "cagr": 0.020092593837629957,
+    "sharpe": 0.201923220051497,
+    "sortino": 0.274131705550487,
+    "max_drawdown": 0.32639343878849325,
+    "calmar": 0.061559429356820475,
+    "mean_daily": 0.00012876773191976355
+   },
+   "oos_costs": 0.03787794140664154,
+   "oos_funding": 0.05434160419453034,
+   "oos_exposure": 0.4203321639190943,
+   "oos_turnover": 0.03865096061902197,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": 0.22038906487942073
+   },
+   "p_value": 0.2907418516296741,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H1_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 7.751860792362747,
+    "cagr": 1.1474230595935748,
+    "sharpe": 1.9683134225523669,
+    "sortino": 2.388487348049922,
+    "max_drawdown": 0.28824677255302833,
+    "calmar": 3.9806969890096,
+    "mean_daily": 0.0023569304798752118
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 1.2511890205669074,
+    "cagr": 0.235602655345029,
+    "sharpe": 0.8752539362890737,
+    "sortino": 1.073851779605018,
+    "max_drawdown": 0.3834704559728773,
+    "calmar": 0.6143958463430963,
+    "mean_daily": 0.0006941978455645969
+   },
+   "oos_by_year": {
+    "2023": 0.6848527276348346,
+    "2024": 0.6649219625626179,
+    "2025": -0.09813458532255925,
+    "2026": -0.11015492375561442
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 1.0037259930880524,
+    "cagr": 0.1986532441562101,
+    "sharpe": 0.7702780481223546,
+    "sortino": 0.9480480884131632,
+    "max_drawdown": 0.4133603159749305,
+    "calmar": 0.4805813148455645,
+    "mean_daily": 0.0006110145122312636
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.7834273481824328,
+    "cagr": 0.1628022886985192,
+    "sharpe": 0.6653045124434572,
+    "sortino": 0.8211304963655173,
+    "max_drawdown": 0.44180646738220464,
+    "calmar": 0.3684923166995646,
+    "mean_daily": 0.0005278311788979305
+   },
+   "oos_costs": 0.11645666666666668,
+   "oos_funding": 0.13213093166666667,
+   "oos_exposure": 0.3459047619047619,
+   "oos_turnover": 0.11883333333333333,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.6878830895471456
+   },
+   "p_value": 0.09418116376724656,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H1_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.93527281444497,
+    "cagr": 0.46137044831154284,
+    "sharpe": 1.8494089885166003,
+    "sortino": 2.3366086250272198,
+    "max_drawdown": 0.18201685439793058,
+    "calmar": 2.5347677270747755,
+    "mean_daily": 0.001104771094430596
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.9196279429376459,
+    "cagr": 0.18532852078466577,
+    "sharpe": 0.9397765268876737,
+    "sortino": 1.2315260384673952,
+    "max_drawdown": 0.28672680211543355,
+    "calmar": 0.6463592500503467,
+    "mean_daily": 0.0005217413276561416
+   },
+   "oos_by_year": {
+    "2023": 0.5392488419066479,
+    "2024": 0.3605463041608781,
+    "2025": -0.0017197203061490862,
+    "2026": -0.08178917465985192
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.7477675637016512,
+    "cagr": 0.1566952660303984,
+    "sharpe": 0.8190115251780321,
+    "sortino": 1.0754470497953628,
+    "max_drawdown": 0.30712792935769395,
+    "calmar": 0.5101954301521845,
+    "mean_daily": 0.0004547339829389992
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.5912846917806363,
+    "cagr": 0.1287520594221463,
+    "sharpe": 0.6982522746063586,
+    "sortino": 0.9177860810274882,
+    "max_drawdown": 0.32693722333925823,
+    "calmar": 0.3938127879936818,
+    "mean_daily": 0.0003877307715125545
+   },
+   "oos_costs": 0.09430783642416334,
+   "oos_funding": 0.08078314290994709,
+   "oos_exposure": 0.2535484298297522,
+   "oos_turnover": 0.09623248614710546,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.7267405117907588
+   },
+   "p_value": 0.07518496300739852,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H1_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.5861098534088779,
+    "cagr": -0.2671379118694247,
+    "sharpe": -0.26860261272347385,
+    "sortino": -0.30361968436294345,
+    "max_drawdown": 0.7433690721440183,
+    "calmar": -0.3593610790114633,
+    "mean_daily": -0.00041579766086862277
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.4957286767450161,
+    "cagr": -0.1634722969631015,
+    "sharpe": -0.35051471427031144,
+    "sortino": -0.37458505759524274,
+    "max_drawdown": 0.6113182156218967,
+    "calmar": -0.2674094976816623,
+    "mean_daily": -0.000327288123080712
+   },
+   "oos_by_year": {
+    "2023": -0.1921857795234948,
+    "2024": -0.23548301970623065,
+    "2025": -0.2613271726318107,
+    "2026": 0.10538487608687253
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.5551066559575367,
+    "cagr": -0.1903537841380878,
+    "sharpe": -0.44634743012769124,
+    "sortino": -0.47917739873997006,
+    "max_drawdown": 0.6440389766303233,
+    "calmar": -0.2955625219051771,
+    "mean_daily": -0.0004167381230807119
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.6075024884579092,
+    "cagr": -0.2163764495446947,
+    "sharpe": -0.5421789413028333,
+    "sortino": -0.5849643057632031,
+    "max_drawdown": 0.6740104875658436,
+    "calmar": -0.3210283126693293,
+    "mean_daily": -0.0005061881230807119
+   },
+   "oos_costs": 0.12523,
+   "oos_funding": -0.031541177999999996,
+   "oos_exposure": 0.35790476190476184,
+   "oos_turnover": 0.1277857142857143,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.41378781363708633
+   },
+   "p_value": 0.8082383523295341,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "LENS_H1_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.16008266044366282,
+    "cagr": -0.05961156888802499,
+    "sharpe": -0.06568665702509693,
+    "sortino": -0.08284745716347615,
+    "max_drawdown": 0.46208242352249007,
+    "calmar": -0.1290063543936629,
+    "mean_daily": -5.308305849787283e-05
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.19307797289814022,
+    "cagr": -0.05439521856408869,
+    "sharpe": -0.15559836530702575,
+    "sortino": -0.18713377636398237,
+    "max_drawdown": 0.37250269580223383,
+    "calmar": -0.14602637558619916,
+    "mean_daily": -9.103354458320861e-05
+   },
+   "oos_by_year": {
+    "2023": -0.0907402358942867,
+    "2024": -0.13248521483760367,
+    "2025": -0.12456505972732279,
+    "2026": 0.1685379895882113
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.26558462543929773,
+    "cagr": -0.07732426021985839,
+    "sharpe": -0.2705793776355062,
+    "sortino": -0.3264389445111316,
+    "max_drawdown": 0.411893158278393,
+    "calmar": -0.18772892597452653,
+    "mean_daily": -0.00015828258997953982
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.331601084333222,
+    "cagr": -0.09970608031230721,
+    "sharpe": -0.38561352790585535,
+    "sortino": -0.46684315833782053,
+    "max_drawdown": 0.45025260430766856,
+    "calmar": -0.2214447609150876,
+    "mean_daily": -0.00022555053875396422
+   },
+   "oos_costs": 0.09350282362375237,
+   "oos_funding": -0.029822010939987514,
+   "oos_exposure": 0.24150180286307352,
+   "oos_turnover": 0.09541104451403304,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.24853041615309715
+   },
+   "p_value": 0.6206758648270346,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "LENS_H1_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 2.9053929097816864,
+    "cagr": 0.616044474357053,
+    "sharpe": 1.0462288893751495,
+    "sortino": 1.3513309348979063,
+    "max_drawdown": 0.42824500201219706,
+    "calmar": 1.4385327825484047,
+    "mean_daily": 0.0019411328190065888
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.18564852494715312,
+    "cagr": 0.04539730622937799,
+    "sharpe": 0.31804076337414144,
+    "sortino": 0.39766865985067756,
+    "max_drawdown": 0.47310619677645527,
+    "calmar": 0.09595584783859513,
+    "mean_daily": 0.0003669097224838852
+   },
+   "oos_by_year": {
+    "2023": 0.37296537128805807,
+    "2024": 0.28813513475283936,
+    "2025": -0.32175195794064504,
+    "2026": -0.011568887979359621
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.06892051982464831,
+    "cagr": -0.01844553242749747,
+    "sharpe": 0.1683973389411869,
+    "sortino": 0.2118419219751235,
+    "max_drawdown": 0.5149971351164646,
+    "calmar": -0.03581676706478393,
+    "mean_daily": 0.00019427638915055182
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.268884307996621,
+    "cagr": -0.07840685737947672,
+    "sharpe": 0.018758834585763176,
+    "sortino": 0.023737600323533264,
+    "max_drawdown": 0.5659038370450362,
+    "calmar": -0.1385515563720005,
+    "mean_daily": 2.1643055817218624e-05
+   },
+   "oos_costs": 0.24168666666666666,
+   "oos_funding": 0.10058975366666667,
+   "oos_exposure": 0.7038095238095238,
+   "oos_turnover": 0.2466190476190476,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.21218849136280837
+   },
+   "p_value": 0.27534493101379726,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H1_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.4557636512661518,
+    "cagr": 0.3723636475028982,
+    "sharpe": 1.4268509686213438,
+    "sortino": 2.0569995000678514,
+    "max_drawdown": 0.148595876635903,
+    "calmar": 2.5058814277551056,
+    "mean_daily": 0.000947110455048509
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.627752862981791,
+    "cagr": 0.13543986014994114,
+    "sharpe": 0.6537110891357283,
+    "sortino": 0.9122488679638168,
+    "max_drawdown": 0.23561621112485687,
+    "calmar": 0.5748325189652139,
+    "mean_daily": 0.0004247081605573998
+   },
+   "oos_by_year": {
+    "2023": 0.38733504058688895,
+    "2024": 0.15826683031649202,
+    "2025": -0.10169872867959662,
+    "2026": 0.12765559351956934
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.3955141230484067,
+    "cagr": 0.09077275812292496,
+    "sharpe": 0.48436701204781213,
+    "sortino": 0.6789864414585803,
+    "max_drawdown": 0.254204629295007,
+    "calmar": 0.35708538579595367,
+    "mean_daily": 0.0003147631262567155
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.19619501483157276,
+    "cagr": 0.04781374170524222,
+    "sharpe": 0.3149258430625695,
+    "sortino": 0.4434002897507113,
+    "max_drawdown": 0.2724622025403659,
+    "calmar": 0.17548761354580367,
+    "mean_daily": 0.00020470210829974078
+   },
+   "oos_costs": 0.15440455325805608,
+   "oos_funding": 0.05196662738998812,
+   "oos_exposure": 0.4140475158801598,
+   "oos_turnover": 0.15755566658985315,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.5294969621457845
+   },
+   "p_value": 0.11577684463107378,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": true,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H5_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 7.24209916960392,
+    "cagr": 1.1024967728322221,
+    "sharpe": 1.906405262743721,
+    "sortino": 2.3565828951390047,
+    "max_drawdown": 0.38785174258498134,
+    "calmar": 2.8425726941027123,
+    "mean_daily": 0.0023035305448024434
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 1.1200092012813005,
+    "cagr": 0.21641260631322412,
+    "sharpe": 0.8403039642074333,
+    "sortino": 1.0378909689922662,
+    "max_drawdown": 0.3467205867313151,
+    "calmar": 0.6241700510299643,
+    "mean_daily": 0.0006441347534681586
+   },
+   "oos_by_year": {
+    "2023": 0.6715741753779307,
+    "2024": 0.6000454372317086,
+    "2025": -0.09950390578798196,
+    "2026": -0.11976639711058445
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 1.0150771828646459,
+    "cagr": 0.20041990849918223,
+    "sharpe": 0.7930170765972085,
+    "sortino": 0.981968581482467,
+    "max_drawdown": 0.3602282453571142,
+    "calmar": 0.5563692216874746,
+    "mean_daily": 0.000607848086801492
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.9153330988715458,
+    "cagr": 0.1846365410344526,
+    "sharpe": 0.7457211959436458,
+    "sortino": 0.9249453924583241,
+    "max_drawdown": 0.37345740165201335,
+    "calmar": 0.4943978622935326,
+    "mean_daily": 0.0005715614201348253
+   },
+   "oos_costs": 0.05080133333333334,
+   "oos_funding": 0.12337289893333334,
+   "oos_exposure": 0.3459095238095238,
+   "oos_turnover": 0.05183809523809525,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.6994852699266138
+   },
+   "p_value": 0.09158168366326734,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H5_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.7626641584723606,
+    "cagr": 0.43049786634178533,
+    "sharpe": 1.7436343283135751,
+    "sortino": 2.204058969349979,
+    "max_drawdown": 0.2514991406222845,
+    "calmar": 1.7117269875221208,
+    "mean_daily": 0.0010469460530834135
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.7165194864576416,
+    "cagr": 0.15126758833382037,
+    "sharpe": 0.8124071423187204,
+    "sortino": 1.015646797291478,
+    "max_drawdown": 0.31469473019488325,
+    "calmar": 0.4806803985568611,
+    "mean_daily": 0.0004393733309146735
+   },
+   "oos_by_year": {
+    "2023": 0.5241059735918139,
+    "2024": 0.325445390093287,
+    "2025": -0.03550565594658628,
+    "2026": -0.11900782997197501
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.6428546773647943,
+    "cagr": 0.13817692865514752,
+    "sharpe": 0.7544290254108095,
+    "sortino": 0.9452781970060701,
+    "max_drawdown": 0.32275750532791836,
+    "calmar": 0.428113758391958,
+    "mean_daily": 0.0004080398218281485
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.5723418579303468,
+    "cagr": 0.12523337344958918,
+    "sharpe": 0.6964487229193401,
+    "sortino": 0.8735392181252672,
+    "max_drawdown": 0.33072544006169613,
+    "calmar": 0.3786626557250242,
+    "mean_daily": 0.00037670360300627885
+   },
+   "oos_costs": 0.04383803466000645,
+   "oos_funding": 0.07866340385345971,
+   "oos_exposure": 0.26231685070582617,
+   "oos_turnover": 0.044732688428578006,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.6694770441215515
+   },
+   "p_value": 0.10017996400719856,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H5_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.4673192472437778,
+    "cagr": -0.1990050380231766,
+    "sharpe": -0.2012643440560023,
+    "sortino": -0.24463771884349178,
+    "max_drawdown": 0.6932088205789811,
+    "calmar": -0.28707805226275657,
+    "mean_daily": -0.000273636352637668
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.48512474991518495,
+    "cagr": -0.15892137314021182,
+    "sharpe": -0.37235711442694186,
+    "sortino": -0.4091426298351914,
+    "max_drawdown": 0.6095958400856202,
+    "calmar": -0.2606995695999019,
+    "mean_daily": -0.00032924805641400967
+   },
+   "oos_by_year": {
+    "2023": -0.21099201336243034,
+    "2024": -0.27472743537270905,
+    "2025": -0.16172541899976178,
+    "2026": 0.0733295098683493
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.5111230170402377,
+    "cagr": -0.170206758539579,
+    "sharpe": -0.4141529781554129,
+    "sortino": -0.4554135257751622,
+    "max_drawdown": 0.6238628961000294,
+    "calmar": -0.2728271862353043,
+    "mean_daily": -0.000366221389747343
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.5358099787045961,
+    "cagr": -0.18134139024269547,
+    "sharpe": -0.4559437266197014,
+    "sortino": -0.5026905567298987,
+    "max_drawdown": 0.6376093747930174,
+    "calmar": -0.2844082872864958,
+    "mean_daily": -0.00040319472308067634
+   },
+   "oos_costs": 0.051762666666666665,
+   "oos_funding": -0.03914086726666667,
+   "oos_exposure": 0.35768095238095243,
+   "oos_turnover": 0.05281904761904763,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.48743449237257624
+   },
+   "p_value": 0.8248350329934013,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "LENS_H5_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.19018493554341553,
+    "cagr": -0.0716263306551368,
+    "sharpe": -0.16285579581526943,
+    "sortino": -0.20877401214190966,
+    "max_drawdown": 0.4536025950761996,
+    "calmar": -0.15790546930866756,
+    "mean_daily": -0.00011479644870576928
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.2333724568437694,
+    "cagr": -0.06694013464831838,
+    "sharpe": -0.22545206673060286,
+    "sortino": -0.2672371629135497,
+    "max_drawdown": 0.442092048106575,
+    "calmar": -0.15141673534960562,
+    "mean_daily": -0.00012954672453108207
+   },
+   "oos_by_year": {
+    "2023": -0.11947931096388464,
+    "2024": -0.1815146873213439,
+    "2025": -0.11242646853316685,
+    "2026": 0.19847676975086892
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.26478988686207117,
+    "cagr": -0.07706405091680812,
+    "sharpe": -0.27744246184415866,
+    "sortino": -0.32879304215373667,
+    "max_drawdown": 0.455783192794747,
+    "calmar": -0.1690805017277423,
+    "mean_daily": -0.00015942395490281145
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.2949207708708037,
+    "cagr": -0.08707845204195286,
+    "sharpe": -0.32942876380669045,
+    "sortino": -0.3914518593318508,
+    "max_drawdown": 0.4691390631383491,
+    "calmar": -0.18561330506019583,
+    "mean_daily": -0.00018930078175095636
+   },
+   "oos_costs": 0.0416374363968661,
+   "oos_funding": -0.03403541085412825,
+   "oos_exposure": 0.250839410542792,
+   "oos_turnover": 0.04248717999680214,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.39154265742879796
+   },
+   "p_value": 0.6650669866026795,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "LENS_H5_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 3.8985992216225744,
+    "cagr": 0.7503455323401476,
+    "sharpe": 1.2290255224792468,
+    "sortino": 1.650133739987249,
+    "max_drawdown": 0.424367289821891,
+    "calmar": 1.7681511990593601,
+    "mean_daily": 0.002029894192164776
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.15766693554519673,
+    "cagr": 0.03890816749412518,
+    "sharpe": 0.2949068838730976,
+    "sortino": 0.3679887979598662,
+    "max_drawdown": 0.4052334146256712,
+    "calmar": 0.09601421326537464,
+    "mean_daily": 0.00031488669705414884
+   },
+   "oos_by_year": {
+    "2023": 0.33571242648405386,
+    "2024": 0.1797755155374936,
+    "2025": -0.22948775026928325,
+    "2026": -0.04656358144730066
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.04481722900777796,
+    "cagr": 0.011495802461380933,
+    "sharpe": 0.22629479424080426,
+    "sortino": 0.28281391700601977,
+    "max_drawdown": 0.4192645864250747,
+    "calmar": 0.02741896843566421,
+    "mean_daily": 0.0002416266970541488
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.05704152024037623,
+    "cagr": -0.01519589843678315,
+    "sharpe": 0.15768226466508956,
+    "sortino": 0.19749184483955134,
+    "max_drawdown": 0.44261711462651965,
+    "calmar": -0.03433192692877556,
+    "mean_daily": 0.00016836669705414887
+   },
+   "oos_costs": 0.10256400000000002,
+   "oos_funding": 0.08423203166666665,
+   "oos_exposure": 0.6145142857142857,
+   "oos_turnover": 0.10465714285714287,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": 0.17463674570385465
+   },
+   "p_value": 0.2793441311737652,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H5_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.3790748283364147,
+    "cagr": 0.3571092904300892,
+    "sharpe": 1.4298784387816397,
+    "sortino": 2.000248276037379,
+    "max_drawdown": 0.19760154543463526,
+    "calmar": 1.8072191168576544,
+    "mean_daily": 0.0009105645729187665
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.353729882358528,
+    "cagr": 0.08216198966958577,
+    "sharpe": 0.454398490035585,
+    "sortino": 0.5867739577982906,
+    "max_drawdown": 0.23923724111012834,
+    "calmar": 0.3434331096961783,
+    "mean_daily": 0.0002918338270023432
+   },
+   "oos_by_year": {
+    "2023": 0.29943535422449763,
+    "2024": 0.11100653459151655,
+    "2025": -0.12286734727894144,
+    "2026": 0.06904366697893916
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.2557610425565251,
+    "cagr": 0.0611736790685935,
+    "sharpe": 0.3708289024646622,
+    "sortino": 0.4793482199287529,
+    "max_drawdown": 0.249444949446608,
+    "calmar": 0.24523919688214538,
+    "mean_daily": 0.0002381815684608232
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.1648515419362131,
+    "cagr": 0.040585300411062786,
+    "sharpe": 0.28724821082725954,
+    "sortino": 0.3718952453984016,
+    "max_drawdown": 0.2595188629846974,
+    "calmar": 0.1563867070944123,
+    "mean_daily": 0.0001845138375931101
+   },
+   "oos_costs": 0.07517784329953237,
+   "oos_funding": 0.04987261273488107,
+   "oos_exposure": 0.3984621694059933,
+   "oos_turnover": 0.07671208499952281,
+   "without_best_coin": {
+    "coin": "DOGEUSDT",
+    "sharpe": 0.32037156606614664
+   },
+   "p_value": 0.1949610077984403,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": true,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H7_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 7.080502741041311,
+    "cagr": 1.0878803527293273,
+    "sharpe": 1.8958078199137152,
+    "sortino": 2.341944007540402,
+    "max_drawdown": 0.3767723950684657,
+    "calmar": 2.8873674583607474,
+    "mean_daily": 0.0022824228599403733
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 1.0883477031689535,
+    "cagr": 0.21164992821108064,
+    "sharpe": 0.8318152468826042,
+    "sortino": 1.028729176725894,
+    "max_drawdown": 0.33816666355979985,
+    "calmar": 0.6258746086414678,
+    "mean_daily": 0.0006313182509925122
+   },
+   "oos_by_year": {
+    "2023": 0.6410506941192493,
+    "2024": 0.5730845690125566,
+    "2025": -0.10584441190050398,
+    "2026": -0.0952769693884925
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 1.0001565377107644,
+    "cagr": 0.19809617617534703,
+    "sharpe": 0.791208851788341,
+    "sortino": 0.9802020506211442,
+    "max_drawdown": 0.3455733222965993,
+    "calmar": 0.5732392039375211,
+    "mean_daily": 0.0006004801557544171
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.915685741097952,
+    "cagr": 0.1846934014985151,
+    "sharpe": 0.7505979728733115,
+    "sortino": 0.9310953120809149,
+    "max_drawdown": 0.3533562439141409,
+    "calmar": 0.5226832826064118,
+    "mean_daily": 0.000569642060516322
+   },
+   "oos_costs": 0.043173333333333334,
+   "oos_funding": 0.12157134161904762,
+   "oos_exposure": 0.34591496598639454,
+   "oos_turnover": 0.04405442176870749,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.7167052697052114
+   },
+   "p_value": 0.08818236352729454,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H7_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.7499206332121955,
+    "cagr": 0.4281696049956325,
+    "sharpe": 1.729306866693042,
+    "sortino": 2.141363568119658,
+    "max_drawdown": 0.2533058408649782,
+    "calmar": 1.6903266167631066,
+    "mean_daily": 0.001043161917473835
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.6570280331763179,
+    "cagr": 0.14072885346591013,
+    "sharpe": 0.7726135307924449,
+    "sortino": 0.9610277752284015,
+    "max_drawdown": 0.3109488819301053,
+    "calmar": 0.45257874089266864,
+    "mean_daily": 0.00041298901166585556
+   },
+   "oos_by_year": {
+    "2023": 0.4949699846762652,
+    "2024": 0.2981146961670724,
+    "2025": -0.05025835772877163,
+    "2026": -0.10096037113851286
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.5956484167599421,
+    "cagr": 0.12955824146603412,
+    "sharpe": 0.7221773975195129,
+    "sortino": 0.8993813344785638,
+    "max_drawdown": 0.3178023618766833,
+    "calmar": 0.40766922152802165,
+    "mean_daily": 0.00038601786429116755
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.5365348137303199,
+    "cagr": 0.1184955737253337,
+    "sharpe": 0.6717311199088348,
+    "sortino": 0.837233253235562,
+    "max_drawdown": 0.32458735980067177,
+    "calmar": 0.36506527487115187,
+    "mean_daily": 0.0003590443293358855
+   },
+   "oos_costs": 0.03775125071531789,
+   "oos_funding": 0.07927256183587252,
+   "oos_exposure": 0.2647847729078595,
+   "oos_turnover": 0.0385216844033856,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.6737916431103858
+   },
+   "p_value": 0.10757848430313938,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H7_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.4673237000007716,
+    "cagr": -0.1990073970129539,
+    "sharpe": -0.24411507756451883,
+    "sortino": -0.3028702617450007,
+    "max_drawdown": 0.6965827406065154,
+    "calmar": -0.28569096736401756,
+    "mean_daily": -0.0003120006200293681
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.46894803172143484,
+    "cagr": -0.15211042559761068,
+    "sharpe": -0.3614837602325105,
+    "sortino": -0.4040023995686256,
+    "max_drawdown": 0.6050694012934046,
+    "calmar": -0.2513933530144763,
+    "mean_daily": -0.00031330557919843297
+   },
+   "oos_by_year": {
+    "2023": -0.25468598801623565,
+    "2024": -0.2637365527108966,
+    "2025": -0.11715166464109583,
+    "2026": 0.09617121715740429
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.4917700482526549,
+    "cagr": -0.16176515633292454,
+    "sharpe": -0.39769157961809654,
+    "sortino": -0.44457290357384305,
+    "max_drawdown": 0.6173364919472268,
+    "calmar": -0.2620372494466973,
+    "mean_daily": -0.00034467224586509957
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.5136123071094514,
+    "cagr": -0.17131040430576872,
+    "sharpe": -0.43390182285245543,
+    "sortino": -0.4858248442325333,
+    "max_drawdown": 0.629223102630739,
+    "calmar": -0.2722570159765774,
+    "mean_daily": -0.00037603891253176633
+   },
+   "oos_costs": 0.04391333333333333,
+   "oos_funding": -0.040181681190476194,
+   "oos_exposure": 0.3575,
+   "oos_turnover": 0.04480952380952381,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.4754323442025686
+   },
+   "p_value": 0.8142371525694861,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "LENS_H7_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.2035395256933915,
+    "cagr": -0.07704927211848867,
+    "sharpe": -0.21052074101415194,
+    "sortino": -0.26796648561170916,
+    "max_drawdown": 0.4734580189766495,
+    "calmar": -0.16273728404690652,
+    "mean_daily": -0.00013982249772004384
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.24475360444539906,
+    "cagr": -0.0705715281524496,
+    "sharpe": -0.2462884015905791,
+    "sortino": -0.2944733568958082,
+    "max_drawdown": 0.44887968520593124,
+    "calmar": -0.1572170238002054,
+    "mean_daily": -0.00014081940411891832
+   },
+   "oos_by_year": {
+    "2023": -0.163510421202956,
+    "2024": -0.16662280384169836,
+    "2025": -0.09887192500585773,
+    "2026": 0.20226441623181635
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.2715046172589036,
+    "cagr": -0.07926913413197334,
+    "sharpe": -0.2913165928504452,
+    "sortino": -0.34838949391693813,
+    "max_drawdown": 0.46318204760367987,
+    "calmar": -0.17114034220903074,
+    "mean_daily": -0.00016656796772906234
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.29731012888890984,
+    "cagr": -0.08788603349766955,
+    "sharpe": -0.33634399337176235,
+    "sortino": -0.40249112300207374,
+    "max_drawdown": 0.4771135999913645,
+    "calmar": -0.18420358065513168,
+    "mean_daily": -0.00019231756833101735
+   },
+   "oos_costs": 0.03602034386206894,
+   "oos_funding": -0.034988051700504924,
+   "oos_exposure": 0.25379257905317065,
+   "oos_turnover": 0.03675545292047851,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.41505216328782807
+   },
+   "p_value": 0.6834633073385323,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "LENS_H7_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 3.865727667699269,
+    "cagr": 0.7461983659934139,
+    "sharpe": 1.2625532947970446,
+    "sortino": 1.7112343146415023,
+    "max_drawdown": 0.40476419889205306,
+    "calmar": 1.843538455317829,
+    "mean_daily": 0.001970422239911005
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.18240021727778877,
+    "cagr": 0.044649846693234796,
+    "sharpe": 0.30634418237724886,
+    "sortino": 0.3832395600666945,
+    "max_drawdown": 0.37022971280028993,
+    "calmar": 0.12060038713672856,
+    "mean_daily": 0.00031801267179407973
+   },
+   "oos_by_year": {
+    "2023": 0.24025208326899516,
+    "2024": 0.180201140812708,
+    "2025": -0.19349952268507653,
+    "2026": 0.0015989873913750952
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.08380867614320642,
+    "cagr": 0.021204331500416895,
+    "sharpe": 0.246432058212667,
+    "sortino": 0.3085235384074033,
+    "max_drawdown": 0.38356904935844294,
+    "calmar": 0.05528165407475716,
+    "mean_daily": 0.00025580790988931774
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.006569000436231542,
+    "cagr": -0.0017168067523798403,
+    "sharpe": 0.1865144250725162,
+    "sortino": 0.2339738927446677,
+    "max_drawdown": 0.39705742586411874,
+    "calmar": -0.00432382481864819,
+    "mean_daily": 0.00019360314798455585
+   },
+   "oos_costs": 0.08708666666666667,
+   "oos_funding": 0.08138966042857143,
+   "oos_exposure": 0.5902312925170069,
+   "oos_turnover": 0.0888639455782313,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": 0.18819215170927892
+   },
+   "p_value": 0.2679464107178564,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H7_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.2574692346947103,
+    "cagr": 0.33225342465811347,
+    "sharpe": 1.3652035338545987,
+    "sortino": 1.8426978440203088,
+    "max_drawdown": 0.20846505125722425,
+    "calmar": 1.5938087590909769,
+    "mean_daily": 0.0008582243979164345
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.23661559388474607,
+    "cagr": 0.056931663841233604,
+    "sharpe": 0.35327153565627983,
+    "sortino": 0.4435494216959875,
+    "max_drawdown": 0.24211411046703613,
+    "calmar": 0.2351439316420381,
+    "mean_daily": 0.00022821877234543427
+   },
+   "oos_by_year": {
+    "2023": 0.1703652195345271,
+    "2024": 0.13679644670536462,
+    "2025": -0.14070968455692967,
+    "2026": 0.08165979403006163
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.15715319770388114,
+    "cagr": 0.03878794903174021,
+    "sharpe": 0.27983329300998555,
+    "sortino": 0.3514319470647832,
+    "max_drawdown": 0.2548994064832065,
+    "calmar": 0.15216963258914323,
+    "mean_daily": 0.00018078088236358255
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.08278286491983189,
+    "cagr": 0.020952248070036816,
+    "sharpe": 0.20638779125852288,
+    "sortino": 0.2595782043361099,
+    "max_drawdown": 0.267472249658267,
+    "calmar": 0.07833428737675115,
+    "mean_daily": 0.0001333363554854037
+   },
+   "oos_costs": 0.0663157404962125,
+   "oos_funding": 0.05032192651865079,
+   "oos_exposure": 0.39470550858471254,
+   "oos_turnover": 0.06766912295531888,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": 0.21718421049548844
+   },
+   "p_value": 0.2519496100779844,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": true,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H14_long_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 5.084256031029307,
+    "cagr": 0.8892494972232619,
+    "sharpe": 1.6715831952517046,
+    "sortino": 1.977312804362687,
+    "max_drawdown": 0.4380526764155115,
+    "calmar": 2.0300058534051075,
+    "mean_daily": 0.0020096878050552503
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 1.1333775106324007,
+    "cagr": 0.21840775241036403,
+    "sharpe": 0.865446948211963,
+    "sortino": 1.0944608270808722,
+    "max_drawdown": 0.3023431529435394,
+    "calmar": 0.7223836567291148,
+    "mean_daily": 0.0006415795337659036
+   },
+   "oos_by_year": {
+    "2023": 0.5460812875770333,
+    "2024": 0.5370899271794825,
+    "2025": -0.04918441889166347,
+    "2026": -0.05585255501164743
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 1.078251679662619,
+    "cagr": 0.21012001387763446,
+    "sharpe": 0.84021856713689,
+    "sortino": 1.0631410947773476,
+    "max_drawdown": 0.309388780993743,
+    "calmar": 0.6791455501480639,
+    "mean_daily": 0.0006228700099563798
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 1.024548846614139,
+    "cagr": 0.20188842702183152,
+    "sharpe": 0.8149889765739866,
+    "sortino": 1.0333783914365555,
+    "max_drawdown": 0.31636344380720727,
+    "calmar": 0.63815346233512,
+    "mean_daily": 0.000604160486146856
+   },
+   "oos_costs": 0.02619333333333334,
+   "oos_funding": 0.1192069093809524,
+   "oos_exposure": 0.34596428571428567,
+   "oos_turnover": 0.026727891156462593,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.771379394644384
+   },
+   "p_value": 0.06718656268746251,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H14_long_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.4727546603826789,
+    "cagr": 0.3757014792063156,
+    "sharpe": 1.5554474840840085,
+    "sortino": 1.8370525398038262,
+    "max_drawdown": 0.3326021882716249,
+    "calmar": 1.1295821027476012,
+    "mean_daily": 0.000941281364346657
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.7030294435941369,
+    "cagr": 0.1489018251992531,
+    "sharpe": 0.8269048315111059,
+    "sortino": 1.069183115359978,
+    "max_drawdown": 0.28592955056186375,
+    "calmar": 0.5207640305335866,
+    "mean_daily": 0.0004295094179268343
+   },
+   "oos_by_year": {
+    "2023": 0.42818484801800216,
+    "2024": 0.311101358954166,
+    "2025": -0.020913505553929346,
+    "2026": -0.07107552039398823
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.6625781237008499,
+    "cagr": 0.14172375586995178,
+    "sharpe": 0.7938181337224561,
+    "sortino": 1.0265237699193053,
+    "max_drawdown": 0.2901124154795627,
+    "calmar": 0.48851323937887686,
+    "mean_daily": 0.0004123368293587713
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.6230862133582811,
+    "cagr": 0.13459027589936623,
+    "sharpe": 0.7607316557878069,
+    "sortino": 0.9851778923267844,
+    "max_drawdown": 0.294270850931715,
+    "calmar": 0.4573686978279668,
+    "mean_daily": 0.0003951641359035986
+   },
+   "oos_costs": 0.024076553982838988,
+   "oos_funding": 0.07917608422722243,
+   "oos_exposure": 0.2640136317805432,
+   "oos_turnover": 0.02456791222738673,
+   "without_best_coin": {
+    "coin": "SOLUSDT",
+    "sharpe": 0.7302665065982635
+   },
+   "p_value": 0.09038192361527694,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": true,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H14_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.4351697848013695,
+    "cagr": -0.18229516666424006,
+    "sharpe": -0.24461657224442018,
+    "sortino": -0.3342227425509681,
+    "max_drawdown": 0.6737609973576384,
+    "calmar": -0.27056354906141317,
+    "mean_daily": -0.00029375968255047734
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.4534934433234419,
+    "cagr": -0.145745321307026,
+    "sharpe": -0.40788390233422267,
+    "sortino": -0.4773707435028324,
+    "max_drawdown": 0.5915313757842051,
+    "calmar": -0.24638645940599258,
+    "mean_daily": -0.00031911024536966507
+   },
+   "oos_by_year": {
+    "2023": -0.3124519548603467,
+    "2024": -0.25345303393824103,
+    "2025": 0.0025276775572973254,
+    "2026": 0.06203497433245153
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.46813112200713614,
+    "cagr": -0.1517705700491061,
+    "sharpe": -0.43264191007855574,
+    "sortino": -0.5070490738841896,
+    "max_drawdown": 0.5991972856978032,
+    "calmar": -0.25328981567791925,
+    "mean_daily": -0.00033848643584585565
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.48237713465510657,
+    "cagr": -0.15775348715774606,
+    "sharpe": -0.4573986160255328,
+    "sortino": -0.5361878427457655,
+    "max_drawdown": 0.6067195297541592,
+    "calmar": -0.26001056406024586,
+    "mean_daily": -0.000357862626322046
+   },
+   "oos_costs": 0.027126666666666674,
+   "oos_funding": -0.04256911830952381,
+   "oos_exposure": 0.3570663265306122,
+   "oos_turnover": 0.027680272108843544,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.5029507990278133
+   },
+   "p_value": 0.8240351929614077,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "LENS_H14_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": -0.16898828866380877,
+    "cagr": -0.063136623041816,
+    "sharpe": -0.1537926697696238,
+    "sortino": -0.233137034899823,
+    "max_drawdown": 0.4515959259071458,
+    "calmar": -0.13980777819239612,
+    "mean_daily": -0.00010155329627238368
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": -0.31950787638356104,
+    "cagr": -0.09548745491301402,
+    "sharpe": -0.40128545082824546,
+    "sortino": -0.49346141576703356,
+    "max_drawdown": 0.49835858950922174,
+    "calmar": -0.19160391116575126,
+    "mean_daily": -0.00022006698277139745
+   },
+   "oos_by_year": {
+    "2023": -0.23986307072711766,
+    "2024": -0.20131393774829387,
+    "2025": -0.0419167414364251,
+    "2026": 0.16990854639644515
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": -0.33547123588037475,
+    "cagr": -0.10106806753592013,
+    "sharpe": -0.43216613025524925,
+    "sortino": -0.5319218549355252,
+    "max_drawdown": 0.5067645847312601,
+    "calmar": -0.19943790584639426,
+    "mean_daily": -0.00023701155065499708
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": -0.3510608090652315,
+    "cagr": -0.10661449720360705,
+    "sharpe": -0.4630440740853342,
+    "sortino": -0.5700598490317182,
+    "max_drawdown": 0.5150298433129576,
+    "calmar": -0.20700644552518252,
+    "mean_daily": -0.0002539564012768024
+   },
+   "oos_costs": 0.02370788548088057,
+   "oos_funding": -0.03747593480136744,
+   "oos_exposure": 0.26212926124349234,
+   "oos_turnover": 0.024191719878449557,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": -0.5170451891508181
+   },
+   "p_value": 0.7816436712657469,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": false,
+    "not_one_coin": false
+   },
+   "passed": false
+  },
+  "LENS_H14_long_short_raw": {
+   "is": {
+    "days": 1036,
+    "total_return": 2.9738734399487634,
+    "cagr": 0.6259719591723327,
+    "sharpe": 1.1789203734976965,
+    "sortino": 1.6020908294370428,
+    "max_drawdown": 0.4107010355830134,
+    "calmar": 1.5241548107706377,
+    "mean_daily": 0.0017159281225047728
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.2635516120874388,
+    "cagr": 0.0628861373566052,
+    "sharpe": 0.350134172333662,
+    "sortino": 0.4494064854637755,
+    "max_drawdown": 0.33025901220360065,
+    "calmar": 0.19041459894465093,
+    "mean_daily": 0.00032246928839623856
+   },
+   "oos_by_year": {
+    "2023": 0.08042522151983067,
+    "2024": 0.17508372849138776,
+    "2025": -0.019340130239171027,
+    "2026": 0.014871498797835558
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.1979355444353088,
+    "cagr": 0.04821102005049549,
+    "sharpe": 0.30877370340024934,
+    "sortino": 0.39702558231516155,
+    "max_drawdown": 0.3356699130812051,
+    "calmar": 0.1436262773983926,
+    "mean_daily": 0.0002843835741105244
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.13572400070664536,
+    "cagr": 0.03373782950122073,
+    "sharpe": 0.2674148773009461,
+    "sortino": 0.3441585381458719,
+    "max_drawdown": 0.3410373624146854,
+    "calmar": 0.09892707726315662,
+    "mean_daily": 0.00024629785982481007
+   },
+   "oos_costs": 0.053320000000000006,
+   "oos_funding": 0.07663779107142858,
+   "oos_exposure": 0.5244081632653061,
+   "oos_turnover": 0.05440816326530613,
+   "without_best_coin": {
+    "coin": "AVAXUSDT",
+    "sharpe": 0.25489493221842563
+   },
+   "p_value": 0.23195360927814437,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": true,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  },
+  "LENS_H14_long_short_managed": {
+   "is": {
+    "days": 1036,
+    "total_return": 1.2391820924263017,
+    "cagr": 0.32844112652403523,
+    "sharpe": 1.3343134933840242,
+    "sortino": 1.7939525437662718,
+    "max_drawdown": 0.2666738612001168,
+    "calmar": 1.2316209959459323,
+    "mean_daily": 0.0008527282550261535
+   },
+   "oos": {
+    "days": 1400,
+    "total_return": 0.21749493682937993,
+    "cagr": 0.052646402490452715,
+    "sharpe": 0.3404409389788044,
+    "sortino": 0.44704657433329664,
+    "max_drawdown": 0.26050472251983636,
+    "calmar": 0.20209385066500632,
+    "mean_daily": 0.00021017920183072965
+   },
+   "oos_by_year": {
+    "2023": -0.010707945076800285,
+    "2024": 0.14625006606552615,
+    "2025": -0.0316813813891782,
+    "2026": 0.10877898591811941
+   },
+   "oos_2x_cost": {
+    "days": 1400,
+    "total_return": 0.1638339237701001,
+    "cagr": 0.04034821923165288,
+    "sharpe": 0.28828339162630745,
+    "sortino": 0.3790120055857011,
+    "max_drawdown": 0.2664471443263139,
+    "calmar": 0.15143048101967652,
+    "mean_daily": 0.0001779890462533151
+   },
+   "oos_3x_cost": {
+    "days": 1400,
+    "total_return": 0.11253074959382214,
+    "cagr": 0.028191966038403127,
+    "sharpe": 0.23612612048047346,
+    "sortino": 0.31056584847166174,
+    "max_drawdown": 0.27234303339664223,
+    "calmar": 0.10351638404990576,
+    "mean_daily": 0.00014579557434140866
+   },
+   "oos_costs": 0.04508312007570933,
+   "oos_funding": 0.0476168229329803,
+   "oos_exposure": 0.37444300431306016,
+   "oos_turnover": 0.046003183750723806,
+   "without_best_coin": {
+    "coin": "DOGEUSDT",
+    "sharpe": 0.24788892413441016
+   },
+   "p_value": 0.25674865026994603,
+   "holm_significant": false,
+   "gates": {
+    "sharpe_ge_0.5": false,
+    "holm_significant": false,
+    "max_drawdown_le_25pct": false,
+    "positive_3_of_4_years": false,
+    "positive_at_2x_costs": true,
+    "not_one_coin": true
+   },
+   "passed": false
+  }
+ },
+ "best_in_sample": "LENS_H1_long_raw",
+ "passed": [],
+ "pbo": 0.07936507936507936,
+ "benchmarks": {
+  "equal_weight_hold": {
+   "days": 1400,
+   "total_return": 1.7837205744262592,
+   "cagr": 0.30593107441191103,
+   "sharpe": 0.7425924691760357,
+   "sortino": 1.0810399369056094,
+   "max_drawdown": 0.6852813137740512,
+   "calmar": 0.44643136805680017,
+   "mean_daily": 0.0012432290204528844
+  },
+  "btc_hold": {
+   "days": 1400,
+   "total_return": 3.667140268387713,
+   "cagr": 0.4942770123088083,
+   "sharpe": 1.0991875315124229,
+   "sortino": 1.7050902422079197,
+   "max_drawdown": 0.5297592444745769,
+   "calmar": 0.933021966986229,
+   "mean_daily": 0.001391111033558551
+  }
+ },
+ "worst_day_move": {
+  "long_side_min": -0.5088161209068011,
+  "short_side_max": 3.8980582524271847
+ }
+}

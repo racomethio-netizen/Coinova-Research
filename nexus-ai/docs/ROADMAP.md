@@ -822,3 +822,21 @@ TradingView's documentation.
   reached 49 (16:30 UTC), causing "Timeout connecting to server" and two dashboard 500s at
   17:03 UTC. Every Redis client now uses a bounded blocking pool (workers 3, API 8,
   5 s wait).
+
+## 2026-11-23: research-backed strategy (TSMOM grid, Han / Kang / Ryu design)
+
+* Pre-registered (97b40d4); run once on 10 Binance perps, 2020–2026, actual funding,
+  1,586 archives checksum-verified.
+* **0 of 96 pass.**
+  * Long-only: OOS Sharpe 0.43–0.99, every configuration positive, PBO 0.08. But it is not
+    significant after Holm (min p 0.05), drawdowns exceed 25%, and the median year is
+    negative in 2025 and 2026: the edge decayed.
+  * Short-only loses everywhere; a +390% single-day move would liquidate a 1× short.
+  * Volatility targeting cuts drawdown by about a quarter to 40% at a similar Sharpe.
+* New tools: `nexus_ai/sampling.py` (CUSUM, volume / dollar / range bars, tested);
+  `nexus_backtest/tsmom_grid.py`; a CSCV PBO.
+* Next:
+  * an edge-decay monitor for forward tests (a rolling Sharpe or CUSUM on strategy returns
+    that cuts risk or stops);
+  * a CUSUM + triple-barrier ML study needs its own pre-registration (Phase D models
+    already failed at AUC 0.51).
