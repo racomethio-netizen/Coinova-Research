@@ -4,6 +4,13 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-23
 
+- **Edge-decay monitor:**
+  * CUSUM, a rolling window and R-drawdown detectors;
+  * NORMAL / REDUCE / STOP, enforced in the bot and the main trader;
+  * it only tightens; the owner's 2FA reset.
+- **Research:** TSMOM grid (Han / Kang / Ryu design), 0 of 96 pass; CUSUM and volume /
+  dollar / range bars.
+- **Reliability:** bounded blocking Redis pools (free Key Value 50-connection limit).
 - **Risk:**
   - aggregate open-risk limit (1% of equity) in the main risk engine;
   - weekly loss limit 3% (master directive Part 8);

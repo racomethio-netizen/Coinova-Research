@@ -840,3 +840,25 @@ TradingView's documentation.
     that cuts risk or stops);
   * a CUSUM + triple-barrier ML study needs its own pre-registration (Phase D models
     already failed at AUC 0.51).
+
+## 2026-11-23: edge-decay monitor (owner: "Build the monitor")
+
+* `nexus_risk/edge_monitor.py` (pure). It works on closed trades in R (net P&L / risk to the
+  initial stop), with three detectors:
+  * one-sided CUSUM for a downward mean shift (k 0.5σ, h 4) → STOP;
+  * rolling 20-trade upper bound below 0 → REDUCE (half size);
+  * drawdown in R: 10R → REDUCE, 15R → STOP.
+* Calibrated by simulation:
+  * CUSUM: 1.3% false alarms on a +0.3R edge, 82% of decays to −0.5R caught;
+  * 15R stop: 1.5% false alarms, 88% caught.
+* It only tightens automatically. The owner's 2FA reset (audited) restarts the count from
+  later trades.
+* `nexus_execution/edge.py`: state per (strategy, portfolio) in `strategies.parameters`,
+  with escalations audited.
+  * Enforced in the bot runner (STOP blocks entries, REDUCE halves risk) and in the main
+    trader (risk per trade × multiplier).
+* API: `GET /strategies/edge-monitor`, `POST /strategies/{code}/edge-reset` (owner + 2FA).
+  Trading bot page card.
+* Tests: 904 passed (6 unit, 1 trader integration, 1 API); e2e 15/15; no migration needed.
+* Not yet: the simulated forward tests (Strategy lab, Crypto Trends) show no edge-monitor
+  state. They place no orders, so there is nothing to gate.

@@ -1324,3 +1324,65 @@ async def test_aggregate_open_risk_blocks_new_entry(engine_setup: tuple[Any, ...
     await eng.handle_signal(1, signal(), v, day0, week0, peak)
     status, reason = await _decision(factory)
     assert status == "rejected" and "aggregate open risk" in reason
+
+
+def _closed_trades(factory: Any, pid: int, strategy: str, rs: list[float],
+                   start: datetime) -> None:
+    """Closed positions whose entry orders record the strategy and the initial stop:
+    entry 60,000, stop 59,000, 0.01 BTC = 10 USDT at risk, P&L = R x 10."""
+    import uuid
+
+    with transaction(factory) as s:
+        ex = repo.exchange_id(s, "binance")
+        pair = repo.pair_id(s, "binance", "BTC/USDT")
+        for i, r in enumerate(rs):
+            o = models.Order(portfolio_id=pid, mode="paper", exchange_id=ex, pair_id=pair,
+                             client_order_id=str(uuid.uuid4()), side="buy",
+                             order_type="limit", time_in_force="IOC", price=D(60_000),
+                             amount=D("0.01"), filled_amount=D("0.01"),
+                             average_fill_price=D(60_000), status="filled", purpose="entry",
+                             details={"strategy": strategy, "stop": "59000"})
+            s.add(o)
+            s.flush()
+            s.add(models.Position(portfolio_id=pid, mode="paper", exchange_id=ex, pair_id=pair,
+                                  base_asset="BTC", status="closed", quantity=D(0),
+                                  avg_entry_price=D(60_000), cost_basis=D(0),
+                                  realized_pnl=D(str(round(r * 10, 4))), entry_order_id=o.id,
+                                  opened_at=start + timedelta(hours=2 * i),
+                                  closed_at=start + timedelta(hours=2 * i + 1),
+                                  exit_reason="stop_loss"))
+
+
+async def test_edge_monitor_stops_a_decaying_strategy_and_only_the_owner_resets(
+        engine_setup: tuple[Any, ...]) -> None:
+    """Ten -1R trades in a row: the CUSUM detects the lost edge and STOPs new entries of
+    that strategy (audited); a system actor cannot reset; the owner's reset counts only
+    later trades."""
+    from nexus_execution import edge
+    from nexus_execution.protection import STREAK_RESET_KEY
+
+    eng, factory, _, redis = engine_setup
+    pid = eng.bootstrap()
+    start = utcnow() - timedelta(days=3)
+    _closed_trades(factory, pid, "momentum", [0.5, -1.0, 0.8] + [-1.0] * 10, start)
+    # Isolate the edge monitor from the (independent) loss-streak and cooldown rules.
+    await redis.set(STREAK_RESET_KEY, utcnow().isoformat())
+    with transaction(factory) as s:
+        assert edge.closed_trade_r(s, pid, "momentum")[:3] == [0.5, -1.0, 0.8]
+        assert edge.closed_trade_r(s, pid, "other") == []
+    v = await eng.valuation()
+    day0, week0, peak = eng.period_starts(v.equity, utcnow())
+    await eng.handle_signal(1, signal(), v, day0, week0, peak)
+    status, reason = await _decision(factory)
+    assert status == "rejected" and "edge monitor STOP" in reason and "CUSUM" in reason
+    with transaction(factory) as s:
+        row = s.scalar(select(models.Strategy).where(models.Strategy.code == "momentum"))
+        assert row is not None and row.parameters["edge_monitor"][str(pid)]["state"] == "STOP"
+        assert s.scalar(select(func.count()).select_from(models.AuditLog).where(
+            models.AuditLog.action == "edge_state_changed")) == 1
+        with pytest.raises(PermissionError):
+            edge.reset(s, pid, "momentum", actor="system:x", reason="automatic")
+        edge.reset(s, pid, "momentum", actor="user:1", reason="reviewed the losses")
+    with transaction(factory) as s:
+        st = edge.update(s, pid, "momentum")
+        assert st is not None and st.state.name == "NORMAL" and st.trades == 0

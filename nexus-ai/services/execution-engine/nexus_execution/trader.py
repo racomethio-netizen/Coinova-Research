@@ -484,6 +484,15 @@ class TradingEngine:
         if streak_mult == 0:
             await self._decide(sig, signal_id, "rejected", streak_note)
             return
+        from nexus_execution import edge
+
+        with transaction(self.factory) as s:
+            edge_status = edge.update(s, self.portfolio_id or 0, sig.strategy)
+        edge_mult = Decimal(str(edge_status.multiplier)) if edge_status else Decimal(1)
+        if edge_mult == 0 and edge_status is not None:
+            await self._decide(sig, signal_id, "rejected",
+                               "edge monitor STOP: " + "; ".join(edge_status.reasons))
+            return
         proceed, explanation = await self._decision_gate(sig, v, day0, week0, book, metrics, best)
         if not proceed:
             await self._decide(sig, signal_id, "rejected", explanation)
@@ -507,7 +516,7 @@ class TradingEngine:
             equity=v.equity, cash_available=venue.cash_available(), entry_price=entry,
             stop_price=stop_px,
             risk_per_trade=self.settings.risk.risk_per_trade
-            * min(streak_mult, self.risk_status.risk_multiplier),
+            * min(streak_mult, self.risk_status.risk_multiplier) * edge_mult,
             fee_rate=venue.taker_fee, slippage_rate=self.settings.paper_slippage_bps / 10_000,
             exposure_now=v.exposure, max_exposure=self.settings.risk.max_portfolio_exposure,
             asset_exposure_now=ZERO,

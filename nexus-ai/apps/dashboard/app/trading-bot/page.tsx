@@ -44,6 +44,44 @@ function OwnerApproval({ r, reload }: { r: Any; reload: () => Promise<void> | vo
   );
 }
 
+function EdgeMonitor() {
+  const { data, reload } = useApi<Any>("/strategies/edge-monitor", 30_000);
+  const [reason, setReason] = useState("");
+  const [totp, setTotp] = useState("");
+  const [msg, setMsg] = useState<string | null>(null);
+  const rows: Any[] = data?.monitors ?? [];
+  const reset = async (m: Any) => {
+    setMsg(null);
+    try { await api.post(`/strategies/${m.strategy}/edge-reset`, { portfolio_id: m.portfolio_id, reason, totp }); setReason(""); setTotp(""); await reload(); }
+    catch (e) { setMsg(e instanceof Error ? e.message : String(e)); }
+  };
+  const tone = (st: string) => (st === "NORMAL" ? "good" : st === "REDUCE" ? "warn" : "bad");
+  return (
+    <Card title="Edge monitor (stops a strategy whose edge disappears)">
+      <p className="mb-2 text-sm text-muted">After every closed trade it checks the strategy&apos;s recent results in R. A sustained drop below breakeven (CUSUM) or a 15R drawdown stops new entries; a negative recent window or a 10R drawdown halves the size. It only tightens by itself; relaxing needs your two-factor code.</p>
+      {rows.length === 0 ? <p className="text-sm text-muted">No closed trades evaluated yet.</p> : (
+        <div className="space-y-3">
+          {rows.map((m: Any) => (
+            <div key={`${m.strategy}-${m.portfolio_id}`} className="rounded border border-line p-3 text-sm">
+              <div className="mb-1 flex flex-wrap items-center justify-between gap-2"><span>{m.strategy} · {m.portfolio ?? m.portfolio_id}</span><Badge tone={tone(m.state)}>{m.state}</Badge></div>
+              <p className="text-xs text-muted">{m.trades ?? 0} trades · CUSUM {m.cusum ?? DASH} · recent mean {m.rolling_mean ?? DASH}R · drawdown {m.drawdown_r ?? DASH}R</p>
+              {(m.reasons ?? []).length > 0 && <ul className="mt-1 list-disc pl-5 text-xs">{m.reasons.map((x: string) => <li key={x}>{x}</li>)}</ul>}
+              {m.state !== "NORMAL" && (
+                <div className="mt-2 grid gap-2 md:grid-cols-3">
+                  <Field id={`edge-reason-${m.portfolio_id}`} label="Reason for the reset" value={reason} onChange={setReason} />
+                  <Field id={`edge-totp-${m.portfolio_id}`} label="Two-factor code" value={totp} onChange={setTotp} inputMode="numeric" />
+                  <div className="flex items-end"><Button disabled={reason.trim().length < 5 || totp.length !== 6} onClick={() => reset(m)}>Reset to NORMAL</Button></div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {msg && <p role="alert" className="mt-2 text-sm text-down">{msg}</p>}
+    </Card>
+  );
+}
+
 export default function TradingBot() {
   const { data: r, error, loading, reload } = useApi<Any>("/trading-bot", 15_000);
   const st = r?.status;
@@ -124,6 +162,7 @@ export default function TradingBot() {
               { key: "fee", label: "Fee", numeric: true, render: (o: Any) => num(o.fee, 4) },
             ]} />
           </Card>
+          <EdgeMonitor />
           <OwnerApproval r={r} reload={reload} />
           <Card title="Risk limits">
             <p className="text-sm">Risk {pct(r.risk.risk_per_trade, 2)} per trade (max {pct(r.risk.max_risk_per_trade, 2)}) · daily loss {pct(r.risk.max_daily_drawdown, 0)} · drawdown {pct(r.risk.max_drawdown, 0)} · up to {r.risk.max_positions} positions · stop 1.5 ATR · take-profit 2R · time stop 4 hours.</p>

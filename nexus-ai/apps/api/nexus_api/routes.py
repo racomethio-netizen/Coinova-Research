@@ -571,6 +571,41 @@ async def activate_model(model_id: int, body: Totp, s: Session = Depends(db), re
     return {"ok": True}
 
 
+@router.get("/strategies/edge-monitor")
+async def edge_monitor_states(s: Session = Depends(db)) -> dict[str, Any]:
+    """Edge-decay monitor state per strategy and portfolio (NORMAL / REDUCE / STOP)."""
+    names = {p.id: f"{p.name} ({p.mode})" for p in s.scalars(select(models.Portfolio))}
+    out = []
+    for row in s.scalars(select(models.Strategy)):
+        for pid, st in ((row.parameters or {}).get("edge_monitor") or {}).items():
+            out.append({"strategy": row.code, "portfolio_id": int(pid),
+                        "portfolio": names.get(int(pid)), **st})
+    return {"monitors": sorted(out, key=lambda x: (x["strategy"], x["portfolio_id"]))}
+
+
+class EdgeReset(BaseModel):
+    portfolio_id: int
+    reason: str = Field(min_length=5, max_length=300)
+    totp: str | None = Field(default=None, max_length=6)
+
+
+@router.post("/strategies/{code}/edge-reset", dependencies=[Depends(owner)])
+async def edge_monitor_reset(code: str, body: EdgeReset, s: Session = Depends(db),
+                             redis: Any = Depends(redis_dep),
+                             viewer: Viewer = Depends(current_viewer),
+                             settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Owner-only, 2FA, audited: return a strategy's edge monitor to NORMAL. Only trades
+    closed after the reset count from then on."""
+    from nexus_execution import edge
+
+    await check_totp(viewer, body.totp or "", settings, redis)
+    try:
+        edge.reset(s, body.portfolio_id, code, actor=viewer.actor, reason=body.reason)
+    except LookupError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "not found") from exc
+    return {"ok": True, "strategy": code, "portfolio_id": body.portfolio_id}
+
+
 OWNER_APPROVAL_CODES = ("bot_ema_rsi_macd",)
 OWNER_APPROVAL_ACK = "I accept this strategy has not passed validation"
 

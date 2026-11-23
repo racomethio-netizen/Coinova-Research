@@ -398,6 +398,17 @@ class SpotPaperRunner:
                          status: dict[str, Any]) -> None:
         reasons: list[str] = [] if bool(c["entry"]) else [str(c["reason"])]
         risk_mult = float(reg["risk_mult"].iloc[-1])
+        edge_note = None
+        if bool(c["entry"]) and self.p.portfolio_guards:
+            from nexus_execution import edge
+
+            with transaction(self.factory) as s:
+                es = edge.update(s, self.portfolio_id, c["strategy"])
+            if es is not None and es.multiplier == 0:
+                reasons.append("edge monitor STOP: " + "; ".join(es.reasons))
+            elif es is not None and es.multiplier < 1:
+                risk_mult *= es.multiplier
+                edge_note = "edge monitor REDUCE: " + "; ".join(es.reasons)
         if bool(c["entry"]):
             if self.p.monitor_only:
                 reasons.append("monitor mode: signals only, no orders")
@@ -414,7 +425,8 @@ class SpotPaperRunner:
         rec = {"time": now.isoformat(), "symbol": sym, "strategy": c["strategy"],
                "timeframe": c["timeframe"], "bar": str(c["bar"]), "regime": reg["regime"].iloc[-1],
                "stop": float(c["stop"]), "tp1": float(c["tp1"]), "tp2": float(c["tp2"]),
-               "score": float(c["score"]), "checks": checks, "reasons": reasons}
+               "score": float(c["score"]), "checks": checks, "reasons": reasons,
+               **({"edge": edge_note} if edge_note else {})}
         order_id = None
         if not reasons and book is not None:
             rules = await self.adapters[EXCHANGE].market_rules(sym)

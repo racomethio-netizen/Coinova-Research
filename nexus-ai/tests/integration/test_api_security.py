@@ -690,3 +690,26 @@ def test_metrics_endpoint_needs_token_and_exposes_health_only(
         assert "USDT" not in body or "nexus_market_data_age_seconds" in body   # no balances
     assert render([("a", {"x": "1"}, 2.0), ("a", {"x": "2"}, 3.5)], HELP) == (
         '# HELP a a\n# TYPE a gauge\na{x="1"} 2\na{x="2"} 3.5\n')
+
+
+def test_edge_monitor_reset_needs_owner_totp(client: TestClient,
+                                             migrated_engine: Engine) -> None:
+    with migrated_engine.begin() as conn:
+        from sqlalchemy import text
+        conn.execute(text("""UPDATE strategies SET parameters = '{"edge_monitor": {"7":
+            {"state": "STOP", "multiplier": 0, "reasons": ["CUSUM 5.0 >= 4.0"]}}}'::jsonb
+            WHERE code = 'momentum'"""))
+    login(client)
+    mons = client.get("/api/v1/strategies/edge-monitor").json()["monitors"]
+    assert any(m["strategy"] == "momentum" and m["state"] == "STOP" for m in mons)
+    body = {"portfolio_id": 7, "reason": "reviewed the losing streak"}
+    assert client.post("/api/v1/strategies/momentum/edge-reset", json=body,
+                       headers=CSRF).status_code == 403            # no two-factor
+    secret = _enable_totp(client)
+    used: set[int] = set()
+    ok = client.post("/api/v1/strategies/momentum/edge-reset",
+                     json={**body, "totp": _fresh_code(secret, used)}, headers=CSRF)
+    assert ok.status_code == 200, ok.text
+    mons = client.get("/api/v1/strategies/edge-monitor").json()["monitors"]
+    m = next(x for x in mons if x["strategy"] == "momentum")
+    assert m["state"] == "NORMAL" and m["reset_by"].startswith("user:")
