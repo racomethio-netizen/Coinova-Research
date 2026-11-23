@@ -626,3 +626,19 @@ trading on Render can use live data once background workers are approved.
   * WebSocket connected; candles current (1m 07:04, 5m 07:00);
   * decision log rows written (NO_TRADE for both pairs);
   * no Binance pauses, 0 orders.
+
+## 2026-11-23: autonomous follow-ups (owner: "do everything by yourself")
+
+* **Deployed `bfacd6f`** (live 07:15 UTC). Clean start: no worker crashes, no database
+  errors, WebSocket connected at 07:15:26.
+  * The trader waits for a Binance pause at start-up instead of crash-restarting, and
+    releases its connections if start-up stops.
+  * Clearer message when the rate-limit state cannot be read (it is not a ban).
+* **e2e:** 15/15 passed, using labelled fixtures. `e2e.sh` refuses any database that is
+  not an e2e database.
+* **Final 24 h stability report** scheduled for 24 Nov 07:20 UTC, covering this release.
+* **Still needs the owner, so not done:**
+  * F2: a supervised real-money test order;
+  * any live trading;
+  * A4: database role password;
+  * paid hosting with its own IP.
