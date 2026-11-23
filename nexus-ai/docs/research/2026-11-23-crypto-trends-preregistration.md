@@ -78,3 +78,54 @@ Live trading would still need all of the following:
 * the owner's explicit activation with two-factor authentication.
 
 A fail is recorded and nothing is enabled.
+
+## Results (single run, 23 Nov 2026, after commits cc41f5f, 26a6133, 862af69, 3bc7f96)
+
+Data: Binance spot 1d archives, BTCUSDT and ETHUSDT, 2017-08-17 to 2026-11-22
+(3,385 days each). All 266 files verified against Binance's SHA-256 checksums.
+Evaluation: 2018-08-12 to 2026-11-22. Full output: `2026-11-23-crypto-trends-result.json`.
+
+### Decision: PASS (all 6 gates)
+
+| Gate | Result | Required |
+|---|---|---|
+| Sharpe, net | **1.11** | >= 0.8 |
+| Max drawdown | **15.6%** | <= 35% |
+| Sharpe, each half | **1.50** (2018-08 to 2022-08) / **0.70** (2022-08 to 2026-11) | >= 0.5 each |
+| Positive full years | **5 of 7** (2019 +21%, 2020 +52%, 2021 +26%, 2022 -7%, 2023 +18%, 2024 +25%, 2025 -2%) | >= 60% |
+| Sharpe vs 50/50 BTC+ETH buy-and-hold | **1.11 vs 0.74** | higher |
+| Primary unseen period (2022-11-14 to 2024-11-13) | **+44%** (Sharpe 1.36, max drawdown 11%) | > 0 |
+
+**Strategy vs buy-and-hold:**
+* Strategy: net CAGR 14.1%, x2.97 over 8.3 years.
+* Buy-and-hold: CAGR 30.5%, x9.1, but with a 76% max drawdown (-65% in 2022).
+* The strategy is invested only part of the time (average exposure: BTC 20%, ETH 13%), so
+  it earns less than holding in strong bull markets and loses far less in crashes.
+* Trading: 1,817 trades in total, turnover 6.7x a year, costs paid 18% of starting capital
+  over the whole period.
+
+**Robustness (reported, not deciding):**
+* Per coin: BTC Sharpe 1.06, ETH 0.93.
+* Costs: zero costs, Sharpe 1.18; double costs, Sharpe 1.03.
+* The paper's 200% cap: identical (the 100% cap never binds at 25% target volatility).
+* Each lookback alone: Sharpe 0.62 (5 days) to 1.20 (30 days); every one is positive.
+* **Different code, same answer:** an independent vectorised computation of the paper's
+  formula (no costs) gives Sharpe 1.119; the simulator gives 1.118.
+
+**Placebo (added after the decision, to check for bugs and drift):**
+* Shuffled daily returns, which destroy trends but keep crypto's upward drift: mean
+  Sharpe 0.64 over 100 runs, and only 3% reached the real 1.11.
+* Shuffled with the drift removed: mean -0.15 (no bug).
+* So part of the Sharpe is the long-only exposure to crypto's rise. The trend timing adds a
+  significant amount on top (p of about 0.03), and the main benefit is the much smaller
+  drawdowns.
+
+**Limits, stated plainly:**
+* The authors' paper (2015-2025) overlaps this period. This was an independent replication
+  with stricter costs, not a test on data nobody has seen.
+* The second half was weaker (Sharpe 0.70, 8% a year).
+* A backtest is not a promise of future returns.
+
+### Next (per this pre-registration)
+A pass allows only a **forward paper test** on new data. See
+`2026-11-23-crypto-trends-forward-preregistration.md`.
