@@ -35,6 +35,7 @@ tests: `scripts/e2e.sh` (see the script header).
     rests.
   * The database refuses a stop-limit row without a stop price.
 * Migration 0013 was upgraded, checked with `alembic check`, downgraded and upgraded again.
+* Full run: `scripts/test.sh` (ruff, mypy --strict, pytest with Postgres and Redis): 772 passed.
 * Not tested: real Binance stop-limit or post-only orders. That needs a demo key (F2).
 
 ## 2026-11-23: strategy modules A-G
