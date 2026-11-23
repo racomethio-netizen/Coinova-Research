@@ -42,6 +42,42 @@ function CheckResult({ check }: { check: Any }) {
   );
 }
 
+function TestnetRoundTrip() {
+  const { data, reload } = useApi<Any>("/system/testnet/round-trip", 0);
+  const [totp, setTotp] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const run = async () => {
+    setBusy(true); setMsg(null);
+    try { await api.post("/system/testnet/round-trip", { totp }); setTotp(""); await reload(); }
+    catch (e) { setMsg(e instanceof Error ? e.message : String(e)); }
+    setBusy(false);
+  };
+  const last = data?.runs?.[0];
+  const s = last?.steps ?? {};
+  return (
+    <Card title="Binance Spot TESTNET round trip (test funds only)" actions={last ? <Badge tone={last.result === "ROUND_TRIP_FILLED" ? "good" : "warn"}>{last.result}</Badge> : <Badge>not run</Badge>}>
+      <p className="mb-2 text-sm">Runs on the server with your stored TESTNET key: connection, balances, real testnet candles and order book, the trend signal, risk sizing (0.25%), a buy and a sell confirmed from Binance by client order ID, and a restart drill that must find the order instead of placing it twice. Never uses a production key.</p>
+      <div className="grid gap-2 md:grid-cols-3">
+        <Field id="testnet-totp" label="Two-factor code" value={totp} onChange={setTotp} inputMode="numeric" />
+        <div className="flex items-end"><Button tone="primary" disabled={busy || totp.length !== 6} onClick={run}>{busy ? "Running…" : "Run testnet round trip"}</Button></div>
+      </div>
+      {msg && <p role="alert" className="mt-2 text-sm text-down">{msg}</p>}
+      {last && (
+        <ul className="mt-3 space-y-1 text-sm">
+          <li>Run {last.run_id} at {time(last.at)}{last.error ? ` · ${last.error}` : ""}</li>
+          <li>Connection: {s.connectivity?.ok ? `ok, ${s.connectivity.latency_ms} ms` : DASH}</li>
+          <li>Signal: {s.signal?.decision ?? DASH}{s.signal?.adx !== undefined ? ` (ADX ${s.signal.adx.toFixed(1)}, RSI ${s.signal.rsi.toFixed(1)})` : ""}</li>
+          <li>Risk: {s.risk ? (s.risk.approved ? `approved ${s.risk.quantity} (risk ${s.risk.risk_amount} USDT)` : `rejected: ${s.risk.reason}`) : DASH}</li>
+          <li>Buy: {s.buy ? `${s.buy.status}, filled ${s.buy.filled} at ${s.buy.average_price ?? DASH}, order ${s.buy.exchange_order_id}` : DASH}</li>
+          <li>Sell: {s.sell ? `${s.sell.status}, filled ${s.sell.filled} at ${s.sell.average_price ?? DASH}` : DASH}</li>
+          <li>Restart drill: {s.restart_drill ? (s.restart_drill.resubmitted ? "FAILED: resubmitted" : "passed: found on Binance, not resubmitted") : DASH}</li>
+        </ul>
+      )}
+    </Card>
+  );
+}
+
 export default function ConnectionPage() {
   const me = useApi<Any>("/auth/me");
   const creds = useApi<{ credentials: Any[] }>("/security/credentials");
@@ -145,6 +181,7 @@ export default function ConnectionPage() {
             </Button>
           </div>
         </Card>
+        <TestnetRoundTrip />
       </div>
     </>
   );

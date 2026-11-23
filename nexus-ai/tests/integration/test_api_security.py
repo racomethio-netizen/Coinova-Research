@@ -713,3 +713,15 @@ def test_edge_monitor_reset_needs_owner_totp(client: TestClient,
     mons = client.get("/api/v1/strategies/edge-monitor").json()["monitors"]
     m = next(x for x in mons if x["strategy"] == "momentum")
     assert m["state"] == "NORMAL" and m["reset_by"].startswith("user:")
+
+
+def test_testnet_round_trip_needs_totp_and_a_testnet_key(client: TestClient) -> None:
+    login(client)
+    assert client.post("/api/v1/system/testnet/round-trip", json={},
+                       headers=CSRF).status_code == 403          # no two-factor
+    secret = _enable_totp(client)
+    used: set[int] = set()
+    r = client.post("/api/v1/system/testnet/round-trip",
+                    json={"totp": _fresh_code(secret, used)}, headers=CSRF)
+    assert r.status_code == 409 and "TESTNET key" in r.json()["detail"]
+    assert client.get("/api/v1/system/testnet/round-trip").json() == {"runs": []}

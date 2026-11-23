@@ -99,6 +99,59 @@ def portfolio(mode: Mode = "paper", s: Session = Depends(db)) -> dict[str, Any]:
 
 
 # ------------------------------------------------------------------ exchanges / markets
+TESTNET_ACTION = "testnet_round_trip"
+
+
+class TestnetRun(BaseModel):
+    totp: str | None = Field(default=None, max_length=6)
+    symbol: Literal["BTC/USDT", "ETH/USDT"] = "BTC/USDT"
+
+
+@router.post("/system/testnet/round-trip", dependencies=[Depends(owner)])
+async def testnet_round_trip(body: TestnetRun, s: Session = Depends(db),
+                             redis: Any = Depends(redis_dep),
+                             viewer: Viewer = Depends(current_viewer),
+                             settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Binance Spot TESTNET round trip with the owner's stored TESTNET key (test funds only):
+    connectivity, balances, market data, signal, risk sizing, a buy and a sell, fill
+    reconciliation and a restart drill. The evidence goes to the audit log; never the key."""
+    from nexus_config import ExchangeCode
+    from nexus_exchange.factory import build_adapter
+    from nexus_execution.testnet_run import round_trip
+
+    from nexus_api.account import decrypt
+
+    await check_totp(viewer, body.totp or "", settings, redis)
+    cred = s.scalar(select(models.ExchangeCredential).join(
+        models.Exchange, models.Exchange.id == models.ExchangeCredential.exchange_id).where(
+        models.ExchangeCredential.user_id == viewer.user.id,
+        models.ExchangeCredential.environment == "sandbox",
+        models.ExchangeCredential.revoked_at.is_(None), models.Exchange.code == "binance")
+        .order_by(desc(models.ExchangeCredential.id)))
+    if cred is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "add a Binance Spot TESTNET key first "
+                            "(Security > API keys, environment: testnet)")
+    key, secret = decrypt(cred, settings)
+    adapter = build_adapter(ExchangeCode.BINANCE, api_key=key, secret=secret, sandbox=True,
+                            ca_file=settings.extra_ca_file,
+                            keep_symbols=frozenset({body.symbol}))
+    try:
+        evidence = await round_trip(adapter, symbol=body.symbol)
+    finally:
+        await adapter.close()
+    repo.record_audit(s, actor=viewer.actor, user_id=viewer.user.id, action=TESTNET_ACTION,
+                      target_type="exchange_credential", target_id=str(cred.id),
+                      details=evidence)
+    return evidence
+
+
+@router.get("/system/testnet/round-trip")
+async def testnet_round_trip_history(s: Session = Depends(db)) -> dict[str, Any]:
+    rows = s.scalars(select(models.AuditLog).where(models.AuditLog.action == TESTNET_ACTION)
+                     .order_by(desc(models.AuditLog.id)).limit(10)).all()
+    return {"runs": [{"at": ser(r.created_at), **(r.details or {})} for r in rows]}
+
+
 CAPS_KEY = "nexus:exchanges:capabilities"
 
 

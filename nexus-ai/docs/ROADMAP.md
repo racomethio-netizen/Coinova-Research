@@ -862,3 +862,21 @@ TradingView's documentation.
 * Tests: 904 passed (6 unit, 1 trader integration, 1 API); e2e 15/15; no migration needed.
 * Not yet: the simulated forward tests (Strategy lab, Crypto Trends) show no edge-monitor
   state. They place no orders, so there is nothing to gate.
+
+## 2026-11-23: "Execute Phase 1": Binance Spot testnet round trip
+
+* testnet.binance.vision gives HTTP 451 from the dev container (not bypassed), so the run
+  executes on the Render server with the owner's stored TESTNET key (owner + 2FA).
+* `nexus_execution/testnet_run.py`:
+  * clock, rules, balances, book and 1h candles;
+  * the trend signal (EMA50 / 200, RSI, ADX, ATR, momentum);
+  * risk sizing at 0.25%;
+  * an IOC buy and sell with deterministic UUIDv4 client IDs, checked on Binance before
+    every submit;
+  * reconciliation by client ID; a restart drill.
+* API `POST/GET /system/testnet/round-trip`; Connection page card; evidence in the audit
+  log. docs/TESTNET.md.
+* Tests: 910 passed (round trip on a stateful fake Binance: fills, no duplicate on re-run,
+  risk rejection, a lost reply reconciled not resubmitted); e2e 15/15.
+* **Real testnet evidence requires the owner:** testnet keys and one press of the button
+  after deploy.
