@@ -49,6 +49,7 @@ from nexus_execution.order_manager import (
     OrderManager,
     fund_paper_portfolio,
 )
+from nexus_execution.pretrade import PreTradeDenied
 
 log = get_logger("nexus.spot_paper")
 
@@ -360,7 +361,7 @@ class SpotPaperRunner:
                                  "regime": rec["regime"], "score": rec["score"],
                                  "checks": checks}))
                     rec["qty"], rec["risk_usdt"] = qty, qty * r_unit
-                except (DuplicateOrder, InsufficientBalance) as exc:
+                except (DuplicateOrder, InsufficientBalance, PreTradeDenied) as exc:
                     reasons.append(str(exc))
         rec["status"] = "executed" if order_id is not None else "rejected"
         rec["order_id"] = order_id

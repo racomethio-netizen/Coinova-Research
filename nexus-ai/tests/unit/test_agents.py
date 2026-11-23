@@ -84,7 +84,7 @@ def test_full_approval_path_and_sizing() -> None:
     assert p["risk_manager"]["verdict"] == "APPROVE" and p["final_decision"].startswith("TRADE")
     assert p["direction"] == "long" and p["strategy"] == "trend_following"
     assert [t["level"] for t in p["take_profits"]] == ["TP1 (1R, partial)", "TP2 (2R)"]
-    assert D(p["risk_pct"]) <= D("0.0025") and p["size_ok"]
+    assert D(p["risk_pct"]) <= D("0.005") and p["size_ok"]
     assert {a["agent"] for a in p["agents"]} == {
         "market_intelligence", "technical", "quant", "derivatives", "sentiment", "portfolio"}
 

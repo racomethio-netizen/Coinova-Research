@@ -13,11 +13,11 @@ def test_defaults_are_safe() -> None:
     assert s.live_trading_enabled is False
     assert s.trading_pairs == ["BTC/USDT", "ETH/USDT"]
     assert [t.value for t in s.timeframes] == ["5m", "15m", "1h", "4h", "1d"]
-    # Owner mandate 2026-11-21: initial paper profile.
-    assert s.risk.risk_per_trade == Decimal("0.0025")
-    assert s.risk.daily_loss_limit == Decimal("0.01")
+    # Owner mandate 2026-11-23: initial research profile.
+    assert s.risk.risk_per_trade == Decimal("0.005")
+    assert s.risk.daily_loss_limit == Decimal("0.02")
     assert s.risk.weekly_loss_limit == Decimal("0.03")
-    assert s.risk.max_drawdown == Decimal("0.10")
+    assert s.risk.max_drawdown == Decimal("0.05")
     assert s.risk.max_open_positions == 3
     assert s.risk.max_portfolio_exposure == Decimal("0.50")
     assert s.live_trading_config_problems()  # live not permitted

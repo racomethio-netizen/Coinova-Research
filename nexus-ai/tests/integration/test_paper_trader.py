@@ -13,7 +13,7 @@ import pytest
 import redis.asyncio as aioredis
 from nexus_common import events
 from nexus_common.timeutil import utcnow
-from nexus_config import ExchangeCode, Settings
+from nexus_config import ExchangeCode, RiskSettings, Settings
 from nexus_db import make_session_factory, models, repo, transaction
 from nexus_exchange import CAPABILITIES
 from nexus_exchange.ccxt_adapter import CcxtSpotAdapter
@@ -64,7 +64,11 @@ async def engine_setup(migrated_engine: Engine, redis: Any) -> AsyncIterator[tup
     from nexus_news.service import KEY as NEWS_KEY
 
     await redis.set(NEWS_KEY, json.dumps({"score": 0.1, "unknown_sources": []}))
-    settings = Settings(enabled_exchanges=["binance"], trading_pairs=["BTC/USDT"])
+    # Pinned to the 2026-11-21 profile these scenarios were written for (0.25% / 1% daily);
+    # the 2026-11-23 defaults are covered by test_settings.
+    settings = Settings(enabled_exchanges=["binance"], trading_pairs=["BTC/USDT"],
+                        risk=RiskSettings(risk_per_trade=D("0.0025"),
+                                          daily_loss_limit=D("0.01"), max_drawdown=D("0.10")))
     books = BookCache({"binance": adapter}, ttl=0)
     broker = PaperBroker(books.get, taker_fee=D("0.001"), maker_fee=D("0.001"),
                          extra_slippage=D("0.0005"))

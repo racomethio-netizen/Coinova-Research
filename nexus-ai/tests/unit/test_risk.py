@@ -13,6 +13,10 @@ from nexus_risk.limits import MarketCheck, RiskSnapshot, evaluate_portfolio, eva
 from nexus_risk.sizing import SizingInput, size_position
 
 NOW = datetime(2026, 6, 1, 12, tzinfo=UTC)
+# These tests pin the 2026-11-21 profile they were written for (the defaults changed by
+# owner mandate on 2026-11-23; test_settings covers the defaults).
+LIMITS = RiskSettings(risk_per_trade=D("0.0025"), daily_loss_limit=D("0.01"),
+                      max_drawdown=D("0.10"))
 
 
 def sizing(**kw: Any) -> SizingInput:
@@ -83,7 +87,7 @@ MKT = MarketCheck("BTC", True, D(2), 1.0)
 
 class TestLimits:
     def test_clean_state_approved(self) -> None:
-        assert evaluate_trade(snapshot(), MKT, RiskSettings()).approved
+        assert evaluate_trade(snapshot(), MKT, LIMITS).approved
 
     @pytest.mark.parametrize(("kw", "fragment"), [
         ({"equity": D(9_800)}, "daily loss"),
@@ -97,17 +101,17 @@ class TestLimits:
         ({"held_assets": frozenset({"BTC"})}, "duplicate"),
     ])
     def test_blocks(self, kw: dict[str, Any], fragment: str) -> None:
-        d = evaluate_trade(snapshot(**kw), MKT, RiskSettings())
+        d = evaluate_trade(snapshot(**kw), MKT, LIMITS)
         assert not d.approved and any(fragment in r for r in d.reasons), d.reasons
 
     def test_just_below_daily_limit_warns_but_allows(self) -> None:
-        d = evaluate_trade(snapshot(equity=D(9_901)), MKT, RiskSettings())   # -0.99% vs 1%
+        d = evaluate_trade(snapshot(equity=D(9_901)), MKT, LIMITS)   # -0.99% vs 1%
         assert d.approved and ("daily_loss_warning", "warning") in d.events
 
     def test_drawdown_shutdown(self) -> None:
         d = evaluate_portfolio(snapshot(equity=D(9_000), peak_equity=D(10_000),
                                         day_start_equity=D(9_000), week_start_equity=D(9_000)),
-                               RiskSettings())
+                               LIMITS)
         assert d.shutdown and not d.approved
         assert ("max_drawdown_shutdown", "critical") in d.events
 
@@ -117,7 +121,7 @@ class TestLimits:
                                      replace(MKT, price_age_seconds=None),
                                      replace(MKT, price_age_seconds=120)])
     def test_market_conditions(self, mkt: MarketCheck) -> None:
-        assert not evaluate_trade(snapshot(), mkt, RiskSettings()).approved
+        assert not evaluate_trade(snapshot(), mkt, LIMITS).approved
 
 
 def venue(name: str, **kw: Any) -> VenueState:

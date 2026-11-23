@@ -11,9 +11,14 @@ import math
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
+from nexus_risk.protections import Lock, blocking
+
 # Hard ceilings (nexus_config): weekly loss 4%. The brief asks 5% weekly; the stricter
 # ceiling applies unless the owner explicitly mandates a change.
 WEEKLY_CEILING = 0.04
+RISK_PER_TRADE_CEILING = 0.01
+DAILY_CEILING = 0.02
+DRAWDOWN_CEILING = 0.10
 
 
 @dataclass(frozen=True)
@@ -33,12 +38,31 @@ class SpotRiskConfig:
     maker_fee: float = 0.001
     trailing_atr: float | None = None    # optional ATR trailing after TP1
     tp1_fraction: float = 0.5            # share closed at TP1 (partial exit)
+    # Peak-to-trough limit on portfolio equity. Once reached, no new entries until the
+    # owner reviews (it never clears by itself); exits continue.
+    max_drawdown: float = DRAWDOWN_CEILING
 
     def __post_init__(self) -> None:
         if self.risk_per_trade > self.max_risk_per_trade:
             raise ValueError("risk_per_trade above max_risk_per_trade")
+        if self.max_risk_per_trade > RISK_PER_TRADE_CEILING:
+            raise ValueError(f"risk per trade above the {RISK_PER_TRADE_CEILING:.0%} ceiling")
+        if self.max_daily_drawdown > DAILY_CEILING:
+            raise ValueError(f"daily drawdown above the {DAILY_CEILING:.0%} ceiling")
         if self.max_weekly_drawdown > WEEKLY_CEILING:
             raise ValueError(f"weekly drawdown above the {WEEKLY_CEILING:.0%} ceiling")
+        if not 0 < self.max_drawdown <= DRAWDOWN_CEILING:
+            raise ValueError(f"max drawdown must be in (0, {DRAWDOWN_CEILING:.0%}]")
+
+
+# The owner's initial research limits (master command 2026-11-23, section 6): 0.5% risk
+# per trade, 1% maximum, 2% daily loss, 5% portfolio drawdown. Weekly stays at the 4%
+# ceiling. Open risk allows the three positions at full risk. Used by the global strategy
+# library; the spot engine keeps its pre-registered 0.25% profile.
+RESEARCH_PROFILE = SpotRiskConfig(risk_per_trade=0.005, max_risk_per_trade=0.01,
+                                  max_open_risk=0.015, max_daily_drawdown=0.02,
+                                  max_weekly_drawdown=0.04, max_drawdown=0.05,
+                                  max_positions=3)
 
 
 @dataclass
@@ -77,14 +101,21 @@ class BookState:
     losses_in_a_row: int = 0
     cooldown_until: datetime | None = None
     correlated: dict[str, set[str]] = field(default_factory=dict)   # symbol -> cluster
+    peak_equity: float | None = None
+    locks: list[Lock] = field(default_factory=list)                 # protections
 
 
 def entry_checks(st: BookState, symbol: str, entry: float, stop: float, now: datetime,
-                 cfg: SpotRiskConfig, *, risk_mult: float = 1.0) -> list[str]:
+                 cfg: SpotRiskConfig, *, risk_mult: float = 1.0,
+                 strategy: str | None = None) -> list[str]:
     """Portfolio-level reasons to refuse a new entry (empty = allowed)."""
     reasons = []
     if st.equity <= 0:
         reasons.append("no equity")
+    if st.peak_equity and st.equity < st.peak_equity * (1 - cfg.max_drawdown):
+        reasons.append(f"portfolio drawdown limit ({cfg.max_drawdown:.0%}) reached: "
+                       "owner review required")
+    reasons.extend(blocking(st.locks, symbol, strategy))
     if st.equity < st.day_start_equity * (1 - cfg.max_daily_drawdown):
         reasons.append("daily drawdown limit reached")
     if st.equity < st.week_start_equity * (1 - cfg.max_weekly_drawdown):

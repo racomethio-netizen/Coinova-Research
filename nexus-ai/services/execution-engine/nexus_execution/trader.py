@@ -73,6 +73,7 @@ from nexus_execution.order_manager import (
     OrderManager,
     fund_paper_portfolio,
 )
+from nexus_execution.pretrade import PreTradeDenied
 from nexus_execution.reconcile import BalanceReconciler
 
 log = get_logger("nexus.trader")
@@ -526,7 +527,7 @@ class TradingEngine:
                 details={"strategy_id": strat_id, "strategy": sig.strategy, "stop": str(stop_px),
                          "target": str(target_px), "regime": sig.regime,
                          "risk_multiplier": str(streak_mult), "streak_note": streak_note}))
-        except (DuplicateOrder, InsufficientBalance) as exc:
+        except (DuplicateOrder, InsufficientBalance, PreTradeDenied) as exc:
             await self._decide(sig, signal_id, "rejected", str(exc))
             return
         await self._decide(sig, signal_id, "executed", None)

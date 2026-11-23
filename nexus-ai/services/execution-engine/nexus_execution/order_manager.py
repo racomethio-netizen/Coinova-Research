@@ -28,8 +28,10 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
+from nexus_execution import pretrade
 from nexus_execution.accounting import FillEvent, Ledger, PositionState, apply_fill
 from nexus_execution.brokers import Broker, BrokerUpdate
+from nexus_execution.pretrade import PreTradeDenied, PreTradeLimits
 
 log = get_logger("nexus.execution.orders")
 
@@ -47,6 +49,9 @@ class DuplicateOrder(Exception):
 
 class InsufficientBalance(Exception):
     pass
+
+
+ENTRY_RATE_WINDOW = timedelta(minutes=1)
 
 
 @dataclass(frozen=True)
@@ -138,15 +143,26 @@ def fund_live_ledger(s: Session, portfolio_id: int, exchange_id: int, asset: str
 # ---------------------------------------------------------------------- manager
 class OrderManager:
     def __init__(self, factory: sessionmaker[Session], broker: Broker, *, redis: Any = None,
-                 settle_seconds: int = 60) -> None:
+                 settle_seconds: int = 60, limits: PreTradeLimits | None = None) -> None:
         self.factory, self.broker, self.redis = factory, broker, redis
         self.settle = timedelta(seconds=settle_seconds)
+        self.limits = limits or PreTradeLimits()
+
+    async def _kill_switch(self) -> bool | None:
+        """Engaged? Without Redis (test harnesses) the switch is not consulted; with Redis an
+        unreadable state counts as engaged (KillSwitch fails closed)."""
+        if self.redis is None:
+            return False
+        from nexus_risk.kill_switch import KillSwitch
+
+        return await KillSwitch(self.redis).is_engaged()
 
     # ------------------------------------------------------------------ place
     async def place(self, intent: OrderIntent) -> int:
         if intent.mode != self.broker.mode:
             raise PermissionError(f"{intent.mode} intent cannot use the {self.broker.mode} broker")
-        order_id, req = await asyncio.to_thread(self._persist_intent, intent)
+        kill = await self._kill_switch() if intent.purpose == "entry" else False
+        order_id, req = await asyncio.to_thread(self._persist_intent, intent, kill)
         try:
             update = await self.broker.submit(req, exchange=intent.exchange)
         except OrderStateUnknown as exc:
@@ -161,7 +177,8 @@ class OrderManager:
         await asyncio.to_thread(self._apply, order_id, update, True)
         return order_id
 
-    def _persist_intent(self, intent: OrderIntent) -> tuple[int, OrderRequest]:
+    def _persist_intent(self, intent: OrderIntent, kill: bool | None = False
+                        ) -> tuple[int, OrderRequest]:
         cid = str(uuid.uuid4())
         req = OrderRequest(client_order_id=cid, symbol=intent.symbol, side=intent.side,
                            amount=intent.amount, price=intent.price,
@@ -193,6 +210,20 @@ class OrderManager:
                     ledger = _ledger(rows).lock(reserve_asset, reserve)
                 except ValueError as exc:
                     raise InsufficientBalance(str(exc)) from exc
+                denied = pretrade.check(
+                    purpose=intent.purpose, side=intent.side, amount=intent.amount,
+                    price=intent.price, expected_price=intent.expected_price,
+                    quote_total=rows[pair.quote_asset].free + rows[pair.quote_asset].locked,
+                    entries_last_minute=s.scalar(select(func.count()).select_from(models.Order)
+                                                 .where(models.Order.portfolio_id
+                                                        == intent.portfolio_id,
+                                                        models.Order.purpose == "entry",
+                                                        models.Order.created_at
+                                                        >= utcnow() - ENTRY_RATE_WINDOW)) or 0,
+                    kill_switch=kill, owner_floor=repo.risk_floor_db_state(s, intent.mode)
+                    if intent.purpose == "entry" else None, limits=self.limits)
+                if denied:
+                    raise PreTradeDenied("; ".join(denied))
                 _store_ledger(rows, ledger)
                 order = models.Order(
                     portfolio_id=intent.portfolio_id, mode=intent.mode,

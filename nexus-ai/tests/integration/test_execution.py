@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from datetime import timedelta
 from decimal import Decimal as D
 from typing import Any
@@ -22,6 +22,7 @@ from nexus_execution.order_manager import (
     OrderManager,
     fund_paper_portfolio,
 )
+from nexus_execution.pretrade import PreTradeDenied, PreTradeLimits
 from sqlalchemy import Engine, func, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -59,6 +60,15 @@ class ScriptedBroker:
 
 def fill(tid: str, price: str, amount: str, fee: str = "0") -> BrokerFill:
     return BrokerFill(tid, D(price), D(amount), D(fee), "USDT", False, utcnow())
+
+
+@pytest.fixture(autouse=True)
+def _ledger_tests_without_fat_finger_cap(monkeypatch: pytest.MonkeyPatch) -> None:
+    """These ledger tests buy 60% of the balance in one order; the 50% fat-finger cap
+    (pretrade.py) is tested on its own in test_pretrade_checks_in_order_manager."""
+    from nexus_execution import order_manager as om
+
+    monkeypatch.setattr(om, "PreTradeLimits", lambda: PreTradeLimits(max_order_fraction=D(1)))
 
 
 @pytest.fixture
@@ -494,3 +504,53 @@ def test_stop_limit_row_needs_a_stop_price(factory: sessionmaker[Session]) -> No
                            side="sell", order_type="stop_limit", price=D(1), amount=D(1),
                            status="open", purpose="exit"))
         s.flush()
+
+
+@pytest.fixture
+async def redis() -> AsyncIterator[Any]:
+    import os
+
+    import redis.asyncio as aioredis
+
+    url = os.environ.get("NEXUS_TEST_REDIS_URL")
+    if not url:
+        pytest.skip("NEXUS_TEST_REDIS_URL not set")
+    r = aioredis.from_url(url)
+    await r.flushdb()
+    yield r
+    await r.flushdb()
+    await r.aclose()
+
+
+async def test_pretrade_checks_in_order_manager(factory: sessionmaker[Session],
+                                              redis: Any) -> None:
+    """NautilusTrader-style last gate: fat-finger notional, price band, REDUCING state
+    (kill switch / owner floor) for entries; exits always pass. A refusal reserves nothing
+    and stores no order."""
+    from nexus_risk.kill_switch import KillSwitch
+
+    om = OrderManager(factory, ScriptedBroker(), redis=redis, limits=PreTradeLimits())
+    with pytest.raises(PreTradeDenied, match="notional"):
+        await om.place(intent(factory))                       # 6,000 of 10,000 > 50%
+    with pytest.raises(PreTradeDenied, match="from the expected"):
+        await om.place(intent(factory, amount=D("0.05"), expected_price=D(50_000)))
+    await KillSwitch(redis).engage("test", actor="user:test")
+    with pytest.raises(PreTradeDenied, match="REDUCING: kill switch"):
+        await om.place(intent(factory, amount=D("0.05")))
+    await KillSwitch(redis).clear(actor="user:test", reason="test over")
+    with transaction(factory) as s:
+        repo.record_audit(s, actor="user:owner", action=repo.RISK_FLOOR_ACTION,
+                          target_type="risk", target_id="paper",
+                          details={"mode": "paper", "state": "NO_NEW_TRADES"})
+    with pytest.raises(PreTradeDenied, match="owner risk floor NO_NEW_TRADES"):
+        await om.place(intent(factory, amount=D("0.05")))
+    with transaction(factory) as s:
+        assert s.scalar(select(func.count()).select_from(models.Order)) == 0
+    assert balances(factory)["USDT"] == (D(10_000), D(0))
+    # An exit is never refused by these checks.
+    with transaction(factory) as s:
+        ex = repo.exchange_id(s, "binance")
+        fund_paper_portfolio(s, pid(factory), ex, "BTC", D("0.05"))
+    oid = await om.place(intent(factory, side=Side.SELL, amount=D("0.05"), purpose="exit",
+                                expected_price=D(70_000)))
+    assert oid > 0
