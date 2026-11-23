@@ -4,6 +4,16 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-23
 
+- **Quant engine brief (Part 1 audit and first gaps):**
+  * Integration map: `docs/INTEGRATION_MAP_2026-11-23.md`.
+  * Statistical arbitrage module (`stat_arb.py`): Engle-Granger statistics verified
+    against statsmodels; research only.
+  * Liquidity and execution planner (`liquidity.py`): book walk, spread, slippage,
+    depth, slicing, and the post-only vs IOC choice. Wired into the testnet round trip
+    (REJECTED_BY_LIQUIDITY).
+  * Market-condition breakdown for backtests (`market_conditions.py`).
+  * Opt-in random-forest model family.
+  * KuCoin and Gate.io in the capability registry (detected only).
 - **Dashboard speed (owner: "very sluggish"):**
   * Cause: Supabase is in us-west-2, the server in Frankfurt (about 150 ms per query
     round trip). The 12 inline workers made blocking queries on the API's event loop

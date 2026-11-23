@@ -92,6 +92,17 @@ async def test_risk_rejection_sends_nothing() -> None:
     assert ev["result"] == "REJECTED_BY_RISK" and fake.creates == 0
 
 
+async def test_illiquid_book_stops_before_any_order() -> None:
+    ad, fake = adapter()
+    last = fake.ohlcv[-1][4]
+    # A 2% spread: far beyond the 25 bps entry limit.
+    ad._client.responses["fetch_order_book"] = {  # type: ignore[attr-defined]
+        "bids": [[last * 0.99, 5.0]], "asks": [[last * 1.01, 5.0]], "timestamp": 0}
+    ev = await round_trip(ad, run_id="thin")
+    assert ev["result"] == "REJECTED_BY_LIQUIDITY" and fake.creates == 0
+    assert any("spread" in r for r in ev["steps"]["execution_plan"]["reasons"])
+
+
 async def test_timeout_is_reconciled_by_client_id_not_resubmitted() -> None:
     ad, fake = adapter()
     real = fake.create

@@ -32,6 +32,19 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-23 night: quant engine brief.**
+  * Audit and map: `docs/INTEGRATION_MAP_2026-11-23.md`.
+  * New modules: stat_arb (research only; matches statsmodels to 1e-5), liquidity
+    planner (in the testnet round trip), market_conditions, rf family, KuCoin / Gate.io
+    detection.
+  * Tests: 931 passed, including integration.
+  * Next, in order:
+    1. Deploy (owner says "Deploy").
+    2. Testnet round trip with the owner's testnet key.
+    3. Wire `liquidity.plan` into the paper trader.
+    4. Pre-registered stat-arb test on futures data.
+    5. OKX adapter.
+
 * **2026-11-23 evening: dashboard sluggishness.**
   * Measured on Render: CPU 1%, memory 320 MB of 2 GB; `/system` 1.5–7.7 s;
     `/overview/context` up to 8.8 s.

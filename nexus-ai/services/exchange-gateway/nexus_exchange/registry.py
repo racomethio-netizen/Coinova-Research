@@ -19,7 +19,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-EXCHANGES = ("binance", "okx", "bybit", "kraken")
+EXCHANGES = ("binance", "okx", "bybit", "kraken", "kucoin", "gate")
 
 # What NEXUS itself has implemented and tested (independent of the exchange's offer).
 NEXUS_SUPPORT: dict[str, dict[str, Any]] = {
@@ -31,6 +31,10 @@ NEXUS_SUPPORT: dict[str, dict[str, Any]] = {
             "note": "detected only; no NEXUS trading adapter yet"},
     "bybit": {"spot_adapter": False, "futures_adapter": False, "live_spot_gate": False,
               "note": "detected only; no NEXUS trading adapter yet"},
+    "kucoin": {"spot_adapter": False, "futures_adapter": False, "live_spot_gate": False,
+               "note": "detected only; no NEXUS trading adapter yet"},
+    "gate": {"spot_adapter": False, "futures_adapter": False, "live_spot_gate": False,
+             "note": "Gate.io; detected only; no NEXUS trading adapter yet"},
 }
 # Spot "max_leverage" values come from margin markets; NEXUS never uses leverage on spot.
 

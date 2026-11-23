@@ -30,7 +30,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-FAMILIES = ("logit", "xgb", "lgbm", "catboost")
+FAMILIES = ("logit", "xgb", "lgbm", "catboost", "rf")  # rf: opt-in, not in the default set
 SEED = 7
 
 
@@ -46,6 +46,12 @@ def available_families() -> list[str]:
 def make_estimator(family: str) -> Any:
     if family == "logit":
         return make_pipeline(StandardScaler(), LogisticRegression(C=0.1, max_iter=1000))
+    if family == "rf":
+        from sklearn.ensemble import RandomForestClassifier
+
+        # Shallow, heavily regularised: a bagged baseline for the boosted families.
+        return RandomForestClassifier(n_estimators=300, max_depth=6, min_samples_leaf=100,
+                                      max_features="sqrt", n_jobs=4, random_state=SEED)
     if family == "xgb":
         from xgboost import XGBClassifier
 

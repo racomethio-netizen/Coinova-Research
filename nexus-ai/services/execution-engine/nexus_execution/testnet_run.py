@@ -11,7 +11,9 @@ funds (testnet.binance.vision). Never touches a production account.
 6. Risk authorisation: size from 0.25% of the testnet USDT equity with a 1.5 ATR stop,
    fees and slippage included, capped by exposure and cash; rounded to Binance's rules.
    A size the risk engine rejects is NOT sent.
-7. Execution: a marketable LIMIT IOC buy, then a LIMIT IOC sell of the filled quantity
+7. Liquidity plan from the live book (spread, walked slippage, depth); an illiquid book
+   stops the run (REJECTED_BY_LIQUIDITY). Execution: a marketable LIMIT IOC buy capped at
+   the walked price plus a buffer, then a LIMIT IOC sell of the filled quantity
    (flat again).
    * Each order has a deterministic client order ID derived from the run ID.
    * Before submitting, the exchange is asked whether that ID already exists: a restarted
@@ -44,6 +46,8 @@ from nexus_exchange.models import OrderRequest, OrderSnapshot, OrderType, Side, 
 from nexus_risk.sizing import SizingInput, size_position
 from nexus_strategies import indicators as ind
 from nexus_strategies.frames import to_frame
+
+from nexus_execution.liquidity import plan as plan_execution
 
 RISK_PER_TRADE = Decimal("0.0025")
 MAX_EXPOSURE = Decimal("0.30")
@@ -153,10 +157,18 @@ async def round_trip(adapter: Any, *, symbol: str = "BTC/USDT", run_id: str | No
         if not sizing.approved:
             ev["result"] = "REJECTED_BY_RISK"
             return ev
+        # Liquidity: spread, expected slippage and depth from the live book. Urgent (this
+        # test wants a fill, so no post-only); the IOC cap is the walked price + buffer.
+        xplan = plan_execution(book, Side.BUY, sizing.quantity, urgent=True,
+                               price_tick=rules.price_tick, amount_step=rules.amount_step)
+        steps["execution_plan"] = xplan.to_json()
+        if not xplan.approved or xplan.limit_price is None:
+            ev["result"] = "REJECTED_BY_LIQUIDITY"
+            return ev
+        cap = min(xplan.limit_price, floor_to_step(entry * (1 + LIMIT_SLIP), rules.price_tick))
         buy_req = await adapter.prepare_order(OrderRequest(
             client_order_id=client_id(run_id, "buy"), symbol=symbol, side=Side.BUY,
-            amount=sizing.quantity, price=floor_to_step(entry * (1 + LIMIT_SLIP),
-                                                        rules.price_tick),
+            amount=sizing.quantity, price=max(cap, entry),
             order_type=OrderType.LIMIT, time_in_force=TimeInForce.IOC))
         buy, placed = await ensure_order(adapter, buy_req)
         if buy is None:

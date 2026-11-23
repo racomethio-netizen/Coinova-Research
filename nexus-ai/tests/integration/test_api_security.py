@@ -657,11 +657,11 @@ def test_exchange_capability_registry_refresh(client: TestClient,
     res = client.post("/api/v1/exchanges/capabilities/refresh", json={}, headers=CSRF)
     assert res.status_code == 200, res.text
     doc = res.json()["exchanges"]
-    assert calls == ["okx", "bybit", "kraken"]                       # Binance not called
+    assert calls == ["okx", "bybit", "kraken", "kucoin", "gate"]     # Binance not called
     assert doc["binance"]["ok"] is False and "skipped" in doc["binance"]["error"]
     assert doc["bybit"]["error"].startswith("RateLimitExceeded")
     cached = client.get("/api/v1/exchanges/capabilities").json()
-    assert set(cached["exchanges"]) == {"binance", "okx", "bybit", "kraken"}
+    assert set(cached["exchanges"]) == {"binance", "okx", "bybit", "kraken", "kucoin", "gate"}
     assert _json.dumps(cached)                                        # serialisable
 
 
