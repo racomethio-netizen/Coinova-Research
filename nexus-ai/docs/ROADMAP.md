@@ -32,6 +32,17 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-23 evening: dashboard sluggishness.**
+  * Measured on Render: CPU 1%, memory 320 MB of 2 GB; `/system` 1.5–7.7 s;
+    `/overview/context` up to 8.8 s.
+  * Cause: blocking database calls from the inline workers on the API event loop. The
+    database is in us-west-2 and the server in Frankfurt, about 150 ms per round trip.
+  * Fix: workers run on their own thread (`InlineWorkers(threaded=True)`), with
+    per-loop guard Redis.
+  * Tests: 913 passed, including integration.
+  * Moving the server next to the database is not an option: a US server IP is blocked
+    by Binance (HTTP 451).
+
 | Check | Result |
 |---|---|
 | `scripts/test.sh` (ruff, mypy --strict on 13 packages, pytest) | ✅ 348 passed |

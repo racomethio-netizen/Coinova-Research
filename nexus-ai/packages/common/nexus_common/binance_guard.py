@@ -29,6 +29,7 @@ import json
 import random
 import re
 import time
+import weakref
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -454,17 +455,34 @@ def attach_weight_hooks(adapters: Any, redis: Any) -> int:
 
 
 # ---------------------------------------------------------------------- raw ccxt clients
-_DEFAULT_REDIS: Any = None
+_DEFAULT_REDIS: Any = None                 # registered outside any running event loop
+_BY_LOOP: weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, Any] = weakref.WeakKeyDictionary()
+
+
+def _running_loop() -> asyncio.AbstractEventLoop | None:
+    try:
+        return asyncio.get_running_loop()
+    except RuntimeError:
+        return None
 
 
 def set_default_redis(redis: Any) -> None:
-    """Register the process's Redis so request-time clients (API account views, the
-    connection test) are gated without passing Redis through every call."""
+    """Register the Redis client of the CURRENT event loop so request-time clients (API
+    account views, the connection test) are gated without passing Redis through every
+    call. Keyed by loop: the API and the background workers run on separate loops
+    (threads), and an asyncio Redis client must only be used on the loop that made it."""
     global _DEFAULT_REDIS
-    _DEFAULT_REDIS = redis
+    loop = _running_loop()
+    if loop is None:
+        _DEFAULT_REDIS = redis
+    else:
+        _BY_LOOP[loop] = redis
 
 
 def default_redis() -> Any:
+    loop = _running_loop()
+    if loop is not None and loop in _BY_LOOP:
+        return _BY_LOOP[loop]
     return _DEFAULT_REDIS
 
 
@@ -517,6 +535,7 @@ class GatedClient:
 
 def gate_client(client: Any, *, scope: str = "spot", environment: str = "production") -> Any:
     """Gate a production client (testnet/demo hosts have their own limits)."""
-    if environment != "production" or _DEFAULT_REDIS is None:
+    redis = default_redis()
+    if environment != "production" or redis is None:
         return client
-    return GatedClient(client, _DEFAULT_REDIS, scope)
+    return GatedClient(client, redis, scope)

@@ -4,6 +4,14 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-23
 
+- **Dashboard speed (owner: "very sluggish"):**
+  * Cause: Supabase is in us-west-2, the server in Frankfurt (about 150 ms per query
+    round trip). The 12 inline workers made blocking queries on the API's event loop
+    (88,000 candle lookups so far), so every dashboard request waited behind them.
+    Requests took 1.5–7.7 s while CPU sat at 1%.
+  * Fix: inline workers run on their own event loop in a dedicated thread. The Binance
+    guard's default Redis client is now kept per event loop. The sign-in lookup and
+    `/system` queries also run off the loop.
 - **Edge-decay monitor:**
   * CUSUM, a rolling window and R-drawdown detectors;
   * NORMAL / REDUCE / STOP, enforced in the bot and the main trader;

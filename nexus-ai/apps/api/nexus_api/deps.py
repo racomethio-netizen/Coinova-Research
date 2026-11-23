@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import ipaddress
 import json
@@ -90,7 +91,8 @@ async def viewer_from_token(token: str | None, redis: Any, s: Session) -> Viewer
     if (utcnow() - created).total_seconds() > SESSION_ABSOLUTE_SECONDS:
         await redis.delete(_key(token))
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "session expired")
-    user = s.get(models.User, data["user_id"])
+    # Blocking DB call (first query of the request: pool checkout + ping) off the event loop.
+    user = await asyncio.to_thread(s.get, models.User, data["user_id"])
     if user is None or not user.is_active:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "account disabled")
     await redis.expire(_key(token), SESSION_IDLE_SECONDS)  # sliding idle timeout

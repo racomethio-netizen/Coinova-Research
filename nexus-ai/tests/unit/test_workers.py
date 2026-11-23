@@ -102,3 +102,60 @@ def test_x_worker_only_with_a_token():
                                                    workers_mode="inline",
                                                    x_bearer_token="dummy"))
     assert isinstance(sup, InlineWorkers) and "x-sentiment" in sup.workers
+
+
+def test_production_inline_workers_run_on_their_own_thread():
+    sup = WorkerSupervisor.from_settings(
+        _settings(run_workers=True, trading_mode="paper", workers_mode="inline"))
+    assert isinstance(sup, InlineWorkers) and sup.threaded
+
+
+def test_threaded_workers_never_block_the_api_loop():
+    """A worker making a blocking call (like a sync DB query) must not stall the API loop."""
+    import threading
+    import time
+
+    seen = {}
+
+    async def blocking(stop):
+        seen["thread"] = threading.current_thread().name
+        while not stop.is_set():
+            time.sleep(0.3)  # noqa: ASYNC251 - deliberately blocks ITS loop only
+            await asyncio.sleep(0)
+
+    async def crash(stop):
+        raise RuntimeError("boom")
+
+    async def go():
+        w = InlineWorkers({"blocking": blocking, "crash": crash}, base_delay=0.05, grace=2,
+                          threaded=True)
+        w.start()
+        ticks, t0 = 0, time.monotonic()
+        while time.monotonic() - t0 < 0.6:        # the API loop keeps ticking meanwhile
+            await asyncio.sleep(0.01)
+            ticks += 1
+        await w.stop()
+        return w, ticks
+    w, ticks = asyncio.run(go())
+    assert seen["thread"] == "nexus-workers"
+    assert ticks > 30                             # ~60 expected; blocked loop would give ~2
+    assert w.restarts["crash"] >= 1               # restarted (its loop is shared with the blocker)
+    assert all(t.done() for t in w._tasks) and not w._thread.is_alive()
+
+
+def test_guard_default_redis_is_per_event_loop():
+    import threading
+
+    from nexus_common import binance_guard as g
+
+    async def register(name):
+        g.set_default_redis(name)
+        await asyncio.sleep(0.05)
+        return g.default_redis()
+
+    out = {}
+    t = threading.Thread(target=lambda: out.setdefault("worker", asyncio.run(register("w"))))
+    t.start()
+    out["api"] = asyncio.run(register("api"))
+    t.join()
+    assert out == {"worker": "w", "api": "api"}

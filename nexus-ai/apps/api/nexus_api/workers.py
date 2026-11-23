@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import sys
+import threading
 from collections.abc import Awaitable, Callable, Sequence
 
 from nexus_common.logging import get_logger
@@ -98,16 +99,24 @@ Serve = Callable[[asyncio.Event], Awaitable[None]]
 
 
 class InlineWorkers:
-    """Workers as tasks in the current event loop. A worker that raises or returns is
-    restarted after a capped back-off; stop() sets the shared stop event and waits."""
+    """Workers as tasks in one event loop. A worker that raises or returns is restarted
+    after a capped back-off; stop() sets the shared stop event and waits.
+
+    ``threaded=True`` (production) runs that loop in its own thread. The workers make
+    blocking database calls (the database is across the Atlantic, about 150 ms per round
+    trip); on the API's loop each call froze every dashboard request. On their own loop
+    they only delay each other, and the API stays responsive."""
 
     def __init__(self, workers: dict[str, Serve], *, base_delay: float = 5.0,
-                 max_delay: float = 300.0, grace: float = 20.0) -> None:
+                 max_delay: float = 300.0, grace: float = 20.0, threaded: bool = False) -> None:
         self.workers = workers
         self.base_delay, self.max_delay, self.grace = base_delay, max_delay, grace
         self.restarts: dict[str, int] = dict.fromkeys(workers, 0)
+        self.threaded = threaded
         self._stop = asyncio.Event()
         self._tasks: list[asyncio.Task[None]] = []
+        self._thread: threading.Thread | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
 
     @classmethod
     def for_settings(cls, settings: Settings) -> InlineWorkers:
@@ -135,10 +144,32 @@ class InlineWorkers:
             "bot": lambda stop: bot.serve(settings, stop)}
         if settings.x_bearer_token is not None:
             workers["x-sentiment"] = lambda stop: social.serve(settings, stop)
-        return cls(workers)
+        return cls(workers, threaded=True)
 
     def start(self) -> None:
-        self._tasks = [asyncio.create_task(self._keep(n)) for n in self.workers]
+        if not self.threaded:
+            self._tasks = [asyncio.create_task(self._keep(n)) for n in self.workers]
+            return
+        ready = threading.Event()
+        self._thread = threading.Thread(target=self._thread_main, args=(ready,),
+                                        name="nexus-workers", daemon=True)
+        self._thread.start()
+        ready.wait(timeout=10)
+
+    def _thread_main(self, ready: threading.Event) -> None:
+        async def main() -> None:
+            self._loop = asyncio.get_running_loop()
+            self._tasks = [asyncio.create_task(self._keep(n)) for n in self.workers]
+            ready.set()
+            await self._stop.wait()
+            await self._drain()
+
+        try:
+            asyncio.run(main())
+        except Exception as exc:  # pragma: no cover - logged, the API keeps serving
+            log.error("worker_thread_crashed", error=f"{type(exc).__name__}: {exc}"[:300])
+        finally:
+            ready.set()
 
     async def _keep(self, name: str) -> None:
         delay = self.base_delay
@@ -160,7 +191,17 @@ class InlineWorkers:
             delay = min(delay * 2, self.max_delay)
 
     async def stop(self) -> None:
+        if self.threaded:
+            if self._loop is not None and self._thread is not None:
+                self._loop.call_soon_threadsafe(self._stop.set)
+                await asyncio.to_thread(self._thread.join, self.grace + 10)
+                if self._thread.is_alive():
+                    log.error("worker_thread_not_stopped", grace=self.grace)
+            return
         self._stop.set()
+        await self._drain()
+
+    async def _drain(self) -> None:
         if not self._tasks:
             return
         _, pending = await asyncio.wait(self._tasks, timeout=self.grace)

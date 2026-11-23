@@ -835,9 +835,15 @@ async def system(s: Session = Depends(db), redis: Any = Depends(redis_dep)) -> d
                  "trader:paper", "trader:live", "notifier"):
         raw = await redis.get(events.heartbeat_key(name))
         beats[name] = raw.decode() if isinstance(raw, bytes) else raw
-    ev = s.scalars(select(models.SystemEvent).order_by(desc(models.SystemEvent.id)).limit(100)).all()
-    counts = {t: s.scalar(select(func.count()).select_from(getattr(models, m))) for t, m in (
-        ("candles", "MarketCandle"), ("orders", "Order"), ("signals", "TradingSignal"))}
+
+    def load() -> tuple[Any, dict[str, Any]]:
+        ev = s.scalars(select(models.SystemEvent).order_by(desc(models.SystemEvent.id))
+                       .limit(100)).all()
+        counts = {t: s.scalar(select(func.count()).select_from(getattr(models, m))) for t, m in (
+            ("candles", "MarketCandle"), ("orders", "Order"), ("signals", "TradingSignal"))}
+        return ev, counts
+
+    ev, counts = await asyncio.to_thread(load)   # blocking queries off the event loop
     return {"heartbeats": beats, "events": _rows(ev, ["id", "component", "event_type", "severity",
                                                       "message", "created_at"]),
             "counts": counts, "server_time": ser(utcnow())}
