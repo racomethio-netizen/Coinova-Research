@@ -1071,10 +1071,11 @@ async def test_spot_engine_paper_runner_end_to_end(engine_setup: tuple[Any, ...]
     from nexus_execution import spot_paper as sp
 
     eng, factory, state, redis = engine_setup
-    # 4,000 closed 15m candles around 60,000 ending at the last full quarter hour.
+    # A full warm-up of closed 15m candles around 60,000 ending at the last full quarter hour.
     end = utcnow().replace(second=0, microsecond=0)
     end -= timedelta(minutes=end.minute % 15)
-    idx = pd.date_range(end=end - timedelta(minutes=15), periods=4000, freq="15min", tz="UTC")
+    idx = pd.date_range(end=end - timedelta(minutes=15), periods=sp.WARMUP_BARS, freq="15min",
+                        tz="UTC")
     rng = np.random.default_rng(0)
     close = 60_000 * np.exp(np.cumsum(rng.normal(0, 0.0005, len(idx))))
     close *= 60_000 / close[-1]

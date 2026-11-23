@@ -198,3 +198,29 @@ def test_backtester_reproducible_and_no_look_ahead() -> None:
     assert entries and all(o["time"] >= o["decided"] for o in entries)   # never before
     for t in a.trades:
         assert t["fees"] > 0
+
+
+def test_live_history_window_settles_the_4h_ema200() -> None:
+    """Recursive (start-up) analysis, after Freqtrade's recursive-analysis: with the live
+    window the 4h EMA200 must equal the full-history value, or live signals would differ
+    from the backtest's. 4,000 bars (the old window) left it up to 3.5% away."""
+    from nexus_execution.spot_paper import BARS, WARMUP_BARS, resample
+    from nexus_strategies import indicators as ind
+
+    rng = np.random.default_rng(5)
+    n = 20_000
+    idx = pd.date_range("2025-01-01", periods=n, freq="15min", tz="UTC")
+    close = 100 * np.exp(np.cumsum(rng.normal(0, 0.004, n)))
+    m15 = pd.DataFrame({"open": close, "high": close * 1.002, "low": close * 0.998,
+                        "close": close, "volume": 1.0}, index=idx)
+
+    def ema200_4h(x: pd.DataFrame) -> float:
+        return float(ind.ema(resample(x, "4h", 16)["close"], 200).iloc[-1])
+
+    full = ema200_4h(m15)
+
+    def err(window: int) -> float:
+        return abs(ema200_4h(m15.iloc[-window:]) / full - 1)
+
+    assert err(BARS) < 1e-4 and err(WARMUP_BARS) < 5e-4
+    assert err(4000) > 10 * err(WARMUP_BARS)

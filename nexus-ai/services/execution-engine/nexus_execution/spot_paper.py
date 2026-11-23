@@ -65,7 +65,12 @@ BACKTEST = {
     "btc_buy_and_hold_return_pct": 1.94,
     "source": "docs/research/2026-11-23-spot-engine-preregistration.md"}
 EXCHANGE = "binance"
-BARS = 4000                        # 15m bars loaded (about 41 days: 4h EMA200 warm-up)
+BARS = 12000                       # 15m bars loaded (125 days)
+# New entries need this much history: three 4h EMA200 spans (16 x 200 x 3 bars of 15m).
+# With fewer bars the 4h EMA200 still depends on where the data starts (4000 bars left it up
+# to 3.5% away from the full-history value), so live signals would differ from the
+# backtest's. Open positions are managed whatever the history length.
+WARMUP_BARS = 9600
 STALE_AFTER = timedelta(minutes=20)
 ENTRY_SLIP_CAP = Decimal("0.002")  # IOC buy limit above the ask
 EXIT_SLIP_CAP = Decimal("0.005")
@@ -238,16 +243,20 @@ class SpotPaperRunner:
             fresh = len(m15) > 0 and now - (m15.index[-1] + Q).to_pydatetime() <= STALE_AFTER
             info: dict[str, Any] = {"fresh": fresh, "bars": len(m15)}
             status["symbols"][sym] = info
-            if len(m15) < 3500:
-                info["note"] = "not enough stored history for the 4h EMA200 warm-up"
+            if len(m15) == 0:
                 continue
+            warm = len(m15) >= WARMUP_BARS
             reg, cands = latest_candidates(sym, m15, btc_h4)
             r = reg.iloc[-1]
+            if not warm:
+                info["note"] = (f"warming up: {len(m15)} of {WARMUP_BARS} 15m bars stored; "
+                                "no new entries until the 4h EMA200 is settled")
+                cands = []
             info.update(regime=r["regime"], trend=r["trend"], btc_risk_off=bool(r["btc_risk_off"]),
                         breakdown={k: _jsonable(r[k]) for k in (
                             "h4_above_ema200", "h1_above_ema200", "h1_ema50_above_200",
                             "h1_adx", "h1_structure", "h1_atr_pct", "quote_vol_24h")},
-                        last_bar=str(m15.index[-1]))
+                        last_bar=str(m15.index[-1]), warm=warm)
             # (a) manage this symbol's positions on the latest closed bar
             bar = m15.iloc[-1]
             for pid, (rp, row, psym) in list(rule_pos.items()):
