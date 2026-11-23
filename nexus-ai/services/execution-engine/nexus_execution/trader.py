@@ -1162,8 +1162,15 @@ async def serve(settings: Settings, stop: asyncio.Event) -> None:
         return
     books = BookCache(adapters, redis=redis)
     if settings.trading_mode is TradingMode.LIVE:
-        with transaction(factory) as s:
-            broker: Broker = await build_live_broker(settings, s, redis, adapters)
+        try:
+            with transaction(factory) as s:
+                broker: Broker = await build_live_broker(settings, s, redis, adapters)
+        except PermissionError:           # a gate is not met: release everything, refuse
+            for a in adapters.values():
+                await a.close()
+            await redis.aclose()
+            engine.dispose()
+            raise
     else:
         broker = PaperBroker(books.get, taker_fee=settings.paper_fee_bps / 10_000,
                              maker_fee=settings.paper_fee_bps / 10_000,

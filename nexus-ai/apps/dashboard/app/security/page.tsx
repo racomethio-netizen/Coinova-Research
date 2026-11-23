@@ -18,10 +18,14 @@ export default function SecurityPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [ack, setAck] = useState("");
   const [approveTotp, setApproveTotp] = useState("");
+  const [busy, setBusy] = useState(false);
   const run = async (fn: () => Promise<unknown>, ok: string) => {
+    if (busy) return;                       // one request per tap: a 2FA code is single-use
+    setBusy(true);
     setMsg(null);
     try { await fn(); setMsg(ok); await sec.reload(); await me.reload(); }
     catch (e) { setMsg(e instanceof Error ? e.message : String(e)); }
+    finally { setBusy(false); setApproveTotp(""); }
   };
   return (
     <>
@@ -47,11 +51,11 @@ export default function SecurityPage() {
           <ul className="mb-3 list-disc pl-5 text-sm text-warn">{sec.data?.live_trading_blockers?.map((b: string) => <li key={b}>{b}</li>)}</ul>
           <div className="grid gap-3 md:grid-cols-2">
             <Field id="ack" label={`Type exactly: ${PHRASE}`} value={ack} onChange={setAck} />
-            <Field id="approve-totp" label="Two-factor code" value={approveTotp} onChange={setApproveTotp} inputMode="numeric" />
+            <Field id="approve-totp" label="Two-factor code (6 digits, enter a fresh one just before tapping)" value={approveTotp} onChange={setApproveTotp} inputMode="numeric" />
           </div>
           <div className="mt-3 flex gap-2">
-            <Button tone="danger" disabled={ack !== PHRASE} onClick={() => run(() => api.post("/security/live-approval", { approve: true, acknowledgement: ack, totp: approveTotp }), "Approval recorded. Configuration gates still apply.")}>Approve live trading</Button>
-            <Button onClick={() => run(() => api.post("/security/live-approval", { approve: false, acknowledgement: "", totp: approveTotp }), "Approval revoked.")}>Revoke approval</Button>
+            <Button tone="danger" disabled={busy || ack !== PHRASE || !/^\d{6}$/.test(approveTotp.trim())} onClick={() => run(() => api.post("/security/live-approval", { approve: true, acknowledgement: ack, totp: approveTotp.trim() }), "Approval recorded. Configuration gates still apply.")}>Approve live trading</Button>
+            <Button disabled={busy} onClick={() => run(() => api.post("/security/live-approval", { approve: false, acknowledgement: "", totp: approveTotp.trim() }), "Approval revoked.")}>Revoke approval</Button>
           </div>
         </Card>
         <Card title="Audit log (append-only)">

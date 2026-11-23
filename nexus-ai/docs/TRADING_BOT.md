@@ -51,7 +51,12 @@ following.
    * `NEXUS_TRADING_MODE=live`
    * `NEXUS_LIVE_TRADING_ENABLED=true`
    * `NEXUS_LIVE_TRADING_ACK` = the exact phrase shown on the Settings page
-   Then redeploy. The paper workers stop in live mode.
+   Then redeploy. In live mode the server runs market data, the LIVE trader and
+   monitoring. The paper bot and the paper forward tests pause. Until every gate is met,
+   the live trader refuses to start and retries every few minutes. Its log says which
+   gate is missing.
+   * Fixed 2026-11-23: before this, live mode on the single server started no worker at
+     all, so the switch could never trade.
 5. **Approve live trading** with 2FA on Settings → Live trading. The card lists any
    blocker left.
 6. **Watch the first trade.** NEXUS reconciles every order with Binance by client order ID.

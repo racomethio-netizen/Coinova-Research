@@ -14,9 +14,19 @@ def test_off_by_default():
     assert WorkerSupervisor.from_settings(_settings()) is None
 
 
-def test_never_starts_a_live_trader():
-    s = _settings(run_workers=True).model_copy(update={"trading_mode": TradingMode.LIVE})
-    assert WorkerSupervisor.from_settings(s) is None
+def test_live_mode_runs_only_live_workers():
+    """Live mode on one server: market data, the (gated) live trader and monitoring. No
+    paper bot, no paper forward tests. Before this fix live mode started NO worker at all,
+    so the owner's live switch could never trade."""
+    from nexus_api.workers import LIVE_WORKERS
+
+    s = _settings(run_workers=True, workers_mode="inline").model_copy(
+        update={"trading_mode": TradingMode.LIVE})
+    sup = WorkerSupervisor.from_settings(s)
+    assert isinstance(sup, InlineWorkers) and set(sup.workers) == set(LIVE_WORKERS)
+    assert "trader" in sup.workers and "bot" not in sup.workers
+    proc = WorkerSupervisor.from_settings(s.model_copy(update={"workers_mode": "process"}))
+    assert isinstance(proc, WorkerSupervisor) and set(proc.commands) == set(LIVE_WORKERS)
 
 
 def test_paper_mode_builds_both_workers():

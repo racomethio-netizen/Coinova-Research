@@ -4,6 +4,14 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-23
 
+- **Live switch fix (owner: "real money switch doesn't work"):**
+  * In live mode the single-server runner started no workers, so even a fully approved
+    live setup could never trade. It now starts the live workers (market data, the gated
+    live trader, monitoring).
+  * The live trader releases its connections when a gate refuses.
+  * The Security page's approval button can no longer double-send a single-use 2FA code
+    (the owner's two attempts at 16:31 were both refused by the 2FA check). It needs a
+    6-digit code and clears it after each attempt.
 - **Quant engine brief (Part 1 audit and first gaps):**
   * Integration map: `docs/INTEGRATION_MAP_2026-11-23.md`.
   * Statistical arbitrage module (`stat_arb.py`): Engle-Granger statistics verified

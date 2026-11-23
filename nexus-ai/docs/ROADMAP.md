@@ -32,6 +32,13 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-23 late: live switch.**
+  * Live mode now runs the live workers (it started none before).
+  * The 2FA approval button now sends a single request per tap.
+  * Tests: backend suite green; e2e 15/15.
+  * The owner's go-live steps are in docs/TRADING_BOT.md: key test, strategy approval,
+    seed the live ledger, Render env vars, 2FA approval.
+
 * **2026-11-23 night: quant engine brief.**
   * Audit and map: `docs/INTEGRATION_MAP_2026-11-23.md`.
   * New modules: stat_arb (research only; matches statsmodels to 1e-5), liquidity

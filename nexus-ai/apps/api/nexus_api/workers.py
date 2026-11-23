@@ -1,11 +1,15 @@
-"""Run the market-data and paper-trader workers next to the API on one small server.
+"""Run the workers next to the API on one small server.
 
-Enabled by NEXUS_RUN_WORKERS=true. NEXUS_WORKERS_MODE=process (default) runs them as
-child processes; =inline runs them as tasks in the API's event loop (about half the
-memory, for 512 MB servers). Either way it is, and only when NEXUS_TRADING_MODE is paper: this module
-never starts a live trader. Each worker is a child process; one that exits is restarted
-after a delay (capped back-off) and every exit is logged. Shutdown sends SIGTERM and
-waits, then kills.
+Enabled by NEXUS_RUN_WORKERS=true. NEXUS_WORKERS_MODE=process (default) runs them as child
+processes; =inline runs them as tasks on one event loop in a dedicated thread (about half
+the memory, for small servers). A worker that exits is restarted after a capped back-off
+and every exit is logged.
+
+* Paper mode: every worker (market data, paper trader, bot, forward tests, monitoring).
+* Live mode: only LIVE_WORKERS. The trader still needs every live gate (live_gate.py:
+  the owner's configuration, 2FA approval, kill switch clear, key test) before it can
+  build a live broker. This module never bypasses the gate and cannot enable live
+  trading by itself.
 """
 
 from __future__ import annotations
@@ -38,6 +42,10 @@ WORKERS: dict[str, list[str]] = {
 }
 
 
+# Live mode on one server: no paper forward tests, no paper bot (paper ledgers stay frozen).
+LIVE_WORKERS = ("market-data", "trader", "notifier", "news", "derivatives", "decision-log")
+
+
 class WorkerSupervisor:
     def __init__(self, commands: dict[str, Sequence[str]], *, base_delay: float = 5.0,
                  max_delay: float = 300.0, grace: float = 20.0) -> None:
@@ -52,8 +60,19 @@ class WorkerSupervisor:
     def from_settings(cls, settings: Settings) -> WorkerSupervisor | InlineWorkers | None:
         if not settings.run_workers:
             return None
+        if settings.trading_mode is TradingMode.LIVE:
+            # Single server in live mode: market data, the LIVE trader and monitoring only.
+            # The trader builds its broker through live_gate.build_live_broker, which
+            # refuses (and the worker retries with back-off) until EVERY gate is met: the
+            # owner's Render configuration, 2FA approval, kill switch clear, key test.
+            # Nothing here can enable live trading by itself.
+            log.warning("live_workers_starting", workers=list(LIVE_WORKERS))
+            if settings.workers_mode == "inline":
+                return InlineWorkers.for_settings(settings, only=LIVE_WORKERS)
+            return cls({n: [sys.executable, *WORKERS[n]] for n in LIVE_WORKERS})
         if settings.trading_mode is not TradingMode.PAPER:
-            log.warning("workers_not_started", reason="NEXUS_RUN_WORKERS only runs paper mode")
+            log.warning("workers_not_started", reason=f"no workers for mode "
+                        f"{settings.trading_mode.value}")
             return None
         if settings.workers_mode == "inline":
             return InlineWorkers.for_settings(settings)
@@ -119,7 +138,8 @@ class InlineWorkers:
         self._loop: asyncio.AbstractEventLoop | None = None
 
     @classmethod
-    def for_settings(cls, settings: Settings) -> InlineWorkers:
+    def for_settings(cls, settings: Settings, *,
+                     only: Sequence[str] | None = None) -> InlineWorkers:
         from nexus_backtest import forward_taker, library_forward, trend_paper
         from nexus_execution import bot, spot_paper, trader
         from nexus_market import carry_paper, derivatives, runner
@@ -144,6 +164,8 @@ class InlineWorkers:
             "bot": lambda stop: bot.serve(settings, stop)}
         if settings.x_bearer_token is not None:
             workers["x-sentiment"] = lambda stop: social.serve(settings, stop)
+        if only is not None:
+            workers = {n: w for n, w in workers.items() if n in only}
         return cls(workers, threaded=True)
 
     def start(self) -> None:
