@@ -158,3 +158,46 @@ Results: see the section appended below.
   stream writes the newest bar first and the REST filler only continues from the newest
   stored bar, so older holes are never revisited. Trading does not use 1m bars; a gap-repair
   fix is committed and will ship with the next deploy (after this test).
+
+## +6 h checkpoint (22 Nov 22:40 UTC; data 18:06-22:40)
+
+The owner asked to deploy the Phase C-E work, so a new release (`9b1fc5d`,
+`dep-dc1islfb9u1s738bo4ig`) went live at **18:06 UTC**. The stability test restarted from that
+time. At **19:43** the owner changed the Render plan, which restarted the service once more. The
+memory limit is still 512 MB and the CPU limit 0.5.
+
+* **One pause, caused by Binance, handled as designed.** At 18:06:14 the first `bookTicker`
+  after start-up got **HTTP 418** ("banned until 18:19:59"). The IP's used weight was only 858 of
+  6,000 at that moment. A second request that was already in flight also got 418. The circuit
+  opened once, until 18:20:01 (Binance's time plus jitter); after that NEXUS sent nothing.
+  * At 18:20:03 the WebSocket connected.
+  * At 18:20:30 the probe request succeeded and the circuit closed.
+  * There were no 429s and no further 418s in the period.
+* **Telegram: 2 alerts in total.**
+  * 18:08 "down for 121 s" (sent after the 2-minute debounce).
+  * 18:25 "stable for 304 s after 1 interruption, 841 s down in total".
+  * There was no flapping.
+* **WebSocket:** connected at 18:20:03 and again at 19:44:08 (after the plan-change restart),
+  with **no disconnects** in between or since.
+* **Gap repair works:** between 19:26 and 19:43 it filled the old 1-minute holes in steps of
+  up to 3,000 bars. After the 19:43 restart it filled the 4 missing minutes at 19:49.
+* **Start-up after the 19:43 restart:** Redis timed out for a moment.
+  * The notifier restarted once.
+  * The gate *failed closed*: it treated the unreadable state as a 2-minute pause, so pair sync
+    used the pairs stored in the database. The trader restarted once.
+  * Requests flowed normally from 19:43:54, with IP weight 670-700.
+  * Note: the log text for this case says "rate limit / IP ban" although the cause was Redis.
+    The behaviour is correct; the wording should be fixed in a later change.
+* **Trader restarts during the 18:06-18:20 ban:** the restart delay grew 5 s → 300 s. No request
+  was sent while paused. The trader started normally after the ban.
+* **Futures:** still paused until 08:54:50 UTC on 23 Nov, from the earlier ban.
+  * `derivatives_fetch_failed` is logged every 5 minutes per symbol without calling Binance.
+  * The hourly forward-test gaps (`carry_paper_gap`, `forward_taker_gap`) are recorded as gaps,
+    not filled with estimates.
+* **Memory** (lower than the 434 MB before this release; the bounded derivation works):
+  * 18:36-19:36: 385-400 MB.
+  * After the 19:43 restart: 395-398 MB, flat through 22:36.
+  * CPU: about 1-2% of the 0.5 limit.
+* **Errors:** only the start-up items above. No `cycle_failed`, no `loop_error`, no tracebacks.
+* **Orders: 0. Duplicate client order IDs: 0.** No strategy is enabled. The 7 strategies A-G
+  now carry their real (failed) validation records in production.
