@@ -73,7 +73,7 @@ Built, tested and validated once on unseen 2022-2024 data: all 7 FAIL (NEXUS_BAC
 
 ## Phase G: backtesting
 
-* G1 Funding, borrow and slippage-by-depth models in the event backtester; per-regime and
+* G1 (done 23 Nov) Funding, borrow and slippage-by-depth models in the event backtester; per-regime and
   per-hour reports; parameter-stability report. Results to NEXUS_BACKTEST_REPORT.md.
 
 ## Phase H: dashboard and documents

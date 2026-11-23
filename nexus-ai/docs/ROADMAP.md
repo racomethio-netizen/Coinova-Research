@@ -565,3 +565,18 @@ trading on Render can use live data once background workers are approved.
   * Order-list (OCO) support: two sells on one balance need a database design.
   * Exchange-side protective stops placed by the trader for live spot.
   * An end-to-end demo run of entry, protective stop, take-profit and cancel/replace.
+
+## 2026-11-23: Phase G1 (backtesting realism and robustness)
+
+* **Completed: size-dependent slippage** (`SlippageModel`).
+  * Real data shows impact under 1 bp at NEXUS sizes, so the 5 bp assumption was realistic.
+  * Fees dominate costs.
+* **Completed: fuller backtest reports.** Recovery factor, average R, slippage, and results
+  by coin, hour and weekday.
+* **Completed: out-of-sample breakdowns** and a parameter-stability report.
+  * Rerun with
+    `python -m nexus_backtest.stability --db URL --out FILE`.
+  * Result: PBO is about 0.5 and the training-vs-unseen rank correlation is about 0, so the
+    losses are not a tuning problem.
+* **Not changed:** any strategy's validation result, the trader, and live trading (off).
+* **Next:** Phase H (dashboard and documents), unless the owner provides the demo key for F2.

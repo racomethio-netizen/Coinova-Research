@@ -4,6 +4,28 @@ How to run: `scripts/test.sh` with `NEXUS_TEST_DATABASE_URL` and `NEXUS_TEST_RED
 (Postgres and Redis test databases; integration tests are skipped without them). Browser
 tests: `scripts/e2e.sh` (see the script header).
 
+## 2026-11-23: Phase G1 (backtesting: slippage model, reports, parameter stability)
+
+`tests/unit/test_backtest_g1.py`:
+* **Square-root impact.** Four times the size gives twice the impact. The rate is capped,
+  and missing history pays the cap, never zero.
+* **No look-ahead in liquidity inputs.** A day's volume and volatility are used only after
+  that day ends. Changing future volume does not change past inputs.
+* **Default behaviour unchanged.** The engine records the slippage cost of both legs and the
+  initial risk (R). All 11 existing backtest tests pass without changes.
+* **New metric fields.** Average R and slippage match the trade's own values.
+* **Breakdowns.** Group counts are correct, small groups are flagged, and the hour blocks
+  are right.
+* **Stability measures.**
+  * One-step neighbours are found correctly.
+  * A true, persistent ranking gives PBO 0, rank correlation above 0.8, and the same set
+    chosen every time.
+  * Pure noise gives a low correlation and a changing choice.
+  * The stability report's out-of-sample trades equal `walk_forward()`'s exactly (over 50
+    trades).
+
+`ruff` and `mypy --strict` are clean on `research/backtesting`. Full run `scripts/test.sh`: 782 passed.
+
 ## 2026-11-23: Phase F1 (post-only and stop-limit orders)
 
 * `tests/unit/test_order_types.py` covers four areas.
