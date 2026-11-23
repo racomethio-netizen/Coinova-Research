@@ -198,7 +198,7 @@ async def acquire(redis: Any, scope: str, endpoint: str, weight: int) -> bool:
             raise BinanceBackoff(f"rate-limit state unreadable ({type(exc).__name__}); "
                                  "not calling Binance") from exc
         if until is not None:
-            raise BinanceBackoff(f"Binance {scope} API paused until {until:%H:%M:%S} UTC "
+            raise BinanceBackoff(f"Binance {scope} API paused until {until:%Y-%m-%d %H:%M:%S} UTC "
                                  "(rate limit / IP ban); not calling")
         probe = False
         if await redis.get(_k("halfopen", scope)):

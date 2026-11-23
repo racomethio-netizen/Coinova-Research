@@ -687,3 +687,14 @@ trading on Render can use live data once background workers are approved.
   * BTC buy-and-hold returned +194% over the same period.
 * **Paper:** runs from the next deploy to observe them on new data. Not eligible for live.
 * **Tests:** 820 passed. **Live trading stays disabled.**
+* **Deployed** cffd743 at 10:27 UTC on 23 Nov: migrations 0015 and 0016 applied, and the
+  spot-engine and trend-paper workers running.
+* **Futures pause (finding).** Binance banned the shared Render IP on fapi.binance.com
+  ("banned until <epoch>" in the 418 body). The gate's first version stored that end time
+  at 12:20 on 22 Nov.
+  * The logs keep saying "paused until 08:54:50" because the message showed only the time
+    of day. The real end is 08:54:50 UTC on a later day (24-26 Nov, the 4-day cap).
+  * This is Binance's own stated ban, so NEXUS correctly waits.
+  * The message now shows the full date; this ships with the next deploy.
+  * The derivatives, carry and taker forward tests have gaps until the ban ends; a dedicated
+    IP would avoid this.
