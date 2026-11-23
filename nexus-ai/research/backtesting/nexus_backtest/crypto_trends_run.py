@@ -44,7 +44,8 @@ def evaluate(bars: dict[str, pd.DataFrame], cfg: SimConfig) -> dict[str, Any]:
     bh = buy_and_hold(bars, eq.index)
     prim = eq[(eq.index >= PRIMARY[0]) & (eq.index < PRIMARY[1])]
     years = calendar_years(eq)
-    out = {"strategy": summary(eq), "half_1": summary(h1), "half_2": summary(h2),
+    out: dict[str, Any] = {"strategy": summary(eq), "half_1": summary(h1),
+                           "half_2": summary(h2),
            "buy_and_hold": summary(bh),
            "primary_unseen_period": {"return": float(prim.iloc[-1] / prim.iloc[0] - 1),
                                      "sharpe": sharpe(prim), "max_drawdown": max_drawdown(prim),
