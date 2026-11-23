@@ -201,3 +201,20 @@ memory limit is still 512 MB and the CPU limit 0.5.
 * **Errors:** only the start-up items above. No `cycle_failed`, no `loop_error`, no tracebacks.
 * **Orders: 0. Duplicate client order IDs: 0.** No strategy is enabled. The 7 strategies A-G
   now carry their real (failed) validation records in production.
+
+## +12 h checkpoint (23 Nov 04:40 UTC; data 22:40-04:40)
+
+The six hours were fully quiet:
+
+* **Binance pauses (circuit opens): 0.** No 429 or 418 responses.
+* **WebSocket:** no disconnects, no reconnects and no stale-stream events.
+* **Telegram alerts: 0.**
+* **Service:** no restarts and no Render events.
+* **Errors:** no error-level log lines, no worker crashes, no `cycle_failed` or `loop_error`.
+* **Data:** 720 one-minute bars stored (360 per coin = every minute for 6 hours, all from the
+  WebSocket). The newest 1m and 5m bars are current.
+* **Memory:** 397.7 → 406.5 MB over 6 hours (limit 512 MB). That is +0.6 MB/h until 03:36,
+  then +7.7 MB in the last hour. This is worth watching, but it is not a leak pattern yet.
+* **CPU:** about 1.1% of the 0.5 CPU limit.
+* **Futures:** still in the earlier back-off until 08:54:50 UTC, with no requests sent.
+* **Orders: 0. Duplicate client order IDs: 0.**
