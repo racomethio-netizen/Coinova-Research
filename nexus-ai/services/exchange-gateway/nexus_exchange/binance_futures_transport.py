@@ -32,6 +32,9 @@ class CcxtFuturesTransport:
         if cafile:
             config["cafile"] = cafile  # verification stays on
         self._client = ccxt_async.binanceusdm(config)
+        from nexus_common.proxy import apply_to_ccxt
+
+        apply_to_ccxt(self._client)
         if environment == "production":
             from nexus_common.binance_guard import CcxtGate, default_redis
 

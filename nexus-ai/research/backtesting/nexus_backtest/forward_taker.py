@@ -173,7 +173,9 @@ async def serve(settings: Any, stop: asyncio.Event) -> None:
     factory = make_session_factory(engine)
     redis = connect_redis(settings.redis_url.get_secret_value())
     try:
-        async with httpx.AsyncClient(timeout=20, trust_env=True) as client:
+        from nexus_common.proxy import httpx_kwargs
+
+        async with httpx.AsyncClient(timeout=20, trust_env=True, **httpx_kwargs()) as client:
             while not stop.is_set():
                 try:
                     await step(factory, redis, client)

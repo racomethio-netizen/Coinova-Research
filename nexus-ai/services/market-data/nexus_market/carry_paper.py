@@ -236,7 +236,9 @@ async def serve(settings: Any, stop: asyncio.Event, *, interval: float = 3600) -
     ledger = Ledger(make_session_factory(engine))
     redis = connect_redis(settings.redis_url.get_secret_value())
     try:
-        async with httpx.AsyncClient(timeout=15, trust_env=True) as client:
+        from nexus_common.proxy import httpx_kwargs
+
+        async with httpx.AsyncClient(timeout=15, trust_env=True, **httpx_kwargs()) as client:
             while not stop.is_set():
                 try:
                     await step(ledger, client, redis=redis)

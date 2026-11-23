@@ -162,7 +162,12 @@ async def liquidation_stream(tracker: LiquidationTracker, redis: Any, stop: asyn
     delay = 1.0
     while not stop.is_set():
         try:
-            async with websockets.connect(url, ping_interval=60, open_timeout=15) as ws:
+            from nexus_common.proxy import binance_proxy_url
+
+            proxy = binance_proxy_url()
+            kwargs: dict[str, Any] = {"proxy": proxy} if proxy else {}
+            async with websockets.connect(url, ping_interval=60, open_timeout=15,
+                                          **kwargs) as ws:
                 delay = 1.0
                 await redis.set("nexus:liquidations:status", json.dumps(
                     {"connected": True, "at": utcnow().isoformat()}), ex=TTL)
@@ -194,7 +199,9 @@ async def serve(settings: Any, stop: asyncio.Event, *, interval: float = 300) ->
     tracker = LiquidationTracker(natives)
     stream = asyncio.create_task(liquidation_stream(tracker, redis, stop))
     try:
-        async with httpx.AsyncClient(timeout=15, trust_env=True) as client:
+        from nexus_common.proxy import httpx_kwargs
+
+        async with httpx.AsyncClient(timeout=15, trust_env=True, **httpx_kwargs()) as client:
             while not stop.is_set():
                 for pair in settings.trading_pairs:
                     native = pair.replace("/", "")

@@ -50,6 +50,10 @@ def build_ws_client(code: ExchangeCode, settings: Settings,
         config["options"]["fetchMarkets"] = ["spot"]
         config["options"]["fetchCurrencies"] = False
     client = getattr(ccxt_pro, code.value)(config)
+    if code is ExchangeCode.BINANCE:
+        from nexus_common.proxy import apply_to_ccxt
+
+        apply_to_ccxt(client)
     if markets:
         client.set_markets(markets)
     if code is ExchangeCode.BINANCE:

@@ -74,7 +74,9 @@ async def probe_spot(api_key: str, secret: str, *, environment: str,
 
     if environment not in ("production", "testnet"):
         return {"ok": False, "error": f"{environment} keys are not supported"}
-    client = gate_client(ccxt_async.binance(config), environment=environment)
+    from nexus_common.proxy import apply_to_ccxt
+
+    client = gate_client(apply_to_ccxt(ccxt_async.binance(config)), environment=environment)
     if environment == "testnet":
         client.set_sandbox_mode(True)
     try:

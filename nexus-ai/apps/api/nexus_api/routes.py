@@ -136,9 +136,10 @@ async def _public_get(settings: Settings, path: str, params: dict[str, Any],
                       redis: Any = None) -> Any:
     import httpx
     from nexus_common.binance_guard import BinanceBackoff, guarded_get
+    from nexus_common.proxy import httpx_kwargs
 
     base = settings.binance_public_api_url or "https://api.binance.com/api/v3"
-    async with httpx.AsyncClient(timeout=15, trust_env=True) as client:
+    async with httpx.AsyncClient(timeout=15, trust_env=True, **httpx_kwargs()) as client:
         try:
             r = await guarded_get(client, redis, f"{base}/{path}", params, cache_ttl=10)
         except BinanceBackoff as exc:
@@ -152,11 +153,15 @@ async def binance_status(redis: Any = Depends(redis_dep)) -> dict[str, Any]:
     """Rate-limit gate (circuit state, last-hour requests by endpoint and status, recent
     events) and the live WebSocket stream state."""
     from nexus_common.binance_guard import status as gate_status
+    from nexus_common.proxy import describe as proxy_host
     from nexus_market.binance_ws import STATE_KEY
 
     out = await gate_status(redis)
     raw = await redis.get(STATE_KEY)
     out["websocket"] = json.loads(raw) if raw else None
+    out["egress"] = {"binance_proxy": proxy_host(),
+                     "note": "Binance traffic leaves through this static-IP proxy" if proxy_host()
+                     else "No proxy: Binance sees Render's shared outbound IPs"}
     return out
 
 
@@ -1457,7 +1462,9 @@ async def binance_reachability() -> dict[str, Any]:
     import httpx
 
     out: dict[str, Any] = {}
-    async with httpx.AsyncClient(timeout=10, trust_env=True) as client:
+    from nexus_common.proxy import httpx_kwargs
+
+    async with httpx.AsyncClient(timeout=10, trust_env=True, **httpx_kwargs()) as client:
         for name, url in BINANCE_PINGS.items():
             try:
                 r = await client.get(url)

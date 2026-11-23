@@ -38,7 +38,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         from nexus_common.binance_guard import set_default_redis
 
         set_default_redis(app.state.redis)
-        log.info("api_started", **settings.safe_summary())
+        from nexus_common.proxy import describe as proxy_host
+
+        # Host:port only; the proxy URL's credentials are never logged.
+        log.info("api_started", **settings.safe_summary(),
+                 binance_proxy=proxy_host() or "none (shared Render IP)")
         from nexus_api.workers import WorkerSupervisor, keep_awake
 
         workers = WorkerSupervisor.from_settings(settings)

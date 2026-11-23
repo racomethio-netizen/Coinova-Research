@@ -112,11 +112,14 @@ class BinanceMarketStream:
 
     async def _aiohttp_connect(self, url: str) -> Any:
         import aiohttp
+        from nexus_common.proxy import binance_proxy_url
 
         session = aiohttp.ClientSession(trust_env=True)   # honours HTTPS_PROXY if set
         try:
             ws = await session.ws_connect(url, autoping=True, heartbeat=None,
-                                          receive_timeout=self.stale_after,
+                                          proxy=binance_proxy_url(),
+                                          timeout=aiohttp.ClientWSTimeout(
+                                              ws_receive=self.stale_after),
                                           max_msg_size=4 * 1024 * 1024)
         except BaseException:
             await session.close()

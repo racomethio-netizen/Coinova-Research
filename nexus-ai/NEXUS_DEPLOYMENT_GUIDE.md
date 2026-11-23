@@ -38,6 +38,27 @@ deploy. More detail: docs/DEPLOYMENT.md.
   itself. If the role is created later, run `scripts/grant_app_role.sql` again (A4 step 2).
 * After the deploy, the first decision-log rows appear within 15 minutes (Decision log page).
 
+## Fixed IP for Binance (static-IP proxy, owner action)
+
+NEXUS can send **only its Binance traffic** through a static-IP HTTP proxy: REST market
+data, the spot and liquidation WebSockets, the trader, and the account pages. Telegram,
+news, X and the database stay direct.
+
+1. Create a static-IP proxy account, for example QuotaGuard Static. Choose an EU location
+   near Frankfurt. It gives you a URL like `http://USER:PASSWORD@HOST:PORT` and 2 fixed IPs.
+2. In Render, open service `nexus-ai-fra` → Environment and add `QUOTAGUARDSTATIC_URL`
+   (or `NEXUS_BINANCE_PROXY_URL`) with that URL. Do not put it in chat or in code: it
+   contains a password. Saving restarts the service.
+3. Check:
+   * the startup log `api_started` shows `binance_proxy: <host>:<port>`;
+   * System page → Binance → egress shows the proxy;
+   * Binance's reported `ip_used_weight` falls to NEXUS's own traffic (tens, not thousands).
+4. Optional, before live trading: restrict the Binance API key to the proxy's 2 IPs.
+
+A malformed URL stops start-up with a clear error instead of silently using the shared
+IP. A wrong password is refused by the proxy; the request is never sent around it.
+Remove the variable to go back to direct connections.
+
 ## A4: switch the app to the restricted database account (owner action)
 
 Why: the app connects as `postgres`, the owner of every table. If its password leaked,

@@ -557,6 +557,10 @@ def create_ccxt_client(
         config["options"]["fetchMarkets"] = ["spot"]
         config["options"]["fetchCurrencies"] = False
     client = cls(config)
+    if code == "binance":
+        from nexus_common.proxy import apply_to_ccxt
+
+        apply_to_ccxt(client)
     if sandbox:
         client.set_sandbox_mode(True)
     elif public_api_url:

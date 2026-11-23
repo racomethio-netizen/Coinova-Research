@@ -99,7 +99,9 @@ async def spot_snapshot(api_key: str, secret: str, *, environment: str, pairs: l
 
     if environment not in ("production", "testnet"):
         raise ValueError(f"{environment} keys are not supported")
-    client = gate_client(ccxt_async.binance(config), environment=environment)
+    from nexus_common.proxy import apply_to_ccxt
+
+    client = gate_client(apply_to_ccxt(ccxt_async.binance(config)), environment=environment)
     if environment == "testnet":
         client.set_sandbox_mode(True)
     try:

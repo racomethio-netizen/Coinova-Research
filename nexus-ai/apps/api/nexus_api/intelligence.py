@@ -258,7 +258,9 @@ async def market_intelligence(pairs: list[str], base: str, *, redis: Any, news_r
         return {**json.loads(cached), "cached": True}
     now = datetime.now(UTC)
     results: list[dict[str, Any]] = []
-    async with httpx.AsyncClient(timeout=15, trust_env=True) as client:
+    from nexus_common.proxy import httpx_kwargs
+
+    async with httpx.AsyncClient(timeout=15, trust_env=True, **httpx_kwargs()) as client:
         btc: dict[str, pd.DataFrame] | None = None
         for pair in sorted(pairs, key=lambda p: p != "BTC/USDT"):
             try:

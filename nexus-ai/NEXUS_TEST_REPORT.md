@@ -4,6 +4,22 @@ How to run: `scripts/test.sh` with `NEXUS_TEST_DATABASE_URL` and `NEXUS_TEST_RED
 (Postgres and Redis test databases; integration tests are skipped without them). Browser
 tests: `scripts/e2e.sh` (see the script header).
 
+## 2026-11-23: Binance-only static-IP proxy support
+
+* `tests/unit/test_binance_proxy.py` uses a local recording proxy (`tests/proxyserver.py`)
+  that, like QuotaGuard, requires Basic authentication.
+  * Real requests went through the proxy from httpx, a ccxt Binance client, an aiohttp
+    WebSocket, the `websockets` library, and NEXUS's own spot-stream connector.
+  * A wrong password gets HTTP 407 and is never sent around the proxy.
+  * Without the variable, nothing changes.
+  * The QuotaGuard variable name is supported.
+  * The log and status show host:port only, never the password.
+  * A malformed URL fails loudly.
+  * Only Binance clients get the proxy; the Kraken client does not.
+* Also fixed: the spot stream used aiohttp's deprecated `receive_timeout` argument; it now
+  uses `ClientWSTimeout`.
+* Full run: `scripts/test.sh`, 795 passed.
+
 ## 2026-11-23: post-deploy robustness fixes
 
 * **Trader start-up** (`tests/unit/test_trader_startup.py`).
