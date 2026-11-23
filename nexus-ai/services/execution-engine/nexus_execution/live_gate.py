@@ -13,7 +13,7 @@ Gates:
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from nexus_common.timeutil import utcnow
@@ -26,6 +26,7 @@ from sqlalchemy.orm import Session
 
 GATE_TOKEN = object()
 APPROVAL_MAX_AGE = timedelta(days=30)
+KEY_TEST_MAX_AGE = timedelta(days=7)
 
 
 def approval_problems(s: Session) -> list[str]:
@@ -53,6 +54,15 @@ def credential_problems(s: Session, exchanges: list[str]) -> list[str]:
             problems.append(f"{code}: no active production API credential")
         elif not cred.withdrawal_disabled_verified:
             problems.append(f"{code}: withdrawal permission not verified disabled")
+        else:
+            check = (cred.permissions or {}).get("last_check") or {}
+            spot = check.get("spot") or {}
+            at = check.get("checked_at")
+            if not check.get("ok") or not spot.get("spot_trading_enabled"):
+                problems.append(f"{code}: the last key test did not show spot trading "
+                                "permission (run Security > Test)")
+            elif at is None or utcnow() - datetime.fromisoformat(at) > KEY_TEST_MAX_AGE:
+                problems.append(f"{code}: the last key test is older than 7 days (run it again)")
     return problems
 
 

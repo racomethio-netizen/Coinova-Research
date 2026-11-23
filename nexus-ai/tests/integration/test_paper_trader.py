@@ -1247,3 +1247,50 @@ async def test_trading_bot_pipeline_entry_exits_guards_and_restart(
                                                           D(100))])
     st = await runner().cycle(end + timedelta(minutes=16))
     assert any("drawdown limit (3%)" in x for x in st["signals"][0]["reasons"]), st["signals"]
+
+
+async def test_owner_approved_bot_strategy_runs_in_the_main_trader(
+        engine_setup: tuple[Any, ...]) -> None:
+    """The bot strategy failed no validation because it never had one: the main trader
+    ignores it until the OWNER approves it (actor user:...). With approval it is listed,
+    passes the regime gate, and a signal becomes a sized order; a system actor cannot
+    approve; disabling removes it again."""
+    eng, factory, _, _ = engine_setup
+    eng.bootstrap()
+    with transaction(factory) as s:
+        row = s.scalar(select(models.Strategy).where(models.Strategy.code == "bot_ema_rsi_macd"))
+        assert row is not None
+        bot_id = row.id
+        for st in s.scalars(select(models.Strategy).where(models.Strategy.id != bot_id)):
+            st.is_enabled = False
+        row.is_enabled = True                       # enabled but not approved: ignored
+    assert eng.enabled_strategies() == []
+    with transaction(factory) as s:
+        row = s.get(models.Strategy, bot_id)
+        assert row is not None
+        row.parameters = {**(row.parameters or {}),
+                          "owner_override": {"active": True, "actor": "system:x"}}
+    assert eng.enabled_strategies() == []           # only the owner can approve
+    with transaction(factory) as s:
+        row = s.get(models.Strategy, bot_id)
+        assert row is not None
+        row.parameters = {**(row.parameters or {}),
+                          "owner_override": {"active": True, "actor": "user:1"}}
+    (sid, strat), = eng.enabled_strategies()
+    assert sid == bot_id and strat.code == "bot_ema_rsi_macd" and strat.history_bars == 3000
+    sig = Signal("bot_ema_rsi_macd", "BTC/USDT", "5m", datetime(2026, 6, 1, 12, tzinfo=UTC),
+                 60_000, 59_400, 61_200, 1.0, "trend_up", {"params": {}})
+    assert eng._regime_block(bot_id, sig) is None
+    v = await eng.valuation()
+    day0, week0, peak = eng.period_starts(v.equity, utcnow())
+    await eng.handle_signal(bot_id, sig, v, day0, week0, peak)
+    status, reason = await _decision(factory)
+    assert status == "executed", reason
+    with transaction(factory) as s:
+        order = s.scalar(select(models.Order).order_by(models.Order.id.desc()))
+        assert order is not None and order.mode == "paper" and order.purpose == "entry"
+        row = s.get(models.Strategy, bot_id)
+        assert row is not None
+        row.parameters = {**(row.parameters or {}),
+                          "owner_override": {"active": False, "actor": "user:1"}}
+    assert eng.enabled_strategies() == []

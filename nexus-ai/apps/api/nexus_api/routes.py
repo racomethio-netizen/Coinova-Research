@@ -529,6 +529,46 @@ async def activate_model(model_id: int, body: Totp, s: Session = Depends(db), re
     return {"ok": True}
 
 
+OWNER_APPROVAL_CODES = ("bot_ema_rsi_macd",)
+OWNER_APPROVAL_ACK = "I accept this strategy has not passed validation"
+
+
+class OwnerApproval(BaseModel):
+    active: bool
+    totp: str | None = Field(default=None, max_length=6)
+    acknowledgement: str | None = Field(default=None, max_length=120)
+
+
+@router.post("/strategies/{code}/owner-approval", dependencies=[Depends(owner)])
+async def strategy_owner_approval(code: str, body: OwnerApproval, s: Session = Depends(db),
+                                  redis: Any = Depends(redis_dep),
+                                  viewer: Viewer = Depends(current_viewer),
+                                  settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Owner decision to let the main trader run a strategy that has NOT passed validation
+    (paper now; live only if every live gate also passes). Enabling needs 2FA and the exact
+    acknowledgement; disabling (always safer) needs neither. Audited either way."""
+    if code not in OWNER_APPROVAL_CODES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "owner approval is not offered for "
+                                                         "this strategy")
+    row = s.scalar(select(models.Strategy).where(models.Strategy.code == code))
+    if row is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")
+    if body.active:
+        if body.acknowledgement != OWNER_APPROVAL_ACK:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                                f'type exactly: "{OWNER_APPROVAL_ACK}"')
+        await check_totp(viewer, body.totp or "", settings, redis)
+    now = utcnow()
+    params = dict(row.parameters or {})
+    params["owner_override"] = {"active": body.active, "actor": viewer.actor, "at": now.isoformat()}
+    row.parameters = params
+    row.is_enabled = body.active
+    repo.record_audit(s, actor=viewer.actor, user_id=viewer.user.id,
+                      action="strategy_owner_approval", target_type="strategy",
+                      target_id=code, details={"active": body.active})
+    return {"ok": True, "code": code, "active": body.active, "at": ser(now)}
+
+
 # ------------------------------------------------------------------ risk
 @router.get("/risk")
 async def risk(mode: Mode = "paper", s: Session = Depends(db), redis: Any = Depends(redis_dep),
@@ -1547,7 +1587,10 @@ async def trading_bot_status(s: Session = Depends(db), redis: Any = Depends(redi
     out: dict[str, Any] = {
         "mode": settings.bot_mode, "live_trading": "DISABLED", "simulated_balance": True,
         "pairs": list(settings.trading_pairs), "status": json.loads(raw) if raw else None,
-        "strategy": {"code": CODE, "params": _asdict(BotParams())},
+        "strategy": {"code": CODE, "params": _asdict(BotParams()),
+                     "owner_approval": ((s.scalar(select(models.Strategy.parameters).where(
+                         models.Strategy.code == CODE)) or {}).get("owner_override")),
+                     "acknowledgement": OWNER_APPROVAL_ACK},
         "risk": {k: (str(v) if not isinstance(v, (int, float)) else v)
                  for k, v in _asdict(BOT_RISK).items()}}
     sig = s.execute(select(models.TradingSignal, models.TradingPair.symbol)

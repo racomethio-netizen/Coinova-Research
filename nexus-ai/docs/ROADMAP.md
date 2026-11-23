@@ -768,3 +768,20 @@ TradingView's documentation.
 * **Tests:** 877 passed (unit + integration); e2e 15/15; alembic check clean.
 * **Next (owner):** enable spot trading on the key, fund USDT, and decide on a dedicated
   IP. Then the live gate and the supervised F2 order.
+
+## 2026-11-23: bot live path (owner: "Build live mode")
+
+* The bot strategy is also a main-trader `Strategy`: `BotEmaRsiMacd`, 5m with 15m, history
+  3,000 bars (`Strategy.history_bars`).
+* The owner can approve an unvalidated strategy:
+  * `POST /strategies/bot_ema_rsi_macd/owner-approval` with the exact acknowledgement and
+    2FA; audited; withdrawing it needs no 2FA;
+  * the trader honours it only when the actor is `user:...`.
+* The live gate now also requires a key test under 7 days old showing spot trading
+  permission.
+* Defaults are now the owner's conservative profile: 0.25% per trade, 1% daily, 3% drawdown,
+  2 positions.
+* Tests: 881 passed; e2e 15/15.
+* Next:
+  * exchange-side stop-limit orders for live positions;
+  * the owner's go-live steps (docs/TRADING_BOT.md).

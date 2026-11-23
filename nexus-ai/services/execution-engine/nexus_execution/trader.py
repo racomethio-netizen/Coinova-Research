@@ -80,6 +80,13 @@ log = get_logger("nexus.trader")
 BOOK_MAX_AGE = 15.0
 WS_BOOK_MAX_AGE = 5.0      # stream books update every second
 HISTORY_BARS = 600
+
+
+def owner_override(parameters: Any) -> bool:
+    """True when the OWNER approved trading this strategy without passed validation
+    (POST /strategies/{code}/owner-approval with 2FA; audited)."""
+    ov = (parameters or {}).get("owner_override") or {}
+    return bool(ov.get("active")) and str(ov.get("actor", "")).startswith("user:")
 MAX_EXIT_SLIPPAGE = Decimal("0.005")
 # Exit management: sell half at +1R once, then trail the rest at 2 x ATR(14, 1h).
 PARTIAL_R = Decimal("1")
@@ -400,15 +407,20 @@ class TradingEngine:
             for r in rows:
                 v = (r.parameters or {}).get("validation") or {}
                 params = (r.parameters or {}).get("params")
+                if owner_override(r.parameters) and r.code in ALL_STRATEGIES:
+                    # The OWNER approved this unvalidated strategy (2FA, audited).
+                    out.append((r.id, ALL_STRATEGIES[r.code](**(params or {}))))
+                    continue
                 if not v.get("passed") or params is None:
                     continue  # enabled flag without a passed validation is ignored
                 out.append((r.id, ALL_STRATEGIES[r.code](**params)))
             return out
 
-    def frames(self, exchange: str, symbol: str, tfs: tuple[str, ...]) -> dict[str, Any]:
+    def frames(self, exchange: str, symbol: str, tfs: tuple[str, ...],
+               limit: int = HISTORY_BARS) -> dict[str, Any]:
         with transaction(self.factory) as s:
             pid = repo.pair_id(s, exchange, symbol)
-            return {tf: to_frame(repo.load_candles(s, pid, tf, limit=HISTORY_BARS)) for tf in tfs}
+            return {tf: to_frame(repo.load_candles(s, pid, tf, limit=limit)) for tf in tfs}
 
     async def evaluate_entries(self, v: Valuation, day0: Decimal, week0: Decimal,
                                peak: Decimal) -> None:
@@ -418,7 +430,8 @@ class TradingEngine:
         signal_exchange = self.settings.signal_exchange
         for strat_id, strat in strategies:
             for symbol in self.settings.trading_pairs:
-                frames = self.frames(signal_exchange, symbol, strat.timeframes)
+                frames = self.frames(signal_exchange, symbol, strat.timeframes,
+                                     max(HISTORY_BARS, strat.history_bars))
                 if any(f.empty for f in frames.values()):
                     continue
                 sig = strat.latest(frames, symbol)
@@ -547,6 +560,8 @@ class TradingEngine:
         with transaction(self.factory) as s:
             row = s.get(models.Strategy, strat_id)
             val = ((row.parameters if row else None) or {}).get("validation") or {}
+            if row is not None and owner_override(row.parameters):
+                return None      # owner accepted trading it without validation evidence
         allowed = val.get("allowed_regimes")
         if allowed is None:
             return "no validated regime record for this strategy (re-run validation)"

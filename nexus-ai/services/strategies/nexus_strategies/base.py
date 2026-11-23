@@ -47,6 +47,7 @@ class Strategy(ABC):
     base_tf: ClassVar[str]
     confirm_tf: ClassVar[str]
     defaults: ClassVar[dict[str, float]]
+    history_bars: ClassVar[int] = 600        # bars per timeframe the live trader loads
 
     # Shared by all strategies: the target must be at least ``min_edge_x`` times the
     # assumed round-trip cost (fees + slippage, both legs) away from entry.

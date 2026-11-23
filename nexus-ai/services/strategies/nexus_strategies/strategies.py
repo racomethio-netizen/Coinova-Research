@@ -191,6 +191,8 @@ def _add_phase6() -> None:
     from nexus_strategies.library_v3 import V3_STRATEGIES
     ALL_STRATEGIES.update(CANDLE_STRATEGIES)
     ALL_STRATEGIES.update(V3_STRATEGIES)
+    from nexus_strategies.bot_strategy import CODE, BotEmaRsiMacd
+    ALL_STRATEGIES[CODE] = BotEmaRsiMacd
 
 
 _add_phase6()

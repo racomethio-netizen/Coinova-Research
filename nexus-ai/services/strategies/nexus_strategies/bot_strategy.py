@@ -137,3 +137,30 @@ def latest(sym: str, m5: pd.DataFrame, _btc: Any = None, p: BotParams | None = N
             "record": e or sum(bool(last[k]) for k in last.index if k.startswith("chk_")) >= 6,
             **{k: bool(last[k]) for k in last.index if k.startswith("chk_")}}
     return reg, [cand]
+
+
+def _strategy_class() -> type:
+    """The same rules as a main-trader ``Strategy`` (base 5m, confirm 15m), so the live
+    trader can run it once the OWNER approves it (it has not passed validation)."""
+    from typing import ClassVar
+
+    from nexus_strategies.base import Strategy
+
+    class BotEmaRsiMacd(Strategy):
+        code = CODE
+        base_tf, confirm_tf = "5m", "15m"
+        defaults: ClassVar[dict[str, float]] = {}
+        history_bars: ClassVar[int] = 3000   # 1h EMA50 from 5m needs 1,800+ bars
+
+        def rules(self, df: pd.DataFrame) -> pd.DataFrame:
+            s = signals(df[["open", "high", "low", "close", "volume"]])
+            checks = [c for c in s.columns if c.startswith("chk_")]
+            return pd.DataFrame({"entry": s["entry"], "exit": s["exit"], "stop": s["stop"],
+                                 "target": s["target"],
+                                 "confidence": s[checks].sum(axis=1) / len(checks)},
+                                index=df.index)
+
+    return BotEmaRsiMacd
+
+
+BotEmaRsiMacd = _strategy_class()

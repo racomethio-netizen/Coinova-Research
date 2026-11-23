@@ -1,6 +1,8 @@
 "use client";
 
-import { Badge, Card, Loading, PageHeader, Stat, Table } from "@/components/ui";
+import { useState } from "react";
+import { api } from "@/lib/api";
+import { Badge, Button, Card, Field, Loading, PageHeader, Stat, Table } from "@/components/ui";
 import { DASH, num, pct, time } from "@/lib/format";
 import { useApi } from "@/lib/hooks";
 
@@ -13,8 +15,37 @@ const CHECKS: [string, string][] = [
   ["volume", "Volume > 1.2x average"], ["beats_costs", "Target covers 3x costs"],
 ];
 
+function OwnerApproval({ r, reload }: { r: Any; reload: () => Promise<void> | void }) {
+  const [ack, setAck] = useState("");
+  const [totp, setTotp] = useState("");
+  const [msg, setMsg] = useState<string | null>(null);
+  const appr = r.strategy?.owner_approval;
+  const send = async (active: boolean) => {
+    setMsg(null);
+    try {
+      await api.post(`/strategies/${r.strategy.code}/owner-approval`, active ? { active, acknowledgement: ack, totp } : { active });
+      setAck(""); setTotp(""); await reload();
+    } catch (e) { setMsg(e instanceof Error ? e.message : String(e)); }
+  };
+  return (
+    <Card title="Owner approval for the main trader" actions={<Badge tone={appr?.active ? "warn" : "muted"}>{appr?.active ? "approved" : "not approved"}</Badge>}>
+      <p className="mb-2 text-sm">Approval lets the main trader (the engine that can trade live, behind every live gate) run this strategy although it has not passed validation. In paper mode it trades the simulated main portfolio. Real orders additionally need live mode, your live approval, a verified key with trading permission and a funded ledger.</p>
+      {appr?.active ? (
+        <div className="flex flex-wrap items-center gap-3 text-sm"><span>Approved by {appr.actor} at {time(appr.at)}.</span><Button tone="danger" onClick={() => send(false)}>Withdraw approval</Button></div>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-3">
+          <Field id="bot-ack" label={`Type: ${r.strategy?.acknowledgement ?? ""}`} value={ack} onChange={setAck} />
+          <Field id="bot-totp" label="Two-factor code" value={totp} onChange={setTotp} inputMode="numeric" />
+          <div className="flex items-end"><Button tone="primary" disabled={ack !== r.strategy?.acknowledgement || totp.length !== 6} onClick={() => send(true)}>Approve</Button></div>
+        </div>
+      )}
+      {msg && <p role="alert" className="mt-2 text-sm text-down">{msg}</p>}
+    </Card>
+  );
+}
+
 export default function TradingBot() {
-  const { data: r, error, loading } = useApi<Any>("/trading-bot", 15_000);
+  const { data: r, error, loading, reload } = useApi<Any>("/trading-bot", 15_000);
   const st = r?.status;
   const risk = st?.risk ?? {};
   const open = (r?.positions ?? []).filter((p: Any) => p.status === "open");
@@ -93,6 +124,7 @@ export default function TradingBot() {
               { key: "fee", label: "Fee", numeric: true, render: (o: Any) => num(o.fee, 4) },
             ]} />
           </Card>
+          <OwnerApproval r={r} reload={reload} />
           <Card title="Risk limits">
             <p className="text-sm">Risk {pct(r.risk.risk_per_trade, 2)} per trade (max {pct(r.risk.max_risk_per_trade, 2)}) · daily loss {pct(r.risk.max_daily_drawdown, 0)} · drawdown {pct(r.risk.max_drawdown, 0)} · up to {r.risk.max_positions} positions · stop 1.5 ATR · take-profit 2R · time stop 4 hours.</p>
             <p className="mt-2 text-xs text-muted">This type of indicator strategy lost money after costs in every NEXUS backtest. It runs so the full pipeline can be watched working; no profit is implied.</p>

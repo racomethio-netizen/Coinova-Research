@@ -606,3 +606,25 @@ def test_technical_analysis_routes_on_stored_candles(client: TestClient,
         assert client.get("/api/v1/analysis/mtf?symbol=DOGE/USDT").status_code == 404
     finally:
         truncate(migrated_engine, "market_candles, trading_pairs")
+
+
+def test_owner_approval_of_bot_strategy_needs_ack_and_totp(client: TestClient) -> None:
+    login(client)
+    url = "/api/v1/strategies/bot_ema_rsi_macd/owner-approval"
+    ack = "I accept this strategy has not passed validation"
+    r = client.post(url, json={"active": True, "acknowledgement": "yes"}, headers=CSRF)
+    assert r.status_code == 400 and "type exactly" in r.json()["detail"]
+    r = client.post(url, json={"active": True, "acknowledgement": ack}, headers=CSRF)
+    assert r.status_code == 403                         # no two-factor configured or code
+    assert client.post("/api/v1/strategies/momentum/owner-approval",
+                       json={"active": True, "acknowledgement": ack},
+                       headers=CSRF).status_code == 400   # only the bot strategy is offered
+    secret = _enable_totp(client)
+    used: set[int] = set()
+    r = client.post(url, json={"active": True, "acknowledgement": ack,
+                               "totp": _fresh_code(secret, used)}, headers=CSRF)
+    assert r.status_code == 200 and r.json()["active"] is True
+    status = client.get("/api/v1/trading-bot").json()["strategy"]["owner_approval"]
+    assert status["active"] is True and status["actor"].startswith("user:")
+    off = client.post(url, json={"active": False}, headers=CSRF)   # disabling: no 2FA
+    assert off.status_code == 200 and off.json()["active"] is False

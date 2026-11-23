@@ -27,32 +27,40 @@ following.
 5. Persists every order, fill, position and qualifying signal, and recovers from the
    database after a restart.
 
-## Modes (`NEXUS_BOT_MODE`)
+## Modes
 
-| Mode | What happens |
-|---|---|
-| `off` | The worker does not start. |
-| `monitor` | Market monitoring: evaluations and signals only, no orders. |
-| `paper` (default) | Orders fill against the **live Binance order book** (latency, partial fills, Binance's order rules) with a **simulated** 10,000 USDT balance in the `nexus-bot` paper portfolio. |
-| live | **Not available from the bot.** Real orders go only through the main trader's live gate, after the owner's explicit activation. |
+| Mode | How | What happens |
+|---|---|---|
+| Market monitoring | `NEXUS_BOT_MODE=monitor` | The bot worker evaluates and records signals; no orders. |
+| Paper | `NEXUS_BOT_MODE=paper` (default) | The bot worker fills against the **live Binance order book** with a **simulated** 10,000 USDT balance (portfolio `nexus-bot`). |
+| Binance spot live | Owner steps below | The **main trader** runs the same strategy (`bot_ema_rsi_macd`, base 5m and confirm 15m, identical rules) with real orders, behind every live gate. |
 
-Live trading stays **disabled** until the owner enables it.
+## Going live (owner steps, in this order; none can be done by code)
 
-## Before real orders could ever be enabled (owner steps)
+1. **Key test.** Dashboard → Security → Binance credential "Spot" → **Test**. The live gate
+   now requires a test from the last 7 days that shows spot trading permission, with
+   withdrawals disabled.
+2. **Approve the strategy.**
+   * Dashboard → Trading bot → "Owner approval": type the acknowledgement and your 2FA
+     code. This is audited, and you can withdraw it at any time without 2FA.
+   * The main trader then runs it. In paper mode it trades the simulated `main` portfolio,
+     which rehearses the live path.
+3. **Seed the live ledger.** Dashboard → Settings / Operating mode → fund the live ledger
+   with the USDT amount the bot may use (at most what is on Binance).
+4. **Set live configuration.** In Render → Environment, set:
+   * `NEXUS_TRADING_MODE=live`
+   * `NEXUS_LIVE_TRADING_ENABLED=true`
+   * `NEXUS_LIVE_TRADING_ACK` = the exact phrase shown on the Settings page
+   Then redeploy. The paper workers stop in live mode.
+5. **Approve live trading** with 2FA on Settings → Live trading. The card lists any
+   blocker left.
+6. **Watch the first trade.** NEXUS reconciles every order with Binance by client order ID.
+   The kill switch (Risk page) stops everything immediately.
 
-The last connection check (22 Nov 2026) showed the following.
-1. **The production API key has spot trading switched OFF** (`spot_trading_enabled: false`).
-   In Binance API management, enable "Spot & Margin Trading" on that key and keep
-   withdrawals disabled. Never share your password or seed phrase.
-2. **The account holds 0 USDT.** Real orders need funds.
-3. **The Render egress IP is shared.** Binance can rate-limit or ban it because of other
-   tenants. A dedicated IP (Oracle Always Free, or a paid static IP) avoids this.
-4. Then the existing live gate applies:
-   * owner 2FA approval with the acknowledgement phrase;
-   * the key re-verified;
-   * the kill switch clear;
-   * a supervised small testnet order and then a live order (F2);
-   * the full test suite green.
+**Known limit:** stop-losses are enforced by NEXUS each cycle. They are market exits when
+the bid reaches the stop; there is no resting stop order on Binance. If the NEXUS service is
+down, the stop waits until it is back. Placing exchange-side stop-limit orders for live
+positions is the next improvement.
 
 ## Where to see it
 

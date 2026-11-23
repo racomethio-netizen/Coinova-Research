@@ -267,7 +267,25 @@ async def test_live_gate(factory: sessionmaker[Session]) -> None:
         s.add(models.ExchangeCredential(
             user_id=uid, exchange_id=repo.exchange_id(s, "binance"), label="main",
             api_key_encrypted=b"x", api_secret_encrypted=b"x", key_fingerprint="f",
-            encryption_key_id="k1", withdrawal_disabled_verified=True))
+            encryption_key_id="k1", withdrawal_disabled_verified=True,
+            permissions={"last_check": {"ok": True, "checked_at": utcnow().isoformat(),
+                                        "spot": {"ok": True, "spot_trading_enabled": False}}}))
+    with transaction(factory) as s:
+        # A key test without spot trading permission blocks live trading.
+        assert any("spot trading permission" in p
+                   for p in await live_gate_problems(ok_settings, s, redis, ["binance"]))
+        cred = s.scalar(select(models.ExchangeCredential))
+        assert cred is not None
+        cred.permissions = {"last_check": {"ok": True, "spot": {"spot_trading_enabled": True},
+                                           "checked_at": (utcnow() - timedelta(days=8))
+                                           .isoformat()}}
+    with transaction(factory) as s:
+        assert any("older than 7 days" in p
+                   for p in await live_gate_problems(ok_settings, s, redis, ["binance"]))
+        cred = s.scalar(select(models.ExchangeCredential))
+        assert cred is not None
+        cred.permissions = {"last_check": {"ok": True, "spot": {"spot_trading_enabled": True},
+                                           "checked_at": utcnow().isoformat()}}
     with transaction(factory) as s:
         assert await live_gate_problems(ok_settings, s, redis, ["binance"]) == []
         broker = await build_live_broker(ok_settings, s, redis, {})
