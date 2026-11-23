@@ -97,8 +97,10 @@ Built, tested and validated once on unseen 2022-2024 data: all 7 FAIL (NEXUS_BAC
 
 ## Owner decisions needed (cannot be done by code)
 
-1. A paid host with a dedicated or less-shared IP (Render Standard or similar) before any
-   live trading; free hosting is fine for paper.
+1. A dedicated outbound IP before any live trading. The service is on a paid Render
+   instance since 22 Nov, but outbound IPs stay shared per region; it needs Render
+   Dedicated IPs (Pro workspace plus a fee) or a static-IP proxy. Paper trading is fine
+   without one.
 2. Approval for a supervised minimum-size real order test (F2); demo keys are not used.
 3. Approval to switch the production DB role (A4).
 4. X Bearer token, if X sentiment is wanted.

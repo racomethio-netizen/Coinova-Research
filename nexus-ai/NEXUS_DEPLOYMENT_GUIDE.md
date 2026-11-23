@@ -1,6 +1,7 @@
 # NEXUS deployment guide
 
-Production today: Render web service `nexus-ai-fra` (Frankfurt, free plan, 512 MB) running
+Production today: Render web service `nexus-ai-fra` (Frankfurt, paid instance
+`0.5c-512mb` since 22 Nov 19:43 UTC: 0.5 CPU, 512 MB) running
 the API with the workers inside it; Postgres on Supabase; Redis on Render Key Value. The
 service auto-deploys from GitHub `racomethio-netizen/nexus-ai` branch `main`. Start command
 (DEPLOY_RENDER.md): `alembic upgrade head && uvicorn ...`, so migrations run on every
@@ -66,8 +67,13 @@ Never paste the password into a chat; it goes only into Supabase and Render.
 
 ## Not done by code (owner decisions)
 
-* Paid hosting with its own outbound IP before any live trading (the free plan shares its
-  IP with other users, which caused the Binance bans).
+* **Its own outbound IP before any live trading.** The service is on a paid instance, but
+  Render's outbound IPs are still shared by every service in the region ("Outbound IP ranges
+  are shared across all services in the same region", render.com/docs/outbound-ip-addresses).
+  The logs agree: after the upgrade Binance still reported up to about 3,100 weight used
+  per minute for this IP, while NEXUS itself sent very little. A dedicated IP needs Render's
+  "Dedicated IPs" add-on (Pro workspace plan or higher, an extra monthly fee per set of 3
+  IPs: render.com/docs/dedicated-ips), or an external static-IP proxy.
 * Approval for one supervised, minimum-size real order round trip on Binance before
   exchange-side stops are used (plan item F2). Demo keys are not used (owner decision
   23 Nov).
