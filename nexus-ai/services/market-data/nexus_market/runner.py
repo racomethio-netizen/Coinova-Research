@@ -459,7 +459,7 @@ async def _relay(src: asyncio.Event, dst: asyncio.Event) -> None:
 
 async def serve(settings: Settings, stop: asyncio.Event) -> None:
     """Run until ``stop`` is set (used by main() and by the API's inline worker mode)."""
-    engine = make_engine(settings.database_url.get_secret_value())
+    engine = make_engine(settings.database_url.get_secret_value(), pool_size=3, max_overflow=2)
     redis = connect_redis(settings.redis_url.get_secret_value())
     from nexus_common.binance_guard import set_default_redis
 

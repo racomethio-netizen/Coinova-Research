@@ -125,7 +125,7 @@ async def daily_reports(factory: sessionmaker[Session], redis: Any, now: datetim
 async def serve(settings: Settings, stop: asyncio.Event) -> None:
     """Run until ``stop`` is set (used by main() and by the API's inline worker mode)."""
     redis = connect_redis(settings.redis_url.get_secret_value())
-    engine = make_engine(settings.database_url.get_secret_value(), pool_size=2)
+    engine = make_engine(settings.database_url.get_secret_value(), pool_size=1, max_overflow=1)
     factory = make_session_factory(engine)
     sender = None
     if settings.telegram_bot_token and settings.telegram_chat_id:

@@ -169,7 +169,7 @@ async def serve(settings: Any, stop: asyncio.Event) -> None:
     from nexus_common.redisutil import connect as connect_redis
     from nexus_db import make_engine, make_session_factory
 
-    engine = make_engine(settings.database_url.get_secret_value())
+    engine = make_engine(settings.database_url.get_secret_value(), pooled=False)
     factory = make_session_factory(engine)
     redis = connect_redis(settings.redis_url.get_secret_value())
     try:
