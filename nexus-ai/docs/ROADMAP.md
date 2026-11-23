@@ -818,3 +818,7 @@ TradingView's documentation.
 * `GET /metrics` for Prometheus (token-gated; no balances).
 * Tests: 889 passed.
 * Next (Phase 2 / 5): exchange-side protective stops; an OKX adapter on OKX demo trading.
+* Redis connection fix: Render's free Key Value allows 50 connections. Deploy overlap
+  reached 49 (16:30 UTC), causing "Timeout connecting to server" and two dashboard 500s at
+  17:03 UTC. Every Redis client now uses a bounded blocking pool (workers 3, API 8,
+  5 s wait).

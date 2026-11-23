@@ -34,7 +34,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.engine = make_engine(settings.database_url.get_secret_value(), pool_size=3,
                                        max_overflow=2)
         app.state.factory = make_session_factory(app.state.engine)
-        app.state.redis = connect_redis(settings.redis_url.get_secret_value())
+        # The API serves concurrent dashboard requests: a larger (still bounded) pool.
+        app.state.redis = connect_redis(settings.redis_url.get_secret_value(),
+                                        max_connections=8)
         from nexus_common.binance_guard import set_default_redis
 
         set_default_redis(app.state.redis)
