@@ -148,6 +148,16 @@ def _code(secret: str, offset: int = 0) -> str:
     return totp._code(secret, int(time.time() // 30) + offset)
 
 
+def _fresh_code(secret: str, used: set[int]) -> str:
+    """A valid code for a 30 s step not used yet in this test (codes are single-use; a
+    step boundary between two requests must not make the test reuse one)."""
+    import time
+    now = int(time.time() // 30)
+    step = next(st for st in (now, now + 1, now - 1) if st not in used)
+    used.add(step)
+    return totp._code(secret, step)
+
+
 def test_kill_switch_engage_easy_clear_needs_totp(client: TestClient) -> None:
     login(client)
     assert client.post("/api/v1/risk/kill-switch", json={"reason": "manual stop"},
@@ -542,11 +552,14 @@ def test_operating_mode_easy_to_lower_live_locked_and_ledger_needs_live_portfoli
     r = client.post("/api/v1/settings/operating-mode", json=live, headers=CSRF)
     assert r.status_code == 403                                               # 2FA
     secret = _enable_totp(client)
-    r = client.post("/api/v1/settings/operating-mode", json={**live, "totp": _code(secret, 1)},
-                    headers=CSRF)
+    import time
+    used = {int(time.time() // 30)}            # the step used to enable 2FA
+    r = client.post("/api/v1/settings/operating-mode",
+                    json={**live, "totp": _fresh_code(secret, used)}, headers=CSRF)
     assert r.status_code == 409 and "not permitted" in r.json()["detail"]
     assert client.get("/api/v1/settings/operating-mode").json()["mode"] == "SIGNALS_ONLY"
-    fund = {"amount": "10", "confirm": "FUND LIVE LEDGER", "totp": _code(secret, 0)}
+    fund = {"amount": "10", "confirm": "FUND LIVE LEDGER",
+            "totp": _fresh_code(secret, used)}
     r = client.post("/api/v1/live/ledger/fund", json=fund, headers=CSRF)
     assert r.status_code == 409 and "no live portfolio" in r.json()["detail"]
     bad = client.post("/api/v1/live/ledger/fund", json={**fund, "confirm": "yes"}, headers=CSRF)

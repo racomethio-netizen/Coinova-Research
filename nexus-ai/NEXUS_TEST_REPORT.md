@@ -4,6 +4,37 @@ How to run: `scripts/test.sh` with `NEXUS_TEST_DATABASE_URL` and `NEXUS_TEST_RED
 (Postgres and Redis test databases; integration tests are skipped without them). Browser
 tests: `scripts/e2e.sh` (see the script header).
 
+## 2026-11-23: Phase H (decision log)
+
+* `tests/unit/test_decision_log.py` covers what gets recorded and when.
+  * Strategy verdicts are compacted.
+  * Small input changes do not create a new row; a change to the decision, blockers, risk
+    state or setups does.
+  * Write rules: never twice for one bar, never for an older bar, hourly when unchanged.
+  * The snapshot ID format is fixed.
+  * The rejection reason is the first blocker, or the real reason, never the generic
+    "SHORT not available" note.
+  * A pair without candles writes no row.
+* `tests/integration/test_decision_log.py` runs on PostgreSQL.
+  * Change and heartbeat writes work, pairs are independent, and writes are idempotent.
+  * The trigger refuses UPDATE, and DELETE of a recent row.
+  * Pruning removes only rows older than 180 days.
+* `/api/v1/decision/log` was added to the "every route requires sign-in" and "works when
+  signed in" tests.
+* Smoke run on the local copy of real Binance history:
+  * one NO_TRADE per pair, with snapshot `binance:BTC/USDT:15m@2026-11-14T09:00:00+00:00`;
+  * reason "risk state unknown" (no risk state is cached locally);
+  * all 16 strategies "failed out-of-sample validation";
+  * about 2.4 KB per row.
+* Migration 0014 was upgraded, checked with `alembic check`, downgraded and upgraded again.
+* **Fixed a timing flake** in `test_operating_mode_easy_to_lower_...`. The test reused a
+  two-factor code when a 30 s boundary fell between two requests, and the code was
+  correctly refused as already used. It now always takes an unused step.
+* **Full run:** `scripts/test.sh`, 789 passed.
+* **Browser (e2e):** 13 passed, including the new Decision log page on desktop and at
+  360 px. The same 2 failures as in earlier phases remain: "validation results are shown
+  honestly" needs validation rows in the e2e database. 1 skipped by design.
+
 ## 2026-11-23: Phase G1 (backtesting: slippage model, reports, parameter stability)
 
 `tests/unit/test_backtest_g1.py`:

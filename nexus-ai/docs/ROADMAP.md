@@ -580,3 +580,19 @@ trading on Render can use live data once background workers are approved.
     losses are not a tuning problem.
 * **Not changed:** any strategy's validation result, the trader, and live trading (off).
 * **Next:** Phase H (dashboard and documents), unless the owner provides the demo key for F2.
+
+## 2026-11-23: Phase H (dashboard: decision log; documents)
+
+* **Completed: the decision log, end to end.**
+  * Worker `decision-log`, migration 0014 (`decision_logs`, append-only, 180-day
+    retention), API `/decision/log`, and a Decision log page in the dashboard (AI Analysis
+    section).
+  * The other Phase H1 items already existed: risk-state badge, mode switch,
+    reconciliation panel, data-quality page, AI models page, Trade candidates page.
+* **Documents updated:** NEXUS_ARCHITECTURE.md (decision log, order types, backtesting),
+  NEXUS_DEPLOYMENT_GUIDE.md (migrations 0013/0014), the implementation plan and the test
+  report.
+* **Tested:** 789 passed. e2e: 13 passed, plus the same 2 failures as earlier phases.
+* **Not deployed.** The F1, G1 and H work ship together in the next deploy, which needs the
+  owner's go-ahead. Migrations 0013 and 0014 run automatically on deploy.
+* **Next:** F2 (needs the owner's Binance demo key) or deploy.
