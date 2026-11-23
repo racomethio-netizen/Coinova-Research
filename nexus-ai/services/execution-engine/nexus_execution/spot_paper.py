@@ -21,7 +21,8 @@ from __future__ import annotations
 
 import asyncio
 import json
-from dataclasses import asdict
+from collections.abc import Callable
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
@@ -108,6 +109,12 @@ def latest_candidates(sym: str, m15: pd.DataFrame, btc_h4: pd.DataFrame | None
     return reg, out
 
 
+def _exit_reason(kind: str, tp1_fraction: float) -> str:
+    if kind == "tp1":
+        return "take_profit" if tp1_fraction >= 1 else "partial_take_profit"
+    return kind
+
+
 def _jsonable(v: Any) -> Any:
     if v is None or (isinstance(v, float) and pd.isna(v)):
         return None
@@ -119,15 +126,45 @@ def _jsonable(v: Any) -> Any:
         return str(v)
 
 
+@dataclass(frozen=True)
+class EngineProfile:
+    """What differs between engines that share this runner (spot engine, NEXUS bot)."""
+    portfolio: str = PORTFOLIO
+    status_key: str = STATUS_KEY
+    redis_prefix: str = "nexus:spot_engine"
+    engine: str = "spot"
+    base_tf: str = "15m"
+    bar: pd.Timedelta = Q
+    bars: int = BARS
+    warmup_bars: int = WARMUP_BARS
+    warmup_note: str = "no new entries until the 4h EMA200 is settled"
+    stale_after: timedelta = STALE_AFTER
+    # None = this module's ``latest_candidates`` (looked up at call time).
+    candidates: Callable[..., tuple[pd.DataFrame, list[dict[str, Any]]]] | None = None
+    btc_per_4h: int = 16                       # base bars per 4h bar
+    breakdown: tuple[str, ...] = ("h4_above_ema200", "h1_above_ema200", "h1_ema50_above_200",
+                                  "h1_adx", "h1_structure", "h1_atr_pct", "quote_vol_24h")
+    tp_r: tuple[float, float] = (1.5, 3.0)      # TP1 and target in R from the fill
+    max_hold: timedelta | None = None          # time stop
+    use_exit_signal: bool = False              # strategy invalidation exits
+    portfolio_guards: bool = False             # peak-drawdown halt and protections
+    monitor_only: bool = False                 # signals only, no orders
+
+
+SPOT = EngineProfile()
+
+
 class SpotPaperRunner:
     def __init__(self, settings: Settings, factory: sessionmaker[Session], redis: Any,
                  adapters: dict[str, Any], books: Any, broker: PaperBroker,
-                 cfg: SpotRiskConfig | None = None) -> None:
+                 cfg: SpotRiskConfig | None = None, profile: EngineProfile | None = None
+                 ) -> None:
         if settings.trading_mode is not TradingMode.PAPER or not isinstance(broker, PaperBroker):
-            raise PermissionError("the spot engine runner is paper-only")
+            raise PermissionError("this runner is paper-only")
         self.settings, self.factory, self.redis = settings, factory, redis
         self.adapters, self.books, self.broker = adapters, books, broker
         self.cfg = cfg or SpotRiskConfig()
+        self.p = profile or SPOT
         self.orders = OrderManager(factory, broker, redis=redis)
         self.portfolio_id = 0
 
@@ -139,14 +176,15 @@ class SpotPaperRunner:
                 raise RuntimeError("no owner account")
             p = s.scalar(select(models.Portfolio).where(
                 models.Portfolio.user_id == owner.id, models.Portfolio.mode == "paper",
-                models.Portfolio.name == PORTFOLIO))
+                models.Portfolio.name == self.p.portfolio))
             if p is None:
-                p = models.Portfolio(user_id=owner.id, name=PORTFOLIO, mode="paper",
+                p = models.Portfolio(user_id=owner.id, name=self.p.portfolio, mode="paper",
                                      quote_currency="USDT", initial_capital=CAPITAL)
                 s.add(p)
                 s.flush()
                 fund_paper_portfolio(s, p.id, repo.exchange_id(s, EXCHANGE), "USDT", CAPITAL)
-                repo.record_audit(s, actor="system:spot-engine", action="paper_portfolio_funded",
+                repo.record_audit(s, actor=f"system:{self.p.portfolio}",
+                                  action="paper_portfolio_funded",
                                   target_type="portfolio", target_id=str(p.id),
                                   details={"virtual_capital": str(CAPITAL), "paper_only": True})
             self.portfolio_id = p.id
@@ -155,7 +193,7 @@ class SpotPaperRunner:
     def frames(self, symbol: str) -> pd.DataFrame:
         with transaction(self.factory) as s:
             pid = repo.pair_id(s, EXCHANGE, symbol)
-            return to_frame(repo.load_candles(s, pid, "15m", limit=BARS))
+            return to_frame(repo.load_candles(s, pid, self.p.base_tf, limit=self.p.bars))
 
     # ------------------------------------------------------------------ state
     def _positions(self) -> list[tuple[models.Position, dict[str, Any], str, bool]]:
@@ -193,8 +231,35 @@ class SpotPaperRunner:
             cooldown = closed[0][1] + self.cfg.cooldown
         return cash, cooldown, streak
 
+    def _guards(self, now: datetime, equity: float) -> tuple[float, list[Any]]:
+        """Peak equity (capital plus the running maximum of realised P&L, and equity now) and
+        the active protection locks, both from the database so a restart keeps them."""
+        from nexus_risk.protections import ClosedTrade, ProtectionConfig, evaluate
+
+        with transaction(self.factory) as s:
+            rows = s.execute(select(models.Position, models.TradingPair.symbol)
+                             .join(models.TradingPair,
+                                   models.TradingPair.id == models.Position.pair_id)
+                             .where(models.Position.portfolio_id == self.portfolio_id,
+                                    models.Position.status == "closed")
+                             .order_by(models.Position.closed_at)).all()
+            port = s.get(models.Portfolio, self.portfolio_id)
+            capital = float(port.initial_capital or CAPITAL) if port is not None else equity
+        run = peak = capital
+        trades = []
+        for pos, sym in rows:
+            if pos.closed_at is None:
+                continue
+            pnl = float(pos.realized_pnl or 0)
+            run += pnl
+            peak = max(peak, run)
+            notional = float(pos.avg_entry_price) * float(pos.quantity or 0) or 1.0
+            trades.append(ClosedTrade(sym.replace("/", ""), "bot", pos.closed_at, pnl,
+                                      pnl / notional, pos.exit_reason or ""))
+        return max(peak, equity), evaluate(trades, now, ProtectionConfig(), equity_now=equity)
+
     async def _period_start(self, key: str, equity: float) -> float:
-        k = f"nexus:spot_engine:{key}"
+        k = f"{self.p.redis_prefix}:{key}"
         await self.redis.set(k, str(equity), nx=True, ex=9 * 86400)
         raw = await self.redis.get(k)
         return float(raw) if raw else equity
@@ -214,7 +279,7 @@ class SpotPaperRunner:
                 btc = self.frames("BTC/USDT")
             except LookupError:
                 btc = None
-        btc_h4 = resample(btc, "4h", 16) if btc is not None and len(btc) else None
+        btc_h4 = resample(btc, "4h", self.p.btc_per_4h) if btc is not None and len(btc) else None
         killed = await KillSwitch(self.redis).is_engaged()
         books = {s: await self.books.get(EXCHANGE, s) for s in symbols}
         marks = {s: float(b.mid) for s, b in books.items() if b is not None and b.mid}
@@ -225,9 +290,12 @@ class SpotPaperRunner:
         st = BookState(equity, cash, [], await self._period_start(f"day:{now:%Y-%m-%d}", equity),
                        await self._period_start(f"week:{now:%G-%V}", equity),
                        losses_in_a_row=streak, cooldown_until=cooldown)
+        if self.p.portfolio_guards:
+            st.peak_equity, st.locks = self._guards(now, equity)
         status: dict[str, Any] = {"at": now.isoformat(), "live_trading": "DISABLED",
-                                  "mode": "paper", "kill_switch": killed, "symbols": {},
-                                  "risk": {}, "signals": []}
+                                  "mode": "monitor" if self.p.monitor_only else "paper",
+                                  "engine": self.p.engine, "kill_switch": killed,
+                                  "symbols": {}, "risk": {}, "signals": []}
         # Positions as rule objects (levels from the entry order; stop from the position row).
         rule_pos: dict[int, tuple[Position, models.Position, str]] = {}
         for p, det, sym, tp1_done in held:
@@ -241,22 +309,22 @@ class SpotPaperRunner:
             st.positions.append(rp)
         for sym in symbols:
             m15 = data[sym]
-            fresh = len(m15) > 0 and now - (m15.index[-1] + Q).to_pydatetime() <= STALE_AFTER
+            fresh = len(m15) > 0 and now - (m15.index[-1] + self.p.bar).to_pydatetime() \
+                <= self.p.stale_after
             info: dict[str, Any] = {"fresh": fresh, "bars": len(m15)}
             status["symbols"][sym] = info
             if len(m15) == 0:
                 continue
-            warm = len(m15) >= WARMUP_BARS
-            reg, cands = latest_candidates(sym, m15, btc_h4)
+            warm = len(m15) >= self.p.warmup_bars
+            reg, cands = (self.p.candidates or latest_candidates)(sym, m15, btc_h4)
             r = reg.iloc[-1]
+            invalidated = self.p.use_exit_signal and any(bool(c.get("exit")) for c in cands)
             if not warm:
-                info["note"] = (f"warming up: {len(m15)} of {WARMUP_BARS} 15m bars stored; "
-                                "no new entries until the 4h EMA200 is settled")
+                info["note"] = (f"warming up: {len(m15)} of {self.p.warmup_bars} "
+                                f"{self.p.base_tf} bars stored; {self.p.warmup_note}")
                 cands = []
             info.update(regime=r["regime"], trend=r["trend"], btc_risk_off=bool(r["btc_risk_off"]),
-                        breakdown={k: _jsonable(r[k]) for k in (
-                            "h4_above_ema200", "h1_above_ema200", "h1_ema50_above_200",
-                            "h1_adx", "h1_structure", "h1_atr_pct", "quote_vol_24h")},
+                        breakdown={k: _jsonable(r.get(k)) for k in self.p.breakdown},
                         last_bar=str(m15.index[-1]), warm=warm)
             # (a) manage this symbol's positions on the latest closed bar
             bar = m15.iloc[-1]
@@ -272,6 +340,11 @@ class SpotPaperRunner:
                 if emergency and book is not None:
                     await self._exit(row, sym, Decimal(str(rp.qty)), "emergency", book)
                     continue
+                timed_out = self.p.max_hold is not None and now - row.opened_at >= self.p.max_hold
+                if not fills and (invalidated or timed_out) and book is not None:
+                    await self._exit(row, sym, Decimal(str(rp.qty)),
+                                     "invalidation" if invalidated else "time_limit", book)
+                    continue
                 for f in fills:
                     if book is None:
                         break
@@ -284,6 +357,13 @@ class SpotPaperRunner:
                             db.stop_loss = Decimal(str(round(rp.stop, 8)))
             # (b) candidates on this bar
             for c in cands:
+                if self.p.engine == "bot":
+                    info["last_eval"] = {"bar": str(c["bar"]), "entry": bool(c["entry"]),
+                                         "reason": c.get("reason"),
+                                         "checks": {k[4:]: bool(v) for k, v in c.items()
+                                                    if k.startswith("chk_")}}
+                if not c.get("record", True):
+                    continue
                 await self._candidate(sym, c, reg, st, books.get(sym), fresh, killed, now, status)
         status["risk"] = {
             "equity": equity, "cash": cash, "open_positions": len(held),
@@ -293,7 +373,7 @@ class SpotPaperRunner:
             "limits": {k: (str(v) if isinstance(v, timedelta) else v)
                        for k, v in asdict(self.cfg).items()},
             "losses_in_a_row": streak, "cooldown_until": cooldown.isoformat() if cooldown else None}
-        await self.redis.set(STATUS_KEY, json.dumps(status, default=str), ex=3600)
+        await self.redis.set(self.p.status_key, json.dumps(status, default=str), ex=3600)
         return status
 
     async def _exit(self, row: models.Position, sym: str, qty: Decimal, kind: str, book: Any) -> None:
@@ -308,8 +388,8 @@ class SpotPaperRunner:
                 portfolio_id=self.portfolio_id, mode="paper", exchange=EXCHANGE, symbol=sym,
                 side=Side.SELL, amount=qty, price=price, purpose="exit", expected_price=bid,
                 time_in_force=TimeInForce.IOC, position_id=row.id,
-                details={"exit_reason": "partial_take_profit" if kind == "tp1" else kind,
-                         "engine": "spot"}))
+                details={"exit_reason": _exit_reason(kind, self.cfg.tp1_fraction),
+                         "engine": self.p.engine}))
         except DuplicateOrder:
             pass
 
@@ -319,6 +399,8 @@ class SpotPaperRunner:
         reasons: list[str] = [] if bool(c["entry"]) else [str(c["reason"])]
         risk_mult = float(reg["risk_mult"].iloc[-1])
         if bool(c["entry"]):
+            if self.p.monitor_only:
+                reasons.append("monitor mode: signals only, no orders")
             if killed:
                 reasons.append("kill switch engaged")
             if not fresh:
@@ -327,7 +409,7 @@ class SpotPaperRunner:
                 reasons.append("no fresh order book")
             entry_ref = float(c["stop"]) + float(c["r"])          # the signal bar's close
             reasons += entry_checks(st, sym.replace("/", ""), entry_ref, float(c["stop"]),
-                                    now, self.cfg, risk_mult=risk_mult)
+                                    now, self.cfg, risk_mult=risk_mult, strategy=c["strategy"])
         checks = {k[4:]: bool(v) for k, v in c.items() if k.startswith("chk_")}
         rec = {"time": now.isoformat(), "symbol": sym, "strategy": c["strategy"],
                "timeframe": c["timeframe"], "bar": str(c["bar"]), "regime": reg["regime"].iloc[-1],
@@ -353,11 +435,11 @@ class SpotPaperRunner:
                         amount=floor_to_step(Decimal(str(qty)), rules.amount_step), price=price,
                         purpose="entry", expected_price=Decimal(str(ask)),
                         time_in_force=TimeInForce.IOC,
-                        details={"strategy": c["strategy"], "engine": "spot",
+                        details={"strategy": c["strategy"], "engine": self.p.engine,
                                  "stop": str(round(float(c["stop"]), 8)),
                                  "initial_stop": str(round(float(c["stop"]), 8)),
-                                 "tp1": str(round(ask + 1.5 * r_unit, 8)),
-                                 "target": str(round(ask + 3.0 * r_unit, 8)),
+                                 "tp1": str(round(ask + self.p.tp_r[0] * r_unit, 8)),
+                                 "target": str(round(ask + self.p.tp_r[1] * r_unit, 8)),
                                  "regime": rec["regime"], "score": rec["score"],
                                  "checks": checks}))
                     rec["qty"], rec["risk_usdt"] = qty, qty * r_unit
@@ -387,7 +469,8 @@ class SpotPaperRunner:
                     confidence=Decimal(str(round(max(0.0, min(1.0, rec["score"])), 6))),
                     status=rec["status"],
                     rejection_reason="; ".join(rec["reasons"])[:2000] or None,
-                    details={"engine": "spot", "regime": rec["regime"], "checks": rec["checks"],
+                    details={"engine": self.p.engine, "regime": rec["regime"],
+                             "checks": rec["checks"],
                              "tp1": rec["tp1"], "order_id": rec["order_id"]}))
         except IntegrityError:
             pass                      # this bar's signal was already recorded

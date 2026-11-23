@@ -746,3 +746,25 @@ TradingView's documentation.
      its own pre-registration.
   3. Paper-trade the passing strategy through OrderManager / PaperBroker to measure
      execution differences, once it gives a signal.
+
+## 2026-11-23: functional trading bot (owner's urgent request)
+
+* **Why NEXUS placed 0 orders.**
+  * All 18 strategies are disabled (each failed validation), so the main trader always
+    decided NO_TRADE.
+  * The production API key has spot trading OFF and the account holds 0 USDT.
+* **Native NEXUS bot, not Freqtrade.** Every pipeline stage already existed. Freqtrade would
+  duplicate data, risk and orders, need paid persistent storage, and hit the same blockers.
+* **Built:**
+  * the strategy `nexus_strategies/bot_strategy.py`;
+  * a profile-driven `SpotPaperRunner` (`EngineProfile`; the spot engine is unchanged);
+  * the worker `nexus_execution/bot.py` (modes off / monitor / paper; live only via the
+    main trader's live gate);
+  * migration 0018 (strategy row);
+  * API `/trading-bot`, the dashboard page "Trading bot", and `docs/TRADING_BOT.md`.
+* **Risk:** the owner's bot profile is 0.25% per trade (0.5% maximum), 1% daily, 3%
+  drawdown halt, and 2 positions, plus protections, the kill switch and pre-trade checks.
+* **R0 verified:** production holds 1,499 daily bars per pair (2022-10-16 to 2026-11-22).
+* **Tests:** 877 passed (unit + integration); e2e 15/15; alembic check clean.
+* **Next (owner):** enable spot trading on the key, fund USDT, and decide on a dedicated
+  IP. Then the live gate and the supervised F2 order.

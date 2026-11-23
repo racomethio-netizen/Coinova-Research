@@ -1532,6 +1532,69 @@ async def trend_forward_status(s: Session = Depends(db),
             "backtest": "docs/research/2026-11-23-crypto-trends-preregistration.md"}
 
 
+@router.get("/trading-bot")
+async def trading_bot_status(s: Session = Depends(db), redis: Any = Depends(redis_dep),
+                             settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """NEXUS bot (EMA/RSI/MACD 5m): mode, live evaluation per pair, recorded signals, open
+    and closed positions, P&L and limits. Balances are SIMULATED in paper mode; no real
+    order is ever sent by the bot."""
+    from dataclasses import asdict as _asdict
+
+    from nexus_execution.bot import BOT_RISK, PORTFOLIO, STATUS_KEY
+    from nexus_strategies.bot_strategy import CODE, BotParams
+
+    raw = await redis.get(STATUS_KEY)
+    out: dict[str, Any] = {
+        "mode": settings.bot_mode, "live_trading": "DISABLED", "simulated_balance": True,
+        "pairs": list(settings.trading_pairs), "status": json.loads(raw) if raw else None,
+        "strategy": {"code": CODE, "params": _asdict(BotParams())},
+        "risk": {k: (str(v) if not isinstance(v, (int, float)) else v)
+                 for k, v in _asdict(BOT_RISK).items()}}
+    sig = s.execute(select(models.TradingSignal, models.TradingPair.symbol)
+                    .join(models.Strategy, models.Strategy.id == models.TradingSignal.strategy_id)
+                    .join(models.TradingPair, models.TradingPair.id == models.TradingSignal.pair_id)
+                    .where(models.Strategy.code == CODE)
+                    .order_by(desc(models.TradingSignal.id)).limit(100)).all()
+    out["signals"] = [{"time": ser(x.generated_at), "bar_time": ser(x.bar_time), "symbol": sym,
+                       "entry": ser(x.entry_price), "stop": ser(x.stop_loss),
+                       "target": ser(x.take_profit), "status": x.status,
+                       "reason": x.rejection_reason, "checks": (x.details or {}).get("checks")}
+                      for x, sym in sig]
+    p = s.scalar(select(models.Portfolio).where(models.Portfolio.name == PORTFOLIO,
+                                                models.Portfolio.mode == "paper"))
+    if p is None:
+        return out
+    rows = s.execute(select(models.Position, models.TradingPair.symbol)
+                     .join(models.TradingPair, models.TradingPair.id == models.Position.pair_id)
+                     .where(models.Position.portfolio_id == p.id)
+                     .order_by(desc(models.Position.opened_at)).limit(200)).all()
+    pnl = [float(x.realized_pnl) for x, _ in rows if x.status == "closed"]
+    gl = -sum(v for v in pnl if v <= 0)
+    fees = float(s.scalar(select(func.coalesce(func.sum(models.Order.fee_amount), 0))
+                          .where(models.Order.portfolio_id == p.id)) or 0)
+    out["portfolio"] = {"id": p.id, "started_at": ser(p.created_at),
+                        "initial_capital": ser(p.initial_capital)}
+    out["positions"] = [{"symbol": sym, "status": x.status, "quantity": ser(x.quantity),
+                         "entry": ser(x.avg_entry_price), "stop": ser(x.stop_loss),
+                         "target": ser(x.take_profit), "opened_at": ser(x.opened_at),
+                         "closed_at": ser(x.closed_at), "exit_reason": x.exit_reason,
+                         "realized_pnl": ser(x.realized_pnl)} for x, sym in rows]
+    out["performance"] = {"closed_trades": len(pnl), "net_pnl": sum(pnl),
+                          "win_rate": sum(1 for v in pnl if v > 0) / len(pnl) if pnl else None,
+                          "profit_factor": sum(v for v in pnl if v > 0) / gl if gl > 0 else None,
+                          "fees": fees}
+    orders = s.execute(select(models.Order, models.TradingPair.symbol)
+                       .join(models.TradingPair, models.TradingPair.id == models.Order.pair_id)
+                       .where(models.Order.portfolio_id == p.id)
+                       .order_by(desc(models.Order.id)).limit(50)).all()
+    out["orders"] = [{"id": o.id, "time": ser(o.created_at), "symbol": sym, "side": o.side,
+                      "purpose": o.purpose, "status": o.status, "price": ser(o.price),
+                      "amount": ser(o.amount), "filled": ser(o.filled_amount),
+                      "fee": ser(o.fee_amount),
+                      "reason": (o.details or {}).get("exit_reason")} for o, sym in orders]
+    return out
+
+
 @router.get("/research/library")
 async def library_forward_status(s: Session = Depends(db),
                                  redis: Any = Depends(redis_dep)) -> dict[str, Any]:

@@ -306,7 +306,8 @@ class Strategy(Base):
                               "vwap_reclaim", "volatility_expansion", "mtf_confluence",
                               "trend_supertrend", "breakout_retest", "momentum_rv",
                               "mean_reversion_vwap", "vwap_trend", "sweep_reclaim",
-                              "market_structure", "trend_pullback", "breakout_retest_v2")),
+                              "market_structure", "trend_pullback", "breakout_retest_v2",
+                              "bot_ema_rsi_macd")),
             name="code_valid",
         ),
     )

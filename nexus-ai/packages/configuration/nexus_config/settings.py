@@ -214,6 +214,10 @@ class Settings(BaseSettings):
     daily_history_days: int = Field(default=1500, ge=120, le=3000)
     # 1-minute candles for the traded pairs (and 3m derived from them), kept this many days.
     minute_candles: bool = True
+    # NEXUS bot (EMA/RSI/MACD on 5m): off | monitor (signals only) | paper (simulated fills
+    # on live Binance order books). Live bot orders are not available in this build: real
+    # orders go only through the main trader's live gate after the owner's activation.
+    bot_mode: Literal["off", "monitor", "paper"] = "paper"
     minute_retention_days: int = Field(default=30, ge=1, le=90)
     # Optional CA bundle replacing certifi's for exchange HTTPS (TLS-inspecting proxies).
     # Certificate verification is never disabled.

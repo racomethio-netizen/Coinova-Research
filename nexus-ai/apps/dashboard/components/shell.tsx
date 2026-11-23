@@ -11,7 +11,7 @@ export const SECTIONS: [string, [string, string][]][] = [
   ["Overview", [["/", "Overview"]]],
   ["Live Markets", [["/markets/", "Live markets"], ["/data-quality/", "Data quality"]]],
   ["AI Analysis", [["/intelligence/", "Market analysis"], ["/technical/", "Technical analysis"], ["/candidates/", "Trade candidates"], ["/decisions/", "Decision log"], ["/proposals/", "Trade proposals"], ["/signals/", "Signals"], ["/models/", "AI models"]]],
-  ["Strategy Center", [["/strategies/", "Strategies"], ["/carry/", "Funding carry test"], ["/taker-test/", "Taker flow test"], ["/trend-test/", "Trend strategy test"], ["/spot-engine/", "Spot strategy engine"], ["/strategy-lab/", "Strategy lab"]]],
+  ["Strategy Center", [["/strategies/", "Strategies"], ["/carry/", "Funding carry test"], ["/taker-test/", "Taker flow test"], ["/trend-test/", "Trend strategy test"], ["/spot-engine/", "Spot strategy engine"], ["/strategy-lab/", "Strategy lab"], ["/trading-bot/", "Trading bot"]]],
   ["Paper Trading", [["/paper/", "Paper trading"]]],
   ["Live Trading", [["/live/", "Live trading"], ["/spot/", "Spot account"], ["/futures/", "Futures account"]]],
   ["Portfolio", [["/portfolio/", "Portfolio"], ["/positions/", "Open positions"], ["/exchanges/", "Exchanges"]]],

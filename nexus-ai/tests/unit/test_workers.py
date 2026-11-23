@@ -24,7 +24,7 @@ def test_paper_mode_builds_both_workers():
     assert sup is not None
     assert set(sup.commands) == {"market-data", "trader", "notifier", "news", "derivatives",
                                  "carry-paper", "forward-taker", "decision-log",
-                                 "trend-paper", "spot-engine", "library-paper"}
+                                 "trend-paper", "spot-engine", "library-paper", "bot"}
 
 
 def test_restarts_a_crashed_worker_and_stops_cleanly():
@@ -48,7 +48,7 @@ def test_inline_mode_selected():
     assert isinstance(sup, InlineWorkers)
     assert set(sup.workers) == {"market-data", "trader", "notifier", "news", "derivatives",
                                  "carry-paper", "forward-taker", "decision-log",
-                                 "trend-paper", "spot-engine", "library-paper"}
+                                 "trend-paper", "spot-engine", "library-paper", "bot"}
 
 
 def test_inline_restarts_crashes_and_stops_cleanly():

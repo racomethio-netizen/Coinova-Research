@@ -32,6 +32,7 @@ WORKERS: dict[str, list[str]] = {
     "trend-paper": ["-m", "nexus_backtest.trend_paper"],
     "spot-engine": ["-m", "nexus_execution.spot_paper"],
     "library-paper": ["-m", "nexus_backtest.library_forward"],
+    "bot": ["-m", "nexus_execution.bot"],
     "x-sentiment": ["-m", "nexus_social.service"],
 }
 
@@ -111,7 +112,7 @@ class InlineWorkers:
     @classmethod
     def for_settings(cls, settings: Settings) -> InlineWorkers:
         from nexus_backtest import forward_taker, library_forward, trend_paper
-        from nexus_execution import spot_paper, trader
+        from nexus_execution import bot, spot_paper, trader
         from nexus_market import carry_paper, derivatives, runner
         from nexus_news import service as news
         from nexus_notify import service as notifier
@@ -130,7 +131,8 @@ class InlineWorkers:
             "decision-log": lambda stop: decision_log.serve(settings, stop),
             "trend-paper": lambda stop: trend_paper.serve(settings, stop),
             "spot-engine": lambda stop: spot_paper.serve(settings, stop),
-            "library-paper": lambda stop: library_forward.serve(settings, stop)}
+            "library-paper": lambda stop: library_forward.serve(settings, stop),
+            "bot": lambda stop: bot.serve(settings, stop)}
         if settings.x_bearer_token is not None:
             workers["x-sentiment"] = lambda stop: social.serve(settings, stop)
         return cls(workers)

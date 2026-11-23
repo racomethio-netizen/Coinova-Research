@@ -1134,3 +1134,116 @@ async def test_spot_engine_paper_runner_end_to_end(engine_setup: tuple[Any, ...]
     live = eng.settings.model_copy(update={"trading_mode": "live"})
     with pytest.raises(PermissionError):
         sp.SpotPaperRunner(live, factory, redis, eng.adapters, eng.books, eng.broker)
+
+
+async def test_trading_bot_pipeline_entry_exits_guards_and_restart(
+        engine_setup: tuple[Any, ...], monkeypatch: pytest.MonkeyPatch) -> None:
+    """NEXUS bot (5m) through the real OrderManager and PaperBroker:
+    * entry sized at 0.25% of equity, with stop and 2R target persisted;
+    * no duplicate entry on the same bar;
+    * an invalidation exit at market;
+    * after a restart (a new runner) the history is intact and nothing is re-ordered;
+    * monitor mode records signals but never orders;
+    * the 3% drawdown halt blocks entries."""
+    import numpy as np
+    import pandas as pd
+    from nexus_execution import bot
+    from nexus_execution import spot_paper as sp
+
+    eng, factory, _state, redis = engine_setup
+    end = utcnow().replace(second=0, microsecond=0)
+    end -= timedelta(minutes=end.minute % 5)
+    idx = pd.date_range(end=end - timedelta(minutes=5), periods=2500, freq="5min", tz="UTC")
+    rng = np.random.default_rng(1)
+    close = 60_000 * np.exp(np.cumsum(rng.normal(0, 0.0004, len(idx))))
+    close *= 60_000 / close[-1]
+    with transaction(factory) as s:
+        pid = repo.pair_id(s, "binance", "BTC/USDT")
+        repo.upsert_candles(s, pid, "5m", [
+            repo.CandleRow(t.to_pydatetime(), D(str(round(c, 2))), D(str(round(c * 1.001, 2))),
+                           D(str(round(c * 0.999, 2))), D(str(round(c, 2))), D(100))
+            for t, c in zip(idx, close, strict=True)])
+    flags = {"entry": True, "exit": False}
+
+    def fake(sym: str, m5: Any, _b: Any = None) -> Any:
+        reg = pd.DataFrame({"regime": ["TRADEABLE"], "trend": ["up"], "btc_risk_off": [False],
+                            "risk_mult": [1.0]}, index=[m5.index[-1]])
+        return reg, [{"strategy": "bot_ema_rsi_macd", "timeframe": "5m", "bar": m5.index[-1],
+                      "entry": flags["entry"], "candidate": flags["entry"],
+                      "reason": None if flags["entry"] else "volume not met",
+                      "stop": 59_400.0, "r": 600.0, "tp1": 61_200.0, "tp2": 61_200.0,
+                      "score": 1.0, "exit": flags["exit"], "record": True,
+                      "chk_volume": flags["entry"]}]
+
+    def runner(monitor: bool = False) -> Any:
+        prof = bot.profile(monitor)
+        prof = sp.EngineProfile(**{**prof.__dict__, "candidates": fake})
+        r = sp.SpotPaperRunner(eng.settings, factory, redis, eng.adapters, eng.books,
+                               eng.broker, cfg=bot.BOT_RISK, profile=prof)
+        r.bootstrap()
+        return r
+
+    r1 = runner()
+    now = end + timedelta(minutes=1)
+    status = await r1.cycle(now)
+    assert status["engine"] == "bot" and status["mode"] == "paper"
+    rec = status["signals"][0]
+    assert rec["status"] == "executed", rec
+    with transaction(factory) as s:
+        pos = s.scalar(select(models.Position).where(models.Position.status == "open",
+                                                     models.Position.portfolio_id
+                                                     == r1.portfolio_id))
+        assert pos is not None and pos.stop_loss == D("59400")
+        entry = s.get(models.Order, pos.entry_order_id)
+        assert entry is not None and entry.status == "filled"
+        assert D(entry.details["target"]) > pos.avg_entry_price
+        risk = (float(pos.avg_entry_price) - 59_400) * float(pos.quantity)
+        assert risk <= 0.0025 * 10_000 * 1.01                  # 0.25% of equity
+    await r1.cycle(now)                                        # same bar: no duplicate
+    with transaction(factory) as s:
+        assert s.scalar(select(func.count()).select_from(models.Order).where(
+            models.Order.portfolio_id == r1.portfolio_id)) == 1
+    # Restart: a fresh runner sees the open position and does not buy again.
+    r2 = runner()
+    assert r2.portfolio_id == r1.portfolio_id
+    await r2.cycle(now)
+    # Invalidation on the next bar: exit at market.
+    flags.update(entry=False, exit=True)
+    with transaction(factory) as s:
+        repo.upsert_candles(s, pid, "5m", [repo.CandleRow(end, D(60_000), D(60_020),
+                                                          D(59_980), D(60_000), D(100))])
+    await r2.cycle(end + timedelta(minutes=6))
+    with transaction(factory) as s:
+        closed = s.scalar(select(models.Position).where(
+            models.Position.portfolio_id == r1.portfolio_id, models.Position.status == "closed"))
+        assert closed is not None and closed.exit_reason == "invalidation"
+        assert s.scalar(select(func.count()).select_from(models.Order).where(
+            models.Order.portfolio_id == r1.portfolio_id)) == 2
+    # Monitor mode: a qualifying signal is recorded but no order is placed.
+    flags.update(entry=True, exit=False)
+    with transaction(factory) as s:
+        repo.upsert_candles(s, pid, "5m", [repo.CandleRow(end + timedelta(minutes=5), D(60_000),
+                                                          D(60_020), D(59_980), D(60_000),
+                                                          D(100))])
+    st = await runner(monitor=True).cycle(end + timedelta(minutes=11))
+    assert st["mode"] == "monitor"
+    assert any("monitor mode" in x for x in st["signals"][0]["reasons"])
+    with transaction(factory) as s:
+        assert s.scalar(select(func.count()).select_from(models.Order).where(
+            models.Order.portfolio_id == r1.portfolio_id)) == 2
+    # Drawdown halt: a recorded 4% loss puts equity below the 3% limit from the peak.
+    with transaction(factory) as s:
+        closed = s.scalar(select(models.Position).where(
+            models.Position.portfolio_id == r1.portfolio_id, models.Position.status == "closed"))
+        assert closed is not None
+        closed.realized_pnl = D(-400)
+        bal = s.scalar(select(models.Balance).where(
+            models.Balance.portfolio_id == r1.portfolio_id, models.Balance.asset == "USDT"))
+        assert bal is not None
+        bal.free = D(9_550)
+    with transaction(factory) as s:
+        repo.upsert_candles(s, pid, "5m", [repo.CandleRow(end + timedelta(minutes=10), D(60_000),
+                                                          D(60_020), D(59_980), D(60_000),
+                                                          D(100))])
+    st = await runner().cycle(end + timedelta(minutes=16))
+    assert any("drawdown limit (3%)" in x for x in st["signals"][0]["reasons"]), st["signals"]
