@@ -4,6 +4,32 @@ How to run: `scripts/test.sh` with `NEXUS_TEST_DATABASE_URL` and `NEXUS_TEST_RED
 (Postgres and Redis test databases; integration tests are skipped without them). Browser
 tests: `scripts/e2e.sh` (see the script header).
 
+## 2026-11-23: crypto trends strategy (research, forward paper test)
+
+* `tests/unit/test_crypto_trends.py` checks the strategy rules on synthetic prices.
+  * Entry happens at the n-day high. The stop starts at the channel midpoint and never
+    moves down.
+  * There is no look-ahead: the weights of a shorter history equal the full history's.
+  * Volatility sizing is capped at 100% (spot).
+  * Trades fill at the next day's open, and costs reduce equity.
+  * The 20% threshold reduces the number of trades.
+  * The metrics are checked.
+* The simulator agrees with an independent vectorised computation of the paper's formula:
+  Sharpe 1.118 against 1.119.
+* `tests/unit/test_trend_paper.py` checks the replay.
+  * Nothing is recorded before START.
+  * The replay is deterministic.
+  * More data never changes days already recorded.
+  * The review checks and decision are tested.
+* `tests/integration/test_paper_trader.py::test_trend_paper_...` (PostgreSQL):
+  * days are recorded once;
+  * a data revision is flagged as a divergence and never rewritten;
+  * a refused download is recorded as a gap.
+* The live fetch was checked against Binance: 999 complete closed days per coin.
+* Migration 0015 was upgraded, checked with `alembic check`, downgraded and upgraded again.
+* Full run: `scripts/test.sh`, 806 passed. e2e: 15 passed, including the new
+  "Trend strategy test" page.
+
 ## 2026-11-23: Binance-only static-IP proxy support
 
 * `tests/unit/test_binance_proxy.py` uses a local recording proxy (`tests/proxyserver.py`)

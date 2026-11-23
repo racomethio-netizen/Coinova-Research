@@ -117,6 +117,7 @@ def simulate(bars: dict[str, pd.DataFrame], cfg: SimConfig | None = None, *,
     sleeve_cash = {s: initial / len(syms) for s in syms}
     units = dict.fromkeys(syms, 0.0)
     eq_vals, w_rows, traded, costs, trades = [], [], 0.0, 0.0, 0
+    log: list[dict[str, Any]] = []
     for t in range(lo, hi):
         # 1) Fill yesterday's decision at today's open.
         if t > lo:
@@ -137,6 +138,12 @@ def simulate(bars: dict[str, pd.DataFrame], cfg: SimConfig | None = None, *,
                     traded += abs(dn)
                     costs += fee
                     trades += 1
+                    log.append({"date": str(index[t].date()), "symbol": s,
+                                "side": "buy" if dn > 0 else "sell", "notional": abs(dn),
+                                "price": px, "cost": fee, "from_weight": cur,
+                                "to_weight": target,
+                                "reason": "signal" if bool(row["signal_changed"])
+                                else "volatility"})
         # 2) Mark at today's close; re-split sleeves at month end.
         values = {s: sleeve_cash[s] + units[s] * closes[s][t] for s in syms}
         total = sum(values.values())
@@ -149,8 +156,10 @@ def simulate(bars: dict[str, pd.DataFrame], cfg: SimConfig | None = None, *,
                 sleeve_cash[s] += total / len(syms) - values[s]
     equity = pd.Series(eq_vals, index=index[lo:hi], name="equity")
     avg_eq = float(equity.mean()) if len(equity) else 1.0
+    targets = pd.DataFrame({s: sig[s]["weight"].iloc[lo:hi].to_numpy() for s in syms},
+                           index=index[lo:hi])
     return SimResult(equity, pd.DataFrame(w_rows, index=index[lo:hi]), traded / avg_eq,
-                     costs, trades)
+                     costs, trades, {"trade_log": log, "targets": targets})
 
 
 # ---------------------------------------------------------------- metrics

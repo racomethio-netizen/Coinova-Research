@@ -1012,3 +1012,50 @@ async def test_selector_rejects_a_passed_strategy_with_thin_regime_evidence(
     assert status == "rejected" and "strategy selector" in reason and "12 out-of-sample" in reason
     with transaction(factory) as s:
         assert s.scalar(select(func.count()).select_from(models.Order)) == 0
+
+
+async def test_trend_paper_records_days_once_and_flags_divergence(
+        migrated_engine: Engine, redis: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    import httpx
+    from nexus_backtest import trend_paper as tp
+
+    from tests.unit.test_trend_paper import bars
+
+    factory = make_session_factory(migrated_engine)
+    data = bars(10)
+
+    async def fake_fetch(client: Any, symbol: str, now: datetime, redis: Any = None) -> Any:
+        return data[symbol]
+
+    monkeypatch.setattr(tp, "fetch", fake_fetch)
+    try:
+        async with httpx.AsyncClient() as client:
+            st = await tp.step(factory, redis, client)
+            assert st["ok"] and st["new_days"] == 10
+            st = await tp.step(factory, redis, client)
+            assert st["new_days"] == 0 and st["divergences"] == 0     # idempotent
+            # Data revised for a recorded day: the record stays, a divergence is logged.
+            changed = {k: v.copy() for k, v in data.items()}
+            for v in changed.values():
+                v.loc[v.index[-1], "close"] *= 1.5
+            monkeypatch.setattr(tp, "fetch", lambda c, s, n, redis=None: _ret(changed[s]))
+            st = await tp.step(factory, redis, client)
+            assert st["divergences"] == 1 and st["new_days"] == 0   # flagged, never rewritten
+
+            async def refused(*a: Any, **k: Any) -> Any:
+                raise PermissionError("Binance refuses this server's location")
+            monkeypatch.setattr(tp, "fetch", refused)
+            st = await tp.step(factory, redis, client)
+            assert st["ok"] is False
+        with transaction(factory) as s:
+            rows = s.scalars(select(models.ForwardTestEvent).where(
+                models.ForwardTestEvent.run == tp.RUN)).all()
+        kinds = [r.kind for r in rows]
+        assert kinds.count("day") == 10 and kinds.count("gap") == 1
+    finally:
+        with migrated_engine.begin() as c:
+            c.execute(text("TRUNCATE forward_test_events"))
+
+
+async def _ret(v: Any) -> Any:
+    return v

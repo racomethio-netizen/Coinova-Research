@@ -15,6 +15,7 @@ FastAPI API + static dashboard
  ├─ notifier             Telegram
  ├─ news, X sentiment    context only (can pause entries, never trigger them)
  ├─ decision log         records the fusion decision per pair after each closed 15m bar
+ ├─ trend-paper          daily forward PAPER test of the crypto trends ensemble (BTC+ETH)
  └─ forward paper tests  funding carry, taker flow (pre-registered research)
 Postgres (Supabase): durable state, ledgers, audit log.  Redis: cache, flags, streams.
 ```

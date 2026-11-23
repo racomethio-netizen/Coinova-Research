@@ -28,12 +28,29 @@ test on new data. Details and full tables are in each pre-registration under
 | Phase 6 (2026-11-22) | vwap_reclaim, volatility_expansion, mtf_confluence, funding_squeeze, taker_flow | BTC/ETH 2024-11..2026-11 | all FAIL (-0.24% to -0.45% per trade) |
 | Strategy modules A-G (2026-11-23) | trend_supertrend, breakout_retest, momentum_rv, mean_reversion_vwap, vwap_trend, sweep_reclaim, market_structure | **unseen** BTC/ETH 2022-11..2024-11 (primary); 2024-11..2026-11 (secondary) | all FAIL on the primary period (-0.08% to -0.30% per trade; D made no trades) |
 
+| **Crypto trends ensemble (2026-11-23)** (Zarattini, Pagani & Barbon 2025, replicated) | Donchian breakout ensemble (9 lookbacks), 25% volatility target, long-only spot, BTC+ETH | BTC/ETH daily 2018-08..2026-11 (Binance archives, checksums verified) | **PASS** all 6 gates: Sharpe 1.11 (buy-and-hold 0.74), CAGR 14.1%, max drawdown 15.6% (buy-and-hold 76%), both halves positive, 5 of 7 years positive, primary unseen period +44% |
+
 Forward paper tests on new data (running, decided once at their stopping rule):
+
+* **Crypto trends ensemble, daily** (starts 2026-11-24, review at day 180). Paper only.
 
 * Funding carry, always-on (started 2026-11-22, decision at day 90).
 * Taker flow in range regimes (started 2026-11-22, decision at 30 trades or 18 months).
 
 ## What this means
+
+**Update 23 Nov 2026: the first strategy to pass.** A published trend-following method
+passed every pre-registered gate on 8 years of Binance data. It is slow and daily,
+long-only and spot, and is in cash most of the time (average exposure about 16%). It earns
+less than holding the coins in bull markets (14% a year against 31%) and loses far less in
+crashes (worst drop 16% against 76%).
+* **Placebo checks:** shuffled prices with crypto's drift kept beat it in only 3 of 100
+  runs, and shuffled prices without drift earn nothing.
+* It now runs as a forward PAPER test. Live trading would still need a forward-test pass,
+  a dedicated IP and the owner's activation.
+* Details: docs/research/2026-11-23-crypto-trends-preregistration.md.
+
+The earlier conclusions below still hold for the short-horizon rules:
 
 * 20 strategies have been tested out of sample; none has a
   positive expectancy after costs that passes the gates. NEXUS therefore places no trades,

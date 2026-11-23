@@ -1447,6 +1447,27 @@ async def taker_forward_status(s: Session = Depends(db),
             "preregistration": "docs/research/2026-11-22-taker-range-forward-preregistration.md"}
 
 
+@router.get("/research/trend-forward")
+async def trend_forward_status(s: Session = Depends(db),
+                               redis: Any = Depends(redis_dep)) -> dict[str, Any]:
+    """Forward paper test of the crypto trends ensemble (pre-registered 2026-11-23)."""
+    from datetime import UTC
+    from datetime import datetime as _dt
+
+    from nexus_backtest.trend_paper import RUN, STATUS_KEY, summary
+
+    rows = s.scalars(select(models.ForwardTestEvent).where(models.ForwardTestEvent.run == RUN)
+                     .order_by(models.ForwardTestEvent.at)).all()
+    days = [r.data for r in rows if r.kind == "day"]
+    divergences = sum(1 for r in rows if r.kind == "divergence")
+    gaps = [r.key for r in rows if r.kind == "gap"]
+    raw = await redis.get(STATUS_KEY)
+    return {**summary(days, divergences, gaps, _dt.now(UTC)),
+            "status": json.loads(raw) if raw else None,
+            "preregistration": "docs/research/2026-11-23-crypto-trends-forward-preregistration.md",
+            "backtest": "docs/research/2026-11-23-crypto-trends-preregistration.md"}
+
+
 BINANCE_PINGS = {
     "spot (live)": "https://api.binance.com/api/v3/ping",
     "futures (live)": "https://fapi.binance.com/fapi/v1/ping",

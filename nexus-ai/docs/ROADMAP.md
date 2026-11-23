@@ -642,3 +642,26 @@ trading on Render can use live data once background workers are approved.
   * any live trading;
   * A4: database role password;
   * paid hosting with its own IP.
+
+## 2026-11-23: strategy search (owner: "find the best profitable strategy and implement it")
+
+* **Searched** the literature on trend following, time-series and cross-sectional momentum,
+  and calendar effects.
+* **Picked** the best-documented spot-friendly method: Zarattini, Pagani & Barbon (2025),
+  "Catching Crypto Trends".
+* **Pre-registered** the rules and gates first (cc41f5f), then ran the test once on
+  Binance daily archives, 2017-2026, checksums verified.
+* **Result: PASS on all 6 gates.**
+  * Sharpe 1.11 against 0.74 for buy-and-hold.
+  * CAGR 14.1%; max drawdown 15.6% against 76%.
+  * It holds per coin, at double costs, and for every lookback.
+  * Placebo p is about 0.03.
+* **Implemented** as a daily forward PAPER test: worker `trend-paper`, migration 0015, API
+  `/research/trend-forward`, and the dashboard page "Trend strategy test". It starts
+  2026-11-24 with 10,000 virtual USDT and is reviewed at day 180 (2027-05-23).
+  * Current signal (22 Nov close): 0% invested in both coins (downtrend), so it starts in
+    cash.
+* **Live:** not enabled. It would need all of the following:
+  * a forward-test pass;
+  * a dedicated IP;
+  * the owner's two-factor activation and a funded live ledger.
