@@ -56,7 +56,7 @@ def rules_from(path: Path) -> dict[str, SymbolRules]:
     out = {}
     for s in json.loads(path.read_text())["symbols"]:
         f = {x["filterType"]: x for x in s["filters"]}
-        notional = f.get("NOTIONAL") or f.get("MIN_NOTIONAL")
+        notional = f.get("NOTIONAL") or f["MIN_NOTIONAL"]
         out[s["symbol"]] = SymbolRules(float(f["PRICE_FILTER"]["tickSize"]),
                                        float(f["LOT_SIZE"]["stepSize"]),
                                        float(notional["minNotional"]))
@@ -70,9 +70,12 @@ def _slice(tr: pd.DataFrame, lo: pd.Timestamp, hi: pd.Timestamp) -> pd.DataFrame
     return tr[(t >= lo) & (t < hi)]
 
 
+def pf(d: dict[str, Any]) -> float:
+    return float(d.get("profit_factor") or 0.0)
+
+
 def gates(res_report: dict[str, Any], tr: pd.DataFrame) -> dict[str, Any]:
     split = {k: trade_stats(_slice(tr, *v)) for k, v in SPLITS.items()}
-    pf = lambda d: d.get("profit_factor") or 0.0  # noqa: E731
     sym = tr.groupby("symbol").pnl.agg(["count", "sum"]) if not tr.empty else pd.DataFrame()
     by_sym = {s: trade_stats(g) for s, g in tr.groupby("symbol")} if not tr.empty else {}
     eligible = [s for s, d in by_sym.items() if d["trades"] >= 10]
