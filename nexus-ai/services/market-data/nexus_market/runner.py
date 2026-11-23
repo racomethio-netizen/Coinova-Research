@@ -164,7 +164,8 @@ class MarketDataService:
         from nexus_config import Timeframe
         from nexus_db import repo
 
-        series = [(tf, self.settings.market_backfill_days) for tf in self.settings.timeframes]
+        series = [(tf, self.settings.daily_history_days if tf is Timeframe.D1
+                   else self.settings.market_backfill_days) for tf in self.settings.timeframes]
         if self.settings.minute_candles:
             series.insert(0, (Timeframe.M1, self.settings.minute_retention_days))
         horizon = await self._rest_horizon()
@@ -173,7 +174,7 @@ class MarketDataService:
             for tf, days in series:
                 if await self._paused():
                     return filled
-                key = f"nexus:md:gapcursor:{pid}:{tf.value}"
+                key = f"nexus:md:gapcursor:{pid}:{tf.value}:{days}"   # new window, new scan
                 raw = await self.redis.get(key)
                 start = utcnow() - timedelta(days=days)
                 if raw:

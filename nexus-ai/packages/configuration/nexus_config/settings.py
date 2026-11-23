@@ -209,6 +209,9 @@ class Settings(BaseSettings):
     binance_public_ws_url: str | None = "wss://data-stream.binance.vision/ws"
     # Candle history to backfill on first start (Kraken is capped at 720 bars anyway).
     market_backfill_days: int = 120
+    # Daily bars are kept for longer: daily strategies need about 400 bars of warm-up (EMA200
+    # plus a weekly EMA50). Real Binance klines only, filled by the gap repair (2 pages).
+    daily_history_days: int = Field(default=1500, ge=120, le=3000)
     # 1-minute candles for the traded pairs (and 3m derived from them), kept this many days.
     minute_candles: bool = True
     minute_retention_days: int = Field(default=30, ge=1, le=90)

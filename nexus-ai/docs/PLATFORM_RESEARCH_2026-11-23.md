@@ -1,6 +1,6 @@
 # NEXUS platform audit, technology research and roadmap
 
-_2026-11-23, for the owner's brief "NEXUS AI — Ultimate quantitative trading intelligence
+_2026-11-23 (corrected after the R0 deploy: 1m candles were already ingested), for the owner's brief "NEXUS AI — Ultimate quantitative trading intelligence
 platform" (phase 13, steps 1–3). Nothing in the architecture was changed for this report.
 Live trading is OFF and stays OFF._
 
@@ -39,7 +39,7 @@ Live trading is OFF and stays OFF._
 
 | Area | Exists (module) | Gap for this brief |
 |---|---|---|
-| Market data | WebSocket-first klines and books, central Binance weight gate, data-quality report, closed-bar store (`nexus_market`) | 1m / 3m / 30m are supported by the schema but **not ingested** (production stores 5m, 15m, 1h, 4h, 1d) |
+| Market data | WebSocket-first klines and books, central Binance weight gate, data-quality report, closed-bar store (`nexus_market`) 1m candles **are** ingested for the traded pairs (kept 30 days; 3m derived from them). 30m is not stored. Stored daily history was only 121 bars (corrected in R0) |
 | Market intelligence | Regime classifiers (`regime.py`, `spot_regime.py`, causal HMM), market structure, levels, sweeps, MTF scores, false-breakout follow-through (`nexus_analysis`, `ta.py`), no-trade rules | Classifiers are spread over several modules: no single "market state" with abnormal-move and false-breakout labels |
 | Strategy library | 16 legacy rules, spot engine (2), global library (8), Crypto Trends | Missing: **volume intelligence** (relative volume, taker buy pressure from kline data), **relative strength vs BTC**, **volatility-adaptive sizing** as strategy families |
 | Machine learning | Purged k-fold with embargo, labels, logit / XGBoost / LightGBM / CatBoost, isotonic calibration, Isolation-Forest OOD veto, HMM, registry with rollback, drift (`nexus_ai`) | No model passed. Missing: regime classification and **strategy-degradation** targets, monitoring dashboard, retraining controls |
@@ -57,9 +57,9 @@ Live trading is OFF and stays OFF._
 2. **Futures data ban.** The futures data feed is paused by a Binance IP ban until 08:54:50
    UTC on 24, 25 or 26 Nov (the stored end shows only the time of day, so the exact day is
    unknown). Spot is unaffected.
-3. **Daily warm-up.** Daily library strategies need about 400 stored daily bars. The stored
-   1d history in production is not verified (the Supabase tool was unavailable during
-   this audit).
+3. **Daily warm-up.** Daily library strategies need about 400 stored daily bars, and
+   production held only 121. Fixed in R0: the gap repair now keeps 1,500 days of daily
+   bars, from real Binance klines.
 
 **Evidence so far (Binance spot, after costs, pre-registered, tested once each)**
 * About 45 rule sets and every ML configuration have been tested.
@@ -111,7 +111,7 @@ The order follows the evidence:
 | R0 | 12 | Deploy S1–S5 (needs the owner's "Deploy"); verify workers, the warm-up state and the stored 1d history | Logs clean, Strategy lab shows data |
 | R1 | 6 | **User-data WebSocket** (CCXT `watch_orders` over the WS API) feeding the order manager, with REST reconciliation kept as the source of truth after any disconnect; local checks for `PERCENT_PRICE_BY_SIDE`, `MARKET_LOT_SIZE`, `MAX_NUM_ORDERS`; spread gate (LEAN); order splitting for orders above x% of top-of-book depth (TWAP / participation cap) | Integration tests with a fake stream: missed events, duplicates and reconnects all reconcile; no double fills |
 | R2 | 7 | Abnormal-move guard (k-sigma 1m return, spread blow-out, book-depth collapse → REDUCING); volatility-targeted sizing (risk scaled by forecast / long-run volatility, capped at 1×) | Unit tests; risk keeps final authority |
-| R3 | 2 | One **MarketState** service over the existing classifiers: bull / bear / sideways / volatile / low liquidity / breakout / false breakout / abnormal, multi-timeframe, causal. Ingest 1m and derive 3m / 30m (for execution and abnormal-move detection, not for signals) | Prefix-invariance and start-up tests on every label; storage measured |
+| R3 | 2 | One **MarketState** service over the existing classifiers: bull / bear / sideways / volatile / low liquidity / breakout / false breakout / abnormal, multi-timeframe, causal. Use the existing 1m store (30 days) and derive 30m (for execution and abnormal-move detection, not for signals) | Prefix-invariance and start-up tests on every label; storage measured |
 | R4 | 3 | New families, pre-registered and tested once on 4h and 1d: **volume intelligence** (relative volume, acceleration, volume-price divergence, *taker-buy ratio from Binance klines*, which are real historical buy pressure); **relative strength vs BTC**; **volatility-adaptive** variants | Results appended to the pre-registration, Holm across the family |
 | R5 | 8 | Lab report additions: Calmar, exposure, turnover, bull / bear / sideways segmentation, deflated Sharpe | Unit tests on known series |
 | R6 | 5 | Ensemble upgrade: measure **signal correlation** (effective number of independent signals); cost-aware expected value; **CUSUM / sequential test** on forward R per strategy, which auto-disables (disabling is always allowed; re-enabling needs new validated evidence); portfolio weights by **HRP** across validated strategies | Tests: correlated duplicates do not raise confidence; a degraded synthetic strategy is disabled |
@@ -126,8 +126,8 @@ The order follows the evidence:
 * Reinforcement-learning execution: no evidence of benefit, high overfitting risk.
 * Microservices: one instance with inline workers is sufficient. The constraints are the
   database pool and memory, not CPU.
-* 1m / 3m indicator scalping: the evidence shows costs dominate. 1m data is still used for
-  execution quality and abnormal-move detection.
+* 1m / 3m indicator scalping: the evidence shows costs dominate. The 1m data already
+  collected is used for execution quality and abnormal-move detection.
 
 ## 4. Risks and limitations
 
@@ -141,7 +141,7 @@ The order follows the evidence:
   * The shared egress IP is exposed to Binance bans caused by other tenants. A dedicated IP
     is the owner's decision (Oracle Always Free is the only free option found).
   * The 15-session Supabase pool and the 2 GB instance cap how many workers can run.
-  * 1m ingestion adds about 1 million rows per pair per 2 years (measured before enabling).
+  * Longer 1m retention would add about 0.5 million rows per pair per year (measured before any change).
 * **Execution realism.** There is no historical order book, so backtests model spread and
   partial fills from bars. Paper fills use live books but cannot model market impact on
   real size.

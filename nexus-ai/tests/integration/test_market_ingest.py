@@ -438,3 +438,41 @@ async def test_gap_repair_fills_old_holes_behind_a_fresh_stream_bar(
     calls = len(served)
     await svc.repair_gaps()                             # the cursor moved past that hole
     assert len(served) == calls
+
+
+async def test_gap_repair_extends_daily_history(factory: sessionmaker[Session],
+                                                 redis: Any) -> None:
+    """Daily bars use the longer ``daily_history_days`` window: a store holding only the
+    last 120 days is filled back to the window's start from real (here: fake) klines."""
+    from nexus_common.timeutil import utcnow
+    from nexus_config import Settings, Timeframe
+    from nexus_market import runner
+
+    now = utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    day = 86_400_000
+
+    def serve(symbol: str, tf: str, since: int | None, limit: int) -> list[list[float]]:
+        t0 = -(-(since or 0) // day) * day
+        return [[t, 1, 1, 1, 1, 1] for t in range(t0, t0 + limit * day, day)
+                if t < int(now.timestamp() * 1000) - day]
+
+    client = FakeCcxtClient()
+    client.responses["fetch_ohlcv"] = serve
+    adapter = CcxtSpotAdapter("binance", client, CAPABILITIES[ExchangeCode.BINANCE])
+    await adapter.load_markets()
+    svc = runner.MarketDataService.__new__(runner.MarketDataService)
+    svc.settings = Settings(enabled_exchanges=["binance"], trading_pairs=["BTC/USDT"],
+                            timeframes=[Timeframe.D1], minute_candles=False,
+                            daily_history_days=600)
+    svc.factory, svc.redis, svc.adapters = factory, redis, {"binance": adapter}
+    pid = _pair(factory)
+    svc.pairs = {("binance", "BTC/USDT"): pid}
+    with transaction(factory) as s:                     # only the recent 120 days stored
+        repo.upsert_candles(s, pid, "1d", [
+            repo.CandleRow(now - timedelta(days=d), D(1), D(1), D(1), D(1), D(1))
+            for d in range(1, 121)])
+    for _ in range(3):
+        await svc.repair_gaps()
+    with transaction(factory) as s:
+        n = len(repo.load_candles(s, pid, "1d"))
+    assert n >= 598
