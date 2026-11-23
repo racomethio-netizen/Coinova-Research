@@ -4,6 +4,39 @@ How to run: `scripts/test.sh` with `NEXUS_TEST_DATABASE_URL` and `NEXUS_TEST_RED
 (Postgres and Redis test databases; integration tests are skipped without them). Browser
 tests: `scripts/e2e.sh` (see the script header).
 
+## 2026-11-23: Phase F1 (post-only and stop-limit orders)
+
+* `tests/unit/test_order_types.py` covers four areas.
+  * **Request rules.** A stop-limit order needs a stop price. A stop price is only valid on a
+    stop-limit order. The limit must be on the correct side of the stop. Post-only is allowed
+    only on a GTC limit order. Stop-limit orders are GTC.
+  * **Rounding.** A sell stop rounds up (it never triggers lower than intended) and a buy stop
+    rounds down. The minimum order value is checked at the limit price.
+  * **Paper simulation.** A post-only order that would take liquidity is refused, as Binance
+    refuses a `LIMIT_MAKER` order. A stop-limit order that would trigger immediately is
+    refused. The trigger reference is the best bid for a sell stop and the best ask for a buy
+    stop. Once triggered, the order fills up to its limit as a taker. If the price gaps through
+    the limit, the order rests unfilled. The paper broker's full lifecycle is tested:
+    waiting, then triggered without a fill, then filled as a maker at its limit.
+  * **Binance wire format.** Real ccxt request building, run offline: what the adapter sends
+    becomes `STOP_LOSS_LIMIT` (with `stopPrice` and `timeInForce=GTC`) or `LIMIT_MAKER`.
+* `tests/exchange/test_ccxt_adapter.py` covers the adapter.
+  * Stop-limit submit parameters are correct, and a response with a trigger price is read back
+    as a stop-limit order.
+  * An adapter without stop-limit support refuses the order without calling the exchange.
+  * Post-only and IOC are tested separately. Their combination is now refused: Binance's
+    `LIMIT_MAKER` takes no time-in-force, and no NEXUS code used the combination.
+* `tests/integration/test_execution.py` runs on real PostgreSQL.
+  * A paper entry fills, then a protective stop-limit sell is placed, locking the BTC. The
+    price gaps through the stop: the order is marked triggered but nothing fills. A NEW order
+    manager, standing in for a restart, still knows the order was triggered. It fills at the
+    limit, and the position closes with reason `stop_loss`.
+  * A post-only order that would take is rejected and its reserve released. A passive one
+    rests.
+  * The database refuses a stop-limit row without a stop price.
+* Migration 0013 was upgraded, checked with `alembic check`, downgraded and upgraded again.
+* Not tested: real Binance stop-limit or post-only orders. That needs a demo key (F2).
+
 ## 2026-11-23: strategy modules A-G
 
 | Suite | Result |

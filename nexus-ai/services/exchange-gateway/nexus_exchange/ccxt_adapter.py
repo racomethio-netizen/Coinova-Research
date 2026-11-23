@@ -148,8 +148,11 @@ def snapshot_from_ccxt(o: dict[str, Any], *, fallback: OrderRequest | None = Non
 
     side_raw = o.get("side") or (fallback.side.value if fallback else None)
     type_raw = o.get("type") or (fallback.order_type.value if fallback else None)
-    if side_raw not in ("buy", "sell") or type_raw not in ("limit", "market"):
+    if side_raw not in ("buy", "sell") or type_raw not in ("limit", "market", "stop_limit"):
         raise ExchangeError(f"unsupported order side/type {side_raw!r}/{type_raw!r}")
+    # ccxt reports a Binance spot STOP_LOSS_LIMIT as type "limit" with a trigger price.
+    if type_raw == "limit" and (o.get("triggerPrice") or o.get("stopPrice")):
+        type_raw = "stop_limit"
 
     fee_cost: Decimal | None = None
     fee_asset: str | None = None
@@ -414,11 +417,18 @@ class CcxtSpotAdapter(ExchangeAdapter):
             params["postOnly"] = True
         if request.time_in_force is TimeInForce.IOC:
             params["timeInForce"] = "IOC"
+        ccxt_type = request.order_type.value
+        if request.order_type is OrderType.STOP_LIMIT:
+            # ccxt maps a spot limit order with ``stopLossPrice`` to STOP_LOSS_LIMIT.
+            assert request.stop_price is not None
+            ccxt_type = "limit"
+            params["stopLossPrice"] = decimal_to_wire(request.stop_price, field="stop_price")
+            params["timeInForce"] = "GTC"
         amount = decimal_to_wire(request.amount, field="amount")
         price = (decimal_to_wire(request.price, field="price")
                  if request.price is not None else None)
         o = await self._call(
-            self._client.create_order, request.symbol, request.order_type.value,
+            self._client.create_order, request.symbol, ccxt_type,
             request.side.value, amount, price, params,
             during_submit=True, client_order_id=request.client_order_id,
         )

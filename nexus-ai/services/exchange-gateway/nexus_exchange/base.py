@@ -31,6 +31,7 @@ from nexus_exchange.models import (
     OrderBook,
     OrderRequest,
     OrderSnapshot,
+    OrderType,
     Ticker,
 )
 from nexus_exchange.precision import normalize_order, validate_order
@@ -85,6 +86,8 @@ class ExchangeAdapter(ABC):
         validate_order(request, rules)
         if request.post_only and not self.capabilities.post_only:
             raise InvalidOrder(f"{self.code} adapter does not support post-only orders")
+        if request.order_type is OrderType.STOP_LIMIT and not self.capabilities.stop_limit:
+            raise InvalidOrder(f"{self.code} adapter does not support stop-limit orders")
         return await self._submit(request)
 
     @abstractmethod

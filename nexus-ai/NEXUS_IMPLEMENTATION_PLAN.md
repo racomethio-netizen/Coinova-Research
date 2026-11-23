@@ -64,8 +64,11 @@ Built, tested and validated once on unseen 2022-2024 data: all 7 FAIL (NEXUS_BAC
 
 ## Phase F: execution
 
-* F1 Post-only and stop-limit orders (paper and live adapters), exchange-side protective
-  stops for live spot (OCO) where supported.
+* F1 (done 23 Nov: post-only and stop-limit) Post-only and stop-limit orders (paper and
+  live adapters), exchange-side protective stops for live spot (OCO) where supported.
+  Moved to F2: OCO and placing exchange-side stops from the trader. An OCO is two live
+  sell orders on one balance, which the one-active-order-per-side database rule does not
+  allow yet (needs an order-list design), and both need a demo run before they are used.
 * F2 Testnet/demo end-to-end run (needs a new demo key from the owner).
 
 ## Phase G: backtesting

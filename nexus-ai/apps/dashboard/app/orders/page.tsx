@@ -7,6 +7,13 @@ import { useApi, useMode } from "@/lib/hooks";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
 
+// Plain words, so the type does not rely on colour or abbreviations.
+function orderType(o: Any): string {
+  if (o.order_type === "stop_limit") return o.triggered ? "stop-limit (triggered)" : "stop-limit (waiting)";
+  if (o.post_only) return "limit, post-only";
+  return o.order_type;
+}
+
 export default function Orders() {
   const { mode } = useMode();
   const { data, error, loading } = useApi<Any[]>(`/orders?mode=${mode}`, 15000);
@@ -18,8 +25,11 @@ export default function Orders() {
         <Table rows={data} empty="No orders." columns={[
           { key: "created_at", label: "Created", render: (o: Any) => time(o.created_at) },
           { key: "exchange", label: "Exchange" }, { key: "symbol", label: "Pair" },
-          { key: "side", label: "Side" }, { key: "purpose", label: "Purpose" }, { key: "time_in_force", label: "TIF" },
+          { key: "side", label: "Side" }, { key: "purpose", label: "Purpose" },
+          { key: "order_type", label: "Type", render: (o: Any) => orderType(o) },
+          { key: "time_in_force", label: "TIF" },
           { key: "price", label: "Limit", numeric: true, render: (o: Any) => num(o.price) },
+          { key: "stop_price", label: "Stop", numeric: true, render: (o: Any) => (o.stop_price == null ? DASH : num(o.stop_price)) },
           { key: "amount", label: "Amount", numeric: true, render: (o: Any) => qty(o.amount) },
           { key: "filled_amount", label: "Filled", numeric: true, render: (o: Any) => qty(o.filled_amount) },
           { key: "average_fill_price", label: "Avg fill", numeric: true, render: (o: Any) => num(o.average_fill_price) },

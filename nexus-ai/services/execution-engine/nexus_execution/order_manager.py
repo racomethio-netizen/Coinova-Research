@@ -23,7 +23,7 @@ from nexus_common.logging import get_logger
 from nexus_common.timeutil import utcnow
 from nexus_db import models, repo, transaction
 from nexus_exchange.errors import ExchangeError, OrderStateUnknown
-from nexus_exchange.models import OrderRequest, OrderStatus, Side, TimeInForce
+from nexus_exchange.models import OrderRequest, OrderStatus, OrderType, Side, TimeInForce
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
@@ -65,6 +65,9 @@ class OrderIntent:
     position_id: int | None = None
     fee_buffer: Decimal = Decimal("0.003")   # reserve quote for fees on buys
     details: dict[str, Any] = field(default_factory=dict)
+    order_type: OrderType = OrderType.LIMIT  # LIMIT or STOP_LIMIT (``price`` = its limit)
+    stop_price: Decimal | None = None        # STOP_LIMIT trigger, already rounded
+    post_only: bool = False                  # maker only; refused if it would take
 
 
 # ---------------------------------------------------------------------- ledger rows
@@ -162,7 +165,8 @@ class OrderManager:
         cid = str(uuid.uuid4())
         req = OrderRequest(client_order_id=cid, symbol=intent.symbol, side=intent.side,
                            amount=intent.amount, price=intent.price,
-                           time_in_force=intent.time_in_force)
+                           order_type=intent.order_type, time_in_force=intent.time_in_force,
+                           post_only=intent.post_only, stop_price=intent.stop_price)
         try:
             with transaction(self.factory) as s:
                 pair = s.scalar(select(models.TradingPair).join(models.Exchange).where(
@@ -193,13 +197,15 @@ class OrderManager:
                 order = models.Order(
                     portfolio_id=intent.portfolio_id, mode=intent.mode,
                     exchange_id=pair.exchange_id, pair_id=pair.id, signal_id=intent.signal_id,
-                    client_order_id=cid, side=intent.side.value, order_type="limit",
+                    client_order_id=cid, side=intent.side.value,
+                    order_type=intent.order_type.value, stop_price=intent.stop_price,
                     time_in_force=intent.time_in_force.value, price=intent.price,
                     amount=intent.amount, expected_price=intent.expected_price,
                     status="pending_submit", purpose=intent.purpose,
                     position_id=intent.position_id,
                     details={**intent.details, "reserve_asset": reserve_asset,
-                             "reserved": str(reserve)})
+                             "reserved": str(reserve),
+                             **({"post_only": True} if intent.post_only else {})})
                 s.add(order)
                 s.flush()
                 return order.id, req
@@ -251,6 +257,9 @@ class OrderManager:
                 order.submitted_at = utcnow()
             if update.exchange_order_id:
                 order.exchange_order_id = update.exchange_order_id
+            if update.triggered and not (order.details or {}).get("triggered"):
+                order.details = {**order.details, "triggered": True,
+                                 "triggered_at": utcnow().isoformat()}
             known = set(s.scalars(select(models.Trade.exchange_trade_id).where(
                 models.Trade.order_id == order.id)).all())
             new = [f for f in update.fills if f.trade_id not in known]
@@ -337,7 +346,9 @@ class OrderManager:
                 update = await self.broker.refresh(
                     exchange=r["exchange"], symbol=r["symbol"], side=Side(r["side"]),
                     price=r["price"], amount=r["amount"], filled=r["filled"],
-                    exchange_order_id=r["exchange_order_id"], since=r["submitted_at"])
+                    exchange_order_id=r["exchange_order_id"], since=r["submitted_at"],
+                    order_type=OrderType(r["order_type"]), stop_price=r["stop_price"],
+                    triggered=r["triggered"])
             except ExchangeError as exc:
                 log.warning("order_refresh_failed", order_id=r["id"], error=str(exc)[:200])
                 continue
@@ -412,7 +423,10 @@ class OrderManager:
                      "price": o.price, "amount": o.amount, "filled": o.filled_amount,
                      "exchange_order_id": o.exchange_order_id, "submitted_at": o.submitted_at,
                      "created_at": o.created_at, "client_order_id": o.client_order_id,
-                     "purpose": o.purpose} for o, code, sym in s.execute(q).all()]
+                     "purpose": o.purpose, "order_type": o.order_type,
+                     "stop_price": o.stop_price,
+                     "triggered": bool((o.details or {}).get("triggered"))}
+                    for o, code, sym in s.execute(q).all()]
 
     async def _notify(self, payload: dict[str, Any]) -> None:
         if self.redis is not None:

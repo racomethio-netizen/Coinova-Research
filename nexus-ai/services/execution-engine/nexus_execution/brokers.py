@@ -14,9 +14,16 @@ from typing import Any, Protocol
 from nexus_common.decimals import ZERO
 from nexus_common.timeutil import utcnow
 from nexus_exchange.base import ExchangeAdapter
-from nexus_exchange.models import OrderBook, OrderRequest, OrderSnapshot, OrderStatus, Side
+from nexus_exchange.models import (
+    OrderBook,
+    OrderRequest,
+    OrderSnapshot,
+    OrderStatus,
+    OrderType,
+    Side,
+)
 
-from nexus_execution.paper import SimResult, simulate_resting, simulate_submit
+from nexus_execution.paper import SimResult, simulate_resting, simulate_stop, simulate_submit
 
 
 @dataclass(frozen=True)
@@ -35,6 +42,7 @@ class BrokerUpdate:
     status: OrderStatus
     exchange_order_id: str | None
     fills: tuple[BrokerFill, ...] = field(default_factory=tuple)  # may repeat known fills
+    triggered: bool | None = None   # stop-limit: True once the stop was reached (paper)
 
 
 class Broker(Protocol):
@@ -44,7 +52,9 @@ class Broker(Protocol):
 
     async def refresh(self, *, exchange: str, symbol: str, side: Side, price: Decimal,
                       amount: Decimal, filled: Decimal, exchange_order_id: str | None,
-                      since: datetime | None) -> BrokerUpdate: ...
+                      since: datetime | None, order_type: OrderType = OrderType.LIMIT,
+                      stop_price: Decimal | None = None,
+                      triggered: bool = False) -> BrokerUpdate: ...
 
     async def find(self, client_order_id: str, *, exchange: str, symbol: str,
                    since: datetime | None) -> BrokerUpdate | None: ...
@@ -87,7 +97,10 @@ class LiveBroker:
 
     async def refresh(self, *, exchange: str, symbol: str, side: Side, price: Decimal,
                       amount: Decimal, filled: Decimal, exchange_order_id: str | None,
-                      since: datetime | None) -> BrokerUpdate:
+                      since: datetime | None, order_type: OrderType = OrderType.LIMIT,
+                      stop_price: Decimal | None = None,
+                      triggered: bool = False) -> BrokerUpdate:
+        # The exchange tracks triggers itself; the order type and stop are not needed.
         if exchange_order_id is None:
             raise ValueError("cannot refresh an order without an exchange id")
         adapter = self._adapters[exchange]
@@ -154,7 +167,7 @@ class PaperBroker:
         now = utcnow()
         fills = tuple(BrokerFill(f.trade_id, f.price, f.amount, f.fee, self.quote_asset,
                                  f.is_maker, now) for f in sim.fills)
-        return BrokerUpdate(status, order_id, fills)
+        return BrokerUpdate(status, order_id, fills, triggered=sim.triggered)
 
     async def submit(self, req: OrderRequest, *, exchange: str) -> BrokerUpdate:
         import asyncio
@@ -179,9 +192,20 @@ class PaperBroker:
 
     async def refresh(self, *, exchange: str, symbol: str, side: Side, price: Decimal,
                       amount: Decimal, filled: Decimal, exchange_order_id: str | None,
-                      since: datetime | None) -> BrokerUpdate:
+                      since: datetime | None, order_type: OrderType = OrderType.LIMIT,
+                      stop_price: Decimal | None = None,
+                      triggered: bool = False) -> BrokerUpdate:
         book = await self._book(exchange, symbol)
-        sim = simulate_resting(side, price, amount - filled, book, maker_fee=self.maker_fee)
+        if order_type is OrderType.STOP_LIMIT and not triggered:
+            if stop_price is None:
+                raise ValueError("stop-limit order without a stop price")
+            sim = simulate_stop(side, stop_price, price, amount - filled, book,
+                                taker_fee=self.taker_fee, extra_slippage=self.extra_slippage,
+                                participation=self.participation)
+        else:
+            sim = simulate_resting(side, price, amount - filled, book, maker_fee=self.maker_fee)
+            if order_type is OrderType.STOP_LIMIT:
+                sim = SimResult(sim.fills, sim.remaining, sim.resting, triggered=True)
         return self._to_update(sim, filled, amount, exchange_order_id or "paper-unknown")
 
     async def find(self, client_order_id: str, *, exchange: str, symbol: str,

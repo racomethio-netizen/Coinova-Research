@@ -47,7 +47,7 @@ ORDER_STATUSES = (
     "expired",
     "unknown",         # timeout/ambiguous; must be reconciled by client order id
 )
-ORDER_TYPES = ("limit", "market")
+ORDER_TYPES = ("limit", "market", "stop_limit")
 MODE_CHECK = in_list("mode", TRADING_MODES)
 
 
@@ -426,6 +426,10 @@ class Order(Base):
         CheckConstraint("amount > 0", name="amount_positive"),
         CheckConstraint("price IS NULL OR price > 0", name="price_positive"),
         CheckConstraint("order_type <> 'limit' OR price IS NOT NULL", name="limit_has_price"),
+        CheckConstraint("(order_type = 'stop_limit') = (stop_price IS NOT NULL) "
+                        "AND (order_type <> 'stop_limit' OR price IS NOT NULL)",
+                        name="stop_limit_complete"),
+        CheckConstraint("stop_price IS NULL OR stop_price > 0", name="stop_price_positive"),
         CheckConstraint("filled_amount >= 0 AND filled_amount <= amount", name="fill_bounded"),
         CheckConstraint("fee_amount >= 0", name="fee_non_negative"),
         _portfolio_fk(),
@@ -459,9 +463,11 @@ class Order(Base):
     client_order_id: Mapped[str] = mapped_column(String(36), unique=True)
     exchange_order_id: Mapped[str | None] = mapped_column(String(128))
     side: Mapped[str] = mapped_column(String(4))
-    order_type: Mapped[str] = mapped_column(String(8))
+    order_type: Mapped[str] = mapped_column(String(16))
     time_in_force: Mapped[str | None] = mapped_column(String(8))
     price: Mapped[Decimal | None]
+    # Trigger of a stop-limit order (its limit is ``price``).
+    stop_price: Mapped[Decimal | None]
     amount: Mapped[Decimal]
     filled_amount: Mapped[Decimal] = mapped_column(server_default="0")
     average_fill_price: Mapped[Decimal | None]

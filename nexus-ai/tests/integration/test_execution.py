@@ -412,3 +412,85 @@ def test_live_ledger_funding_refuses_a_stale_report(factory: sessionmaker[Sessio
     live = _live_portfolio(factory, D(100), age_min=30)
     with transaction(factory) as s, pytest.raises(ValueError, match="no recent"):
         fund_live_ledger(s, live, repo.exchange_id(s, "binance"), "USDT", D(10))
+
+
+# ------------------------------------------------------------------ Phase F1 order types
+async def test_paper_stop_limit_protective_exit_lifecycle(
+        factory: sessionmaker[Session]) -> None:
+    """Entry fills; a protective sell stop-limit rests untriggered; the market gaps through
+    the stop (triggered, nothing fills); a NEW order manager (restart) still knows it was
+    triggered, and it fills at its limit once the price comes back."""
+    from datetime import UTC, datetime
+
+    from nexus_exchange.models import OrderBook, OrderType
+    from nexus_execution.brokers import PaperBroker
+
+    state = {"bid": D(60_000), "ask": D("60001")}
+
+    async def books(exchange: str, symbol: str) -> OrderBook:
+        return OrderBook(symbol, ((state["bid"], D(5)),), ((state["ask"], D(5)),),
+                         datetime.now(UTC))
+
+    def broker() -> PaperBroker:
+        return PaperBroker(books, taker_fee=D("0.001"), maker_fee=D("0.001"),
+                           extra_slippage=D(0))
+
+    om = OrderManager(factory, broker())
+    entry = await om.place(intent(factory, price=D("60001")))
+    assert order(factory, entry).status == "filled"
+    with transaction(factory) as s:
+        pos_id = s.scalar(select(models.Position.id))
+    stop = await om.place(intent(factory, side=Side.SELL, amount=D("0.1"), price=D(58_900),
+                                 stop_price=D(59_000), order_type=OrderType.STOP_LIMIT,
+                                 purpose="exit", position_id=pos_id,
+                                 details={"exit_reason": "stop_loss"}))
+    o = order(factory, stop)
+    assert (o.status, o.order_type, o.stop_price) == ("open", "stop_limit", D(59_000))
+    assert balances(factory)["BTC"][1] == D("0.1")           # base locked for the stop
+
+    state.update(bid=D(58_000), ask=D("58010"))              # gap below the limit
+    await om.refresh_open()
+    o = order(factory, stop)
+    assert o.status == "open" and o.details.get("triggered") is True and o.filled_amount == 0
+
+    state.update(bid=D(58_950), ask=D(58_960))               # back above the limit
+    await OrderManager(factory, broker()).refresh_open()     # fresh process: state from DB
+    o = order(factory, stop)
+    assert o.status == "filled" and o.average_fill_price == D(58_900)
+    with transaction(factory) as s:
+        pos = s.get(models.Position, pos_id)
+        assert pos is not None and pos.status == "closed" and pos.exit_reason == "stop_loss"
+
+
+async def test_paper_post_only_that_would_take_is_rejected(
+        factory: sessionmaker[Session]) -> None:
+    from datetime import UTC, datetime
+
+    from nexus_exchange.models import OrderBook
+    from nexus_execution.brokers import PaperBroker
+
+    async def books(exchange: str, symbol: str) -> OrderBook:
+        return OrderBook(symbol, ((D(59_999), D(5)),), ((D(60_000), D(5)),), datetime.now(UTC))
+
+    om = OrderManager(factory, PaperBroker(books, taker_fee=D("0.001"), maker_fee=D("0.001"),
+                                           extra_slippage=D(0)))
+    oid = await om.place(intent(factory, price=D(60_000), post_only=True))
+    o = order(factory, oid)
+    assert o.status == "rejected" and "post-only" in (o.last_error or "")
+    assert balances(factory)["USDT"] == (D(10_000), D(0))   # reserve released
+    oid = await om.place(intent(factory, price=D(59_990), post_only=True))
+    o = order(factory, oid)
+    assert o.status == "open" and o.details.get("post_only") is True
+
+
+def test_stop_limit_row_needs_a_stop_price(factory: sessionmaker[Session]) -> None:
+    from sqlalchemy.exc import IntegrityError
+
+    with pytest.raises(IntegrityError, match="stop_limit_complete"), transaction(factory) as s:
+        pair = s.scalar(select(models.TradingPair))
+        assert pair is not None
+        s.add(models.Order(portfolio_id=pid(factory), mode="paper", exchange_id=pair.exchange_id,
+                           pair_id=pair.id, client_order_id="00000000-0000-4000-8000-000000000001",
+                           side="sell", order_type="stop_limit", price=D(1), amount=D(1),
+                           status="open", purpose="exit"))
+        s.flush()

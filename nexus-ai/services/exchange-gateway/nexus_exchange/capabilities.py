@@ -18,6 +18,7 @@ CAPABILITIES: dict[ExchangeCode, Capabilities] = {
         websocket_market_data=True,
         post_only=True,                # LIMIT_MAKER
         withdrawal_permission_check="api",  # GET /sapi/v1/account/apiRestrictions
+        stop_limit=True,               # STOP_LOSS_LIMIT (ccxt: limit + stopLossPrice)
         ohlcv_page_limit=1000,
         notes=(
             "Testnet balances and liquidity are synthetic; use only for adapter tests.",

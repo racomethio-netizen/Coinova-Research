@@ -27,6 +27,10 @@ class Side(StrEnum):
 class OrderType(StrEnum):
     LIMIT = "limit"
     MARKET = "market"
+    # Rests untriggered until the market reaches ``stop_price``, then becomes a limit order
+    # at ``price`` (Binance spot STOP_LOSS_LIMIT). A sell stop sits below the market, a buy
+    # stop above it; one that would trigger immediately is refused, as Binance does.
+    STOP_LIMIT = "stop_limit"
 
 
 class TimeInForce(StrEnum):
@@ -146,17 +150,34 @@ class OrderRequest:
     price: Decimal | None
     order_type: OrderType = OrderType.LIMIT
     time_in_force: TimeInForce = TimeInForce.GTC
-    post_only: bool = False
+    post_only: bool = False          # maker only (Binance LIMIT_MAKER): refused if it would take
+    stop_price: Decimal | None = None  # trigger, STOP_LIMIT only
 
     def __post_init__(self) -> None:
         if not _UUID_RE.match(self.client_order_id):
             raise ValueError("client_order_id must be a lowercase UUIDv4 string")
         if self.amount <= 0:
             raise ValueError("amount must be > 0")
-        if self.order_type is OrderType.LIMIT and (self.price is None or self.price <= 0):
-            raise ValueError("limit orders require a positive price")
-        if self.order_type is OrderType.MARKET and self.post_only:
-            raise ValueError("market orders cannot be post-only")
+        if self.order_type in (OrderType.LIMIT, OrderType.STOP_LIMIT) and (
+                self.price is None or self.price <= 0):
+            raise ValueError("limit and stop-limit orders require a positive price")
+        if self.post_only and (self.order_type is not OrderType.LIMIT
+                               or self.time_in_force is not TimeInForce.GTC):
+            raise ValueError("post-only applies to GTC limit orders only")
+        if self.order_type is OrderType.STOP_LIMIT:
+            if self.stop_price is None or self.stop_price <= 0:
+                raise ValueError("stop-limit orders require a positive stop price")
+            if self.time_in_force is not TimeInForce.GTC:
+                raise ValueError("stop-limit orders are GTC")
+            # The limit must not be on the wrong side of the trigger, or the order could
+            # trigger and never be able to fill.
+            assert self.price is not None
+            if self.side is Side.SELL and self.price > self.stop_price:
+                raise ValueError("a sell stop-limit's limit price must be at or below its stop")
+            if self.side is Side.BUY and self.price < self.stop_price:
+                raise ValueError("a buy stop-limit's limit price must be at or above its stop")
+        elif self.stop_price is not None:
+            raise ValueError("stop price is only valid for stop-limit orders")
 
 
 @dataclass(frozen=True)
@@ -224,6 +245,8 @@ class Capabilities:
     websocket_market_data: bool
     post_only: bool
     withdrawal_permission_check: str
+    # Native stop-limit orders this adapter can place (Binance spot STOP_LOSS_LIMIT).
+    stop_limit: bool = False
     # Timeframe -> source timeframe it is aggregated from (exchange lacks it natively).
     aggregated_timeframes: tuple[tuple[str, str], ...] = ()
     ohlcv_page_limit: int = 500

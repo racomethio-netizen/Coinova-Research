@@ -22,7 +22,7 @@ from nexus_exchange.errors import (
     RateLimited,
     UnsupportedFeature,
 )
-from nexus_exchange.models import OrderRequest, OrderStatus, Side, new_client_order_id
+from nexus_exchange.models import OrderRequest, OrderStatus, OrderType, Side, new_client_order_id
 
 from tests.exchange.fakes import FakeCcxtClient, ccxt_order
 
@@ -235,11 +235,19 @@ async def test_post_only_and_ioc_params() -> None:
     a, client = adapter()
     client.responses["create_order"] = lambda *args: ccxt_order()
     r = OrderRequest(client_order_id=new_client_order_id(), symbol="BTC/USDT", side=Side.BUY,
-                     amount=D("0.001"), price=D("60000"), post_only=True,
-                     time_in_force=TimeInForce.IOC)
+                     amount=D("0.001"), price=D("60000"), post_only=True)
     await a.submit_order(r)
     params = client.calls[-1][1][5]
-    assert params["postOnly"] is True and params["timeInForce"] == "IOC"
+    assert params["postOnly"] is True and "timeInForce" not in params
+    r = OrderRequest(client_order_id=new_client_order_id(), symbol="BTC/USDT", side=Side.BUY,
+                     amount=D("0.001"), price=D("60000"), time_in_force=TimeInForce.IOC)
+    await a.submit_order(r)
+    assert client.calls[-1][1][5]["timeInForce"] == "IOC"
+    # Binance LIMIT_MAKER takes no time-in-force: the combination is refused up front.
+    with pytest.raises(ValueError, match="post-only"):
+        OrderRequest(client_order_id=new_client_order_id(), symbol="BTC/USDT", side=Side.BUY,
+                     amount=D("0.001"), price=D("60000"), post_only=True,
+                     time_in_force=TimeInForce.IOC)
 
 
 # ------------------------------------------------------------------ lookup by client id
@@ -371,3 +379,29 @@ def test_adapter_interface_has_no_margin_or_withdraw_methods() -> None:
     forbidden = ("withdraw", "transfer", "borrow", "leverage", "margin", "futures", "short")
     names = [n for n in dir(CcxtSpotAdapter) if not n.startswith("__")]
     assert not [n for n in names if any(f in n.lower() for f in forbidden)]
+
+
+async def test_stop_limit_submit_and_snapshot_type() -> None:
+    a, client = adapter()
+    r = await a.prepare_order(OrderRequest(
+        client_order_id=new_client_order_id(), symbol="BTC/USDT", side=Side.SELL,
+        amount=D("0.001"), price=D("59000"), order_type=OrderType.STOP_LIMIT,
+        stop_price=D("59100")))
+    client.responses["create_order"] = lambda *args: ccxt_order(
+        clientOrderId=args[5]["clientOrderId"], side="sell", amount=0.001, price=59000.0,
+        triggerPrice=59100.0)
+    snap = await a.submit_order(r)
+    _, args = client.calls[-1]
+    assert args[1] == "limit" and args[5]["stopLossPrice"] == 59100.0
+    assert args[5]["timeInForce"] == "GTC"
+    assert snap.order_type is OrderType.STOP_LIMIT
+
+
+async def test_stop_limit_refused_without_capability() -> None:
+    a, client = adapter(ExchangeCode.KRAKEN)
+    r = OrderRequest(client_order_id=new_client_order_id(), symbol="BTC/USDT", side=Side.SELL,
+                     amount=D("0.001"), price=D("59000"), order_type=OrderType.STOP_LIMIT,
+                     stop_price=D("59100"))
+    with pytest.raises(InvalidOrder, match="stop-limit"):
+        await a.submit_order(r)
+    assert client.count("create_order") == 0

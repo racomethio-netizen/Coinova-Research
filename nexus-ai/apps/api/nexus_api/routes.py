@@ -362,10 +362,14 @@ def orders(mode: Mode = "paper", limit: int = Query(200, le=1000),
          .join(models.TradingPair, models.TradingPair.id == models.Order.pair_id)
          .where(models.Order.mode == mode).order_by(desc(models.Order.id)).limit(limit))
     cols = ["id", "mode", "client_order_id", "exchange_order_id", "side", "order_type",
-            "time_in_force", "price", "amount", "filled_amount", "average_fill_price",
+            "time_in_force", "price", "stop_price", "amount", "filled_amount",
+            "average_fill_price",
             "expected_price", "fee_amount", "fee_asset", "status", "purpose", "last_error",
             "created_at", "closed_at"]
-    return [{**{c: ser(getattr(o, c)) for c in cols}, "exchange": ex, "symbol": sym}
+    return [{**{c: ser(getattr(o, c)) for c in cols}, "exchange": ex, "symbol": sym,
+             "post_only": bool((o.details or {}).get("post_only")),
+             "triggered": (o.details or {}).get("triggered")
+             if o.order_type == "stop_limit" else None}
             for o, ex, sym in s.execute(q).all()]
 
 

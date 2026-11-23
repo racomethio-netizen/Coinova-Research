@@ -34,11 +34,21 @@ def normalize_order(request: OrderRequest, rules: MarketRules) -> OrderRequest:
     price = request.price
     if price is not None:
         price = round_price(price, request.side, rules)
+    # Trigger rounded the same conservative way: a protective sell stop never triggers
+    # lower than intended, a buy stop never higher.
+    stop = request.stop_price
+    if stop is not None:
+        stop = round_price(stop, request.side, rules)
+        if stop <= 0:
+            raise InvalidOrder(f"stop price {request.stop_price} rounds to zero")
     if amount <= 0:
         raise InvalidOrder(f"amount {request.amount} rounds to zero at step {rules.amount_step}")
     if price is not None and price <= 0:
         raise InvalidOrder(f"price {request.price} rounds to zero at tick {rules.price_tick}")
-    normalized = replace(request, amount=amount, price=price)
+    try:
+        normalized = replace(request, amount=amount, price=price, stop_price=stop)
+    except ValueError as exc:   # rounding moved the limit across the stop
+        raise InvalidOrder(str(exc)) from exc
     validate_order(normalized, rules)
     return normalized
 
@@ -55,12 +65,16 @@ def validate_order(
         raise InvalidOrder(f"amount {request.amount} is not a multiple of {rules.amount_step}")
     if request.price is not None and not is_multiple_of(request.price, rules.price_tick):
         raise InvalidOrder(f"price {request.price} is not a multiple of {rules.price_tick}")
+    if request.stop_price is not None and not is_multiple_of(request.stop_price,
+                                                             rules.price_tick):
+        raise InvalidOrder(f"stop price {request.stop_price} is not a multiple of "
+                           f"{rules.price_tick}")
     if rules.min_amount is not None and request.amount < rules.min_amount:
         raise InvalidOrder(f"amount {request.amount} below minimum {rules.min_amount}")
     if rules.max_amount is not None and request.amount > rules.max_amount:
         raise InvalidOrder(f"amount {request.amount} above maximum {rules.max_amount}")
 
-    price = request.price if request.order_type is OrderType.LIMIT else reference_price
+    price = request.price if request.order_type is not OrderType.MARKET else reference_price
     if rules.min_notional is not None:
         if price is None:
             raise InvalidOrder("cannot check minimum notional without a price")

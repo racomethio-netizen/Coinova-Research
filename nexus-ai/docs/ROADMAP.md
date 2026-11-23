@@ -547,3 +547,21 @@ trading on Render can use live data once background workers are approved.
 * Next candidates (each needs its own pre-registration): volatility forecasts for risk
   sizing; maker-execution study; Phase F execution (post-only, stop-limit) and the testnet
   run.
+
+## 2026-11-23: Phase F1 (execution: post-only and stop-limit orders)
+
+* **Completed: order types.** Post-only (Binance `LIMIT_MAKER`) and stop-limit (Binance
+  `STOP_LOSS_LIMIT`) orders now work across the whole stack:
+  * the order model, and rounding (precision);
+  * the paper simulator, which mirrors Binance's refusals;
+  * the Binance adapter (ccxt `limit` + `stopLossPrice`);
+  * the order manager, which stores the trigger state in the database so it survives restarts;
+  * migration 0013 (`orders.stop_price`, `order_type` 'stop_limit');
+  * the orders API, and the dashboard Orders page (type and stop columns).
+* **Unchanged on purpose:** the trader still uses its own software stops and IOC exits.
+  Paper and live trading behaviour is the same as before.
+* **Tested:** see NEXUS_TEST_REPORT.md.
+* **Next: F2. Needs the owner's Binance demo (testnet) key.**
+  * Order-list (OCO) support: two sells on one balance need a database design.
+  * Exchange-side protective stops placed by the trader for live spot.
+  * An end-to-end demo run of entry, protective stop, take-profit and cancel/replace.
