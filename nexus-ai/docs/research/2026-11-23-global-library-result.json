@@ -1,0 +1,3533 @@
+{
+ "data": {
+  "intraday": {
+   "BTCUSDT": [
+    "2022-09-01 00:00:00+00:00",
+    "2026-11-22 23:45:00+00:00",
+    148219
+   ],
+   "ETHUSDT": [
+    "2022-09-01 00:00:00+00:00",
+    "2026-11-22 23:45:00+00:00",
+    148219
+   ],
+   "BNBUSDT": [
+    "2022-09-01 00:00:00+00:00",
+    "2026-11-22 23:45:00+00:00",
+    148219
+   ],
+   "SOLUSDT": [
+    "2022-09-01 00:00:00+00:00",
+    "2026-11-22 23:45:00+00:00",
+    148219
+   ],
+   "XRPUSDT": [
+    "2022-09-01 00:00:00+00:00",
+    "2026-11-22 23:45:00+00:00",
+    148219
+   ],
+   "ADAUSDT": [
+    "2022-09-01 00:00:00+00:00",
+    "2026-11-22 23:45:00+00:00",
+    148219
+   ],
+   "DOGEUSDT": [
+    "2022-09-01 00:00:00+00:00",
+    "2026-11-22 23:45:00+00:00",
+    148219
+   ],
+   "LINKUSDT": [
+    "2022-09-01 00:00:00+00:00",
+    "2026-11-22 23:45:00+00:00",
+    148219
+   ],
+   "AVAXUSDT": [
+    "2022-09-01 00:00:00+00:00",
+    "2026-11-22 23:45:00+00:00",
+    148219
+   ],
+   "LTCUSDT": [
+    "2022-09-01 00:00:00+00:00",
+    "2026-11-22 23:45:00+00:00",
+    148219
+   ]
+  },
+  "daily": {
+   "BTCUSDT": [
+    "2017-08-17 00:00:00+00:00",
+    "2026-11-22 00:00:00+00:00",
+    3385
+   ],
+   "ETHUSDT": [
+    "2017-08-17 00:00:00+00:00",
+    "2026-11-22 00:00:00+00:00",
+    3385
+   ]
+  }
+ },
+ "tests": {
+  "ema_adx_macd_trend@1h": {
+   "full": {
+    "trades": 1089,
+    "signals": 1209,
+    "halt_5pct_would_trigger_at": "2023-03-14 21:00:00+00:00",
+    "return_pct": -0.24213225023083496,
+    "max_drawdown": 0.297217485577425,
+    "sharpe": -0.9543186947659535,
+    "sortino": -1.0496150542258702,
+    "net_profit": -2421.3225023083723,
+    "win_rate": 0.2745638200183655,
+    "profit_factor": 0.8267663662259015,
+    "avg_win": 38.648445910114134,
+    "avg_loss": -17.69266813852215,
+    "expectancy": -2.223436641238175,
+    "expectancy_r": -0.061396990589919896,
+    "avg_ret": -0.0017460794933178557,
+    "fees": 3091.3870719047627,
+    "exit_kinds": {
+     "strategy_exit": 879,
+     "target": 134,
+     "stop": 76
+    },
+    "avg_bars": 6.24793388429752,
+    "recovery_factor": -0.7936374327648819
+   },
+   "train": {
+    "trades": 420,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.10810201066531278,
+    "max_drawdown": 0.13795298693621383,
+    "sharpe": -1.0196504629671272,
+    "sortino": -1.1016561751905964,
+    "net_profit": -1081.0201066531395,
+    "win_rate": 0.2857142857142857,
+    "profit_factor": 0.8147784162327383,
+    "avg_win": 39.62784432299839,
+    "avg_loss": -19.45453808470982,
+    "expectancy": -2.5738573967931893,
+    "expectancy_r": -0.062259899279640374,
+    "avg_ret": -0.002307448776365205,
+    "fees": 1258.9509856125264,
+    "exit_kinds": {
+     "strategy_exit": 338,
+     "target": 52,
+     "stop": 30
+    },
+    "avg_bars": 6.166666666666667,
+    "recovery_factor": -0.7633901023390837
+   },
+   "validation": {
+    "trades": 297,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.03889870841494425,
+    "max_drawdown": 0.0908357673447232,
+    "sharpe": -0.4784713887153745,
+    "sortino": -0.5872135385863642,
+    "net_profit": -352.64706458574113,
+    "win_rate": 0.2760942760942761,
+    "profit_factor": 0.9097824258058146,
+    "avg_win": 43.36834195713379,
+    "avg_loss": -18.180702814282377,
+    "expectancy": -1.1873638538240443,
+    "expectancy_r": -0.03617729333860647,
+    "avg_ret": -0.0004041910432095761,
+    "fees": 821.6694068371653,
+    "exit_kinds": {
+     "strategy_exit": 241,
+     "target": 37,
+     "stop": 19
+    },
+    "avg_bars": 6.531986531986532,
+    "recovery_factor": -0.36724556926714247
+   },
+   "test": {
+    "trades": 372,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.1158401885748297,
+    "max_drawdown": 0.194293328850772,
+    "sharpe": -1.2627578369110033,
+    "sortino": -1.3044001530724023,
+    "net_profit": -987.6553310694916,
+    "win_rate": 0.260752688172043,
+    "profit_factor": 0.766621826986715,
+    "avg_win": 33.446803792570606,
+    "avg_loss": -15.389073814359415,
+    "expectancy": -2.6549874491115366,
+    "expectancy_r": -0.08055781971346153,
+    "avg_ret": -0.0021836218879476206,
+    "fees": 1010.7666794550713,
+    "exit_kinds": {
+     "strategy_exit": 300,
+     "target": 45,
+     "stop": 27
+    },
+    "avg_bars": 6.112903225806452,
+    "recovery_factor": -0.48664251997609587
+   },
+   "p_value": 0.9752049590081984,
+   "sqn": -2.1989113746983007,
+   "mc_drawdown": {
+    "median": 0.2687622224213173,
+    "p95": 0.30931629239310265
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 1.0863960558353019,
+    "AVAXUSDT": 0.982927897589582,
+    "BNBUSDT": 0.7410914704139501,
+    "BTCUSDT": 0.978754406114476,
+    "DOGEUSDT": 1.2050302954349248,
+    "ETHUSDT": 0.7453112789872152,
+    "LINKUSDT": 0.7356250371476941,
+    "LTCUSDT": 0.5147728242196122,
+    "SOLUSDT": 0.5916542003265409,
+    "XRPUSDT": 0.9539655006283438
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 94,
+    "AVAXUSDT": 113,
+    "BNBUSDT": 100,
+    "BTCUSDT": 119,
+    "DOGEUSDT": 91,
+    "ETHUSDT": 104,
+    "LINKUSDT": 138,
+    "LTCUSDT": 107,
+    "SOLUSDT": 135,
+    "XRPUSDT": 88
+   },
+   "rejections": {
+    "maximum open positions": 118,
+    "aggregate open risk limit": 108,
+    "insufficient cash": 2
+   },
+   "buy_and_hold": {
+    "return_pct": 1.0959954541121153,
+    "max_drawdown": 0.7046581136542083
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": false,
+    "max_drawdown_le_15pct": false,
+    "mc_p95_drawdown_le_20pct": false,
+    "holm_significant": false,
+    "breadth_half_symbols": false
+   },
+   "passed": false
+  },
+  "rsi_macd_roc_momentum@1h": {
+   "full": {
+    "trades": 2616,
+    "signals": 3420,
+    "halt_5pct_would_trigger_at": "2023-02-07 18:00:00+00:00",
+    "return_pct": -0.7751110459912742,
+    "max_drawdown": 0.8007191469390836,
+    "sharpe": -2.16926207904397,
+    "sortino": -3.3147708077214126,
+    "net_profit": -7742.796440435558,
+    "win_rate": 0.3237767584097859,
+    "profit_factor": 0.7696990827487021,
+    "avg_win": 30.552006145146994,
+    "avg_loss": -19.005283010387256,
+    "expectancy": -2.9597845720319413,
+    "expectancy_r": -0.14256264656538647,
+    "avg_ret": -0.002970446717276077,
+    "fees": 5529.600558556283,
+    "exit_kinds": {
+     "stop": 1035,
+     "strategy_exit": 703,
+     "target": 649,
+     "time_limit": 229
+    },
+    "avg_bars": 11.845948012232416,
+    "recovery_factor": -0.8575363148198557
+   },
+   "train": {
+    "trades": 1096,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.4202089233500096,
+    "max_drawdown": 0.49465090202415074,
+    "sharpe": -2.10423882611111,
+    "sortino": -3.545305705903045,
+    "net_profit": -4143.728085821676,
+    "win_rate": 0.3156934306569343,
+    "profit_factor": 0.7904023677263602,
+    "avg_win": 45.16239973732482,
+    "avg_loss": -26.359891193248085,
+    "expectancy": -3.7807738009321863,
+    "expectancy_r": -0.1550968870790705,
+    "avg_ret": -0.0022644402447456902,
+    "fees": 3376.8186021236716,
+    "exit_kinds": {
+     "stop": 475,
+     "target": 276,
+     "strategy_exit": 256,
+     "time_limit": 89
+    },
+    "avg_bars": 11.296532846715328,
+    "recovery_factor": -0.7428948299761776
+   },
+   "validation": {
+    "trades": 635,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.32531068664199037,
+    "max_drawdown": 0.3469865893560109,
+    "sharpe": -2.1245103999861823,
+    "sortino": -3.049537916526189,
+    "net_profit": -1949.2432435771898,
+    "win_rate": 0.32440944881889766,
+    "profit_factor": 0.7499253511359618,
+    "avg_win": 28.375739247545713,
+    "avg_loss": -18.16933689643731,
+    "expectancy": -3.0696743993341573,
+    "expectancy_r": -0.12691492907322957,
+    "avg_ret": -0.0036694436113398118,
+    "fees": 1087.5883387542272,
+    "exit_kinds": {
+     "stop": 246,
+     "strategy_exit": 181,
+     "target": 153,
+     "time_limit": 55
+    },
+    "avg_bars": 12.039370078740157,
+    "recovery_factor": -0.5559040419719363
+   },
+   "test": {
+    "trades": 885,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.4255878055273513,
+    "max_drawdown": 0.47308742615244415,
+    "sharpe": -2.3154888419632487,
+    "sortino": -3.391379581148516,
+    "net_profit": -1649.8251110366919,
+    "win_rate": 0.3333333333333333,
+    "profit_factor": 0.7275619916947825,
+    "avg_win": 14.935446138409143,
+    "avg_loss": -10.264036816724389,
+    "expectancy": -1.864209165013211,
+    "expectancy_r": -0.13826747481908355,
+    "avg_ret": -0.0033432377524883162,
+    "fees": 1065.1936176783845,
+    "exit_kinds": {
+     "stop": 314,
+     "strategy_exit": 266,
+     "target": 220,
+     "time_limit": 85
+    },
+    "avg_bars": 12.387570621468926,
+    "recovery_factor": -0.3201465738875792
+   },
+   "p_value": 1.0,
+   "sqn": -5.661770709587246,
+   "mc_drawdown": {
+    "median": 0.7852895877121013,
+    "p95": 0.8155659469077613
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 0.7829681175362965,
+    "AVAXUSDT": 0.6462178132236273,
+    "BNBUSDT": 0.7589239035283438,
+    "BTCUSDT": 0.613501414753249,
+    "DOGEUSDT": 0.8790177387949135,
+    "ETHUSDT": 0.716518656149728,
+    "LINKUSDT": 0.9143716903411181,
+    "LTCUSDT": 0.6971625332123536,
+    "SOLUSDT": 0.9290813368427449,
+    "XRPUSDT": 0.7742712101743596
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 274,
+    "AVAXUSDT": 292,
+    "BNBUSDT": 263,
+    "BTCUSDT": 288,
+    "DOGEUSDT": 275,
+    "ETHUSDT": 320,
+    "LINKUSDT": 226,
+    "LTCUSDT": 239,
+    "SOLUSDT": 235,
+    "XRPUSDT": 204
+   },
+   "rejections": {
+    "maximum open positions": 433,
+    "insufficient cash": 237,
+    "aggregate open risk limit": 306,
+    "weekly drawdown limit reached": 121,
+    "daily drawdown limit reached": 15
+   },
+   "buy_and_hold": {
+    "return_pct": 1.0959954541121153,
+    "max_drawdown": 0.7046581136542083
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": false,
+    "max_drawdown_le_15pct": false,
+    "mc_p95_drawdown_le_20pct": false,
+    "holm_significant": false,
+    "breadth_half_symbols": false
+   },
+   "passed": false
+  },
+  "donchian_breakout@1h": {
+   "full": {
+    "trades": 2373,
+    "signals": 4930,
+    "halt_5pct_would_trigger_at": "2023-01-16 08:00:00+00:00",
+    "return_pct": -0.38759905232773506,
+    "max_drawdown": 0.5071890789478684,
+    "sharpe": -0.5471123356476227,
+    "sortino": -0.9799563635078921,
+    "net_profit": -3875.9905232773726,
+    "win_rate": 0.3118415507796039,
+    "profit_factor": 0.898866692445882,
+    "avg_win": 46.55347061714213,
+    "avg_loss": -23.469417501507994,
+    "expectancy": -1.633371480521438,
+    "expectancy_r": -0.04856816252095134,
+    "avg_ret": -0.0010932647075503521,
+    "fees": 5814.255290383757,
+    "exit_kinds": {
+     "stop": 1078,
+     "strategy_exit": 803,
+     "target": 478,
+     "time_limit": 14
+    },
+    "avg_bars": 15.18078381795196,
+    "recovery_factor": -0.6936565110304515
+   },
+   "train": {
+    "trades": 959,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.39252386058116684,
+    "max_drawdown": 0.4637109530935747,
+    "sharpe": -1.8242574170807375,
+    "sortino": -3.0894724258934105,
+    "net_profit": -3920.231313893986,
+    "win_rate": 0.28988529718456724,
+    "profit_factor": 0.782970852934383,
+    "avg_win": 50.8738293735589,
+    "avg_loss": -26.524457973191424,
+    "expectancy": -4.087832444102175,
+    "expectancy_r": -0.12357799868041963,
+    "avg_ret": -0.0029389928280424745,
+    "fees": 2624.9507976042187,
+    "exit_kinds": {
+     "stop": 466,
+     "strategy_exit": 314,
+     "target": 171,
+     "time_limit": 8
+    },
+    "avg_bars": 15.437956204379562,
+    "recovery_factor": -0.7673544098146386
+   },
+   "validation": {
+    "trades": 641,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.08419908677253951,
+    "max_drawdown": 0.20303532460893348,
+    "sharpe": -0.2381243474990951,
+    "sortino": -0.41337327849823563,
+    "net_profit": -517.5080196567775,
+    "win_rate": 0.3213728549141966,
+    "profit_factor": 0.9466421724825096,
+    "avg_win": 44.56948063410128,
+    "avg_loss": -22.296140299498024,
+    "expectancy": -0.8073448044567512,
+    "expectancy_r": -0.022864192591684394,
+    "avg_ret": -0.000504638493266648,
+    "fees": 1339.8403292066118,
+    "exit_kinds": {
+     "stop": 275,
+     "strategy_exit": 235,
+     "target": 128,
+     "time_limit": 3
+    },
+    "avg_bars": 15.274570982839313,
+    "recovery_factor": -0.22271808718829492
+   },
+   "test": {
+    "trades": 773,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.09720356378825756,
+    "max_drawdown": 0.21835124676998707,
+    "sharpe": 0.4624087824690208,
+    "sortino": 0.946354258795911,
+    "net_profit": 561.7488102733914,
+    "win_rate": 0.3311772315653299,
+    "profit_factor": 1.0531778725426504,
+    "avg_win": 43.458322969574,
+    "avg_loss": -20.43246009659101,
+    "expectancy": 0.7267125618025763,
+    "expectancy_r": 0.023175935994275018,
+    "avg_ret": 0.0007084737972311363,
+    "fees": 1849.4641635729258,
+    "exit_kinds": {
+     "stop": 337,
+     "strategy_exit": 254,
+     "target": 179,
+     "time_limit": 3
+    },
+    "avg_bars": 14.783958602846054,
+    "recovery_factor": 0.19867952886617563
+   },
+   "p_value": 0.8842231553689263,
+   "sqn": -1.466693226269498,
+   "mc_drawdown": {
+    "median": 0.43699757485515134,
+    "p95": 0.5101103061435726
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 0.9122955945403384,
+    "AVAXUSDT": 1.0324531958543326,
+    "BNBUSDT": 0.9377388547745482,
+    "BTCUSDT": 0.9979714821080263,
+    "DOGEUSDT": 0.7706139152712637,
+    "ETHUSDT": 0.7931662763956139,
+    "LINKUSDT": 0.9045245656738388,
+    "LTCUSDT": 0.6102663831039787,
+    "SOLUSDT": 1.0731401511807384,
+    "XRPUSDT": 0.9485639002852477
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 244,
+    "AVAXUSDT": 251,
+    "BNBUSDT": 295,
+    "BTCUSDT": 311,
+    "DOGEUSDT": 222,
+    "ETHUSDT": 242,
+    "LINKUSDT": 206,
+    "LTCUSDT": 200,
+    "SOLUSDT": 238,
+    "XRPUSDT": 164
+   },
+   "rejections": {
+    "insufficient cash": 318,
+    "maximum open positions": 2134,
+    "aggregate open risk limit": 1650,
+    "daily drawdown limit reached": 31,
+    "weekly drawdown limit reached": 74
+   },
+   "buy_and_hold": {
+    "return_pct": 1.0959954541121153,
+    "max_drawdown": 0.7046581136542083
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": false,
+    "max_drawdown_le_15pct": false,
+    "mc_p95_drawdown_le_20pct": false,
+    "holm_significant": false,
+    "breadth_half_symbols": false
+   },
+   "passed": false
+  },
+  "bollinger_squeeze_breakout@1h": {
+   "full": {
+    "trades": 2483,
+    "signals": 3708,
+    "halt_5pct_would_trigger_at": "2023-02-14 16:00:00+00:00",
+    "return_pct": -0.5726955427700551,
+    "max_drawdown": 0.6200274404221564,
+    "sharpe": -1.3866069758240567,
+    "sortino": -2.164920948048103,
+    "net_profit": -5726.9554277005345,
+    "win_rate": 0.3221908981071285,
+    "profit_factor": 0.8434507004731174,
+    "avg_win": 38.56935628002334,
+    "avg_loss": -21.7364470895539,
+    "expectancy": -2.3064661408379115,
+    "expectancy_r": -0.10776142115845436,
+    "avg_ret": -0.0016986763559474801,
+    "fees": 7168.590068560482,
+    "exit_kinds": {
+     "strategy_exit": 1165,
+     "stop": 715,
+     "target": 602,
+     "time_limit": 1
+    },
+    "avg_bars": 9.194522754732178,
+    "recovery_factor": -0.8213514242327012
+   },
+   "train": {
+    "trades": 1012,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.235691224240139,
+    "max_drawdown": 0.32292267236571615,
+    "sharpe": -1.215817982338711,
+    "sortino": -2.333491673652281,
+    "net_profit": -2288.4136522903736,
+    "win_rate": 0.3221343873517787,
+    "profit_factor": 0.8724509382010383,
+    "avg_win": 48.01541374649175,
+    "avg_loss": -26.153700486365434,
+    "expectancy": -2.2612783125398948,
+    "expectancy_r": -0.11194942610759342,
+    "avg_ret": -0.0011893432739037276,
+    "fees": 3664.5957961163745,
+    "exit_kinds": {
+     "strategy_exit": 457,
+     "stop": 306,
+     "target": 249
+    },
+    "avg_bars": 8.726284584980236,
+    "recovery_factor": -0.6301618596084224
+   },
+   "validation": {
+    "trades": 627,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.16705642517656993,
+    "max_drawdown": 0.22577377290957956,
+    "sharpe": -0.9257298071705108,
+    "sortino": -1.3491121311167555,
+    "net_profit": -1334.2228051503744,
+    "win_rate": 0.3365231259968102,
+    "profit_factor": 0.8639076436315565,
+    "avg_win": 40.14019584275617,
+    "avg_loss": -23.56683684608636,
+    "expectancy": -2.1279470576560993,
+    "expectancy_r": -0.07415994448328585,
+    "avg_ret": -0.0017342289749366583,
+    "fees": 1652.834233205268,
+    "exit_kinds": {
+     "strategy_exit": 295,
+     "stop": 177,
+     "target": 155
+    },
+    "avg_bars": 9.264752791068581,
+    "recovery_factor": -0.5492969221675668
+   },
+   "test": {
+    "trades": 844,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.32996691441794757,
+    "max_drawdown": 0.408787138902285,
+    "sharpe": -2.1608064781863505,
+    "sortino": -3.0838391656870194,
+    "net_profit": -2104.318970259786,
+    "win_rate": 0.31161137440758296,
+    "profit_factor": 0.7618793852710825,
+    "avg_win": 25.60029969521221,
+    "avg_loss": -15.210323218761786,
+    "expectancy": -2.493268922108751,
+    "expectancy_r": -0.12770201934186887,
+    "avg_ret": -0.0022829815537224367,
+    "fees": 1851.16003923884,
+    "exit_kinds": {
+     "strategy_exit": 413,
+     "stop": 232,
+     "target": 198,
+     "time_limit": 1
+    },
+    "avg_bars": 9.703791469194313,
+    "recovery_factor": -0.45421689259493025
+   },
+   "p_value": 0.9954009198160368,
+   "sqn": -3.443928626862204,
+   "mc_drawdown": {
+    "median": 0.5976711382449511,
+    "p95": 0.6468506315943472
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 0.8461737506895286,
+    "AVAXUSDT": 0.9268826040274024,
+    "BNBUSDT": 0.7021795686510097,
+    "BTCUSDT": 0.8134537648196647,
+    "DOGEUSDT": 0.9020518940297813,
+    "ETHUSDT": 0.6972360761328633,
+    "LINKUSDT": 0.825739683242392,
+    "LTCUSDT": 0.6931525689994483,
+    "SOLUSDT": 1.2590240366972005,
+    "XRPUSDT": 0.7394893855130091
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 241,
+    "AVAXUSDT": 295,
+    "BNBUSDT": 275,
+    "BTCUSDT": 280,
+    "DOGEUSDT": 253,
+    "ETHUSDT": 267,
+    "LINKUSDT": 228,
+    "LTCUSDT": 235,
+    "SOLUSDT": 217,
+    "XRPUSDT": 192
+   },
+   "rejections": {
+    "insufficient cash": 255,
+    "maximum open positions": 954,
+    "aggregate open risk limit": 578,
+    "daily drawdown limit reached": 5,
+    "weekly drawdown limit reached": 11
+   },
+   "buy_and_hold": {
+    "return_pct": 1.0959954541121153,
+    "max_drawdown": 0.7046581136542083
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": false,
+    "max_drawdown_le_15pct": false,
+    "mc_p95_drawdown_le_20pct": false,
+    "holm_significant": false,
+    "breadth_half_symbols": false
+   },
+   "passed": false
+  },
+  "atr_expansion_breakout@1h": {
+   "full": {
+    "trades": 2611,
+    "signals": 3055,
+    "halt_5pct_would_trigger_at": "2023-01-25 22:00:00+00:00",
+    "return_pct": -0.5924485061620153,
+    "max_drawdown": 0.6184996196296366,
+    "sharpe": -1.6082869877584602,
+    "sortino": -2.068276932834362,
+    "net_profit": -5924.485061620141,
+    "win_rate": 0.4316353887399464,
+    "profit_factor": 0.8012335279437165,
+    "avg_win": 21.19057188724005,
+    "avg_loss": -20.08508057853078,
+    "expectancy": -2.2690482809728616,
+    "expectancy_r": -0.08126153277953586,
+    "avg_ret": -0.0019473704703586228,
+    "fees": 5456.103308406156,
+    "exit_kinds": {
+     "target": 1017,
+     "strategy_exit": 935,
+     "stop": 478,
+     "time_limit": 181
+    },
+    "avg_bars": 8.009191880505554,
+    "recovery_factor": -0.8966514555904574
+   },
+   "train": {
+    "trades": 1067,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.2691064463493553,
+    "max_drawdown": 0.3288926906988655,
+    "sharpe": -1.6519513913377564,
+    "sortino": -2.1611620522783594,
+    "net_profit": -2635.2330007292057,
+    "win_rate": 0.44798500468603564,
+    "profit_factor": 0.8221012974191494,
+    "avg_win": 25.476729542379527,
+    "avg_loss": -25.149592057702236,
+    "expectancy": -2.4697591384528637,
+    "expectancy_r": -0.07365711397630316,
+    "avg_ret": -0.001571042966404164,
+    "fees": 2785.6446342912777,
+    "exit_kinds": {
+     "target": 428,
+     "strategy_exit": 354,
+     "stop": 207,
+     "time_limit": 78
+    },
+    "avg_bars": 7.964386129334583,
+    "recovery_factor": -0.750027668156239
+   },
+   "validation": {
+    "trades": 636,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.2613908687438917,
+    "max_drawdown": 0.26856096826557263,
+    "sharpe": -2.082659718302467,
+    "sortino": -2.6276944050388833,
+    "net_profit": -1965.2550612968846,
+    "win_rate": 0.3977987421383648,
+    "profit_factor": 0.7412908585633678,
+    "avg_win": 22.257443114604612,
+    "avg_loss": -19.833911669169325,
+    "expectancy": -3.0900236812844097,
+    "expectancy_r": -0.10514574658630477,
+    "avg_ret": -0.0028346487960564507,
+    "fees": 1211.1610292132525,
+    "exit_kinds": {
+     "strategy_exit": 247,
+     "target": 222,
+     "stop": 120,
+     "time_limit": 47
+    },
+    "avg_bars": 8.312893081761006,
+    "recovery_factor": -0.7246686752914143
+   },
+   "test": {
+    "trades": 908,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.24730221732776547,
+    "max_drawdown": 0.32655068240814344,
+    "sharpe": -1.283692373521041,
+    "sortino": -1.6503042865991733,
+    "net_profit": -1323.9969995940512,
+    "win_rate": 0.43612334801762115,
+    "profit_factor": 0.8210031557628449,
+    "avg_win": 15.335264362795856,
+    "avg_loss": -14.446800170432052,
+    "expectancy": -1.458146475323845,
+    "expectancy_r": -0.07346809101956266,
+    "avg_ret": -0.001768111033767861,
+    "fees": 1459.2976449016255,
+    "exit_kinds": {
+     "target": 367,
+     "strategy_exit": 334,
+     "stop": 151,
+     "time_limit": 56
+    },
+    "avg_bars": 7.849118942731278,
+    "recovery_factor": -0.3627610796393763
+   },
+   "p_value": 0.9948010397920416,
+   "sqn": -3.8452590804758335,
+   "mc_drawdown": {
+    "median": 0.6037237985760965,
+    "p95": 0.6288512148435234
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 1.0781854912642643,
+    "AVAXUSDT": 0.8573627327912117,
+    "BNBUSDT": 0.6715239473947987,
+    "BTCUSDT": 0.731044181752712,
+    "DOGEUSDT": 0.939201697796102,
+    "ETHUSDT": 0.7167578553168348,
+    "LINKUSDT": 0.8951544552875726,
+    "LTCUSDT": 0.6812159941469277,
+    "SOLUSDT": 0.7334251611049357,
+    "XRPUSDT": 0.7134212967158543
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 276,
+    "AVAXUSDT": 268,
+    "BNBUSDT": 286,
+    "BTCUSDT": 350,
+    "DOGEUSDT": 260,
+    "ETHUSDT": 329,
+    "LINKUSDT": 251,
+    "LTCUSDT": 192,
+    "SOLUSDT": 206,
+    "XRPUSDT": 193
+   },
+   "rejections": {
+    "insufficient cash": 219,
+    "maximum open positions": 211,
+    "aggregate open risk limit": 193,
+    "weekly drawdown limit reached": 13,
+    "daily drawdown limit reached": 1
+   },
+   "buy_and_hold": {
+    "return_pct": 1.0959954541121153,
+    "max_drawdown": 0.7046581136542083
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": false,
+    "max_drawdown_le_15pct": false,
+    "mc_p95_drawdown_le_20pct": false,
+    "holm_significant": false,
+    "breadth_half_symbols": false
+   },
+   "passed": false
+  },
+  "bb_rsi_reversion@1h": {
+   "full": {
+    "trades": 155,
+    "signals": 159,
+    "halt_5pct_would_trigger_at": "2024-04-01 14:00:00+00:00",
+    "return_pct": -0.09970411105923849,
+    "max_drawdown": 0.1000083231195299,
+    "sharpe": -1.127637976998829,
+    "sortino": -0.5658102709533688,
+    "net_profit": -997.0411105923883,
+    "win_rate": 0.41935483870967744,
+    "profit_factor": 0.6068243120513123,
+    "avg_win": 23.674238908651905,
+    "avg_loss": -28.176295996164022,
+    "expectancy": -6.432523294144441,
+    "expectancy_r": -0.2635925854799409,
+    "avg_ret": -0.003338422343342828,
+    "fees": 563.5896008834197,
+    "exit_kinds": {
+     "stop": 81,
+     "strategy_exit": 37,
+     "target": 33,
+     "time_limit": 4
+    },
+    "avg_bars": 6.219354838709678,
+    "recovery_factor": -0.9966212581196737
+   },
+   "train": {
+    "trades": 59,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.06316484326319938,
+    "max_drawdown": 0.06438358829678126,
+    "sharpe": -2.059897035513096,
+    "sortino": -1.0817384740412552,
+    "net_profit": -631.6484326319909,
+    "win_rate": 0.3389830508474576,
+    "profit_factor": 0.4182354613787715,
+    "avg_win": 22.704870795074175,
+    "avg_loss": -27.839637141883966,
+    "expectancy": -10.705905637830353,
+    "expectancy_r": -0.4187816288896686,
+    "avg_ret": -0.005703194441338913,
+    "fees": 220.7847576701164,
+    "exit_kinds": {
+     "stop": 38,
+     "strategy_exit": 11,
+     "target": 9,
+     "time_limit": 1
+    },
+    "avg_bars": 5.440677966101695,
+    "recovery_factor": -0.980739057688168
+   },
+   "validation": {
+    "trades": 34,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.003695968213111467,
+    "max_drawdown": 0.02925216886667603,
+    "sharpe": 0.17349944648112922,
+    "sortino": 0.08025731111212844,
+    "net_profit": 34.62512960224088,
+    "win_rate": 0.5588235294117647,
+    "profit_factor": 1.0745905757465513,
+    "avg_win": 26.25408426154203,
+    "avg_loss": -30.946831424470517,
+    "expectancy": 1.0183861647717907,
+    "expectancy_r": 0.0022047071508171407,
+    "avg_ret": 0.0012012856742433576,
+    "fees": 113.49897209878458,
+    "exit_kinds": {
+     "stop": 12,
+     "strategy_exit": 11,
+     "target": 10,
+     "time_limit": 1
+    },
+    "avg_bars": 6.411764705882353,
+    "recovery_factor": 0.1166249695333833
+   },
+   "test": {
+    "trades": 62,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.04254161426259073,
+    "max_drawdown": 0.060496521717223084,
+    "sharpe": -1.1518462380435386,
+    "sortino": -0.5597652970997822,
+    "net_profit": -400.01780756263827,
+    "win_rate": 0.41935483870967744,
+    "profit_factor": 0.5942688156333733,
+    "avg_win": 22.534635084291985,
+    "avg_loss": -27.386619993173053,
+    "expectancy": -6.451900121978037,
+    "expectancy_r": -0.2616724949681965,
+    "avg_ret": -0.0035775920016680074,
+    "fees": 229.3058711145187,
+    "exit_kinds": {
+     "stop": 31,
+     "strategy_exit": 15,
+     "target": 14,
+     "time_limit": 2
+    },
+    "avg_bars": 6.854838709677419,
+    "recovery_factor": -0.6488247453672161
+   },
+   "p_value": 0.978004399120176,
+   "sqn": -2.4719376570713023,
+   "mc_drawdown": {
+    "median": 0.10706815034439815,
+    "p95": 0.122305987283671
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 0.7334114411270657,
+    "AVAXUSDT": 1.8491698731480042,
+    "BNBUSDT": 0.6295741311164929,
+    "BTCUSDT": 0.29589987307661564,
+    "DOGEUSDT": 1.265980238491902,
+    "ETHUSDT": 0.2674772077779919,
+    "LINKUSDT": 0.560507824914148,
+    "LTCUSDT": 0.3265536902685928,
+    "SOLUSDT": 1.1612296473023185,
+    "XRPUSDT": 0.06020400490223557
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 16,
+    "AVAXUSDT": 10,
+    "BNBUSDT": 12,
+    "BTCUSDT": 17,
+    "DOGEUSDT": 22,
+    "ETHUSDT": 14,
+    "LINKUSDT": 15,
+    "LTCUSDT": 18,
+    "SOLUSDT": 16,
+    "XRPUSDT": 15
+   },
+   "rejections": {
+    "insufficient cash": 4
+   },
+   "buy_and_hold": {
+    "return_pct": 1.0959954541121153,
+    "max_drawdown": 0.7046581136542083
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": true,
+    "max_drawdown_le_15pct": true,
+    "mc_p95_drawdown_le_20pct": true,
+    "holm_significant": false,
+    "breadth_half_symbols": false
+   },
+   "passed": false
+  },
+  "vwap_deviation_reversion@1h": {
+   "full": {
+    "trades": 379,
+    "signals": 392,
+    "halt_5pct_would_trigger_at": "2023-03-01 00:00:00+00:00",
+    "return_pct": -0.2744044882301506,
+    "max_drawdown": 0.2824587858113792,
+    "sharpe": -1.5833267873593948,
+    "sortino": -1.0276285487636059,
+    "net_profit": -2744.0448823014985,
+    "win_rate": 0.36147757255936674,
+    "profit_factor": 0.6135129758772244,
+    "avg_win": 31.795047517665992,
+    "avg_loss": -29.33870410008984,
+    "expectancy": -7.240223963856197,
+    "expectancy_r": -0.23923751531872553,
+    "avg_ret": -0.0038501973288285534,
+    "fees": 1243.6475549328056,
+    "exit_kinds": {
+     "stop": 222,
+     "target": 66,
+     "time_limit": 52,
+     "strategy_exit": 39
+    },
+    "avg_bars": 8.70184696569921,
+    "recovery_factor": -0.9607013170451231
+   },
+   "train": {
+    "trades": 138,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.10965786345836137,
+    "max_drawdown": 0.12127694815463863,
+    "sharpe": -1.946328688450297,
+    "sortino": -1.1845760011368487,
+    "net_profit": -1096.578634583612,
+    "win_rate": 0.36231884057971014,
+    "profit_factor": 0.5954488468450604,
+    "avg_win": 32.280539968584186,
+    "avg_loss": -30.80233673878206,
+    "expectancy": -7.946221989736319,
+    "expectancy_r": -0.2586765707724368,
+    "avg_ret": -0.003678332771309607,
+    "fees": 503.2455833845265,
+    "exit_kinds": {
+     "stop": 81,
+     "target": 26,
+     "time_limit": 19,
+     "strategy_exit": 12
+    },
+    "avg_bars": 7.956521739130435,
+    "recovery_factor": -0.8941570059481551
+   },
+   "validation": {
+    "trades": 72,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.11996802618036273,
+    "max_drawdown": 0.12692095839433248,
+    "sharpe": -2.539432755887242,
+    "sortino": -1.2207812887694987,
+    "net_profit": -1068.1258874610676,
+    "win_rate": 0.2638888888888889,
+    "profit_factor": 0.38680148739857667,
+    "avg_win": 35.46140043244753,
+    "avg_loss": -32.865896144859825,
+    "expectancy": -14.835081770292605,
+    "expectancy_r": -0.4308298276945232,
+    "avg_ret": -0.00873127703130633,
+    "fees": 226.6737825686168,
+    "exit_kinds": {
+     "stop": 50,
+     "target": 8,
+     "strategy_exit": 7,
+     "time_limit": 7
+    },
+    "avg_bars": 7.625,
+    "recovery_factor": -0.8394421622891851
+   },
+   "test": {
+    "trades": 169,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.07393982293160484,
+    "max_drawdown": 0.13667254430683828,
+    "sharpe": -0.8532515685972952,
+    "sortino": -0.7150782078105464,
+    "net_profit": -579.3403602568186,
+    "win_rate": 0.40236686390532544,
+    "profit_factor": 0.7811719338670896,
+    "avg_win": 30.41364563639013,
+    "avg_loss": -26.21255706466681,
+    "expectancy": -3.428049468975258,
+    "expectancy_r": -0.1417390765987871,
+    "avg_ret": -0.0019110231889422498,
+    "fees": 513.7281889796624,
+    "exit_kinds": {
+     "stop": 91,
+     "target": 32,
+     "time_limit": 26,
+     "strategy_exit": 20
+    },
+    "avg_bars": 9.76923076923077,
+    "recovery_factor": -0.39517444270956015
+   },
+   "p_value": 0.999000199960008,
+   "sqn": -3.4580095133393045,
+   "mc_drawdown": {
+    "median": 0.2824625419596959,
+    "p95": 0.2998363258002902
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 0.7989724548907553,
+    "AVAXUSDT": 0.7536334119032269,
+    "BNBUSDT": 0.52554222363249,
+    "BTCUSDT": 0.24606320280032246,
+    "DOGEUSDT": 1.1061753911792034,
+    "ETHUSDT": 0.7154440879005443,
+    "LINKUSDT": 0.3669247311305712,
+    "LTCUSDT": 0.5826539851960798,
+    "SOLUSDT": 0.7271732210099221,
+    "XRPUSDT": 0.36886647971954817
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 48,
+    "AVAXUSDT": 41,
+    "BNBUSDT": 31,
+    "BTCUSDT": 42,
+    "DOGEUSDT": 38,
+    "ETHUSDT": 22,
+    "LINKUSDT": 34,
+    "LTCUSDT": 44,
+    "SOLUSDT": 38,
+    "XRPUSDT": 41
+   },
+   "rejections": {
+    "maximum open positions": 10,
+    "aggregate open risk limit": 9,
+    "insufficient cash": 3
+   },
+   "buy_and_hold": {
+    "return_pct": 1.0959954541121153,
+    "max_drawdown": 0.7046581136542083
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": false,
+    "max_drawdown_le_15pct": false,
+    "mc_p95_drawdown_le_20pct": false,
+    "holm_significant": false,
+    "breadth_half_symbols": false
+   },
+   "passed": false
+  },
+  "mtf_structure_trend@1h": {
+   "full": {
+    "trades": 2169,
+    "signals": 3462,
+    "halt_5pct_would_trigger_at": "2023-01-18 10:00:00+00:00",
+    "return_pct": -0.4783068548743784,
+    "max_drawdown": 0.5217802606423867,
+    "sharpe": -0.9824866054181512,
+    "sortino": -1.665210847015431,
+    "net_profit": -4783.068548743804,
+    "win_rate": 0.35361917934532044,
+    "profit_factor": 0.8680624517536708,
+    "avg_win": 41.0292712035404,
+    "avg_loss": -25.85771723385113,
+    "expectancy": -2.205195273740804,
+    "expectancy_r": -0.06881896780267024,
+    "avg_ret": -0.0014732013056719417,
+    "fees": 5569.4501833297645,
+    "exit_kinds": {
+     "strategy_exit": 790,
+     "stop": 727,
+     "target": 505,
+     "time_limit": 147
+    },
+    "avg_bars": 16.269709543568464,
+    "recovery_factor": -0.8551872505979882
+   },
+   "train": {
+    "trades": 897,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.2075418726653323,
+    "max_drawdown": 0.26134145342064075,
+    "sharpe": -0.9212498567342678,
+    "sortino": -1.5485776859914684,
+    "net_profit": -2087.346240394526,
+    "win_rate": 0.3556298773690078,
+    "profit_factor": 0.8825538351946544,
+    "avg_win": 49.17067588492871,
+    "avg_loss": -30.748774822987517,
+    "expectancy": -2.327030368332805,
+    "expectancy_r": -0.06996441174762742,
+    "avg_ret": -0.0012236998055709894,
+    "fees": 2741.7258638106773,
+    "exit_kinds": {
+     "strategy_exit": 319,
+     "stop": 304,
+     "target": 207,
+     "time_limit": 67
+    },
+    "avg_bars": 15.995540691192865,
+    "recovery_factor": -0.745123824958982
+   },
+   "validation": {
+    "trades": 557,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.18949755636045618,
+    "max_drawdown": 0.24375222919882134,
+    "sharpe": -1.181017290770932,
+    "sortino": -2.121507968926977,
+    "net_profit": -1492.985094686224,
+    "win_rate": 0.3357271095152603,
+    "profit_factor": 0.8365879794652862,
+    "avg_win": 40.87346777763548,
+    "avg_loss": -24.69276640298394,
+    "expectancy": -2.6804041197239212,
+    "expectancy_r": -0.09383074187270501,
+    "avg_ret": -0.0013168950279677388,
+    "fees": 1299.8501562161528,
+    "exit_kinds": {
+     "strategy_exit": 230,
+     "stop": 175,
+     "target": 109,
+     "time_limit": 43
+    },
+    "avg_bars": 17.152603231597844,
+    "recovery_factor": -0.5715005526412137
+   },
+   "test": {
+    "trades": 715,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.18931124317853498,
+    "max_drawdown": 0.31332891148839725,
+    "sharpe": -0.8749117375071482,
+    "sortino": -1.4298468706748126,
+    "net_profit": -1202.737213663053,
+    "win_rate": 0.365034965034965,
+    "profit_factor": 0.8712741956797543,
+    "avg_win": 31.190294756342485,
+    "avg_loss": -20.580185341560444,
+    "expectancy": -1.682149949179095,
+    "expectancy_r": -0.04789725958499755,
+    "avg_ret": -0.0019079781480101166,
+    "fees": 1527.874163302934,
+    "exit_kinds": {
+     "stop": 248,
+     "strategy_exit": 241,
+     "target": 189,
+     "time_limit": 37
+    },
+    "avg_bars": 15.925874125874126,
+    "recovery_factor": -0.3308984865806413
+   },
+   "p_value": 0.9260147970405919,
+   "sqn": -1.9468322737466717,
+   "mc_drawdown": {
+    "median": 0.5116240504617596,
+    "p95": 0.568124974676618
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 0.909223782860056,
+    "AVAXUSDT": 0.9879028829830873,
+    "BNBUSDT": 0.7879115867705624,
+    "BTCUSDT": 0.9823439867962758,
+    "DOGEUSDT": 0.8101641339095101,
+    "ETHUSDT": 0.8099514641099984,
+    "LINKUSDT": 0.8411488407132424,
+    "LTCUSDT": 0.6199414676541427,
+    "SOLUSDT": 1.0085662370344735,
+    "XRPUSDT": 0.9842588600975102
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 171,
+    "AVAXUSDT": 186,
+    "BNBUSDT": 257,
+    "BTCUSDT": 273,
+    "DOGEUSDT": 206,
+    "ETHUSDT": 262,
+    "LINKUSDT": 214,
+    "LTCUSDT": 205,
+    "SOLUSDT": 222,
+    "XRPUSDT": 173
+   },
+   "rejections": {
+    "maximum open positions": 1179,
+    "aggregate open risk limit": 1086,
+    "insufficient cash": 38,
+    "weekly drawdown limit reached": 74,
+    "daily drawdown limit reached": 2
+   },
+   "buy_and_hold": {
+    "return_pct": 1.0959954541121153,
+    "max_drawdown": 0.7046581136542083
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": false,
+    "max_drawdown_le_15pct": false,
+    "mc_p95_drawdown_le_20pct": false,
+    "holm_significant": false,
+    "breadth_half_symbols": false
+   },
+   "passed": false
+  },
+  "ema_adx_macd_trend@4h": {
+   "full": {
+    "trades": 290,
+    "signals": 324,
+    "halt_5pct_would_trigger_at": "2024-05-21 12:00:00+00:00",
+    "return_pct": 0.0010944515410411526,
+    "max_drawdown": 0.08812335347724587,
+    "sharpe": 0.02822891821565207,
+    "sortino": 0.02296742542726471,
+    "net_profit": 10.944515410404023,
+    "win_rate": 0.3137931034482759,
+    "profit_factor": 1.0024861815431854,
+    "avg_win": 48.49541740328032,
+    "avg_loss": -22.12129883561862,
+    "expectancy": 0.03773970831173801,
+    "expectancy_r": 0.0048806384031345115,
+    "avg_ret": 0.0009451183710342849,
+    "fees": 532.496904276225,
+    "exit_kinds": {
+     "strategy_exit": 236,
+     "target": 37,
+     "stop": 17
+    },
+    "avg_bars": 6.106896551724138,
+    "recovery_factor": 0.011609008510061572
+   },
+   "train": {
+    "trades": 139,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.010731600174661349,
+    "max_drawdown": 0.055231397301037544,
+    "sharpe": 0.18090834591875843,
+    "sortino": 0.1552875084565779,
+    "net_profit": 107.316001746609,
+    "win_rate": 0.33093525179856115,
+    "profit_factor": 1.0516236845852818,
+    "avg_win": 47.524549884568636,
+    "avg_loss": -22.352831106919872,
+    "expectancy": 0.7720575665223669,
+    "expectancy_r": 0.019361280761796038,
+    "avg_ret": 0.0012988015387332878,
+    "fees": 247.62538463766015,
+    "exit_kinds": {
+     "strategy_exit": 110,
+     "target": 19,
+     "stop": 10
+    },
+    "avg_bars": 6.302158273381295,
+    "recovery_factor": 0.18162183587915573
+   },
+   "validation": {
+    "trades": 57,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.010388237774091924,
+    "max_drawdown": 0.032445803819020846,
+    "sharpe": -0.22379458944381758,
+    "sortino": -0.13337890083466758,
+    "net_profit": -104.99720188403256,
+    "win_rate": 0.21052631578947367,
+    "profit_factor": 0.8908535252263708,
+    "avg_win": 71.4155966644001,
+    "avg_loss": -21.3774302634852,
+    "expectancy": -1.8420561734040801,
+    "expectancy_r": -0.03424888399176526,
+    "avg_ret": 0.0015896029621012646,
+    "fees": 89.74383230672383,
+    "exit_kinds": {
+     "strategy_exit": 46,
+     "target": 8,
+     "stop": 3
+    },
+    "avg_bars": 4.9298245614035086,
+    "recovery_factor": -0.316395020473033
+   },
+   "test": {
+    "trades": 94,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.0008623715880706762,
+    "max_drawdown": 0.05400887406436905,
+    "sharpe": 0.03576544876459334,
+    "sortino": 0.03802688340157737,
+    "net_profit": 8.62571554782755,
+    "win_rate": 0.35106382978723405,
+    "profit_factor": 1.006336191100984,
+    "avg_win": 41.51413724350152,
+    "avg_loss": -22.31706251619218,
+    "expectancy": 0.09176293135986756,
+    "expectancy_r": 0.0071952499845741764,
+    "avg_ret": 3.1314307194081566e-05,
+    "fees": 195.127687331841,
+    "exit_kinds": {
+     "strategy_exit": 80,
+     "target": 10,
+     "stop": 4
+    },
+    "avg_bars": 6.531914893617022,
+    "recovery_factor": 0.015490708381742319
+   },
+   "p_value": 0.3795240951809638,
+   "sqn": 0.27131207359376863,
+   "mc_drawdown": {
+    "median": 0.06946513922531927,
+    "p95": 0.10586214130055836
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 0.8748009033496253,
+    "AVAXUSDT": 1.0757246584719011,
+    "BNBUSDT": 0.927560886478817,
+    "BTCUSDT": 0.4491187093842881,
+    "DOGEUSDT": 1.120369384151181,
+    "ETHUSDT": 1.1206547252852446,
+    "LINKUSDT": 1.0509444790053544,
+    "LTCUSDT": 0.431908686389294,
+    "SOLUSDT": 1.4822621482168001,
+    "XRPUSDT": 2.2668002020413955
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 30,
+    "AVAXUSDT": 21,
+    "BNBUSDT": 30,
+    "BTCUSDT": 32,
+    "DOGEUSDT": 20,
+    "ETHUSDT": 25,
+    "LINKUSDT": 39,
+    "LTCUSDT": 28,
+    "SOLUSDT": 40,
+    "XRPUSDT": 25
+   },
+   "rejections": {
+    "maximum open positions": 34,
+    "aggregate open risk limit": 34
+   },
+   "buy_and_hold": {
+    "return_pct": 1.0766263206057554,
+    "max_drawdown": 0.6996285050553721
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": false,
+    "max_drawdown_le_15pct": true,
+    "mc_p95_drawdown_le_20pct": true,
+    "holm_significant": false,
+    "breadth_half_symbols": true
+   },
+   "passed": false
+  },
+  "rsi_macd_roc_momentum@4h": {
+   "full": {
+    "trades": 773,
+    "signals": 917,
+    "halt_5pct_would_trigger_at": "2023-06-18 20:00:00+00:00",
+    "return_pct": -0.08710968416236342,
+    "max_drawdown": 0.2860016342856464,
+    "sharpe": -0.10917639036541228,
+    "sortino": -0.13604516948643636,
+    "net_profit": -871.0968416236501,
+    "win_rate": 0.3428201811125485,
+    "profit_factor": 0.9609677393665496,
+    "avg_win": 80.92927844903221,
+    "avg_loss": -43.93180242247478,
+    "expectancy": -1.1269040641961838,
+    "expectancy_r": -0.014128996076948884,
+    "avg_ret": -0.000709264296494813,
+    "fees": 2167.8514376874796,
+    "exit_kinds": {
+     "stop": 285,
+     "strategy_exit": 227,
+     "target": 215,
+     "time_limit": 46
+    },
+    "avg_bars": 11.245795601552393,
+    "recovery_factor": -0.23821907941690257
+   },
+   "train": {
+    "trades": 298,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.06313023187760924,
+    "max_drawdown": 0.1236855926955327,
+    "sharpe": 0.4137591192966885,
+    "sortino": 0.5635103979702113,
+    "net_profit": 631.3023187760848,
+    "win_rate": 0.36577181208053694,
+    "profit_factor": 1.0803171503917932,
+    "avg_win": 77.90294319034976,
+    "avg_loss": -41.58792851307958,
+    "expectancy": 2.1184641569667275,
+    "expectancy_r": 0.04824943877258726,
+    "avg_ret": 0.0018602643947242823,
+    "fees": 847.6564774825488,
+    "exit_kinds": {
+     "stop": 105,
+     "target": 89,
+     "strategy_exit": 87,
+     "time_limit": 17
+    },
+    "avg_bars": 11.516778523489933,
+    "recovery_factor": 0.4523477639506094
+   },
+   "validation": {
+    "trades": 196,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.12845102013604714,
+    "max_drawdown": 0.14395879712097914,
+    "sharpe": 0.8755545441714511,
+    "sortino": 1.294191484860019,
+    "net_profit": 1239.7704230037962,
+    "win_rate": 0.40816326530612246,
+    "profit_factor": 1.227381966316319,
+    "avg_win": 83.65174491511591,
+    "avg_loss": -47.003182501771335,
+    "expectancy": 6.325359301039776,
+    "expectancy_r": 0.12140015166903254,
+    "avg_ret": 0.006361585629941602,
+    "fees": 514.7540842790927,
+    "exit_kinds": {
+     "stop": 62,
+     "target": 58,
+     "strategy_exit": 55,
+     "time_limit": 21
+    },
+    "avg_bars": 12.005102040816327,
+    "recovery_factor": 0.7160908888200526
+   },
+   "test": {
+    "trades": 279,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.23814100593997167,
+    "max_drawdown": 0.2784893791158306,
+    "sharpe": -1.3049902331385292,
+    "sortino": -1.3867222124932446,
+    "net_profit": -2742.1695834035304,
+    "win_rate": 0.2724014336917563,
+    "profit_factor": 0.6954792016828291,
+    "avg_win": 82.40392615837023,
+    "avg_loss": -44.358955524333346,
+    "expectancy": -9.828564815066418,
+    "expectancy_r": -0.17596586540803894,
+    "avg_ret": -0.008421114244755848,
+    "fees": 805.4408759258381,
+    "exit_kinds": {
+     "stop": 118,
+     "strategy_exit": 85,
+     "target": 68,
+     "time_limit": 8
+    },
+    "avg_bars": 10.422939068100359,
+    "recovery_factor": -0.9325106528909793
+   },
+   "p_value": 0.596880623875225,
+   "sqn": -0.37362193067100513,
+   "mc_drawdown": {
+    "median": 0.21212277408912317,
+    "p95": 0.295140089572775
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 1.1382337787946037,
+    "AVAXUSDT": 0.8712056391159435,
+    "BNBUSDT": 0.9057396936809394,
+    "BTCUSDT": 0.8961392849635389,
+    "DOGEUSDT": 1.1282304939079815,
+    "ETHUSDT": 0.7530583097085767,
+    "LINKUSDT": 0.6787238597749882,
+    "LTCUSDT": 0.9597058165516903,
+    "SOLUSDT": 1.42433857860859,
+    "XRPUSDT": 0.9954770865347365
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 88,
+    "AVAXUSDT": 73,
+    "BNBUSDT": 73,
+    "BTCUSDT": 80,
+    "DOGEUSDT": 88,
+    "ETHUSDT": 88,
+    "LINKUSDT": 81,
+    "LTCUSDT": 73,
+    "SOLUSDT": 71,
+    "XRPUSDT": 58
+   },
+   "rejections": {
+    "maximum open positions": 119,
+    "aggregate open risk limit": 118,
+    "insufficient cash": 20,
+    "weekly drawdown limit reached": 5
+   },
+   "buy_and_hold": {
+    "return_pct": 1.0766263206057554,
+    "max_drawdown": 0.6996285050553721
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": true,
+    "max_drawdown_le_15pct": false,
+    "mc_p95_drawdown_le_20pct": false,
+    "holm_significant": false,
+    "breadth_half_symbols": false
+   },
+   "passed": false
+  },
+  "donchian_breakout@4h": {
+   "full": {
+    "trades": 616,
+    "signals": 1137,
+    "halt_5pct_would_trigger_at": "2023-01-24 20:00:00+00:00",
+    "return_pct": 0.31014661004516575,
+    "max_drawdown": 0.2505120363661315,
+    "sharpe": 0.5818227120460322,
+    "sortino": 0.7383907287986387,
+    "net_profit": 3101.4661004516397,
+    "win_rate": 0.3198051948051948,
+    "profit_factor": 1.1568554532111208,
+    "avg_win": 116.11285098092453,
+    "avg_loss": -47.19037122384366,
+    "expectancy": 5.0348475656682465,
+    "expectancy_r": 0.11123120890151389,
+    "avg_ret": 0.0034606511890310355,
+    "fees": 1727.6692301836251,
+    "exit_kinds": {
+     "stop": 284,
+     "strategy_exit": 180,
+     "target": 149,
+     "time_limit": 3
+    },
+    "avg_bars": 13.827922077922079,
+    "recovery_factor": 1.091408068119528
+   },
+   "train": {
+    "trades": 283,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.03753996066249088,
+    "max_drawdown": 0.2505120363661315,
+    "sharpe": 0.242331877491852,
+    "sortino": 0.2947271271855847,
+    "net_profit": 375.3996066249083,
+    "win_rate": 0.303886925795053,
+    "profit_factor": 1.044255381897481,
+    "avg_win": 102.99970749382652,
+    "avg_loss": -43.05875755250849,
+    "expectancy": 1.3265003767664605,
+    "expectancy_r": 0.048846968202471475,
+    "avg_ret": -0.002033491546465047,
+    "fees": 678.9121616357985,
+    "exit_kinds": {
+     "stop": 141,
+     "strategy_exit": 75,
+     "target": 65,
+     "time_limit": 2
+    },
+    "avg_bars": 13.763250883392226,
+    "recovery_factor": 0.13210338148776116
+   },
+   "validation": {
+    "trades": 150,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.15836945306430428,
+    "max_drawdown": 0.07704991585509924,
+    "sharpe": 1.2170426417960591,
+    "sortino": 1.8465106734644439,
+    "net_profit": 1484.0699569694423,
+    "win_rate": 0.3466666666666667,
+    "profit_factor": 1.3201601799390807,
+    "avg_win": 117.68208205413339,
+    "avg_loss": -47.299982753525434,
+    "expectancy": 9.893799713129615,
+    "expectancy_r": 0.18944798762117776,
+    "avg_ret": 0.015186446059714307,
+    "fees": 392.1196955115579,
+    "exit_kinds": {
+     "stop": 64,
+     "strategy_exit": 48,
+     "target": 37,
+     "time_limit": 1
+    },
+    "avg_bars": 15.533333333333333,
+    "recovery_factor": 1.543986615171266
+   },
+   "test": {
+    "trades": 183,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.0912529589634119,
+    "max_drawdown": 0.14641888921936463,
+    "sharpe": 0.6189051950820154,
+    "sortino": 0.7713607404648956,
+    "net_profit": 1241.9965368572894,
+    "win_rate": 0.3224043715846995,
+    "profit_factor": 1.1866319094228088,
+    "avg_win": 133.84387342301895,
+    "avg_loss": -53.66767737984539,
+    "expectancy": 6.786866321624532,
+    "expectancy_r": 0.1435930849117839,
+    "avg_ret": 0.0023457504433638224,
+    "fees": 656.6373730362689,
+    "exit_kinds": {
+     "stop": 79,
+     "strategy_exit": 57,
+     "target": 47
+    },
+    "avg_bars": 12.530054644808743,
+    "recovery_factor": 0.7370328815335352
+   },
+   "p_value": 0.23395320935812838,
+   "sqn": 1.134304752132311,
+   "mc_drawdown": {
+    "median": 0.11571673854570307,
+    "p95": 0.18127989736069836
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 1.239047101619054,
+    "AVAXUSDT": 0.9205622903210272,
+    "BNBUSDT": 1.2636193995836067,
+    "BTCUSDT": 1.3732148369700667,
+    "DOGEUSDT": 1.0466293784012501,
+    "ETHUSDT": 0.9064675131900229,
+    "LINKUSDT": 1.1096464943217577,
+    "LTCUSDT": 0.730561947356539,
+    "SOLUSDT": 1.4780813647464366,
+    "XRPUSDT": 1.6280563767416012
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 54,
+    "AVAXUSDT": 61,
+    "BNBUSDT": 73,
+    "BTCUSDT": 84,
+    "DOGEUSDT": 44,
+    "ETHUSDT": 73,
+    "LINKUSDT": 59,
+    "LTCUSDT": 52,
+    "SOLUSDT": 71,
+    "XRPUSDT": 45
+   },
+   "rejections": {
+    "maximum open positions": 509,
+    "aggregate open risk limit": 507,
+    "insufficient cash": 12
+   },
+   "buy_and_hold": {
+    "return_pct": 1.0766263206057554,
+    "max_drawdown": 0.6996285050553721
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": true,
+    "validation_pf_ge_1.00": true,
+    "max_drawdown_le_15pct": false,
+    "mc_p95_drawdown_le_20pct": true,
+    "holm_significant": false,
+    "breadth_half_symbols": true
+   },
+   "passed": false
+  },
+  "bollinger_squeeze_breakout@4h": {
+   "full": {
+    "trades": 692,
+    "signals": 1010,
+    "halt_5pct_would_trigger_at": "2023-04-14 12:00:00+00:00",
+    "return_pct": -0.13412845944882645,
+    "max_drawdown": 0.1829843237123051,
+    "sharpe": -0.2782430529877101,
+    "sortino": -0.31572731766229417,
+    "net_profit": -1341.284594488257,
+    "win_rate": 0.3265895953757225,
+    "profit_factor": 0.9177588764204583,
+    "avg_win": 66.22958838291265,
+    "avg_loss": -34.99822225112986,
+    "expectancy": -1.9382725353876546,
+    "expectancy_r": -0.033254426581360866,
+    "avg_ret": -0.0014480681985009783,
+    "fees": 1828.2417601523603,
+    "exit_kinds": {
+     "strategy_exit": 298,
+     "stop": 215,
+     "target": 179
+    },
+    "avg_bars": 8.351156069364162,
+    "recovery_factor": -0.6916461681926034
+   },
+   "train": {
+    "trades": 275,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.07600026734378407,
+    "max_drawdown": 0.1441968588995154,
+    "sharpe": -0.4350851125580435,
+    "sortino": -0.49948088857937606,
+    "net_profit": -760.0026734378436,
+    "win_rate": 0.3236363636363636,
+    "profit_factor": 0.888204341138125,
+    "avg_win": 67.84425300168776,
+    "avg_loss": -36.54914618595728,
+    "expectancy": -2.763646085228522,
+    "expectancy_r": -0.05415527947878976,
+    "avg_ret": -0.0025391573516262687,
+    "fees": 768.0545605240959,
+    "exit_kinds": {
+     "strategy_exit": 109,
+     "stop": 93,
+     "target": 73
+    },
+    "avg_bars": 7.84,
+    "recovery_factor": -0.4973203652687983
+   },
+   "validation": {
+    "trades": 183,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.021990655240678558,
+    "max_drawdown": 0.08735965545940516,
+    "sharpe": 0.3399852932346692,
+    "sortino": 0.39329050503847945,
+    "net_profit": 122.19850063446404,
+    "win_rate": 0.34972677595628415,
+    "profit_factor": 1.0306115404192193,
+    "avg_win": 64.28293833953768,
+    "avg_loss": -33.54545842937771,
+    "expectancy": 0.6677513695872352,
+    "expectancy_r": 0.0155663603605337,
+    "avg_ret": 0.0022103756144649144,
+    "fees": 437.37080870677005,
+    "exit_kinds": {
+     "strategy_exit": 87,
+     "stop": 51,
+     "target": 45
+    },
+    "avg_bars": 9.300546448087431,
+    "recovery_factor": 0.12763311143943903
+   },
+   "test": {
+    "trades": 234,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.08497539504190721,
+    "max_drawdown": 0.1710237724872029,
+    "sharpe": -0.4259789688449667,
+    "sortino": -0.46929350070366216,
+    "net_profit": -703.4804216848778,
+    "win_rate": 0.31196581196581197,
+    "profit_factor": 0.8725375935865256,
+    "avg_win": 65.96767676243337,
+    "avg_loss": -34.28025357355599,
+    "expectancy": -3.0063265883969135,
+    "expectancy_r": -0.046871817451334175,
+    "avg_ret": -0.0030268959791133862,
+    "fees": 622.8163909214943,
+    "exit_kinds": {
+     "strategy_exit": 102,
+     "stop": 71,
+     "target": 61
+    },
+    "avg_bars": 8.209401709401709,
+    "recovery_factor": -0.37265318496645167
+   },
+   "p_value": 0.735252949410118,
+   "sqn": -0.8248254472934987,
+   "mc_drawdown": {
+    "median": 0.20547375885701546,
+    "p95": 0.2716616619552623
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 0.8031934232385977,
+    "AVAXUSDT": 0.9220462904687782,
+    "BNBUSDT": 0.9261352418321024,
+    "BTCUSDT": 1.109946266938264,
+    "DOGEUSDT": 0.8779785063080686,
+    "ETHUSDT": 0.6828921674254127,
+    "LINKUSDT": 0.8785894342722325,
+    "LTCUSDT": 0.7901429075013224,
+    "SOLUSDT": 1.6444746369432437,
+    "XRPUSDT": 0.8263526791628337
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 66,
+    "AVAXUSDT": 65,
+    "BNBUSDT": 70,
+    "BTCUSDT": 78,
+    "DOGEUSDT": 74,
+    "ETHUSDT": 87,
+    "LINKUSDT": 73,
+    "LTCUSDT": 62,
+    "SOLUSDT": 67,
+    "XRPUSDT": 50
+   },
+   "rejections": {
+    "maximum open positions": 294,
+    "aggregate open risk limit": 294,
+    "insufficient cash": 24
+   },
+   "buy_and_hold": {
+    "return_pct": 1.0766263206057554,
+    "max_drawdown": 0.6996285050553721
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": true,
+    "max_drawdown_le_15pct": false,
+    "mc_p95_drawdown_le_20pct": false,
+    "holm_significant": false,
+    "breadth_half_symbols": false
+   },
+   "passed": false
+  },
+  "atr_expansion_breakout@4h": {
+   "full": {
+    "trades": 778,
+    "signals": 858,
+    "halt_5pct_would_trigger_at": "2023-03-15 12:00:00+00:00",
+    "return_pct": 0.012378195702714256,
+    "max_drawdown": 0.1707211159029811,
+    "sharpe": 0.07958304766906794,
+    "sortino": 0.08159314866975648,
+    "net_profit": 123.78195702712594,
+    "win_rate": 0.44473007712082263,
+    "profit_factor": 1.008276578505311,
+    "avg_win": 43.582294005776184,
+    "avg_loss": -34.61965687261906,
+    "expectancy": 0.15910277252843952,
+    "expectancy_r": 0.0067592547019124215,
+    "avg_ret": 0.000846954185782357,
+    "fees": 1631.5787308111276,
+    "exit_kinds": {
+     "target": 322,
+     "strategy_exit": 284,
+     "stop": 131,
+     "time_limit": 41
+    },
+    "avg_bars": 7.440874035989717,
+    "recovery_factor": 0.0606360833992214
+   },
+   "train": {
+    "trades": 304,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.05284690911430778,
+    "max_drawdown": 0.12556423845053355,
+    "sharpe": 0.48444521470252105,
+    "sortino": 0.5261621831185939,
+    "net_profit": 527.0608092069051,
+    "win_rate": 0.4901315789473684,
+    "profit_factor": 1.0976101474989537,
+    "avg_win": 39.7765947315746,
+    "avg_loss": -34.83646326321103,
+    "expectancy": 1.7337526618648194,
+    "expectancy_r": 0.03570282428010534,
+    "avg_ret": 0.0038411886353566503,
+    "fees": 630.7965684774597,
+    "exit_kinds": {
+     "target": 136,
+     "strategy_exit": 92,
+     "stop": 56,
+     "time_limit": 20
+    },
+    "avg_bars": 7.171052631578948,
+    "recovery_factor": 0.3954858100562844
+   },
+   "validation": {
+    "trades": 184,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.042523872234003335,
+    "max_drawdown": 0.09144566920772301,
+    "sharpe": 0.530860254238322,
+    "sortino": 0.5716551791971511,
+    "net_profit": 376.2481052952039,
+    "win_rate": 0.44021739130434784,
+    "profit_factor": 1.1041927924254793,
+    "avg_win": 49.226225085572246,
+    "avg_loss": -35.0589915207393,
+    "expectancy": 2.0448266592130646,
+    "expectancy_r": 0.041594489195182494,
+    "avg_ret": 0.0023640066684372085,
+    "fees": 352.6697544907977,
+    "exit_kinds": {
+     "target": 77,
+     "strategy_exit": 64,
+     "stop": 36,
+     "time_limit": 7
+    },
+    "avg_bars": 7.489130434782608,
+    "recovery_factor": 0.3813794433220641
+   },
+   "test": {
+    "trades": 290,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.0769810391456236,
+    "max_drawdown": 0.170721115902981,
+    "sharpe": -0.5436488881548047,
+    "sortino": -0.5167850237771273,
+    "net_profit": -779.5269574749838,
+    "win_rate": 0.4,
+    "profit_factor": 0.868876080846105,
+    "avg_win": 44.529628267780986,
+    "avg_loss": -34.16645883067573,
+    "expectancy": -2.6880239912930475,
+    "expectancy_r": -0.045683946327509446,
+    "avg_ret": -0.0032543731572489474,
+    "fees": 648.1124078428701,
+    "exit_kinds": {
+     "strategy_exit": 128,
+     "target": 109,
+     "stop": 39,
+     "time_limit": 14
+    },
+    "avg_bars": 7.6931034482758625,
+    "recovery_factor": -0.41882933838727743
+   },
+   "p_value": 0.3669266146770646,
+   "sqn": 0.48679025210999094,
+   "mc_drawdown": {
+    "median": 0.1127597775655308,
+    "p95": 0.16763717945813922
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 1.1956637663698928,
+    "AVAXUSDT": 1.4390347989294876,
+    "BNBUSDT": 0.6614227436282485,
+    "BTCUSDT": 0.8244905987226364,
+    "DOGEUSDT": 0.9198435312113012,
+    "ETHUSDT": 0.8543337221150892,
+    "LINKUSDT": 1.1573230091442912,
+    "LTCUSDT": 1.0127587814443622,
+    "SOLUSDT": 2.028534869024856,
+    "XRPUSDT": 0.6187707594669913
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 80,
+    "AVAXUSDT": 74,
+    "BNBUSDT": 76,
+    "BTCUSDT": 108,
+    "DOGEUSDT": 64,
+    "ETHUSDT": 100,
+    "LINKUSDT": 69,
+    "LTCUSDT": 62,
+    "SOLUSDT": 77,
+    "XRPUSDT": 68
+   },
+   "rejections": {
+    "maximum open positions": 77,
+    "aggregate open risk limit": 77,
+    "insufficient cash": 3
+   },
+   "buy_and_hold": {
+    "return_pct": 1.0766263206057554,
+    "max_drawdown": 0.6996285050553721
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": true,
+    "max_drawdown_le_15pct": false,
+    "mc_p95_drawdown_le_20pct": true,
+    "holm_significant": false,
+    "breadth_half_symbols": true
+   },
+   "passed": false
+  },
+  "bb_rsi_reversion@4h": {
+   "full": {
+    "trades": 45,
+    "signals": 45,
+    "halt_5pct_would_trigger_at": "2025-12-01 16:00:00+00:00",
+    "return_pct": -0.05017563559711202,
+    "max_drawdown": 0.0742019525914629,
+    "sharpe": -0.5969710330960813,
+    "sortino": -0.15165372124756174,
+    "net_profit": -501.7563559711148,
+    "win_rate": 0.37777777777777777,
+    "profit_factor": 0.57632924211517,
+    "avg_win": 40.15005339454312,
+    "avg_loss": -42.296687988512424,
+    "expectancy": -11.150141243802551,
+    "expectancy_r": -0.208108447662462,
+    "avg_ret": -0.00888287303060745,
+    "fees": 131.58089429803553,
+    "exit_kinds": {
+     "stop": 24,
+     "strategy_exit": 11,
+     "target": 9,
+     "time_limit": 1
+    },
+    "avg_bars": 5.911111111111111,
+    "recovery_factor": -0.6752084137528912
+   },
+   "train": {
+    "trades": 15,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.02143680601777742,
+    "max_drawdown": 0.022877140943600605,
+    "sharpe": -0.8307352253942326,
+    "sortino": -0.257427264759408,
+    "net_profit": -214.36806017777394,
+    "win_rate": 0.26666666666666666,
+    "profit_factor": 0.49343938461928516,
+    "avg_win": 52.20384317514082,
+    "avg_loss": -38.47122117075793,
+    "expectancy": -14.291204011851596,
+    "expectancy_r": -0.24904413518657206,
+    "avg_ret": -0.0076370037831582395,
+    "fees": 43.2151672679548,
+    "exit_kinds": {
+     "stop": 8,
+     "strategy_exit": 4,
+     "target": 2,
+     "time_limit": 1
+    },
+    "avg_bars": 6.933333333333334,
+    "recovery_factor": -0.9356612132561408
+   },
+   "validation": {
+    "trades": 10,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.0030053531699588687,
+    "max_drawdown": 0.015894009225078554,
+    "sharpe": -0.12338629109408264,
+    "sortino": -0.025108971781817688,
+    "net_profit": -29.409279970394884,
+    "win_rate": 0.6,
+    "profit_factor": 0.8481099672454238,
+    "avg_win": 27.368817448678836,
+    "avg_loss": -48.40554616561697,
+    "expectancy": -2.9409279970394886,
+    "expectancy_r": -0.04167143521949653,
+    "avg_ret": -0.008761785443010301,
+    "fees": 28.525543352353004,
+    "exit_kinds": {
+     "stop": 4,
+     "target": 3,
+     "strategy_exit": 3
+    },
+    "avg_bars": 6.0,
+    "recovery_factor": -0.18354882942036724
+   },
+   "test": {
+    "trades": 20,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.026442510059202284,
+    "max_drawdown": 0.05506918014712514,
+    "sharpe": -0.7449979120132325,
+    "sortino": -0.1850366081278827,
+    "net_profit": -257.97901582294605,
+    "win_rate": 0.35,
+    "profit_factor": 0.5454127444761264,
+    "avg_win": 44.21751861637096,
+    "avg_loss": -43.65397277981098,
+    "expectancy": -12.898950791147303,
+    "expectancy_r": -0.2606251882408622,
+    "avg_ret": -0.00987781875999293,
+    "fees": 59.84018367772774,
+    "exit_kinds": {
+     "stop": 12,
+     "target": 4,
+     "strategy_exit": 4
+    },
+    "avg_bars": 5.1,
+    "recovery_factor": -0.46580218806141266
+   },
+   "p_value": 0.9514097180563887,
+   "sqn": -1.8264326114186833,
+   "mc_drawdown": {
+    "median": 0.0593768320974053,
+    "p95": 0.0737425875012932
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 0.09504828585261435,
+    "AVAXUSDT": 0.45304894646983396,
+    "BNBUSDT": 1.057125412013298,
+    "BTCUSDT": 2.0327557248943573,
+    "DOGEUSDT": 0.1013061243102907,
+    "ETHUSDT": 2.1465975232209176,
+    "LINKUSDT": 0.8735314859879733,
+    "LTCUSDT": 0.0,
+    "SOLUSDT": 0.31525599595794435,
+    "XRPUSDT": 0.38225729349363047
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 5,
+    "AVAXUSDT": 7,
+    "BNBUSDT": 2,
+    "BTCUSDT": 9,
+    "DOGEUSDT": 4,
+    "ETHUSDT": 3,
+    "LINKUSDT": 6,
+    "LTCUSDT": 1,
+    "SOLUSDT": 4,
+    "XRPUSDT": 4
+   },
+   "rejections": {},
+   "buy_and_hold": {
+    "return_pct": 1.0766263206057554,
+    "max_drawdown": 0.6996285050553721
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": false,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": false,
+    "max_drawdown_le_15pct": true,
+    "mc_p95_drawdown_le_20pct": true,
+    "holm_significant": false,
+    "breadth_half_symbols": false
+   },
+   "passed": false
+  },
+  "vwap_deviation_reversion@4h": {
+   "full": {
+    "trades": 105,
+    "signals": 109,
+    "halt_5pct_would_trigger_at": "2023-10-11 12:00:00+00:00",
+    "return_pct": -0.10103834786373866,
+    "max_drawdown": 0.1480705855677379,
+    "sharpe": -0.6878143605575733,
+    "sortino": -0.29594013860517254,
+    "net_profit": -1010.3834786373856,
+    "win_rate": 0.34285714285714286,
+    "profit_factor": 0.6566989860280992,
+    "avg_win": 53.687724225518544,
+    "avg_loss": -42.654225373276134,
+    "expectancy": -9.622699796546529,
+    "expectancy_r": -0.20831398145218322,
+    "avg_ret": -0.006960786126410585,
+    "fees": 284.4772147052337,
+    "exit_kinds": {
+     "stop": 65,
+     "target": 17,
+     "time_limit": 15,
+     "strategy_exit": 8
+    },
+    "avg_bars": 8.028571428571428,
+    "recovery_factor": -0.6750073670194076
+   },
+   "train": {
+    "trades": 35,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.07879406818778223,
+    "max_drawdown": 0.08872848263558131,
+    "sharpe": -1.7637859403950396,
+    "sortino": -0.678582469051322,
+    "net_profit": -787.9406818778234,
+    "win_rate": 0.2571428571428571,
+    "profit_factor": 0.27679423286053484,
+    "avg_win": 33.50781977961379,
+    "avg_loss": -41.90427153439798,
+    "expectancy": -22.512590910794955,
+    "expectancy_r": -0.4807332269684306,
+    "avg_ret": -0.017346386545142242,
+    "fees": 109.24051723503793,
+    "exit_kinds": {
+     "stop": 23,
+     "time_limit": 9,
+     "target": 2,
+     "strategy_exit": 1
+    },
+    "avg_bars": 9.857142857142858,
+    "recovery_factor": -0.87845908719805
+   },
+   "validation": {
+    "trades": 18,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.026057957857158698,
+    "max_drawdown": 0.04331084920551509,
+    "sharpe": -1.0082785680578046,
+    "sortino": -0.43462580442634396,
+    "net_profit": -240.0474534892735,
+    "win_rate": 0.2777777777777778,
+    "profit_factor": 0.5914546875481171,
+    "avg_win": 69.50376728013057,
+    "avg_loss": -45.19740691460973,
+    "expectancy": -13.335969638292973,
+    "expectancy_r": -0.29209837891884033,
+    "avg_ret": -0.016839054912458518,
+    "fees": 35.55836696019092,
+    "exit_kinds": {
+     "stop": 13,
+     "strategy_exit": 3,
+     "target": 2
+    },
+    "avg_bars": 4.333333333333333,
+    "recovery_factor": -0.5498689388046191
+   },
+   "test": {
+    "trades": 52,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.001962174927466087,
+    "max_drawdown": 0.04403023738812217,
+    "sharpe": 0.053064886700001895,
+    "sortino": 0.02559198868666374,
+    "net_profit": 17.604656729711095,
+    "win_rate": 0.4230769230769231,
+    "profit_factor": 1.0139050268668826,
+    "avg_win": 58.34858444097685,
+    "avg_loss": -42.20214003239266,
+    "expectancy": 0.3385510909559826,
+    "expectancy_r": 0.004047417537595378,
+    "avg_ret": 0.003448922581367697,
+    "fees": 139.67833051000486,
+    "exit_kinds": {
+     "stop": 29,
+     "target": 13,
+     "time_limit": 6,
+     "strategy_exit": 4
+    },
+    "avg_bars": 8.076923076923077,
+    "recovery_factor": 0.03981970023756898
+   },
+   "p_value": 0.8920215956808638,
+   "sqn": -1.5963585238660767,
+   "mc_drawdown": {
+    "median": 0.11604479585809141,
+    "p95": 0.13794754635783057
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 1.6783147732559773,
+    "AVAXUSDT": 0.43768723448741065,
+    "BNBUSDT": 0.23198874555093982,
+    "BTCUSDT": 0.7936656177608594,
+    "DOGEUSDT": 1.2685138243099268,
+    "ETHUSDT": 1.034391472157848,
+    "LINKUSDT": 0.7614442912311287,
+    "LTCUSDT": 0.43621811583331954,
+    "SOLUSDT": 0.0185722953131473,
+    "XRPUSDT": 0.6086998774598134
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 10,
+    "AVAXUSDT": 13,
+    "BNBUSDT": 4,
+    "BTCUSDT": 12,
+    "DOGEUSDT": 11,
+    "ETHUSDT": 5,
+    "LINKUSDT": 13,
+    "LTCUSDT": 13,
+    "SOLUSDT": 9,
+    "XRPUSDT": 15
+   },
+   "rejections": {
+    "maximum open positions": 4,
+    "aggregate open risk limit": 4
+   },
+   "buy_and_hold": {
+    "return_pct": 1.0766263206057554,
+    "max_drawdown": 0.6996285050553721
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": false,
+    "max_drawdown_le_15pct": true,
+    "mc_p95_drawdown_le_20pct": true,
+    "holm_significant": false,
+    "breadth_half_symbols": false
+   },
+   "passed": false
+  },
+  "mtf_structure_trend@4h": {
+   "full": {
+    "trades": 524,
+    "signals": 789,
+    "halt_5pct_would_trigger_at": "2023-06-28 04:00:00+00:00",
+    "return_pct": 0.048278743345606,
+    "max_drawdown": 0.17663464092546333,
+    "sharpe": 0.17805147412574177,
+    "sortino": 0.19946263679863188,
+    "net_profit": 482.7874334560581,
+    "win_rate": 0.36259541984732824,
+    "profit_factor": 1.0350576291415032,
+    "avg_win": 75.0212583784238,
+    "avg_loss": -41.231292390552284,
+    "expectancy": 0.9213500638474391,
+    "expectancy_r": 0.021262962538764293,
+    "avg_ret": 0.0028293486586619156,
+    "fees": 1226.3631617439064,
+    "exit_kinds": {
+     "strategy_exit": 213,
+     "stop": 156,
+     "target": 127,
+     "time_limit": 28
+    },
+    "avg_bars": 16.43320610687023,
+    "recovery_factor": 0.21468212690981797
+   },
+   "train": {
+    "trades": 230,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.19332656311773966,
+    "max_drawdown": 0.06738862877822815,
+    "sharpe": 1.2628329552992308,
+    "sortino": 1.6704557563720714,
+    "net_profit": 1933.265631177415,
+    "win_rate": 0.41739130434782606,
+    "profit_factor": 1.3486869627345202,
+    "avg_win": 77.89251866439616,
+    "avg_loss": -41.37624000451208,
+    "expectancy": 8.40550274424963,
+    "expectancy_r": 0.16115302830738198,
+    "avg_ret": 0.008554368994160845,
+    "fees": 517.7516929139864,
+    "exit_kinds": {
+     "strategy_exit": 84,
+     "target": 69,
+     "stop": 65,
+     "time_limit": 12
+    },
+    "avg_bars": 16.204347826086956,
+    "recovery_factor": 2.253308851425279
+   },
+   "validation": {
+    "trades": 138,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.07060030156107844,
+    "max_drawdown": 0.11083860154111069,
+    "sharpe": -0.8104632111008572,
+    "sortino": -0.8302284260523219,
+    "net_profit": -925.6907495799051,
+    "win_rate": 0.2971014492753623,
+    "profit_factor": 0.7716347732842146,
+    "avg_win": 76.28934451292291,
+    "avg_loss": -41.78921520216231,
+    "expectancy": -6.70790398246308,
+    "expectancy_r": -0.11826663904485818,
+    "avg_ret": -0.0016751821030926508,
+    "fees": 305.0851059171362,
+    "exit_kinds": {
+     "strategy_exit": 57,
+     "stop": 46,
+     "target": 26,
+     "time_limit": 9
+    },
+    "avg_bars": 16.340579710144926,
+    "recovery_factor": -0.8029369594593324
+   },
+   "test": {
+    "trades": 156,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.05431752583330074,
+    "max_drawdown": 0.13589791641241133,
+    "sharpe": -0.3510363845297589,
+    "sortino": -0.34387661464946545,
+    "net_profit": -524.7874481414513,
+    "win_rate": 0.33974358974358976,
+    "profit_factor": 0.87425065080193,
+    "avg_win": 68.83951273752174,
+    "avg_loss": -40.51729731291362,
+    "expectancy": -3.3640221034708415,
+    "expectancy_r": -0.061555179180736795,
+    "avg_ret": -0.0016266092390472082,
+    "fees": 403.5263629127838,
+    "exit_kinds": {
+     "strategy_exit": 72,
+     "stop": 45,
+     "target": 32,
+     "time_limit": 7
+    },
+    "avg_bars": 16.852564102564102,
+    "recovery_factor": -0.3528501875771045
+   },
+   "p_value": 0.2461507698460308,
+   "sqn": 0.9023409116447977,
+   "mc_drawdown": {
+    "median": 0.12373282377548928,
+    "p95": 0.18403915791235764
+   },
+   "per_symbol_pf": {
+    "ADAUSDT": 1.6054055718394076,
+    "AVAXUSDT": 0.9774833972060271,
+    "BNBUSDT": 0.8840299333854384,
+    "BTCUSDT": 0.9668107649651014,
+    "DOGEUSDT": 1.3170142415689756,
+    "ETHUSDT": 1.2093860999828248,
+    "LINKUSDT": 1.0162449175991943,
+    "LTCUSDT": 0.4916810251396672,
+    "SOLUSDT": 1.3204409023667907,
+    "XRPUSDT": 1.2018864240428968
+   },
+   "per_symbol_trades": {
+    "ADAUSDT": 37,
+    "AVAXUSDT": 41,
+    "BNBUSDT": 70,
+    "BTCUSDT": 78,
+    "DOGEUSDT": 33,
+    "ETHUSDT": 59,
+    "LINKUSDT": 60,
+    "LTCUSDT": 53,
+    "SOLUSDT": 51,
+    "XRPUSDT": 42
+   },
+   "rejections": {
+    "maximum open positions": 265,
+    "aggregate open risk limit": 265
+   },
+   "buy_and_hold": {
+    "return_pct": 1.0766263206057554,
+    "max_drawdown": 0.6996285050553721
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": false,
+    "max_drawdown_le_15pct": false,
+    "mc_p95_drawdown_le_20pct": true,
+    "holm_significant": false,
+    "breadth_half_symbols": true
+   },
+   "passed": false
+  },
+  "ema_adx_macd_trend@1d": {
+   "full": {
+    "trades": 32,
+    "signals": 32,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.02025146853564308,
+    "max_drawdown": 0.02269350771050782,
+    "sharpe": -0.3119711935321167,
+    "sortino": -0.10400394511177989,
+    "net_profit": -202.51468535643102,
+    "win_rate": 0.28125,
+    "profit_factor": 0.5931031017042253,
+    "avg_win": 32.79894148687724,
+    "avg_loss": -21.639354727753318,
+    "expectancy": -6.328583917388469,
+    "expectancy_r": -0.12691860794440918,
+    "avg_ret": -0.022749283078859105,
+    "fees": 28.394044780901893,
+    "exit_kinds": {
+     "strategy_exit": 27,
+     "stop": 3,
+     "target": 2
+    },
+    "avg_bars": 5.5625,
+    "recovery_factor": -0.8901661073341298
+   },
+   "train": {
+    "trades": 16,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.015344722776866493,
+    "max_drawdown": 0.017798992095466315,
+    "sharpe": -0.6080623104327418,
+    "sortino": -0.19776451359176803,
+    "net_profit": -153.44722776866257,
+    "win_rate": 0.1875,
+    "profit_factor": 0.4496467899423861,
+    "avg_win": 41.7895587359945,
+    "avg_loss": -21.447377228972776,
+    "expectancy": -9.59045173554141,
+    "expectancy_r": -0.19250554612845544,
+    "avg_ret": -0.035457570939152555,
+    "fees": 10.577548599161801,
+    "exit_kinds": {
+     "strategy_exit": 13,
+     "stop": 2,
+     "target": 1
+    },
+    "avg_bars": 4.875,
+    "recovery_factor": -0.8599630655084577
+   },
+   "validation": {
+    "trades": 7,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.005249799812863998,
+    "max_drawdown": 0.008623015786493937,
+    "sharpe": 0.24978444465237418,
+    "sortino": 0.07338153191863797,
+    "net_profit": 51.692430901016365,
+    "win_rate": 0.5714285714285714,
+    "profit_factor": 1.6353601066780872,
+    "avg_win": 33.26292382233514,
+    "avg_loss": -27.119754796108065,
+    "expectancy": 7.384632985859481,
+    "expectancy_r": 0.1515593621073457,
+    "avg_ret": 0.003032538644458575,
+    "fees": 7.857217903333421,
+    "exit_kinds": {
+     "strategy_exit": 5,
+     "target": 1,
+     "stop": 1
+    },
+    "avg_bars": 6.571428571428571,
+    "recovery_factor": 0.5937998833757976
+   },
+   "test": {
+    "trades": 9,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.010179570865439413,
+    "max_drawdown": 0.01752091482187834,
+    "sharpe": -0.6034860836055065,
+    "sortino": -0.21986835624483478,
+    "net_profit": -100.75988848878477,
+    "win_rate": 0.2222222222222222,
+    "profit_factor": 0.26736060829169345,
+    "avg_win": 18.385050942285595,
+    "avg_loss": -19.647141481907994,
+    "expectancy": -11.19554316542053,
+    "expectancy_r": -0.22691358343524737,
+    "avg_ret": -0.02020929933425116,
+    "fees": 9.959278278406668,
+    "exit_kinds": {
+     "strategy_exit": 9
+    },
+    "avg_bars": 6.0,
+    "recovery_factor": -0.5708181856150905
+   },
+   "p_value": 0.9988002399520096,
+   "sqn": -1.6195165508592198,
+   "mc_drawdown": {
+    "median": 0.028361072464213898,
+    "p95": 0.0386766607842451
+   },
+   "per_symbol_pf": {
+    "BTCUSDT": 0.9846451248445168,
+    "ETHUSDT": 0.2324410663468032
+   },
+   "per_symbol_trades": {
+    "BTCUSDT": 16,
+    "ETHUSDT": 16
+   },
+   "rejections": {},
+   "buy_and_hold": {
+    "return_pct": 15.986050664092737,
+    "max_drawdown": 0.7625369100009562
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": true,
+    "max_drawdown_le_15pct": true,
+    "mc_p95_drawdown_le_20pct": true,
+    "holm_significant": false
+   },
+   "passed": false
+  },
+  "rsi_macd_roc_momentum@1d": {
+   "full": {
+    "trades": 30,
+    "signals": 30,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.07538244382829284,
+    "max_drawdown": 0.026453582901298067,
+    "sharpe": 0.6476420813312933,
+    "sortino": 0.3363454510440277,
+    "net_profit": 753.8244382829287,
+    "win_rate": 0.5333333333333333,
+    "profit_factor": 2.2436426208781635,
+    "avg_win": 84.99792313711706,
+    "avg_loss": -43.295880850781735,
+    "expectancy": 25.127481276097622,
+    "expectancy_r": 0.4905702734074876,
+    "avg_ret": 0.04243154460255912,
+    "fees": 41.981894089285795,
+    "exit_kinds": {
+     "target": 12,
+     "stop": 9,
+     "time_limit": 6,
+     "strategy_exit": 3
+    },
+    "avg_bars": 13.066666666666666,
+    "recovery_factor": 2.579889921930891
+   },
+   "train": {
+    "trades": 10,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.06197708168088356,
+    "max_drawdown": 0.010927990789771136,
+    "sharpe": 1.3787488031233717,
+    "sortino": 0.8625491942630849,
+    "net_profit": 619.7708168088353,
+    "win_rate": 0.8,
+    "profit_factor": 6.914428891787072,
+    "avg_win": 90.57005588443727,
+    "avg_loss": -52.39481513333139,
+    "expectancy": 61.97708168088353,
+    "expectancy_r": 1.2134486094987689,
+    "avg_ret": 0.112961612655375,
+    "fees": 11.933790191629647,
+    "exit_kinds": {
+     "target": 7,
+     "stop": 2,
+     "time_limit": 1
+    },
+    "avg_bars": 10.6,
+    "recovery_factor": 5.480228980224826
+   },
+   "validation": {
+    "trades": 12,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.02020848288449084,
+    "max_drawdown": 0.022112002490150773,
+    "sharpe": 0.5228317100166845,
+    "sortino": 0.33582677521175747,
+    "net_profit": 214.60945678869962,
+    "win_rate": 0.5,
+    "profit_factor": 1.996754785027248,
+    "avg_win": 71.65293915012741,
+    "avg_loss": -35.88469635201081,
+    "expectancy": 17.8841213990583,
+    "expectancy_r": 0.33755001161596304,
+    "avg_ret": 0.01784892403617906,
+    "fees": 18.128028621054494,
+    "exit_kinds": {
+     "time_limit": 4,
+     "stop": 3,
+     "target": 3,
+     "strategy_exit": 2
+    },
+    "avg_bars": 16.416666666666668,
+    "recovery_factor": 0.9624366132352307
+   },
+   "test": {
+    "trades": 8,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.007435204716868982,
+    "max_drawdown": 0.026453582901298067,
+    "sharpe": -0.2632401627971622,
+    "sortino": -0.10525475521461242,
+    "net_profit": -80.55583531460623,
+    "win_rate": 0.25,
+    "profit_factor": 0.7183800818143147,
+    "avg_win": 102.74434410880521,
+    "avg_loss": -47.674087255369436,
+    "expectancy": -10.069479414325778,
+    "expectancy_r": -0.1834972540193264,
+    "avg_ret": -0.008857109613890662,
+    "fees": 11.920075276601647,
+    "exit_kinds": {
+     "stop": 4,
+     "target": 2,
+     "strategy_exit": 1,
+     "time_limit": 1
+    },
+    "avg_bars": 11.125,
+    "recovery_factor": -0.2986978133655705
+   },
+   "p_value": 0.009998000399920015,
+   "sqn": 2.0470208681781337,
+   "mc_drawdown": {
+    "median": 0.016257707653417053,
+    "p95": 0.027676946863936784
+   },
+   "per_symbol_pf": {
+    "BTCUSDT": 3.143633568092135,
+    "ETHUSDT": 1.7891327145480955
+   },
+   "per_symbol_trades": {
+    "BTCUSDT": 12,
+    "ETHUSDT": 18
+   },
+   "rejections": {},
+   "buy_and_hold": {
+    "return_pct": 15.986050664092737,
+    "max_drawdown": 0.7625369100009562
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": true,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": true,
+    "max_drawdown_le_15pct": true,
+    "mc_p95_drawdown_le_20pct": true,
+    "holm_significant": false
+   },
+   "passed": false
+  },
+  "donchian_breakout@1d": {
+   "full": {
+    "trades": 55,
+    "signals": 55,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.20655588509561063,
+    "max_drawdown": 0.04076499923691579,
+    "sharpe": 0.9931553723662311,
+    "sortino": 0.7003085643562248,
+    "net_profit": 2065.558850956109,
+    "win_rate": 0.509090909090909,
+    "profit_factor": 2.460813923519833,
+    "avg_win": 124.26917571783329,
+    "avg_loss": -52.36955811641566,
+    "expectancy": 37.55561547192925,
+    "expectancy_r": 0.6937113772270316,
+    "avg_ret": 0.05680968028813017,
+    "fees": 79.81824814564975,
+    "exit_kinds": {
+     "stop": 23,
+     "target": 21,
+     "strategy_exit": 11
+    },
+    "avg_bars": 13.818181818181818,
+    "recovery_factor": 4.028354753995157
+   },
+   "train": {
+    "trades": 27,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.12831748693517775,
+    "max_drawdown": 0.030673015361343814,
+    "sharpe": 1.3257392604479667,
+    "sortino": 0.9505219335978303,
+    "net_profit": 1283.1748693517754,
+    "win_rate": 0.5555555555555556,
+    "profit_factor": 3.1604251063932502,
+    "avg_win": 125.14136102169059,
+    "avg_loss": -49.495462164465266,
+    "expectancy": 47.52499516117687,
+    "expectancy_r": 0.9057302090590644,
+    "avg_ret": 0.07836979274374739,
+    "fees": 31.92797505306895,
+    "exit_kinds": {
+     "target": 12,
+     "stop": 11,
+     "strategy_exit": 4
+    },
+    "avg_bars": 10.777777777777779,
+    "recovery_factor": 4.036822079554155
+   },
+   "validation": {
+    "trades": 14,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.04203062269498292,
+    "max_drawdown": 0.021707022214379257,
+    "sharpe": 0.7943512159506732,
+    "sortino": 0.598702178544895,
+    "net_profit": 474.2388657352358,
+    "win_rate": 0.5,
+    "profit_factor": 2.325290878785359,
+    "avg_win": 118.8680620460503,
+    "avg_loss": -51.11965265530234,
+    "expectancy": 33.87420469537398,
+    "expectancy_r": 0.5981202531343772,
+    "avg_ret": 0.038299777504198926,
+    "fees": 23.126197347833415,
+    "exit_kinds": {
+     "stop": 5,
+     "target": 5,
+     "strategy_exit": 4
+    },
+    "avg_bars": 18.857142857142858,
+    "recovery_factor": 2.0510929728656846
+   },
+   "test": {
+    "trades": 14,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.02620857977886004,
+    "max_drawdown": 0.04076499923691568,
+    "sharpe": 0.5888076932501615,
+    "sortino": 0.36977371374999213,
+    "net_profit": 308.14511586909805,
+    "win_rate": 0.42857142857142855,
+    "profit_factor": 1.6666994367072436,
+    "avg_win": 128.3900117419369,
+    "avg_loss": -57.77436932281539,
+    "expectancy": 22.01036541922129,
+    "expectancy_r": 0.3804090399293374,
+    "avg_ret": 0.03373936619337105,
+    "fees": 24.764075744747377,
+    "exit_kinds": {
+     "stop": 7,
+     "target": 4,
+     "strategy_exit": 3
+    },
+    "avg_bars": 14.642857142857142,
+    "recovery_factor": 0.7065733054983713
+   },
+   "p_value": 0.005398920215956809,
+   "sqn": 2.6391731022133014,
+   "mc_drawdown": {
+    "median": 0.02527550244717943,
+    "p95": 0.041634888602137814
+   },
+   "per_symbol_pf": {
+    "BTCUSDT": 3.786181913585863,
+    "ETHUSDT": 1.6442595221527778
+   },
+   "per_symbol_trades": {
+    "BTCUSDT": 28,
+    "ETHUSDT": 27
+   },
+   "rejections": {},
+   "buy_and_hold": {
+    "return_pct": 15.986050664092737,
+    "max_drawdown": 0.7625369100009562
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": true,
+    "test_pf_ge_1.10": true,
+    "validation_pf_ge_1.00": true,
+    "max_drawdown_le_15pct": true,
+    "mc_p95_drawdown_le_20pct": true,
+    "holm_significant": false
+   },
+   "passed": false
+  },
+  "bollinger_squeeze_breakout@1d": {
+   "full": {
+    "trades": 52,
+    "signals": 52,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.08214841990321187,
+    "max_drawdown": 0.03503364150330868,
+    "sharpe": 0.5621785490760981,
+    "sortino": 0.32019606726884425,
+    "net_profit": 821.4841990321149,
+    "win_rate": 0.4807692307692308,
+    "profit_factor": 1.7202674587650577,
+    "avg_win": 78.48043213878326,
+    "avg_loss": -42.24172609027655,
+    "expectancy": 15.797773058309902,
+    "expectancy_r": 0.3100569141041157,
+    "avg_ret": 0.014895425704097921,
+    "fees": 75.91556016497935,
+    "exit_kinds": {
+     "target": 19,
+     "strategy_exit": 17,
+     "stop": 16
+    },
+    "avg_bars": 9.134615384615385,
+    "recovery_factor": 2.1234359585436136
+   },
+   "train": {
+    "trades": 17,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.05448374173856019,
+    "max_drawdown": 0.01863961533251368,
+    "sharpe": 0.9108118968349694,
+    "sortino": 0.5019461722940037,
+    "net_profit": 544.8374173856041,
+    "win_rate": 0.6470588235294118,
+    "profit_factor": 3.077617619844598,
+    "avg_win": 73.37080438498425,
+    "avg_loss": -43.706905141537135,
+    "expectancy": 32.04925984621201,
+    "expectancy_r": 0.6302124391222927,
+    "avg_ret": 0.041737334145327425,
+    "fees": 21.4693156293168,
+    "exit_kinds": {
+     "target": 8,
+     "strategy_exit": 5,
+     "stop": 4
+    },
+    "avg_bars": 10.352941176470589,
+    "recovery_factor": 2.868981253427659
+   },
+   "validation": {
+    "trades": 15,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.012817491889647759,
+    "max_drawdown": 0.029296528489234586,
+    "sharpe": 0.32529683428898865,
+    "sortino": 0.15557234630428837,
+    "net_profit": 135.15836807498908,
+    "win_rate": 0.4666666666666667,
+    "profit_factor": 1.3382706318148683,
+    "avg_win": 76.38789673410494,
+    "avg_loss": -49.944613632968185,
+    "expectancy": 9.01055787166594,
+    "expectancy_r": 0.17693264335678544,
+    "avg_ret": -0.0019165689202005917,
+    "fees": 25.088707316516583,
+    "exit_kinds": {
+     "stop": 6,
+     "target": 5,
+     "strategy_exit": 4
+    },
+    "avg_bars": 7.933333333333334,
+    "recovery_factor": 0.44216276516654035
+   },
+   "test": {
+    "trades": 20,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.013247984026748538,
+    "max_drawdown": 0.03503364150330879,
+    "sharpe": 0.31421372446587503,
+    "sortino": 0.22399683021218103,
+    "net_profit": 141.4884135715216,
+    "win_rate": 0.35,
+    "profit_factor": 1.295550574420452,
+    "avg_win": 88.6023825851457,
+    "avg_loss": -36.8252511172691,
+    "expectancy": 7.07442067857608,
+    "expectancy_r": 0.13776792089916284,
+    "avg_ret": 0.004688799497276723,
+    "fees": 29.357537219145968,
+    "exit_kinds": {
+     "strategy_exit": 8,
+     "target": 6,
+     "stop": 6
+    },
+    "avg_bars": 9.0,
+    "recovery_factor": 0.3905997055540302
+   },
+   "p_value": 0.15776844631073786,
+   "sqn": 1.09241509225621,
+   "mc_drawdown": {
+    "median": 0.02440391597599971,
+    "p95": 0.03950154271542511
+   },
+   "per_symbol_pf": {
+    "BTCUSDT": 2.3589890405065503,
+    "ETHUSDT": 1.2390097548292989
+   },
+   "per_symbol_trades": {
+    "BTCUSDT": 27,
+    "ETHUSDT": 25
+   },
+   "rejections": {},
+   "buy_and_hold": {
+    "return_pct": 15.986050664092737,
+    "max_drawdown": 0.7625369100009562
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": true,
+    "test_pf_ge_1.10": true,
+    "validation_pf_ge_1.00": true,
+    "max_drawdown_le_15pct": true,
+    "mc_p95_drawdown_le_20pct": true,
+    "holm_significant": false
+   },
+   "passed": false
+  },
+  "atr_expansion_breakout@1d": {
+   "full": {
+    "trades": 36,
+    "signals": 36,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.07552696830522332,
+    "max_drawdown": 0.009215699701109803,
+    "sharpe": 0.9753321205574537,
+    "sortino": 0.4740023060441208,
+    "net_profit": 755.2696830522289,
+    "win_rate": 0.75,
+    "profit_factor": 3.444205141192625,
+    "avg_win": 39.417551659988916,
+    "avg_loss": -34.333801307496856,
+    "expectancy": 20.97971341811747,
+    "expectancy_r": 0.406730120281386,
+    "avg_ret": 0.046879088428157654,
+    "fees": 36.470090084565065,
+    "exit_kinds": {
+     "target": 25,
+     "strategy_exit": 6,
+     "time_limit": 3,
+     "stop": 2
+    },
+    "avg_bars": 7.416666666666667,
+    "recovery_factor": 7.980357838691065
+   },
+   "train": {
+    "trades": 14,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.03498686232747583,
+    "max_drawdown": 0.009215699701109803,
+    "sharpe": 1.104789547936282,
+    "sortino": 0.458886577640594,
+    "net_profit": 349.86862327476007,
+    "win_rate": 0.7857142857142857,
+    "profit_factor": 4.215122487645742,
+    "avg_win": 41.69893731191358,
+    "avg_loss": -36.27322905209642,
+    "expectancy": 24.99061594819715,
+    "expectancy_r": 0.4939564793227516,
+    "avg_ret": 0.06670073041943893,
+    "fees": 11.646768648617371,
+    "exit_kinds": {
+     "target": 11,
+     "strategy_exit": 2,
+     "stop": 1
+    },
+    "avg_bars": 6.571428571428571,
+    "recovery_factor": 3.696794499918651
+   },
+   "validation": {
+    "trades": 11,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.014756318686705017,
+    "max_drawdown": 0.007844138659943822,
+    "sharpe": 0.6516462766931314,
+    "sortino": 0.38307236849678156,
+    "net_profit": 152.72595977056648,
+    "win_rate": 0.7272727272727273,
+    "profit_factor": 2.1150213033268943,
+    "avg_win": 36.21216221631842,
+    "avg_loss": -45.657112653326976,
+    "expectancy": 13.88417816096059,
+    "expectancy_r": 0.26816949969436327,
+    "avg_ret": 0.015861802710402443,
+    "fees": 13.034499473741898,
+    "exit_kinds": {
+     "target": 6,
+     "strategy_exit": 2,
+     "time_limit": 2,
+     "stop": 1
+    },
+    "avg_bars": 9.090909090909092,
+    "recovery_factor": 1.9130780489166612
+   },
+   "test": {
+    "trades": 11,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.024058350344666746,
+    "max_drawdown": 0.007746458244432208,
+    "sharpe": 1.159839761860743,
+    "sortino": 0.5655435194596673,
+    "net_profit": 252.67510000690217,
+    "win_rate": 0.7272727272727273,
+    "profit_factor": 4.997189722472241,
+    "avg_win": 39.48603583226297,
+    "avg_loss": -21.07106221706718,
+    "expectancy": 22.970463636991106,
+    "expectancy_r": 0.4342753748157616,
+    "avg_ret": 0.05266882979337309,
+    "fees": 11.788821962205784,
+    "exit_kinds": {
+     "target": 8,
+     "strategy_exit": 2,
+     "time_limit": 1
+    },
+    "avg_bars": 6.818181818181818,
+    "recovery_factor": 3.1605103474299066
+   },
+   "p_value": 0.0001999600079984003,
+   "sqn": 3.568295306899176,
+   "mc_drawdown": {
+    "median": 0.008291463526879456,
+    "p95": 0.013526232682665614
+   },
+   "per_symbol_pf": {
+    "BTCUSDT": 7.942119598121585,
+    "ETHUSDT": 2.064117360228291
+   },
+   "per_symbol_trades": {
+    "BTCUSDT": 18,
+    "ETHUSDT": 18
+   },
+   "rejections": {},
+   "buy_and_hold": {
+    "return_pct": 15.986050664092737,
+    "max_drawdown": 0.7625369100009562
+   },
+   "holm_significant": true,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": true,
+    "test_pf_ge_1.10": true,
+    "validation_pf_ge_1.00": true,
+    "max_drawdown_le_15pct": true,
+    "mc_p95_drawdown_le_20pct": true,
+    "holm_significant": true
+   },
+   "passed": true
+  },
+  "bb_rsi_reversion@1d": {
+   "full": {
+    "trades": 0,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.0,
+    "max_drawdown": 0.0,
+    "sharpe": null,
+    "sortino": null
+   },
+   "train": {
+    "trades": 0,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.0,
+    "max_drawdown": 0.0,
+    "sharpe": null,
+    "sortino": null
+   },
+   "validation": {
+    "trades": 0,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.0,
+    "max_drawdown": 0.0,
+    "sharpe": null,
+    "sortino": null
+   },
+   "test": {
+    "trades": 0,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.0,
+    "max_drawdown": 0.0,
+    "sharpe": null,
+    "sortino": null
+   },
+   "p_value": null,
+   "sqn": null,
+   "mc_drawdown": null,
+   "per_symbol_pf": {},
+   "per_symbol_trades": {},
+   "rejections": {},
+   "buy_and_hold": {
+    "return_pct": 15.986050664092737,
+    "max_drawdown": 0.7625369100009562
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": false,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": false,
+    "max_drawdown_le_15pct": true,
+    "mc_p95_drawdown_le_20pct": false,
+    "holm_significant": false
+   },
+   "passed": false
+  },
+  "vwap_deviation_reversion@1d": {
+   "full": {
+    "trades": 2,
+    "signals": 2,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.006084078415430461,
+    "max_drawdown": 0.007879419220577888,
+    "sharpe": -0.21127078311716393,
+    "sortino": -0.025314875311177723,
+    "net_profit": -60.84078415430367,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "avg_win": null,
+    "avg_loss": -30.420392077151835,
+    "expectancy": -30.420392077151835,
+    "expectancy_r": -0.60898621514426,
+    "avg_ret": -0.05266733426493931,
+    "fees": 3.100757593185147,
+    "exit_kinds": {
+     "stop": 1,
+     "time_limit": 1
+    },
+    "avg_bars": 10.5,
+    "recovery_factor": -0.7711007873863445
+   },
+   "train": {
+    "trades": 1,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.004999902644260312,
+    "max_drawdown": 0.004999902644260312,
+    "sharpe": -0.6265596331898224,
+    "sortino": -0.031297585814218126,
+    "net_profit": -49.999026442603515,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "avg_win": null,
+    "avg_loss": -49.999026442603515,
+    "expectancy": -49.999026442603515,
+    "expectancy_r": -0.9999949878834639,
+    "avg_ret": -0.09504022544030623,
+    "fees": 1.0031697123425394,
+    "exit_kinds": {
+     "stop": 1
+    },
+    "avg_bars": 1.0,
+    "recovery_factor": -1.0000000000000047
+   },
+   "validation": {
+    "trades": 1,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.0010896237840092304,
+    "max_drawdown": 0.007879419220577999,
+    "sharpe": -0.07997562397310613,
+    "sortino": -0.018890375521707522,
+    "net_profit": -10.841757711700156,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "avg_win": null,
+    "avg_loss": -10.841757711700156,
+    "expectancy": -10.841757711700156,
+    "expectancy_r": -0.2179774424050562,
+    "avg_ret": -0.010294443089572397,
+    "fees": 2.0975878808426076,
+    "exit_kinds": {
+     "time_limit": 1
+    },
+    "avg_bars": 20.0,
+    "recovery_factor": -0.13672223982861412
+   },
+   "test": {
+    "trades": 0,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.0,
+    "max_drawdown": 0.0,
+    "sharpe": null,
+    "sortino": null
+   },
+   "p_value": null,
+   "sqn": -1.2429488006132794,
+   "mc_drawdown": null,
+   "per_symbol_pf": {
+    "BTCUSDT": 0.0,
+    "ETHUSDT": 0.0
+   },
+   "per_symbol_trades": {
+    "BTCUSDT": 1,
+    "ETHUSDT": 1
+   },
+   "rejections": {},
+   "buy_and_hold": {
+    "return_pct": 15.986050664092737,
+    "max_drawdown": 0.7625369100009562
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": false,
+    "full_pf_ge_1.20": false,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": false,
+    "max_drawdown_le_15pct": true,
+    "mc_p95_drawdown_le_20pct": false,
+    "holm_significant": false
+   },
+   "passed": false
+  },
+  "mtf_structure_trend@1d": {
+   "full": {
+    "trades": 63,
+    "signals": 63,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.06795132746289512,
+    "max_drawdown": 0.041757716272416534,
+    "sharpe": 0.4475091370825479,
+    "sortino": 0.2934331776949301,
+    "net_profit": 679.5132746289559,
+    "win_rate": 0.42857142857142855,
+    "profit_factor": 1.4565430075343768,
+    "avg_win": 80.29265121786062,
+    "avg_loss": -41.34411967370224,
+    "expectancy": 10.78592499411041,
+    "expectancy_r": 0.21442359004760725,
+    "avg_ret": 0.023082703243729363,
+    "fees": 60.96468593856873,
+    "exit_kinds": {
+     "stop": 21,
+     "target": 21,
+     "strategy_exit": 20,
+     "time_limit": 1
+    },
+    "avg_bars": 13.904761904761905,
+    "recovery_factor": 1.489977242943023
+   },
+   "train": {
+    "trades": 32,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.07127126169187581,
+    "max_drawdown": 0.01911547340061892,
+    "sharpe": 0.9317841678025303,
+    "sortino": 0.6362124803699024,
+    "net_profit": 712.7126169187604,
+    "win_rate": 0.5,
+    "profit_factor": 2.1394569256841343,
+    "avg_win": 83.63731824339251,
+    "avg_loss": -39.09277968596998,
+    "expectancy": 22.272269278711263,
+    "expectancy_r": 0.4369429460859088,
+    "avg_ret": 0.05612148129990763,
+    "fees": 25.72239852950156,
+    "exit_kinds": {
+     "target": 13,
+     "strategy_exit": 12,
+     "stop": 7
+    },
+    "avg_bars": 14.1875,
+    "recovery_factor": 3.413876595303081
+   },
+   "validation": {
+    "trades": 17,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": 0.006539184697575751,
+    "max_drawdown": 0.0265507815290289,
+    "sharpe": 0.17201889244720256,
+    "sortino": 0.11618159789443108,
+    "net_profit": 70.05240641408272,
+    "win_rate": 0.4117647058823529,
+    "profit_factor": 1.1574747625769573,
+    "avg_win": 73.55726734984373,
+    "avg_loss": -44.48484650348234,
+    "expectancy": 4.12072978906369,
+    "expectancy_r": 0.082138593005481,
+    "avg_ret": 0.0003443529328723391,
+    "fees": 18.994393457414766,
+    "exit_kinds": {
+     "stop": 7,
+     "strategy_exit": 5,
+     "target": 5
+    },
+    "avg_bars": 14.529411764705882,
+    "recovery_factor": 0.26290666918880595
+   },
+   "test": {
+    "trades": 14,
+    "signals": 0,
+    "halt_5pct_would_trigger_at": null,
+    "return_pct": -0.00957562818817459,
+    "max_drawdown": 0.023419415652411457,
+    "sharpe": -0.28779909041558843,
+    "sortino": -0.17805853544273403,
+    "net_profit": -103.25174870388722,
+    "win_rate": 0.2857142857142857,
+    "profit_factor": 0.7530189622062544,
+    "avg_win": 78.70090488476255,
+    "avg_loss": -41.80553682429373,
+    "expectancy": -7.375124907420515,
+    "expectancy_r": -0.13356029877450024,
+    "avg_ret": -0.024823649792923116,
+    "fees": 16.24789395165239,
+    "exit_kinds": {
+     "stop": 7,
+     "target": 3,
+     "strategy_exit": 3,
+     "time_limit": 1
+    },
+    "avg_bars": 12.5,
+    "recovery_factor": -0.4375448170615703
+   },
+   "p_value": 0.21775644871025795,
+   "sqn": 1.1154371954886257,
+   "mc_drawdown": {
+    "median": 0.03102566495487862,
+    "p95": 0.049921895353661774
+   },
+   "per_symbol_pf": {
+    "BTCUSDT": 1.4845717638180267,
+    "ETHUSDT": 1.4281323703393887
+   },
+   "per_symbol_trades": {
+    "BTCUSDT": 34,
+    "ETHUSDT": 29
+   },
+   "rejections": {},
+   "buy_and_hold": {
+    "return_pct": 15.986050664092737,
+    "max_drawdown": 0.7625369100009562
+   },
+   "holm_significant": false,
+   "gates": {
+    "trades": true,
+    "full_pf_ge_1.20": true,
+    "test_pf_ge_1.10": false,
+    "validation_pf_ge_1.00": true,
+    "max_drawdown_le_15pct": true,
+    "mc_p95_drawdown_le_20pct": true,
+    "holm_significant": false
+   },
+   "passed": false
+  }
+ },
+ "passed": [
+  "atr_expansion_breakout@1d"
+ ]
+}

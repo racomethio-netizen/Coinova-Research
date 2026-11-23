@@ -163,10 +163,10 @@ nexus_backtest/library_run.py        one pre-registered run: 8 strategies x 10 p
 | Stage | Content | Exit criterion |
 |---|---|---|
 | S1 | Start-up (recursive) analysis; live warm-up fix | Unit test green ✅ |
-| S2 | Protections plus the owner's research risk profile (0.5% / 1% / 2% daily / 5% drawdown) | Unit tests; spot-engine paper keeps its pre-registered 0.25% profile |
-| S3 | Pre-trade checks in OrderManager (max notional, submit rate, REDUCING) | Unit and integration tests; all existing tests still pass |
-| S4 | Global library, significance tools, pre-registration, one validation run | Pre-registration committed before the run; results appended once |
-| S5 | Paper programme for the library: every signal recorded, daily / weekly / monthly reports, API, "Strategy lab" dashboard page (simulated balances labelled) | e2e green; history persists across restarts |
+| S2 | Protections plus the owner's research risk profile (0.5% / 1% / 2% daily / 5% drawdown) | Unit tests; spot-engine paper keeps its pre-registered 0.25% profile ✅ |
+| S3 | Pre-trade checks in OrderManager (max notional, submit rate, REDUCING) | Unit and integration tests; all existing tests still pass ✅ |
+| S4 | Global library, significance tools, pre-registration, one validation run | Pre-registration committed before the run; results appended once ✅ (1 of 24 passed: atr_expansion_breakout @ 1d) |
+| S5 | Paper programme for the library: every signal recorded, daily / weekly / monthly reports, API, "Strategy lab" dashboard page (simulated balances labelled) | e2e green; history persists across restarts ✅ (forward test starts 2026-11-24) |
 | S6 (optional) | FreqAI recency weights and a volatility-forecast regime input for the selector | Pre-registered; can only reduce risk or abstain |
 
 ## 6. Risks and limitations

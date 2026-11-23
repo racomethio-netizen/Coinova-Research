@@ -98,4 +98,69 @@ Reported but not gates:
 
 ## Results
 
-_(appended after the single run)_
+_Run once on 2026-11-23, after the pre-registration commit (081c550).
+* Archive checksums re-verified: 720 + 266 files, 0 bad.
+* Full output: `2026-11-23-global-library-result.json`. Runner: `python -m
+  nexus_backtest.library_run`._
+
+**One of 24 tests passes: `atr_expansion_breakout` on daily BTC/ETH.** The other 23 fail.
+
+| Strategy | 1h PF (return) | 4h PF (return) | 1d PF (return) |
+|---|---|---|---|
+| ema_adx_macd_trend | 0.83 (−24%) | 1.00 (+0.1%) | 0.59 (−2%) |
+| rsi_macd_roc_momentum | 0.77 (−78%) | 0.96 (−9%) | 2.24 (+7.5%), 30 trades, test PF 0.72 |
+| donchian_breakout | 0.90 (−39%) | 1.16 (+31%), drawdown 25% | 2.46 (+21%), p = 0.005, **fails Holm only** |
+| bollinger_squeeze_breakout | 0.84 (−57%) | 0.92 (−13%) | 1.72 (+8%), p = 0.16 |
+| atr_expansion_breakout | 0.80 (−59%) | 1.01 (+1%) | **3.44 (+7.6%) PASS** |
+| bb_rsi_reversion | 0.61 (−10%) | 0.58 (−5%) | 0 trades |
+| vwap_deviation_reversion | 0.61 (−27%) | 0.66 (−10%) | 2 trades |
+| mtf_structure_trend | 0.87 (−48%) | 1.04 (+5%) | 1.46 (+7%), test PF 0.75 |
+
+Benchmarks (equal-weight buy and hold of the same coins and window):
+* 1h / 4h, 10 coins, 2023-01 to 2026-11: **+108% to +110%**.
+* 1d, BTC + ETH, 2019-01 to 2026-11: **+1,599%**.
+
+### The passing test: atr_expansion_breakout @ 1d (BTC, ETH)
+
+| | Trades | Profit factor | Return | Max drawdown | Win rate | Expectancy |
+|---|---|---|---|---|---|---|
+| Full 2019-01 – 2026-11 | 36 | 3.44 | +7.6% | 0.9% | 75% | +0.41 R |
+| Train 2019 – 2022-06 | 14 | 4.22 | +3.5% | 0.9% | 79% | +0.49 R |
+| Validation 2022-07 – 2024-06 | 11 | 2.12 | +1.5% | 0.8% | 73% | +0.27 R |
+| Test 2024-07 – 2026-11 | 11 | 5.00 | +2.4% | 0.8% | 73% | +0.43 R |
+
+* **Significance.** Stationary-bootstrap p = 0.0002, significant after Holm across 24 tests.
+  SQN 3.57.
+* **Robustness.** Monte Carlo trade-shuffle drawdown: median 0.8%, 95th percentile 1.4%.
+  Sharpe 0.98 (daily, the account including idle cash).
+* **Breadth.** Profit factor 7.9 on BTC and 2.1 on ETH, 18 trades each.
+* **Exits.** 25 targets, 6 strategy exits, 3 time limits, 2 stops. The 5% drawdown halt
+  would never have triggered.
+
+**Limitations of this pass (read before relying on it):**
+1. **Small sample.** 36 trades over 8 years (about 4–5 a year on two coins), so the
+   confidence interval is wide. A 180-day paper period will see only about 2 trades and
+   cannot confirm it statistically. It can only catch a gross break.
+2. **Economically small at this risk level.** About +0.9% a year at 0.5% risk per trade
+   with mostly idle cash, against +1,599% for buy-and-hold. It is a low-exposure filter,
+   not a growth strategy.
+3. **Many tests were run.** Holm controls the family of 24, but NEXUS has now tested about
+   45 rule sets in total. Some selection effect remains.
+
+### Near misses, not passed (no re-tuning)
+* **donchian_breakout @ 1d.** Every gate except Holm: p = 0.005 against a Holm threshold of
+  0.0022. It matches the Crypto Trends finding that slow daily breakouts work on BTC/ETH.
+* **donchian_breakout @ 4h.** +31% but PF 1.16, drawdown 25% and p = 0.23.
+
+### What this confirms
+On 1h, every strategy loses after costs: 7 of 8 have PF ≤ 0.90, and all 8 lose money. On
+4h nothing reaches significance. Only daily rules show an edge. This matches every earlier
+NEXUS test: costs dominate intraday indicator signals on Binance spot.
+
+### Consequence (as pre-registered)
+* `atr_expansion_breakout @ 1d` becomes a **paper forward-test candidate**. It is recorded by
+  the library forward test from 2026-11-24, with no orders and simulated only.
+* It stays disabled for live trading. Live use needs 180 calendar days of paper results and
+  the owner's separate explicit approval.
+* The other 23 are failed. They are still observed in the same forward ledger, labelled
+  "failed".

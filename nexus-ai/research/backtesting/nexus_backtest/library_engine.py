@@ -79,6 +79,7 @@ class LibResult:
     signals: int
     rejected: dict[str, int]
     halt_would_trigger_at: str | None
+    open_positions: list[dict[str, Any]] = field(default_factory=list)
 
 
 def run(sigs: dict[str, pd.DataFrame], bars: dict[str, pd.DataFrame], tf: str, *,
@@ -220,8 +221,12 @@ def run(sigs: dict[str, pd.DataFrame], bars: dict[str, pd.DataFrame], tf: str, *
             for why in reasons:
                 note(why)
     tr = pd.DataFrame(trades)
+    opened = [{"symbol": s, "entry_time": str(o.pos.opened_at), "entry": o.pos.entry,
+               "qty": o.pos.qty, "stop": o.pos.stop, "target": o.target, "bars": o.bars,
+               "time_limit": o.time_limit, "exit_pending": pending_out.get(s)}
+              for s, o in held.items()]
     return LibResult(pd.Series(eq, index=pd.DatetimeIndex(clock[:len(eq)])), tr, n_signals,
-                     rejected, halt_at)
+                     rejected, halt_at, opened)
 
 
 def daily_sharpe_sortino(equity: pd.Series) -> tuple[float | None, float | None]:

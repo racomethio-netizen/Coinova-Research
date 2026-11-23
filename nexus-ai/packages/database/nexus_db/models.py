@@ -689,7 +689,7 @@ class ForwardTestEvent(Base):
 
     __tablename__ = "forward_test_events"
     __table_args__ = (
-        CheckConstraint(in_list("kind", ("trade", "gap", "day", "divergence")),
+        CheckConstraint(in_list("kind", ("trade", "gap", "day", "divergence", "signal")),
                         name="kind_valid"),
         UniqueConstraint("run", "symbol", "kind", "key", name="one_event_per_key"),
         Index("ix_forward_test_events_run_at", "run", "at"),

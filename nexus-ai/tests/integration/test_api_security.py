@@ -61,7 +61,7 @@ GET_ROUTES = ["/api/v1/overview", "/api/v1/portfolio", "/api/v1/exchanges", "/ap
               "/api/v1/risk/state", "/api/v1/markets/data-quality", "/api/v1/system/binance",
               "/api/v1/analysis/technical", "/api/v1/analysis/mtf",
               "/api/v1/decision/fusion", "/api/v1/decision/log", "/api/v1/spot-engine",
-              "/api/v1/research/trend-forward"]
+              "/api/v1/research/trend-forward", "/api/v1/research/library"]
 
 
 @pytest.mark.parametrize("path", GET_ROUTES)

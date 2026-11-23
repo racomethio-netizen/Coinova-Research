@@ -698,3 +698,51 @@ trading on Render can use live data once background workers are approved.
   * The message now shows the full date; this ships with the next deploy.
   * The derivatives, carry and taker forward tests have gaps until the ban ends; a dedicated
     IP would avoid this.
+
+## 2026-11-23: global strategy integration (owner master command)
+
+Plan, audit and research: docs/GLOBAL_STRATEGY_INTEGRATION.md. The source code of
+Freqtrade, FreqAI, Hummingbot, Jesse, NautilusTrader and Backtrader was read, plus
+TradingView's documentation.
+
+* **S1 start-up analysis (Freqtrade recursive-analysis): fixed a real bug.**
+  * The live spot engine loaded 4,000 15m bars, which left the 4h EMA200 up to 3.5% away
+    from the backtest's value.
+  * It now loads 12,000 bars, and opens new positions only after 9,600 bars.
+  * A unit test guards it.
+* **S2 protections (Freqtrade) and the owner's risk profile.**
+  * `nexus_risk/protections.py` (stop-loss guard, low-profit pair lock, lookback drawdown,
+    cooldown).
+  * Spot rules: a 5% portfolio-drawdown halt, ceilings enforced, `RESEARCH_PROFILE`.
+  * Settings defaults are now 0.5% per trade, 2% daily, 5% drawdown (weekly 3%). Ceilings
+    are unchanged.
+  * The production paper account had no drawdown (10,000 → 10,000) when the 5% limit was
+    added.
+* **S3 pre-trade checks (NautilusTrader)** in `OrderManager.place`, for entries only:
+  * REDUCING state (kill switch, or an owner floor of NO_NEW_TRADES or stricter);
+  * a fat-finger cap of 50% of the quote balance;
+  * a 5% price band;
+  * 10 entries per minute.
+  * Exits always pass.
+* **S4 library.** 8 strategies (`library_global.py`), the library backtester, and the
+  significance tools (stationary bootstrap, SQN, Holm, trade-shuffle Monte Carlo).
+  * Pre-registered (081c550), then run once.
+  * **1 of 24 passes: atr_expansion_breakout @ 1d (BTC/ETH)**: 36 trades, PF 3.44, +7.6%
+    over 2019-2026, drawdown 0.9%, p = 0.0002.
+  * The pass is small in money and the sample is small (see the pre-registration).
+  * All 1h strategies lose after costs.
+* **S5 forward paper test.**
+  * Worker `library-paper` (`nexus_backtest/library_forward.py`): hourly, simulated only, no
+    orders. It writes an append-only ledger in forward_test_events (migration 0017 adds the
+    'signal' kind).
+  * API `/research/library`; dashboard page "Strategy lab".
+  * Run `global-lib-2026-11-24`, review at 180 days. The daily data warm-up depends on the
+    stored 1d history.
+* **Tests:** 868 passed (unit + integration); e2e 15/15; alembic check clean.
+* **Next:**
+  1. Check after deploy that the `library-paper` worker reports `ready`, and how many stored
+     1d candles exist for the daily strategies.
+  2. Optional S6 (FreqAI recency weights, volatility-forecast input for sizing), only with
+     its own pre-registration.
+  3. Paper-trade the passing strategy through OrderManager / PaperBroker to measure
+     execution differences, once it gives a signal.

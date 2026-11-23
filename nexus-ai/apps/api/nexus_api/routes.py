@@ -1532,6 +1532,28 @@ async def trend_forward_status(s: Session = Depends(db),
             "backtest": "docs/research/2026-11-23-crypto-trends-preregistration.md"}
 
 
+@router.get("/research/library")
+async def library_forward_status(s: Session = Depends(db),
+                                 redis: Any = Depends(redis_dep)) -> dict[str, Any]:
+    """Global strategy library: pre-registered backtest verdicts and the 180-day forward
+    paper test (SIMULATED: no orders of any kind are placed)."""
+    from datetime import UTC
+    from datetime import datetime as _dt
+
+    from nexus_backtest.library_forward import BACKTEST, RUN, STATUS_KEY, summary
+    from nexus_strategies.library_global import LIBRARY
+
+    rows = s.scalars(select(models.ForwardTestEvent).where(models.ForwardTestEvent.run == RUN)
+                     .order_by(models.ForwardTestEvent.at)).all()
+    raw = await redis.get(STATUS_KEY)
+    return {"live_trading": "DISABLED", "simulated": True,
+            "strategies": {c: {"family": v.family, "source": v.source}
+                           for c, v in LIBRARY.items()},
+            "backtest": BACKTEST, "forward": summary(list(rows), _dt.now(UTC)),
+            "status": json.loads(raw) if raw else None,
+            "preregistration": "docs/research/2026-11-23-global-library-preregistration.md"}
+
+
 BINANCE_PINGS = {
     "spot (live)": "https://api.binance.com/api/v3/ping",
     "futures (live)": "https://fapi.binance.com/fapi/v1/ping",
