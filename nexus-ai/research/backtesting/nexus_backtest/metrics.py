@@ -31,10 +31,17 @@ def sharpe_sortino(equity: pd.Series) -> tuple[float | None, float | None]:
     return sharpe, sortino
 
 
+def max_drawdown_money(equity: pd.Series) -> float:
+    if equity.empty:
+        return 0.0
+    return float((equity.cummax() - equity).max())
+
+
 def trade_stats(trades: pd.DataFrame) -> dict[str, Any]:
     if trades.empty:
         return {"trades": 0, "win_rate": None, "profit_factor": None, "expectancy": None,
                 "avg_win": None, "avg_loss": None, "net_pnl": 0.0, "fees": 0.0}
+    r = trades["r"].dropna() if "r" in trades else pd.Series(dtype=float)
     wins, losses = trades[trades.pnl > 0], trades[trades.pnl <= 0]
     gross_win, gross_loss = wins.pnl.sum(), -losses.pnl.sum()
     return {
@@ -47,6 +54,8 @@ def trade_stats(trades: pd.DataFrame) -> dict[str, Any]:
         "avg_loss": float(losses.pnl.mean()) if len(losses) else None,
         "net_pnl": float(trades.pnl.sum()),
         "fees": float(trades.fees.sum()),
+        "slippage": float(trades.slippage.sum()) if "slippage" in trades else None,
+        "avg_r": float(r.mean()) if len(r) else None,
     }
 
 
@@ -72,6 +81,12 @@ def compute_metrics(result: BacktestResult) -> dict[str, Any]:
         "sharpe": sharpe,
         "sortino": sortino,
         "time_in_market": exposure,
+        "max_drawdown_money": max_drawdown_money(eq),
+        "recovery_factor": (final - initial) / max_drawdown_money(eq)
+        if max_drawdown_money(eq) > 0 else None,
+        # Spot NEXUS never borrows and pays no funding; futures studies model funding in
+        # nexus_backtest.futures_engine.
+        "funding": 0.0,
         **trade_stats(trades),
         "events": [(t.isoformat(), k, v) for t, k, v in result.events],
         "rejected_signals": dict(result.rejected_signals),
@@ -80,6 +95,12 @@ def compute_metrics(result: BacktestResult) -> dict[str, Any]:
         out["by_strategy"] = {k: trade_stats(g) for k, g in trades.groupby("strategy")}
         out["by_regime"] = {str(k): trade_stats(g) for k, g in trades.groupby("regime")}
         out["by_exit"] = trades.exit_reason.value_counts().to_dict()
+        out["by_symbol"] = {k: trade_stats(g) for k, g in trades.groupby("symbol")}
+        out["by_side"] = {k: trade_stats(g) for k, g in trades.groupby("side")}
+        out["by_entry_hour_utc"] = {int(k): trade_stats(g) for k, g in
+                                    trades.groupby(trades.entry_time.dt.hour)}
+        out["by_weekday"] = {str(k): trade_stats(g) for k, g in
+                             trades.groupby(trades.entry_time.dt.day_name())}
     return out
 
 

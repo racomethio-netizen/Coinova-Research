@@ -96,6 +96,23 @@ def _slice(df: pd.DataFrame, lo: pd.Timestamp, hi: pd.Timestamp) -> pd.DataFrame
     return df[(df.entry_time >= lo) & (df.exit_time < hi)]
 
 
+def compute_studies(data: dict[str, dict[str, pd.DataFrame]], strategy_cls: type[Strategy], *,
+                    costs: CostModel,
+                    adjust: Callable[[pd.DataFrame, str], pd.DataFrame] | None = None
+                    ) -> tuple[list[dict[str, float]], list[pd.DataFrame]]:
+    """Signal outcomes for every parameter set on the full history (signals are causal)."""
+    combos = grid(strategy_cls)
+    studies: list[pd.DataFrame] = []
+    for params in combos:
+        strat = strategy_cls(**params, round_trip_cost=costs.round_trip)
+        parts = [study_signals(frames, strat, costs=costs).assign(symbol=sym)
+                 for sym, frames in data.items()]
+        if adjust is not None:
+            parts = [adjust(part, sym) for part, sym in zip(parts, data, strict=True)]
+        studies.append(pd.concat(parts).sort_values("entry_time"))
+    return combos, studies
+
+
 def walk_forward(data: dict[str, dict[str, pd.DataFrame]], strategy_cls: type[Strategy], *,
                  costs: CostModel | None = None, train_days: int = 180, test_days: int = 60,
                  min_train_trades: int = 15, gates: Gates | None = None,
@@ -105,16 +122,7 @@ def walk_forward(data: dict[str, dict[str, pd.DataFrame]], strategy_cls: type[St
     before any parameter choice, so train and test see the same cost model."""
     costs = costs or CostModel()
     gates = gates or Gates()
-    combos = grid(strategy_cls)
-    # Outcomes for every parameter set on the full history (signals are causal).
-    studies: list[pd.DataFrame] = []
-    for params in combos:
-        strat = strategy_cls(**params, round_trip_cost=costs.round_trip)
-        parts = [study_signals(frames, strat, costs=costs).assign(symbol=sym)
-                 for sym, frames in data.items()]
-        if adjust is not None:
-            parts = [adjust(part, sym) for part, sym in zip(parts, data, strict=True)]
-        studies.append(pd.concat(parts).sort_values("entry_time"))
+    combos, studies = compute_studies(data, strategy_cls, costs=costs, adjust=adjust)
     any_frames = next(iter(data.values()))
     idx = any_frames["5m"].index
     windows = make_windows(idx[0], idx[-1], train_days=train_days, test_days=test_days)

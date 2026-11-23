@@ -6,7 +6,10 @@ Timing model (prevents look-ahead):
 * Stops/targets are checked on each later 5m bar's high/low. If both are touched in
   the same bar, the STOP is assumed first. A bar opening beyond a level fills at the
   open (gap-through), not at the level.
-* Every fill pays the taker fee and adverse slippage.
+* Every fill pays the taker fee and adverse slippage. Slippage is either a fixed rate per
+  side (default) or a ``SlippageModel``: a fixed part (half the spread) plus market impact
+  that grows with the square root of the order's share of recent volume. Historical order
+  books are not available, so depth is approximated by traded volume (stated limitation).
 
 Risk model: identical code to live (``nexus_risk``): sizing from equity marked at the
 previous close, max positions, no duplicate asset exposure, max exposure, daily/weekly
@@ -44,6 +47,41 @@ class MarketSpec:
     min_notional: Decimal | None = None
 
 
+@dataclass(frozen=True)
+class SlippageModel:
+    """Adverse slippage per side = ``base_rate`` + ``impact_coef`` x daily volatility x
+    sqrt(order notional / average daily quote volume), capped at ``max_rate``.
+
+    The square-root law of market impact (Almgren et al. 2005; Toth et al. 2011) with a
+    coefficient of 1 is a conservative, widely used default. Volatility and volume are
+    measured on the ``lookback_days`` BEFORE the fill (no look-ahead). Without enough
+    history the model falls back to ``max_rate`` (never to a free fill)."""
+
+    base_rate: float = 0.0005
+    impact_coef: float = 1.0
+    lookback_days: int = 30
+    max_rate: float = 0.02
+
+    def rate(self, notional: float, daily_vol: float, daily_quote_volume: float) -> float:
+        if not (daily_vol > 0 and daily_quote_volume > 0) or notional <= 0:
+            return self.max_rate if notional > 0 else self.base_rate
+        impact = self.impact_coef * daily_vol * (notional / daily_quote_volume) ** 0.5
+        return float(min(self.base_rate + impact, self.max_rate))
+
+
+def liquidity_inputs(bars: pd.DataFrame, lookback_days: int) -> pd.DataFrame:
+    """Per execution bar: daily volatility and average daily quote volume over the
+    ``lookback_days`` that ENDED before the bar opened (shifted: no look-ahead)."""
+    quote = (bars["volume"] * bars["close"]).astype(float)
+    daily_q = quote.resample("1D").sum()
+    daily_c = bars["close"].astype(float).resample("1D").last()
+    vol = np.log(daily_c).diff().rolling(lookback_days, min_periods=lookback_days).std()
+    adv = daily_q.rolling(lookback_days, min_periods=lookback_days).mean()
+    # A day's figures are known only after it ends: shift one day, then map onto bars.
+    daily = pd.DataFrame({"daily_vol": vol, "adv": adv}).shift(1)
+    return daily.reindex(bars.index.floor("1D")).set_axis(bars.index)
+
+
 @dataclass
 class BacktestConfig:
     initial_capital: Decimal = field(default_factory=lambda: D(10_000))
@@ -51,6 +89,7 @@ class BacktestConfig:
     slippage_rate: Decimal = field(default_factory=lambda: D("0.0005"))  # 5 bps per side
     risk: RiskSettings = field(default_factory=RiskSettings)
     execution_tf: str = "5m"
+    slippage_model: SlippageModel | None = None   # None: fixed ``slippage_rate``
 
 
 @dataclass
@@ -68,6 +107,12 @@ class Trade:
     exit_price: Decimal | None = None
     exit_fee: Decimal = ZERO
     exit_reason: str | None = None
+    slippage_cost: Decimal = ZERO        # quote currency paid to slippage, both legs
+
+    @property
+    def initial_risk(self) -> Decimal:
+        """Loss at the stop before costs: the R unit."""
+        return (self.entry_price - self.stop) * self.quantity
 
     @property
     def pnl(self) -> Decimal:
@@ -94,6 +139,9 @@ class BacktestResult:
             "exit_price": float(t.exit_price) if t.exit_price is not None else None,
             "quantity": float(t.quantity), "pnl": float(t.pnl), "fees": float(t.entry_fee + t.exit_fee),
             "return": float(t.pnl / t.cost), "exit_reason": t.exit_reason, "regime": t.regime,
+            "slippage": float(t.slippage_cost),
+            "r": float(t.pnl / t.initial_risk) if t.initial_risk > 0 else None,
+            "side": "long",
         } for t in self.trades if t.exit_price is not None])
 
 
@@ -155,6 +203,20 @@ def run_backtest(
     clock = [t for t in clock if (start is None or t >= start) and (end is None or t < end)]
     arrays = {s: {c: b[c].reindex(clock).to_numpy(dtype=float)
                   for c in ("open", "high", "low", "close")} for s, b in bars.items()}
+    model = cfg.slippage_model
+    if model is not None:
+        for s, b in bars.items():
+            liq = liquidity_inputs(b, model.lookback_days).reindex(clock)
+            arrays[s]["daily_vol"] = liq["daily_vol"].to_numpy(dtype=float)
+            arrays[s]["adv"] = liq["adv"].to_numpy(dtype=float)
+
+    def slip(symbol: str, i: int, notional: Decimal) -> Decimal:
+        if model is None:
+            return cfg.slippage_rate
+        a = arrays[symbol]
+        dv, adv = float(a["daily_vol"][i]), float(a["adv"][i])
+        return _q(model.rate(float(notional), 0.0 if np.isnan(dv) else dv,
+                             0.0 if np.isnan(adv) else adv))
 
     cash = cfg.initial_capital
     open_trades: list[Trade] = []
@@ -173,11 +235,14 @@ def run_backtest(
         return cash + sum((last_close.get(t.symbol, t.entry_price) * t.quantity
                            for t in open_trades), ZERO)
 
-    def close_trade(tr: Trade, price: Decimal, when: pd.Timestamp, reason: str) -> None:
+    def close_trade(tr: Trade, price: Decimal, when: pd.Timestamp, reason: str,
+                    i: int) -> None:
+        """``i``: execution-bar index whose liquidity inputs price the exit."""
         nonlocal cash
-        fill = price * (1 - cfg.slippage_rate)
+        fill = price * (1 - slip(tr.symbol, i, price * tr.quantity))
         fee = fill * tr.quantity * cfg.fee_rate
         cash += fill * tr.quantity - fee
+        tr.slippage_cost += (price - fill) * tr.quantity
         tr.exit_price, tr.exit_fee, tr.exit_time, tr.exit_reason = fill, fee, when, reason
         open_trades.remove(tr)
         done.append(tr)
@@ -199,7 +264,7 @@ def run_backtest(
             if (tr.strategy, tr.symbol) in exits.get(t, ()):
                 o = arrays[tr.symbol]["open"][i]
                 if not np.isnan(o):
-                    close_trade(tr, _q(o), t, "strategy_exit")
+                    close_trade(tr, _q(o), t, "strategy_exit", i)
 
         # (b) entries at this bar's open
         for p in entries.get(t, []):
@@ -226,22 +291,32 @@ def run_backtest(
             equity = mark()
             exposure = sum((last_close.get(o.symbol, o.entry_price) * o.quantity
                             for o in open_trades), ZERO)
-            entry = _q(open_px) * (1 + cfg.slippage_rate)
-            sizing = size_position(SizingInput(
-                equity=equity, cash_available=cash, entry_price=entry, stop_price=_q(p.stop),
-                risk_per_trade=risk.risk_per_trade, fee_rate=cfg.fee_rate,
-                slippage_rate=cfg.slippage_rate, exposure_now=exposure,
-                max_exposure=risk.max_portfolio_exposure, asset_exposure_now=ZERO,
-                max_asset_concentration=risk.max_asset_concentration,
-                amount_step=spec.amount_step, min_amount=spec.min_amount,
-                min_notional=spec.min_notional))
+            # With a slippage model: size at the base rate, price the impact of that
+            # (upper-bound) size, then size again at the full rate.
+            rate = cfg.slippage_rate if model is None else _q(model.base_rate)
+            passes = 1 if model is None else 2
+            for k in range(passes):
+                entry = _q(open_px) * (1 + rate)
+                sizing = size_position(SizingInput(
+                    equity=equity, cash_available=cash, entry_price=entry,
+                    stop_price=_q(p.stop), risk_per_trade=risk.risk_per_trade,
+                    fee_rate=cfg.fee_rate, slippage_rate=rate, exposure_now=exposure,
+                    max_exposure=risk.max_portfolio_exposure, asset_exposure_now=ZERO,
+                    max_asset_concentration=risk.max_asset_concentration,
+                    amount_step=spec.amount_step, min_amount=spec.min_amount,
+                    min_notional=spec.min_notional))
+                if not sizing.approved:
+                    break
+                if k + 1 < passes:
+                    rate = slip(p.symbol, i, entry * sizing.quantity)
             if not sizing.approved:
                 reject("sizing")
                 continue
             fee = entry * sizing.quantity * cfg.fee_rate
             cash -= entry * sizing.quantity + fee
             open_trades.append(Trade(p.strategy, p.symbol, t, entry, sizing.quantity,
-                                     _q(p.stop), _q(p.target), fee, p.regime))
+                                     _q(p.stop), _q(p.target), fee, p.regime,
+                                     slippage_cost=(entry - _q(open_px)) * sizing.quantity))
 
         # (c) intrabar stop / target (stop first when both touched)
         for tr in list(open_trades):
@@ -250,13 +325,13 @@ def run_backtest(
                 continue
             o, h, lo = _q(arr["open"][i]), _q(arr["high"][i]), _q(arr["low"][i])
             if o <= tr.stop:
-                close_trade(tr, o, t, "stop_gap")
+                close_trade(tr, o, t, "stop_gap", i)
             elif lo <= tr.stop:
-                close_trade(tr, tr.stop, t, "stop")
+                close_trade(tr, tr.stop, t, "stop", i)
             elif o >= tr.target:
-                close_trade(tr, o, t, "target_gap")
+                close_trade(tr, o, t, "target_gap", i)
             elif h >= tr.target:
-                close_trade(tr, tr.target, t, "target")
+                close_trade(tr, tr.target, t, "target", i)
 
         # (d) mark to market at close; risk-limit and drawdown checks
         for s, arr in arrays.items():
@@ -270,7 +345,7 @@ def run_backtest(
             shutdown = True
             events.append((t, "max_drawdown_shutdown", f"equity {equity:.2f} peak {peak:.2f}"))
             for tr in list(open_trades):
-                close_trade(tr, last_close[tr.symbol], t + step, "shutdown")
+                close_trade(tr, last_close[tr.symbol], t + step, "shutdown", i)
         if blocked_until_day != day_key and loss_fraction(day_start, equity) >= risk.daily_loss_limit:
             blocked_until_day = day_key
             events.append((t, "daily_loss_limit", f"{loss_fraction(day_start, equity):.4%}"))
@@ -282,7 +357,8 @@ def run_backtest(
     # Close anything still open at the final close (marked, with costs).
     if clock:
         for tr in list(open_trades):
-            close_trade(tr, last_close[tr.symbol], clock[-1] + step, "end_of_data")
+            close_trade(tr, last_close[tr.symbol], clock[-1] + step, "end_of_data",
+                        len(clock) - 1)
         if len(equity_values):
             equity_values[-1] = float(mark())
     equity_series = pd.Series(equity_values, index=pd.DatetimeIndex(clock), name="equity")
