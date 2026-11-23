@@ -28,6 +28,7 @@ WORKERS: dict[str, list[str]] = {
     "derivatives": ["-m", "nexus_market.derivatives"],
     "carry-paper": ["-m", "nexus_market.carry_paper"],
     "forward-taker": ["-m", "nexus_backtest.forward_taker"],
+    "decision-log": ["-m", "nexus_api.decision_log"],
     "x-sentiment": ["-m", "nexus_social.service"],
 }
 
@@ -113,6 +114,8 @@ class InlineWorkers:
         from nexus_notify import service as notifier
         from nexus_social import service as social
 
+        from nexus_api import decision_log
+
         workers: dict[str, Serve] = {
             "market-data": lambda stop: runner.serve(settings, stop),
             "trader": lambda stop: trader.serve(settings, stop),
@@ -120,7 +123,8 @@ class InlineWorkers:
             "news": lambda stop: news.serve(settings, stop),
             "derivatives": lambda stop: derivatives.serve(settings, stop),
             "carry-paper": lambda stop: carry_paper.serve(settings, stop),
-            "forward-taker": lambda stop: forward_taker.serve(settings, stop)}
+            "forward-taker": lambda stop: forward_taker.serve(settings, stop),
+            "decision-log": lambda stop: decision_log.serve(settings, stop)}
         if settings.x_bearer_token is not None:
             workers["x-sentiment"] = lambda stop: social.serve(settings, stop)
         return cls(workers)

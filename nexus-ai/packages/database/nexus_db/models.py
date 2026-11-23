@@ -702,3 +702,42 @@ class ForwardTestEvent(Base):
     at: Mapped[datetime]
     data: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
     created_at: Mapped[created_at]
+
+
+class DecisionLog(Base):
+    """One explained trading decision per pair (LONG / SHORT / WAIT / NO_TRADE) from the
+    signal-fusion layer, with the inputs it used. Append-only: rows cannot be edited, and
+    only rows older than the retention period (180 days) can be deleted."""
+
+    __tablename__ = "decision_logs"
+    __table_args__ = (
+        CheckConstraint(MODE_CHECK, name="mode_valid"),
+        CheckConstraint(in_list("decision", ("LONG", "SHORT", "WAIT", "NO_TRADE")),
+                        name="decision_valid"),
+        UniqueConstraint("mode", "exchange", "symbol", "bar_time", name="one_decision_per_bar"),
+        Index("ix_decision_logs_symbol_decided", "symbol", "decided_at"),
+    )
+
+    id: Mapped[bigint_pk]
+    mode: Mapped[str] = mapped_column(String(8))
+    exchange: Mapped[str] = mapped_column(String(16))
+    symbol: Mapped[str] = mapped_column(String(32))
+    # Open time of the newest CLOSED 15m bar the decision was made on.
+    bar_time: Mapped[datetime]
+    decided_at: Mapped[datetime]
+    # Market data snapshot identifier: exchange, pair, bar and order-book update used.
+    snapshot_id: Mapped[str] = mapped_column(String(160))
+    decision: Mapped[str] = mapped_column(String(10))
+    strategy: Mapped[str | None] = mapped_column(String(64))
+    regime: Mapped[str | None] = mapped_column(String(16))
+    risk_state: Mapped[str | None] = mapped_column(String(16))
+    probability: Mapped[Decimal | None] = mapped_column(Ratio)
+    expected_return: Mapped[Decimal | None] = mapped_column(Ratio)
+    features: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
+    models_used: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
+    strategy_signals: Mapped[dict[str, Any]] = mapped_column(
+        server_default=text("'{}'::jsonb"))
+    risk_checks: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
+    reasons: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[created_at]

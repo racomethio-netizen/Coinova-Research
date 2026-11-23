@@ -22,6 +22,16 @@ deploy. More detail: docs/DEPLOYMENT.md.
 3. Settings page: the operating mode is what you chose (default Paper trading).
 4. Logs: no `cycle_failed`, no `binance_weight_pause` loops.
 
+## Migrations in the next deploy
+
+* 0013 `stop_limit_orders`: `orders.order_type` widened to 16 characters and accepts
+  'stop_limit', plus a new `orders.stop_price` column. Existing rows are unchanged.
+* 0014 `decision_logs`: a new append-only table with row-level security and the
+  `decision_logs_no_change` trigger.
+* If the `nexus_app` role already exists when 0014 runs, the migration grants it access
+  itself. If the role is created later, run `scripts/grant_app_role.sql` again (A4 step 2).
+* After the deploy, the first decision-log rows appear within 15 minutes (Decision log page).
+
 ## A4: switch the app to the restricted database account (owner action)
 
 Why: the app connects as `postgres`, the owner of every table. If its password leaked,

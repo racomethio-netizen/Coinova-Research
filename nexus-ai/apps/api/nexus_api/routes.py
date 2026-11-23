@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import timedelta
 from decimal import Decimal
 from typing import Any, Literal
 
@@ -238,6 +239,61 @@ async def decision_fusion(s: Session = Depends(db), redis: Any = Depends(redis_d
     out = await asyncio.to_thread(fusion_view.compute, s, values, settings)
     await redis.set(key, json.dumps(out, default=str), ex=60)
     return out
+
+
+@router.get("/decision/log")
+def decision_log(symbol: str | None = Query(None, max_length=32),
+                 decision: str | None = Query(None, pattern="^(LONG|SHORT|WAIT|NO_TRADE)$"),
+                 limit: int = Query(100, ge=1, le=500),
+                 s: Session = Depends(db)) -> dict[str, Any]:
+    """Recorded decisions (newest first) with the inputs they used, joined with the
+    trader's signal and order for the same pair and bar, if any (the execution result)."""
+    q = select(models.DecisionLog).order_by(desc(models.DecisionLog.bar_time),
+                                            models.DecisionLog.symbol).limit(limit)
+    if symbol:
+        q = q.where(models.DecisionLog.symbol == symbol)
+    if decision:
+        q = q.where(models.DecisionLog.decision == decision)
+    rows = s.scalars(q).all()
+    out = []
+    for r in rows:
+        # Trader signals whose bar closed inside this 15m bar, for the same pair.
+        sigs = s.execute(
+            select(models.TradingSignal, models.Strategy.code)
+            .join(models.Strategy, models.Strategy.id == models.TradingSignal.strategy_id)
+            .join(models.TradingPair, models.TradingPair.id == models.TradingSignal.pair_id)
+            .where(models.TradingPair.symbol == r.symbol,
+                   models.TradingSignal.mode == r.mode,
+                   models.TradingSignal.bar_time >= r.bar_time,
+                   models.TradingSignal.bar_time < r.bar_time + timedelta(minutes=15))).all()
+        execution = []
+        for sig, code in sigs:
+            order = s.scalar(select(models.Order).where(models.Order.signal_id == sig.id)
+                             .order_by(models.Order.id).limit(1))
+            execution.append({"strategy": code, "signal_status": sig.status,
+                              "rejection_reason": sig.rejection_reason,
+                              "order_id": order.id if order else None,
+                              "order_status": order.status if order else None})
+        out.append({
+            "id": r.id, "mode": r.mode, "symbol": r.symbol, "bar_time": ser(r.bar_time),
+            "decided_at": ser(r.decided_at), "snapshot_id": r.snapshot_id,
+            "decision": r.decision, "strategy": r.strategy, "regime": r.regime,
+            "risk_state": r.risk_state, "probability": ser(r.probability),
+            "expected_return": ser(r.expected_return), "features": r.features,
+            "models_used": r.models_used, "strategy_signals": r.strategy_signals,
+            "risk_checks": r.risk_checks, "reasons": (r.reasons or {}).get("reasons", []),
+            "rejection_reason": r.rejection_reason,
+            "execution": execution or None,
+            "execution_result": (
+                "no trade (nothing to execute)" if r.decision in ("NO_TRADE", "WAIT")
+                and not execution else
+                "see trader signals" if execution else
+                "no trader signal for this bar"),
+        })
+    return {"decisions": out,
+            "note": "Recorded after each closed 15m bar when something changed, at least "
+                    "hourly. The decision layer is advisory: only the trader places orders, "
+                    "after the independent Risk Manager approves."}
 
 
 @router.get("/markets/data-quality")

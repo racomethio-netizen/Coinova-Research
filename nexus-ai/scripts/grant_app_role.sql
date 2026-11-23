@@ -2,7 +2,7 @@
 -- RLS policy per RLS-enabled table for nexus_app only (migration 0010).
 -- Run as the schema owner AFTER creating the role (see NEXUS_DEPLOYMENT_GUIDE.md, step A4)
 -- and again after any migration run made before the role existed. Mirrors migrations
--- 0003 (base grants), 0008 and 0009 (append-only research ledgers).
+-- 0003 (base grants), 0008 and 0009 (append-only research ledgers), 0014 (decision log).
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'nexus_app') THEN
@@ -14,6 +14,8 @@ BEGIN
   EXECUTE 'REVOKE UPDATE, DELETE ON audit_logs FROM nexus_app';
   EXECUTE 'REVOKE INSERT, DELETE ON exchanges, strategies FROM nexus_app';
   EXECUTE 'REVOKE UPDATE, DELETE ON carry_paper_events, forward_test_events FROM nexus_app';
+  -- decision_logs: no UPDATE; DELETE only reaches rows past retention (trigger).
+  EXECUTE 'REVOKE UPDATE ON decision_logs FROM nexus_app';
   EXECUTE 'REVOKE ALL ON alembic_version FROM nexus_app';
   EXECUTE 'GRANT SELECT ON alembic_version TO nexus_app';
   EXECUTE 'GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO nexus_app';

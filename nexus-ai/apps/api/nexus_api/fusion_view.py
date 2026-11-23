@@ -121,6 +121,20 @@ def compute(s: Session, redis_values: dict[str, Any], settings: Settings) -> dic
         d = fused.as_dict()
         d["regimes_by_timeframe"] = regimes
         d["mtf_scores"] = mtf
+        # The exact inputs the decision used (for the decision log and explanations).
+        d["context"] = {"spread_bps": spread, "data_fresh": fresh,
+                        "risk_state": risk.get("state"),
+                        "entries_allowed": bool(risk.get("entries_allowed")),
+                        "news_block": news_block, "funding_rate": deriv.get("funding_rate"),
+                        "btc_trend_1h": btc_trend if symbol != "BTC/USDT" else None,
+                        "htf_trend": mtf.get("htf_trend"),
+                        "mtf_conflict": bool(mtf.get("conflict"))}
+        # Identifies the market data behind the decision: the newest closed 15m bar and
+        # the order-book update used for the spread.
+        m15 = frames["15m"]
+        d["snapshot"] = {"exchange": exchange, "timeframe": "15m",
+                         "bar_open": m15.index[-1].isoformat(),
+                         "book_at": (book or {}).get("ts")}
         out.append(d)
     return {"generated_at": now.isoformat(), "signals": out,
             "principle": "Only strategies or models with validated out-of-sample edges can "

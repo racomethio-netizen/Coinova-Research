@@ -79,8 +79,13 @@ Built, tested and validated once on unseen 2022-2024 data: all 7 FAIL (NEXUS_BAC
 ## Phase H: dashboard and documents
 
 * H1 Risk-state badge, mode switch, reconciliation panel, data-quality page, model registry
-  page.
-* H2 Documents: NEXUS_ARCHITECTURE.md, NEXUS_RISK_POLICY.md, NEXUS_MODEL_REPORT.md,
+  page. Done 23 Nov:
+  * Earlier phases had already added the risk-state badge, mode switch, reconciliation
+    panel, data-quality page, AI models page and Trade candidates page.
+  * Added the brief's "decision logs": a persisted, append-only record of every decision
+    with its snapshot ID, inputs, models, strategy verdicts, risk checks, rejection reason
+    and execution result (worker, migration 0014, API, dashboard page).
+* H2 (kept current, updated 23 Nov) Documents: NEXUS_ARCHITECTURE.md, NEXUS_RISK_POLICY.md, NEXUS_MODEL_REPORT.md,
   NEXUS_BACKTEST_REPORT.md, NEXUS_TEST_REPORT.md, NEXUS_DEPLOYMENT_GUIDE.md (started in
   Phase A and kept current).
 

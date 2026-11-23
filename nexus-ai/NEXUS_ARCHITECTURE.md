@@ -14,6 +14,7 @@ FastAPI API + static dashboard
  │                       -> risk state -> operating mode -> entries
  ├─ notifier             Telegram
  ├─ news, X sentiment    context only (can pause entries, never trigger them)
+ ├─ decision log         records the fusion decision per pair after each closed 15m bar
  └─ forward paper tests  funding carry, taker flow (pre-registered research)
 Postgres (Supabase): durable state, ledgers, audit log.  Redis: cache, flags, streams.
 ```
@@ -22,8 +23,8 @@ Postgres (Supabase): durable state, ledgers, audit log.  Redis: cache, flags, st
 
 | Data | Source | Stored | Freshness check |
 |---|---|---|---|
-| Candles 5m, 15m, 1h, 4h, 1d | Binance spot REST (closed bars only) | yes, 120 days backfill | Data quality page; 5m staleness stops entries |
-| Candles 1m | Binance spot REST, filled gradually (3 pages per poll) | yes, 30-day rolling | Data quality page |
+| Candles 1m, 5m, 15m, 1h, 4h, 1d | Binance WebSocket closed klines first; REST only for bars the stream missed (90 s grace) and for history | yes, 120 days backfill (1m: 30-day rolling) | Data quality page; 5m staleness stops entries |
+| Gap repair | every 5 min, the oldest hole in each series is refilled from REST in pages | - | logged `gap_repaired` |
 | Candles 3m, 30m, 2h, 6h, 12h | Derived from stored closed bars (1m, 15m, 1h); only complete groups, epoch-aligned like Binance | yes (source `derived:<tf>`) | Data quality page |
 | Order books, spread, depth, imbalance | Binance REST snapshots + WebSocket | snapshots every 5 min; live book in Redis | books older than 10-15 s are refused |
 | Funding, mark/index price, open interest, long/short ratios | Binance USD-M public REST | Redis cache | shown with timestamps; missing = "unavailable" |
@@ -68,6 +69,46 @@ shared by every caller; no synthetic data in production.
   reward/risk, probability and its source, expected return, regime, expiry, model and
   feature version, reasons, conflicts, blockers, and every source considered.
 * API `/decision/fusion`; dashboard page Trade candidates.
+
+## Decision log (Phase H)
+
+* `nexus_api/decision_log.py` (worker `decision-log`): after each closed 15m bar it runs
+  the fusion engine once and stores a `decision_logs` row per pair. A row is written when
+  something material changed, and at least hourly.
+* Each row holds:
+  * the market data snapshot identifier (exchange, pair, bar and order-book update);
+  * the context inputs, multi-timeframe scores and regimes by timeframe;
+  * the model state;
+  * every strategy's selector verdict and the setups on that bar;
+  * the risk checks (state, blockers, conflicts);
+  * the decision and the reason it was not traded.
+* The API `/decision/log` joins each row with the trader's signal and order for the same
+  pair and bar, to show the execution result. Dashboard page: Decision log.
+* The table is append-only: a trigger refuses updates, and deletion of rows younger than
+  180 days. Older rows are pruned daily (about 2.5 KB per row, under 25 MB at most).
+
+## Order types (Phase F1)
+
+* Limit (GTC / IOC), post-only (Binance `LIMIT_MAKER`), and stop-limit (Binance
+  `STOP_LOSS_LIMIT`), in the order model, the Binance adapter and the paper simulator.
+* Paper mirrors Binance's refusals:
+  * a post-only order that would take liquidity is refused;
+  * a stop that would trigger immediately is refused.
+* A stop-limit's trigger state is stored on the order row, so it survives restarts.
+* The trader still exits with its own software stops and IOC orders.
+* Exchange-side protective stops and OCO orders are F2. They need a demo-key run and an
+  order-list design, because the database allows one active order per pair and side.
+
+## Backtesting realism (Phase G1)
+
+* Slippage can follow `SlippageModel`: half the spread plus square-root market impact on
+  trailing volatility and volume. Inputs come only from data before the fill.
+* Reports include recovery factor, average R, slippage, funding (0 for spot), and results
+  per coin, side, hour and weekday. Walk-forward out-of-sample trades are broken down by
+  regime, coin, 4-hour block, weekday and exit.
+* `nexus_backtest.stability`: parameter-stability diagnostics (training-vs-unseen rank
+  correlation, probability of backtest overfitting, how often each choice is made,
+  neighbour drop).
 
 ## Decision path for an entry
 
