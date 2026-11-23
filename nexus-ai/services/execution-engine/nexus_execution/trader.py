@@ -1061,6 +1061,36 @@ class TradingEngine:
                 pass
 
 
+async def load_markets_when_allowed(adapters: dict[str, Any], redis: Any,
+                                    stop: asyncio.Event, *, retry_s: float = 30.0,
+                                    max_wait_s: float = 300.0) -> bool:
+    """Load market rules, WAITING while Binance is paused or unreachable instead of
+    crashing (a crash-and-restart loop adds nothing and logged as errors). Returns False if
+    ``stop`` was set while waiting."""
+    from nexus_common.binance_guard import blocked
+    from nexus_common.timeutil import utcnow
+    from nexus_exchange.errors import ExchangeUnavailable
+
+    for code, adapter in adapters.items():
+        while True:
+            if stop.is_set():
+                return False
+            try:
+                await adapter.load_markets()
+                break
+            except ExchangeUnavailable as exc:
+                until = await blocked(redis, "spot") if redis is not None else None
+                wait = retry_s if until is None else (until - utcnow()).total_seconds() + 2
+                wait = min(max(wait, 1.0), max_wait_s)
+                log.warning("trader_waiting_for_exchange", exchange=code,
+                            error=str(exc)[:200], retry_in=round(wait))
+                try:
+                    await asyncio.wait_for(stop.wait(), timeout=wait)
+                except TimeoutError:
+                    pass
+    return True
+
+
 async def serve(settings: Settings, stop: asyncio.Event) -> None:
     """Run until ``stop`` is set (used by main() and by the API's inline worker mode)."""
     engine = make_engine(settings.database_url.get_secret_value(), pool_size=3, max_overflow=2)
@@ -1078,8 +1108,17 @@ async def serve(settings: Settings, stop: asyncio.Event) -> None:
     from nexus_common.binance_guard import attach_weight_hooks
 
     attach_weight_hooks(adapters, redis)
-    for a in adapters.values():
-        await a.load_markets()
+    ready = False
+    try:
+        ready = await load_markets_when_allowed(adapters, redis, stop)
+    finally:
+        if not ready:                     # stopped while waiting, or failed: release all
+            for a in adapters.values():
+                await a.close()
+            await redis.aclose()
+            engine.dispose()
+    if not ready:
+        return
     books = BookCache(adapters, redis=redis)
     if settings.trading_mode is TradingMode.LIVE:
         with transaction(factory) as s:

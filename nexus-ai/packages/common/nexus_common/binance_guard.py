@@ -130,16 +130,21 @@ def until_from(status: int | None, text: str, retry_after: str | None,
 
 
 # ---------------------------------------------------------------------- circuit state
-async def blocked(redis: Any, scope: str) -> datetime | None:
-    """When the circuit is OPEN: its end. A peek only (never takes the probe)."""
-    try:
-        raw = await redis.get(_key(scope))
-    except Exception:
-        return utcnow() + DEFAULT_429                # cannot know: do not call Binance
+async def _open_until(redis: Any, scope: str) -> datetime | None:
+    """The OPEN circuit's end, or None. Raises if Redis cannot be read."""
+    raw = await redis.get(_key(scope))
     if not raw:
         return None
     t = datetime.fromisoformat(raw.decode() if isinstance(raw, bytes) else raw)
     return t if t > utcnow() else None
+
+
+async def blocked(redis: Any, scope: str) -> datetime | None:
+    """When the circuit is OPEN: its end. A peek only (never takes the probe)."""
+    try:
+        return await _open_until(redis, scope)
+    except Exception:
+        return utcnow() + DEFAULT_429                # cannot know: do not call Binance
 
 
 async def record(redis: Any, scope: str, until: datetime) -> None:
@@ -186,7 +191,12 @@ async def acquire(redis: Any, scope: str, endpoint: str, weight: int) -> bool:
     if redis is None:
         return False
     try:
-        until = await blocked(redis, scope)
+        try:
+            until = await _open_until(redis, scope)
+        except Exception as exc:
+            # Say what happened: the state is unknown, which is not a Binance ban.
+            raise BinanceBackoff(f"rate-limit state unreadable ({type(exc).__name__}); "
+                                 "not calling Binance") from exc
         if until is not None:
             raise BinanceBackoff(f"Binance {scope} API paused until {until:%H:%M:%S} UTC "
                                  "(rate limit / IP ban); not calling")

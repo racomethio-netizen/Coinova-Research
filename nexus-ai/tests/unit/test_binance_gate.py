@@ -105,8 +105,9 @@ async def test_own_budget_per_minute_refuses_before_sending() -> None:
 
 
 async def test_unreadable_redis_means_do_not_call() -> None:
-    with pytest.raises(g.BinanceBackoff, match="not calling"):
+    with pytest.raises(g.BinanceBackoff, match="state unreadable") as exc:
         await g.acquire(MemRedis(broken=True), "spot", "klines", 2)
+    assert "ban" not in str(exc.value)    # an unknown state is not reported as a Binance ban
 
 
 async def test_statistics_per_endpoint_and_status() -> None:

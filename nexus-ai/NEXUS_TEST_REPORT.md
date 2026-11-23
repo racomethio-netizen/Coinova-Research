@@ -4,6 +4,27 @@ How to run: `scripts/test.sh` with `NEXUS_TEST_DATABASE_URL` and `NEXUS_TEST_RED
 (Postgres and Redis test databases; integration tests are skipped without them). Browser
 tests: `scripts/e2e.sh` (see the script header).
 
+## 2026-11-23: post-deploy robustness fixes
+
+* **Trader start-up** (`tests/unit/test_trader_startup.py`).
+  * While Binance is paused or unreachable, the trader waits for the pause to end (or
+    retries) and then loads market rules. It no longer crashes and restarts.
+  * A stop interrupts the wait at once.
+  * Errors that are not exchange errors still raise.
+  * Resources are released if start-up stops or fails. Before this, each crash leaked a
+    Redis connection, plus a database connection in live mode.
+* **Binance gate.** When the rate-limit state in Redis cannot be read, the message now
+  says "rate-limit state unreadable" instead of "rate limit / IP ban". Calls are still
+  refused (fail closed).
+* **e2e.**
+  * `scripts/e2e.sh` adds clearly labelled fixtures ("e2e fixture: not a real result"):
+    one failed strategy validation and one rejected model.
+  * It refuses any database whose name does not contain "e2e", so it can never write to
+    production.
+  * Result: **15 passed, 0 failed**. The 2 long-standing failures were missing fixture
+    data, not app bugs.
+* **Full run:** `scripts/test.sh`, 788 passed.
+
 ## 2026-11-23: Binance Demo Trading removed (owner decision)
 
 * Removed:
