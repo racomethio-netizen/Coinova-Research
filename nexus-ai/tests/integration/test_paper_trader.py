@@ -1059,3 +1059,73 @@ async def test_trend_paper_records_days_once_and_flags_divergence(
 
 async def _ret(v: Any) -> Any:
     return v
+
+
+# ---------------------------------------------------------------- spot strategy engine
+async def test_spot_engine_paper_runner_end_to_end(engine_setup: tuple[Any, ...],
+                                                   monkeypatch: pytest.MonkeyPatch) -> None:
+    """Entry through the real OrderManager and PaperBroker, every decision recorded,
+    a stop exit on a later bar, and the live-mode refusal."""
+    import numpy as np
+    import pandas as pd
+    from nexus_execution import spot_paper as sp
+
+    eng, factory, state, redis = engine_setup
+    # 4,000 closed 15m candles around 60,000 ending at the last full quarter hour.
+    end = utcnow().replace(second=0, microsecond=0)
+    end -= timedelta(minutes=end.minute % 15)
+    idx = pd.date_range(end=end - timedelta(minutes=15), periods=4000, freq="15min", tz="UTC")
+    rng = np.random.default_rng(0)
+    close = 60_000 * np.exp(np.cumsum(rng.normal(0, 0.0005, len(idx))))
+    close *= 60_000 / close[-1]
+    with transaction(factory) as s:
+        pid = repo.pair_id(s, "binance", "BTC/USDT")
+        rows = [repo.CandleRow(t.to_pydatetime(), D(str(round(c, 2))),
+                               D(str(round(c * 1.001, 2))), D(str(round(c * 0.999, 2))),
+                               D(str(round(c, 2))), D(100))
+                for t, c in zip(idx, close, strict=True)]
+        repo.upsert_candles(s, pid, "15m", rows)
+    runner = sp.SpotPaperRunner(eng.settings, factory, redis, eng.adapters, eng.books, eng.broker)
+    runner.bootstrap()
+    now = end + timedelta(minutes=1)
+    candidate = {"strategy": "trend_pullback", "timeframe": "15m", "bar": idx[-1], "entry": True,
+                 "candidate": True, "reason": None, "stop": 59_400.0, "r": 600.0, "tp1": 60_900.0,
+                 "tp2": 61_800.0, "score": 1.0, "chk_volume_confirmed": True}
+
+    def fake_latest(sym: str, m15: Any, btc_h4: Any) -> Any:
+        reg, _ = real_latest(sym, m15, btc_h4)
+        return reg, [candidate]
+
+    real_latest = sp.latest_candidates
+    monkeypatch.setattr(sp, "latest_candidates", fake_latest)
+    status = await runner.cycle(now)
+    assert status["live_trading"] == "DISABLED" and status["symbols"]["BTC/USDT"]["fresh"]
+    rec = status["signals"][0]
+    assert rec["status"] == "executed", rec
+    with transaction(factory) as s:
+        sig = s.scalar(select(models.TradingSignal))
+        assert sig is not None and sig.status == "executed" and sig.details["engine"] == "spot"
+        pos = s.scalar(select(models.Position).where(models.Position.status == "open"))
+        assert pos is not None and pos.stop_loss == D("59400")
+        entry = s.get(models.Order, pos.entry_order_id)
+        assert entry is not None and entry.details["tp1"] and entry.details["initial_stop"]
+        risk = (float(pos.avg_entry_price) - 59_400) * float(pos.quantity)
+        assert risk <= 0.0025 * 10_000 * 1.01          # sized from the stop: 0.25% of equity
+    # The same bar again: no duplicate signal or order.
+    await runner.cycle(now)
+    with transaction(factory) as s:
+        assert s.scalar(select(func.count()).select_from(models.TradingSignal)) == 1
+    # A new bar trades through the stop: the position is closed by a stop exit.
+    monkeypatch.setattr(sp, "latest_candidates", lambda sym, m15, b: (real_latest(sym, m15, b)[0], []))
+    with transaction(factory) as s:
+        repo.upsert_candles(s, pid, "15m", [repo.CandleRow(end, D(60_000), D(60_010), D(59_000),
+                                                           D(59_100), D(100))])
+    state.update(bid=59_090.0, ask=59_110.0)
+    await runner.cycle(end + timedelta(minutes=16))
+    with transaction(factory) as s:
+        closed = s.scalar(select(models.Position).where(models.Position.status == "closed"))
+        assert closed is not None and closed.exit_reason == "stop"
+    # Paper only.
+    live = eng.settings.model_copy(update={"trading_mode": "live"})
+    with pytest.raises(PermissionError):
+        sp.SpotPaperRunner(live, factory, redis, eng.adapters, eng.books, eng.broker)

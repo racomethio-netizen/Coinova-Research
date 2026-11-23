@@ -20,6 +20,12 @@ paper trading and a dashboard. **Live trading stays disabled.** Nothing here can
 | Backtests: walk-forward, Monte Carlo, slippage model, stability, breakdowns | `nexus_backtest` |
 | Live gates (2FA, typed phrase, owner approval) | `nexus_execution.live_gate`, never set by code |
 
+## Status (23 Nov 2026)
+* Items 1 to 8 are built and tested.
+* The pre-registered backtest FAILED for both strategies
+  (docs/research/2026-11-23-spot-engine-preregistration.md).
+* The engine runs in paper only, observing on new data. Live trading is disabled.
+
 ## Gaps: what is built
 
 1. **Regime engine** `nexus_strategies/spot_regime.py`: TRENDING_UP, TRENDING_DOWN,

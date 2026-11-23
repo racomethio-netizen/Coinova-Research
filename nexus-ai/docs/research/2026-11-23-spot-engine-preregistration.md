@@ -62,3 +62,57 @@ Reported, not deciding:
 * **Fail:** the strategy still runs in paper so its signals and rejections can be observed,
   but it is marked "failed backtest" and is never eligible for live.
 * Live trading stays disabled either way.
+
+## Results (single run, 23 Nov 2026, after commits 9c97bb1, 73cb532 and 5d05f0b)
+
+Data: 720 archive files, all SHA-256 verified. 148,219 15m bars per symbol. 5 bars per
+symbol are missing in Binance's own archive; they stay missing and are never filled.
+Full output: `2026-11-23-spot-engine-result.json`.
+
+### Decision: both strategies FAIL
+
+| | Trend Pullback | Breakout + Retest |
+|---|---|---|
+| Trades (full period) | 322 | 270 |
+| Profit factor (needs >= 1.30) | **0.59** (95% CI 0.45-0.76) | **0.71** (95% CI 0.54-0.92) |
+| Expectancy per trade | -4.50 USDT, -0.42 R (CI entirely < 0) | -4.01 USDT, -0.22 R (CI entirely < 0) |
+| Net return, 10,000 USDT start | -14.5% | -10.8% |
+| Max drawdown (needs <= 10%) | 15.3% | 13.1% |
+| Win rate | 36% | 38% |
+| Profit factor: train / validation / test | 0.60 / 0.71 / 0.46 | 0.74 / 0.59 / 0.79 |
+| Symbols with PF > 1 | 1 of 10 (DOGE) | 2 of 10 (DOGE, ETH) |
+| Fees / slippage paid | 1,062 / 463 USDT | 694 / 284 USDT |
+| Exposure (time with a position) | 3.4% | 9.4% |
+| Longest losing streak | 16 | 13 |
+
+**Failed gates (both strategies):**
+* full-period PF, expectancy and drawdown;
+* test-period PF and expectancy;
+* not one coin;
+* not one regime.
+
+**Passed gates:** at least 200 trades, and no out-of-sample drop. They are equally poor
+in every period.
+
+**Benchmark:** BTC buy-and-hold over the same period returned +194% (max drawdown 56%,
+Sharpe 0.80). The combined engine returned -21.9% (PF 0.66, max drawdown 23.8%).
+
+**Train-period sensitivity (one parameter changed one step at a time):** every variant
+also had PF < 1:
+* Trend Pullback: 0.47 to 0.67;
+* Breakout + Retest: 0.69 to 0.92.
+
+No nearby setting rescues either strategy, so the losses are not a tuning accident.
+
+**Why (from the decision log):**
+* Most Trend Pullback candidates are rejected by the 4h trend filter (25,873 of 48,883).
+  Of those that pass, 84% end at the stop, and only 15% reach TP2.
+* With about 0.25% round-trip costs and stops of 1 to 3 ATR on 15m bars, the payoff after
+  TP1 and the break-even move does not cover the losers.
+
+### Consequence
+* Both strategies are marked "failed backtest" and are not eligible for live use.
+* The paper runner still records their signals and paper trades, so their behaviour on new
+  data can be observed. That is the brief's 180-day paper validation. It cannot change this
+  verdict without a new, separately pre-registered hypothesis.
+* Live trading stays disabled.

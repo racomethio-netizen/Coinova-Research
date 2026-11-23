@@ -4,6 +4,39 @@ How to run: `scripts/test.sh` with `NEXUS_TEST_DATABASE_URL` and `NEXUS_TEST_RED
 (Postgres and Redis test databases; integration tests are skipped without them). Browser
 tests: `scripts/e2e.sh` (see the script header).
 
+## 2026-11-23: spot strategy engine
+
+* `tests/unit/test_spot_engine.py` (11 tests) covers four areas.
+  * **Sizing.**
+    * Size comes from the stop distance, with both fees counted as risk.
+    * Limits: 20% allocation, cash (no leverage), quantity step, minimum notional.
+    * The weekly limit cannot be set above the 4% ceiling.
+  * **Entry refusals.**
+    * Daily and weekly drawdown, the 3-loss cooldown, at most 3 positions.
+    * No averaging down; aggregate open risk; correlated clusters.
+  * **Exits.**
+    * The stop is checked first, and a gap fills at the open.
+    * TP1 closes half, then the stop moves to break even including taker fees on both
+      sides; the stop never moves down.
+    * TP2, and optional ATR trailing.
+  * **Regime, strategies and backtester.**
+    * Regime labels: uptrend, downtrend, LOW_LIQUIDITY, BTC_RISK_OFF.
+    * Both strategies are causal (full data matches truncated data), and every rejection
+      has a reason.
+    * The backtester is reproducible (seeded) and has no look-ahead.
+    * Entries fill only after their decision, and fees are paid.
+* `tests/integration/test_paper_trader.py::test_spot_engine_paper_runner_end_to_end`
+  runs on PostgreSQL and Redis.
+  * An entry goes through the real OrderManager and PaperBroker against a book.
+  * The signal is recorded as executed, with its checks and engine tag.
+  * The position is sized from the stop: at most 0.25% of equity at risk.
+  * The same bar again creates no duplicate.
+  * A later bar through the stop closes the position (`stop`).
+  * The runner refuses live mode.
+* `/api/v1/spot-engine` and `/api/v1/research/trend-forward` were added to the sign-in tests.
+* Migration 0016 was upgraded, checked with `alembic check`, downgraded and upgraded again.
+* Full run: `scripts/test.sh`, 820 passed.
+
 ## 2026-11-23: crypto trends strategy (research, forward paper test)
 
 * `tests/unit/test_crypto_trends.py` checks the strategy rules on synthetic prices.

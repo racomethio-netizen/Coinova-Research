@@ -665,3 +665,25 @@ trading on Render can use live data once background workers are approved.
   * a forward-test pass;
   * a dedicated IP;
   * the owner's two-factor activation and a funded live ledger.
+
+## 2026-11-23: spot strategy engine (brief "professional Binance SPOT strategy engine")
+
+* **Built** (plan: docs/SPOT_ENGINE_PLAN.md):
+  * the regime engine (6 labels);
+  * Trend Pullback and Breakout + Retest;
+  * shared risk and exit rules (TP1/TP2, break even after fees, no stop widening,
+    3-loss cooldown, correlated clusters, a 4% weekly ceiling);
+  * the portfolio backtester (spread, slippage, partial fills, rejections, Binance filters,
+    emergency exit);
+  * a full report (Monte Carlo, bootstrap CIs, benchmark, monthly, per symbol, strategy and
+    regime);
+  * the paper runner (its own `spot-engine` portfolio, real OrderManager and PaperBroker,
+    every signal, rejection, order, fill and exit persisted);
+  * the API `/spot-engine`, the dashboard page "Spot strategy engine" with LIVE TRADING
+    DISABLED, and migration 0016 (strategy rows, disabled).
+* **Backtest** (pre-registered, 10 coins, 2022-11..2026-11): **both FAIL**.
+  * Trend Pullback: PF 0.59, -14.5%. Breakout + Retest: PF 0.71, -10.8%.
+  * Both lose in every split and on 8-9 of 10 coins, with 95% CIs below break-even.
+  * BTC buy-and-hold returned +194% over the same period.
+* **Paper:** runs from the next deploy to observe them on new data. Not eligible for live.
+* **Tests:** 820 passed. **Live trading stays disabled.**

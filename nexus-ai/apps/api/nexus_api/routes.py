@@ -1447,6 +1447,70 @@ async def taker_forward_status(s: Session = Depends(db),
             "preregistration": "docs/research/2026-11-22-taker-range-forward-preregistration.md"}
 
 
+@router.get("/spot-engine")
+async def spot_engine(s: Session = Depends(db), redis: Any = Depends(redis_dep)) -> dict[str, Any]:
+    """Spot strategy engine (paper only): live regime/signal status, the latest signals with
+    their checks and rejection reasons, open paper positions, closed-trade performance and
+    the 180-day validation status. LIVE TRADING IS DISABLED for this engine."""
+    from datetime import UTC
+    from datetime import datetime as _dt
+
+    from nexus_execution.spot_paper import BACKTEST, PORTFOLIO, STATUS_KEY
+
+    raw = await redis.get(STATUS_KEY)
+    p = s.scalar(select(models.Portfolio).where(models.Portfolio.name == PORTFOLIO,
+                                                models.Portfolio.mode == "paper"))
+    out: dict[str, Any] = {"live_trading": "DISABLED", "status": json.loads(raw) if raw else None,
+                           "portfolio": None, "backtest": BACKTEST}
+    sig = s.execute(select(models.TradingSignal, models.Strategy.code, models.TradingPair.symbol)
+                    .join(models.Strategy, models.Strategy.id == models.TradingSignal.strategy_id)
+                    .join(models.TradingPair, models.TradingPair.id == models.TradingSignal.pair_id)
+                    .where(models.Strategy.code.in_(("trend_pullback", "breakout_retest_v2")),
+                           models.TradingSignal.mode == "paper")
+                    .order_by(desc(models.TradingSignal.id)).limit(100)).all()
+    out["signals"] = [{"time": ser(x.generated_at), "bar_time": ser(x.bar_time), "strategy": code,
+                       "symbol": sym, "timeframe": x.timeframe, "entry": ser(x.entry_price),
+                       "stop": ser(x.stop_loss), "target": ser(x.take_profit),
+                       "score": ser(x.confidence), "status": x.status,
+                       "reason": x.rejection_reason, "details": x.details}
+                      for x, code, sym in sig]
+    if p is None:
+        return out
+    rows = s.execute(select(models.Position, models.TradingPair.symbol)
+                     .join(models.TradingPair, models.TradingPair.id == models.Position.pair_id)
+                     .where(models.Position.portfolio_id == p.id)
+                     .order_by(models.Position.opened_at)).all()
+    closed = [(x, sym) for x, sym in rows if x.status == "closed"]
+    pnl = [float(x.realized_pnl) for x, _ in closed]
+    wins, losses = [v for v in pnl if v > 0], [-v for v in pnl if v <= 0]
+    started = p.created_at
+    days = (_dt.now(UTC) - started).days if started else 0
+    pf = (sum(wins) / sum(losses)) if losses and sum(losses) > 0 else None
+    fees = float(s.scalar(select(func.coalesce(func.sum(models.Order.fee_amount), 0))
+                          .where(models.Order.portfolio_id == p.id)) or 0)
+    out["portfolio"] = {"id": p.id, "started_at": ser(started), "days": days,
+                        "initial_capital": ser(p.initial_capital)}
+    out["open_positions"] = [{"symbol": sym, "quantity": ser(x.quantity),
+                              "entry": ser(x.avg_entry_price), "stop": ser(x.stop_loss),
+                              "target": ser(x.take_profit), "opened_at": ser(x.opened_at),
+                              "realized_pnl": ser(x.realized_pnl)}
+                             for x, sym in rows if x.status == "open"]
+    out["performance"] = {"closed_trades": len(pnl), "net_pnl": sum(pnl) if pnl else 0.0,
+                          "win_rate": len(wins) / len(pnl) if pnl else None,
+                          "profit_factor": pf,
+                          "expectancy": sum(pnl) / len(pnl) if pnl else None, "fees": fees}
+    out["validation"] = {
+        "required_days": 180, "days": days, "required_trades": 200, "trades": len(pnl),
+        "profit_factor_min": 1.30, "max_drawdown_max": 0.10,
+        "checks": {"days": days >= 180, "trades": len(pnl) >= 200,
+                   "profit_factor": pf is not None and pf >= 1.30,
+                   "expectancy_positive": bool(pnl) and sum(pnl) > 0},
+        "eligible_for_live": False,
+        "note": "Live trading stays disabled. Even if every check passes, live use needs a "
+                "separately reviewed implementation and the owner's manual activation."}
+    return out
+
+
 @router.get("/research/trend-forward")
 async def trend_forward_status(s: Session = Depends(db),
                                redis: Any = Depends(redis_dep)) -> dict[str, Any]:

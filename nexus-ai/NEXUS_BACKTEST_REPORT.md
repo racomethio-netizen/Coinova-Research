@@ -30,6 +30,8 @@ test on new data. Details and full tables are in each pre-registration under
 
 | **Crypto trends ensemble (2026-11-23)** (Zarattini, Pagani & Barbon 2025, replicated) | Donchian breakout ensemble (9 lookbacks), 25% volatility target, long-only spot, BTC+ETH | BTC/ETH daily 2018-08..2026-11 (Binance archives, checksums verified) | **PASS** all 6 gates: Sharpe 1.11 (buy-and-hold 0.74), CAGR 14.1%, max drawdown 15.6% (buy-and-hold 76%), both halves positive, 5 of 7 years positive, primary unseen period +44% |
 
+| Spot strategy engine (2026-11-23) | trend_pullback (15m, 1h/4h/BTC filters), breakout_retest_v2 (1h), regime engine, portfolio risk rules | 10 coins, 15m, 2022-11..2026-11, portfolio simulation with spread, slippage, partial fills, rejections and Binance filters | both FAIL: PF 0.59 / 0.71, -14.5% / -10.8%, max drawdown 15% / 13% (BTC buy-and-hold +194%) |
+
 Forward paper tests on new data (running, decided once at their stopping rule):
 
 * **Crypto trends ensemble, daily** (starts 2026-11-24, review at day 180). Paper only.
