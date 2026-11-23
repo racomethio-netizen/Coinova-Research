@@ -77,25 +77,26 @@ LIVE_TRADING_ACK_PHRASE: Final = "I accept that live trading can lose real money
 # ceilings above are unchanged except max open positions (2 -> 3). Total open risk at the
 # new defaults is 3 x 0.25% = 0.75%, lower than the previous 2 x 0.5% = 1%.
 MAX_RISK_PER_TRADE: Final = Decimal("0.01")
-# Owner mandate 2026-11-23 (functional bot request, section 6): 0.25% per trade, 1% daily
-# loss, 3% drawdown, 2 positions. Ceilings are unchanged.
+# Owner mandate 2026-11-23 (multi-exchange brief, part 9): 0.25% per trade, 1% daily,
+# 2% weekly, 5% drawdown, 3 positions, 30% spot allocation. Ceilings are unchanged.
 DEFAULT_RISK_PER_TRADE: Final = Decimal("0.0025")
 MAX_DAILY_LOSS: Final = Decimal("0.02")
 DEFAULT_DAILY_LOSS: Final = Decimal("0.01")
 MAX_WEEKLY_LOSS: Final = Decimal("0.04")
-DEFAULT_WEEKLY_LOSS: Final = Decimal("0.03")
+DEFAULT_WEEKLY_LOSS: Final = Decimal("0.02")
 MAX_DRAWDOWN: Final = Decimal("0.10")
-DEFAULT_DRAWDOWN: Final = Decimal("0.03")
+DEFAULT_DRAWDOWN: Final = Decimal("0.05")
 MAX_OPEN_POSITIONS: Final = 3
-DEFAULT_OPEN_POSITIONS: Final = 2
+DEFAULT_OPEN_POSITIONS: Final = 3
 MAX_PORTFOLIO_EXPOSURE: Final = Decimal("0.50")
+DEFAULT_PORTFOLIO_EXPOSURE: Final = Decimal("0.30")    # owner: max 30% of equity in spot
 MIN_COOLDOWN_AFTER_STOP_MINUTES: Final = 30
 # Futures: Binance only, disabled by default, isolated margin. Leverage never changes
 # position size (size comes from risk); it only sets margin use.
-FUTURES_LEVERAGE_OPTIONS: Final = (2, 3, 4, 5)
+FUTURES_LEVERAGE_OPTIONS: Final = (1, 2, 3, 4, 5)   # owner 2026-11-23: start at 1x
 MAX_FUTURES_LEVERAGE: Final = Decimal("5")
 MAX_FUTURES_RISK_PER_TRADE: Final = Decimal("0.01")
-DEFAULT_FUTURES_RISK_PER_TRADE: Final = Decimal("0.005")
+DEFAULT_FUTURES_RISK_PER_TRADE: Final = Decimal("0.0025")
 FUTURES_EXCHANGES: Final = ("binance",)
 
 
@@ -105,7 +106,7 @@ class RiskSettings(BaseModel):
     weekly_loss_limit: Decimal = DEFAULT_WEEKLY_LOSS
     max_drawdown: Decimal = DEFAULT_DRAWDOWN
     max_open_positions: int = DEFAULT_OPEN_POSITIONS
-    max_portfolio_exposure: Decimal = MAX_PORTFOLIO_EXPOSURE
+    max_portfolio_exposure: Decimal = DEFAULT_PORTFOLIO_EXPOSURE
     # Max share of equity in a single base asset across all exchanges.
     max_asset_concentration: Decimal = Decimal("0.25")
     # Assets whose 1h return correlation is >= correlation_threshold count as one exposure.
@@ -196,7 +197,7 @@ class Settings(BaseSettings):
     futures_enabled: bool = False
     futures_exchanges: Annotated[list[ExchangeCode], NoDecode] = Field(
         default_factory=lambda: [ExchangeCode.BINANCE])
-    futures_default_leverage: int = 2
+    futures_default_leverage: int = 1
     futures_leverage_options: Annotated[list[int], NoDecode] = Field(
         default_factory=lambda: list(FUTURES_LEVERAGE_OPTIONS))
     futures_risk_per_trade: Decimal = DEFAULT_FUTURES_RISK_PER_TRADE

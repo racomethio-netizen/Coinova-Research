@@ -628,3 +628,38 @@ def test_owner_approval_of_bot_strategy_needs_ack_and_totp(client: TestClient) -
     assert status["active"] is True and status["actor"].startswith("user:")
     off = client.post(url, json={"active": False}, headers=CSRF)   # disabling: no 2FA
     assert off.status_code == 200 and off.json()["active"] is False
+
+
+def test_exchange_capability_registry_refresh(client: TestClient,
+                                              monkeypatch: pytest.MonkeyPatch) -> None:
+    """Owner-only refresh; detection results are cached and served; Binance is skipped (not
+    called) while its rate-limit circuit is open."""
+    import json as _json
+    from datetime import timedelta
+
+    from nexus_common.timeutil import utcnow
+    from nexus_exchange import registry
+
+    calls: list[str] = []
+
+    def fake(ex: str, **_kw: Any) -> dict[str, Any]:
+        calls.append(ex)
+        return {"exchange": ex, "ok": ex != "bybit", "checked_at": "t",
+                **({"error": "RateLimitExceeded: 403 Forbidden"} if ex == "bybit" else {})}
+
+    monkeypatch.setattr(registry, "detect", fake)
+    assert client.post("/api/v1/exchanges/capabilities/refresh", json={},
+                       headers=CSRF).status_code == 401            # not signed in
+    login(client)
+    r = sync_redis.from_url(os.environ["NEXUS_TEST_REDIS_URL"])
+    r.set("nexus:binance:public_backoff:spot", (utcnow() + timedelta(hours=1)).isoformat(),
+          ex=3600)
+    res = client.post("/api/v1/exchanges/capabilities/refresh", json={}, headers=CSRF)
+    assert res.status_code == 200, res.text
+    doc = res.json()["exchanges"]
+    assert calls == ["okx", "bybit", "kraken"]                       # Binance not called
+    assert doc["binance"]["ok"] is False and "skipped" in doc["binance"]["error"]
+    assert doc["bybit"]["error"].startswith("RateLimitExceeded")
+    cached = client.get("/api/v1/exchanges/capabilities").json()
+    assert set(cached["exchanges"]) == {"binance", "okx", "bybit", "kraken"}
+    assert _json.dumps(cached)                                        # serialisable

@@ -99,6 +99,48 @@ def portfolio(mode: Mode = "paper", s: Session = Depends(db)) -> dict[str, Any]:
 
 
 # ------------------------------------------------------------------ exchanges / markets
+CAPS_KEY = "nexus:exchanges:capabilities"
+
+
+@router.get("/exchanges/capabilities")
+async def exchange_capabilities(redis: Any = Depends(redis_dep)) -> dict[str, Any]:
+    """Last live capability detection per exchange (public data via CCXT, no keys)."""
+    raw = await redis.get(CAPS_KEY)
+    return json.loads(raw) if raw else {"checked_at": None, "exchanges": {}}
+
+
+@router.post("/exchanges/capabilities/refresh", dependencies=[Depends(owner)])
+async def refresh_exchange_capabilities(redis: Any = Depends(redis_dep),
+                                        settings: Settings = Depends(settings_dep)
+                                        ) -> dict[str, Any]:
+    """Re-detect Binance, OKX, Bybit and Kraken from their PUBLIC APIs (read-only). Binance
+    is skipped while NEXUS's rate-limit circuit is open (no extra load on a banned IP)."""
+    import asyncio as _asyncio
+
+    from nexus_common.binance_guard import blocked
+    from nexus_common.proxy import binance_proxy_url
+    from nexus_exchange.registry import EXCHANGES, NEXUS_SUPPORT, detect
+
+    out: dict[str, Any] = {}
+    for ex in EXCHANGES:
+        if ex == "binance":
+            spot_until, fut_until = await blocked(redis, "spot"), await blocked(redis, "futures")
+            if spot_until is not None:
+                out[ex] = {"exchange": ex, "ok": False, "checked_at": ser(utcnow()),
+                           "error": f"skipped: Binance paused until {spot_until:%Y-%m-%d %H:%M} "
+                                    "UTC (rate limit / IP ban)", "nexus": NEXUS_SUPPORT[ex]}
+                continue
+            res = await _asyncio.to_thread(detect, ex, proxy_url=binance_proxy_url(),
+                                           ca_bundle=settings.extra_ca_file,
+                                           futures=fut_until is None)
+        else:
+            res = await _asyncio.to_thread(detect, ex, ca_bundle=settings.extra_ca_file)
+        out[ex] = res
+    doc = {"checked_at": ser(utcnow()), "exchanges": out}
+    await redis.set(CAPS_KEY, json.dumps(doc, default=str), ex=8 * 86400)
+    return doc
+
+
 @router.get("/exchanges")
 async def exchanges(s: Session = Depends(db), redis: Any = Depends(redis_dep)) -> list[dict[str, Any]]:
     health = await _health(redis)

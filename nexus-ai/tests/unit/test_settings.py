@@ -13,13 +13,15 @@ def test_defaults_are_safe() -> None:
     assert s.live_trading_enabled is False
     assert s.trading_pairs == ["BTC/USDT", "ETH/USDT"]
     assert [t.value for t in s.timeframes] == ["5m", "15m", "1h", "4h", "1d"]
-    # Owner mandate 2026-11-23 (functional bot): conservative profile.
+    # Owner mandate 2026-11-23 (multi-exchange brief, part 9).
     assert s.risk.risk_per_trade == Decimal("0.0025")
     assert s.risk.daily_loss_limit == Decimal("0.01")
-    assert s.risk.weekly_loss_limit == Decimal("0.03")
-    assert s.risk.max_drawdown == Decimal("0.03")
-    assert s.risk.max_open_positions == 2
-    assert s.risk.max_portfolio_exposure == Decimal("0.50")
+    assert s.risk.weekly_loss_limit == Decimal("0.02")
+    assert s.risk.max_drawdown == Decimal("0.05")
+    assert s.risk.max_open_positions == 3
+    assert s.risk.max_portfolio_exposure == Decimal("0.30")
+    assert s.futures_enabled is False and s.futures_default_leverage == 1
+    assert s.futures_risk_per_trade == Decimal("0.0025")
     assert s.live_trading_config_problems()  # live not permitted
 
 
@@ -123,9 +125,10 @@ def test_secrets_not_in_repr_or_summary() -> None:
 def test_futures_defaults_and_ceilings(monkeypatch: pytest.MonkeyPatch) -> None:
     s = Settings()
     assert s.futures_enabled is False and s.futures_allow_short is False
-    assert s.futures_default_leverage == 2 and s.futures_leverage_options == [2, 3, 4, 5]
+    # Owner 2026-11-23: start at 1x; 1-5x selectable, never raised automatically.
+    assert s.futures_default_leverage == 1 and s.futures_leverage_options == [1, 2, 3, 4, 5]
     assert s.futures_margin_mode == "isolated" and s.futures_cross_margin_enabled is False
-    assert s.futures_risk_per_trade == Decimal("0.005")
+    assert s.futures_risk_per_trade == Decimal("0.0025")
     assert [e.value for e in s.futures_exchanges] == ["binance"]
     with pytest.raises(ValidationError):
         Settings(futures_leverage_options="2,10")  # not a selectable tier

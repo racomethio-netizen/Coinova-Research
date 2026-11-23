@@ -68,7 +68,9 @@ async def engine_setup(migrated_engine: Engine, redis: Any) -> AsyncIterator[tup
     # the 2026-11-23 defaults are covered by test_settings.
     settings = Settings(enabled_exchanges=["binance"], trading_pairs=["BTC/USDT"],
                         risk=RiskSettings(risk_per_trade=D("0.0025"),
-                                          daily_loss_limit=D("0.01"), max_drawdown=D("0.10")))
+                                          daily_loss_limit=D("0.01"), weekly_loss_limit=D("0.03"),
+                                          max_drawdown=D("0.10"),
+                                          max_portfolio_exposure=D("0.50")))
     books = BookCache({"binance": adapter}, ttl=0)
     broker = PaperBroker(books.get, taker_fee=D("0.001"), maker_fee=D("0.001"),
                          extra_slippage=D("0.0005"))

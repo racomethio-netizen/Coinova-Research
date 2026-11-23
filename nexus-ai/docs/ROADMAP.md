@@ -785,3 +785,22 @@ TradingView's documentation.
 * Next:
   * exchange-side stop-limit orders for live positions;
   * the owner's go-live steps (docs/TRADING_BOT.md).
+
+## 2026-11-23: multi-exchange brief (audit, capability registry, Part-9 risk)
+
+* Audit: docs/AUDIT-2026-11-23-multi-exchange.md.
+  * The real stack is Python / FastAPI, not Node.
+  * NEXUS has no Claude API and no Sentry.
+  * The only production errors were already-fixed bans and pool exhaustion.
+* New: `nexus_exchange/registry.py`, live public CCXT detection for Binance, OKX, Bybit and
+  Kraken.
+  * API `GET /exchanges/capabilities` and `POST /exchanges/capabilities/refresh` (owner;
+    Binance is skipped while banned).
+  * Exchanges page card.
+  * Detected from the container: OKX full (498 spot / 531 perps); Kraken spot only; Bybit
+    403; Binance 451.
+* Risk defaults (owner Part 9): 0.25% per trade, 1% daily, 2% weekly, 5% drawdown,
+  3 positions, 30% exposure; futures 0.25% at 1x (options 1–5x).
+* Tests: 884 passed; e2e 15/15.
+* Next: owner key test; exchange-side stops; OKX adapter (demo first); a cross-exchange
+  budget; Sentry (needs a DSN).
