@@ -608,3 +608,21 @@ trading on Render can use live data once background workers are approved.
   minimum-size real order. That needs the owner's explicit approval and live permission.
   The trader keeps its software stops.
 * **Tested:** 785 passed; e2e 13 passed, plus the same 2 known failures.
+
+## 2026-11-23: deploy of F1 + G1 + H + demo removal
+
+* **First deploy:** `d196557` went live at 06:45 UTC. Migrations 0013 and 0014 applied.
+* **Incident:** market-data and trader could not connect (EMAXCONNSESSION). Supabase's
+  session pooler allows 15 client connections, and the new decision-log worker's pool
+  pushed the app over that.
+* **Impact:** paper only and 0 orders. Candles were not stored from about 06:45 to 06:55;
+  the gap-repair job refills them.
+* **Fix:** `3e41486`, live at 06:55.
+  * Infrequent workers (decision log, carry paper, forward taker) open a connection only
+    while working.
+  * The API, market-data and trader pools are 3 + 2 overflow; the notifier's is 1 + 1.
+* **Verified at 07:05 UTC:**
+  * 5 pooler connections (was 15);
+  * WebSocket connected; candles current (1m 07:04, 5m 07:00);
+  * decision log rows written (NO_TRADE for both pairs);
+  * no Binance pauses, 0 orders.

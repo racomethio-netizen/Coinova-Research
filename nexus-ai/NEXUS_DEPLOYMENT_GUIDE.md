@@ -8,6 +8,11 @@ deploy. More detail: docs/DEPLOYMENT.md.
 
 ## Before every deploy
 
+0. Database connections: Supabase's session pooler allows **15 client connections in
+   total**, and an old instance still holds its connections while a new one starts. Keep
+   pools small (`make_engine(pool_size=3, max_overflow=2)`). Any new background worker
+   that runs only every few minutes uses `make_engine(..., pooled=False)`.
+
 1. `scripts/test.sh` with the test Postgres and Redis set: everything passes.
 2. Not during a Binance ban or back-off: a restart sends a burst of requests from the
    shared IP. Check the System page or the logs for `BinanceBackoff`.
