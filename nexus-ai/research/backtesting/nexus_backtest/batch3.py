@@ -375,6 +375,57 @@ def pairs_report(fut: Path) -> dict[str, Any]:
             "recent_trades": base["trade_log"], "gates": gates, "passed": all(gates.values())}
 
 
+def vol_target_ledger(px: pd.Series, target: float, *, start: pd.Timestamp | None = None,
+                      initial: float = 1.0, cost: float = COST) -> pd.DataFrame:
+    """The ``vol_target`` rule as a ledger (equity, held weight, target, trades), holding
+    nothing before ``start``. Used by the paper forward test; the same arithmetic as
+    ``vol_target`` (a unit test checks they agree)."""
+    r = px.pct_change()
+    vol = r.rolling(30, min_periods=30).std() * math.sqrt(365)
+    want = (target / vol).clip(upper=1.0)
+    cash, units = initial, 0.0
+    rows = []
+    for d, p, w, v in zip(px.index, px.to_numpy(float), want.to_numpy(float),
+                          vol.to_numpy(float), strict=True):
+        if start is not None and d < start:
+            continue
+        eq = cash + units * p
+        trade = fee = 0.0
+        if not math.isnan(w) and abs(w - units * p / eq) > 0.10:
+            trade = w * eq - units * p
+            fee = abs(trade) * cost
+            units += trade / p
+            cash -= trade + fee
+            eq -= fee
+        rows.append({"date": d, "equity": eq, "weight": units * p / eq,
+                     "target": None if math.isnan(w) else float(w),
+                     "vol": None if math.isnan(v) else float(v), "trade": trade, "fee": fee})
+    return pd.DataFrame(rows).set_index("date") if rows else pd.DataFrame(
+        columns=["equity", "weight", "target", "vol", "trade", "fee"])
+
+
+def combine(grid: dict[str, Any], vol: dict[str, Any], pairs_: dict[str, Any], *,
+            harness_commit: str, generated_at: str) -> dict[str, Any]:
+    """The committed result file shown in the app."""
+    return {
+        "generated_at": generated_at, "harness_commit": harness_commit,
+        "preregistration": "docs/research/2026-11-26-batch3-preregistration.md",
+        "paper": False, "kind": "historical backtest (no orders placed)",
+        "data": {"grid": "Binance spot 15m klines 2020-01..2023-12, 10 coins, 465 archives, "
+                         "checksums verified",
+                 "vol_target": "Binance spot daily closes 2020-01..2026-10 (15m archives to "
+                               "2023-12, hourly klines after), checksums verified",
+                 "pairs": "Binance USD-M perpetual 15m klines and funding 2023-06..2026-10, "
+                          "164 archives, checksums verified"},
+        "windows": {"grid": ["2020-07-01", "2023-12-31"],
+                    "vol_target": ["2020-07-01", "2026-10-31"],
+                    "pairs": ["2024-01-01", "2026-10-31"]},
+        "grid_v2": grid, "vol_target": vol, "pairs": pairs_,
+        "summary": {"grid_v2_passed": grid["passed"],
+                    "vol_target_passed": [k for k, v in vol.items() if v["passed"]],
+                    "pairs_passed": pairs_["passed"]}}
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--spot15", type=Path)
@@ -382,9 +433,20 @@ def main() -> None:
     ap.add_argument("--futures", type=Path)
     ap.add_argument("--exinfo", type=Path)
     ap.add_argument("--out", type=Path, required=True)
-    ap.add_argument("--part", choices=("grid", "vol", "pairs"), required=True)
+    ap.add_argument("--part", choices=("grid", "vol", "pairs", "combine"), required=True)
+    ap.add_argument("--parts", type=Path, help="combine: directory with grid/vol/pairs.json")
+    ap.add_argument("--commit", default="")
     ap.add_argument("--workers", type=int, default=4)
     a = ap.parse_args()
+    if a.part == "combine":
+        from datetime import UTC, datetime
+        parts = {k: json.loads((a.parts / f"{k}.json").read_text())
+                 for k in ("grid", "vol", "pairs")}
+        a.out.write_text(json.dumps(combine(parts["grid"], parts["vol"], parts["pairs"],
+                                            harness_commit=a.commit,
+                                            generated_at=datetime.now(UTC).isoformat()),
+                                    indent=1, default=str))
+        return
     if a.part == "pairs":
         res = pairs_report(a.futures)
     elif a.part == "vol":

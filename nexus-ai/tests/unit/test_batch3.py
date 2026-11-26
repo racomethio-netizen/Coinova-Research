@@ -170,3 +170,37 @@ def test_grid_v2_closes_inventory_on_regime_break_and_v1_does_not():
     assert v2["regime_closes"] >= 1
     closes = [t for t in v2["trips"] if t["regime_close"]]
     assert closes and not any(t["stop"] for t in closes)
+
+
+def test_ledger_matches_backtest_rule():
+    px = walk(vol=0.05)
+    led = b3.vol_target_ledger(px, 0.40)
+    r = b3.vol_target(px, 0.40)
+    np.testing.assert_allclose(led["equity"].pct_change().iloc[1:].to_numpy(),
+                               r.iloc[1:].to_numpy(), rtol=1e-12, atol=1e-15)
+
+
+def test_voltarget_forward_replay_starts_on_start_day_and_never_looks_ahead():
+    from datetime import timedelta
+
+    from nexus_backtest import voltarget_paper as vp
+
+    idx = pd.date_range(vp.START - timedelta(days=60), periods=100, freq="D", tz="UTC")
+    rng = np.random.default_rng(5)
+    bars = {s: pd.DataFrame({"open": 1.0, "close": 100 * np.exp(np.cumsum(
+        rng.normal(0, 0.04, 100)))}, index=idx) for s in vp.SYMBOLS.values()}
+    days = vp.replay(bars)
+    assert days and days[0]["date"] == str(vp.START.date())
+    first = days[0]
+    assert 0 < first["weight"] <= 1 and first["trade"] is not None    # buys in on day one
+    assert abs(first["equity"] - vp.INITIAL) / vp.INITIAL < 0.002     # entry cost only
+    assert first["hold_equity"] == pytest.approx(vp.INITIAL)
+    total = sum(first["coins_usdt"].values()) + first["cash_usdt"]
+    assert total == pytest.approx(first["equity"])
+    # Later prices never change earlier records.
+    cut = vp.START + timedelta(days=20)
+    early = {k: v[v.index <= cut] for k, v in bars.items()}
+    assert vp.replay(early) == [d for d in days if d["date"] <= str(cut.date())]
+    s = vp.summary(days, 0, [], vp.START + timedelta(days=40))
+    assert s["paper"] is True and s["days"] == len(days)
+    assert vp.replay({k: v[v.index < vp.START] for k, v in bars.items()}) == []

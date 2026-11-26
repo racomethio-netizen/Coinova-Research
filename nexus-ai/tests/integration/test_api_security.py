@@ -786,3 +786,14 @@ def test_rebalancing_research_endpoint(client: TestClient) -> None:
     assert r["backtest"]["summary"]["rebalancing_passed"] == ["R3_BTC40_ETH40_USDT20:band"]
     assert r["backtest"]["summary"]["xsmom_passed"] == []
     assert r["forward"]["paper"] is True and r["forward"]["days"] == 0
+
+
+def test_batch3_research_endpoint(client: TestClient) -> None:
+    assert client.get("/api/v1/research/batch3").status_code == 401
+    login(client)
+    r = client.get("/api/v1/research/batch3").json()
+    s = r["backtest"]["summary"]
+    assert s["grid_v2_passed"] is False and s["pairs_passed"] is False
+    assert s["vol_target_passed"] == ["BTC_ETH_50_50"]
+    assert r["forward"]["paper"] is True and r["forward"]["days"] == 0
+    assert r["preregistration"].endswith("batch3-preregistration.md")

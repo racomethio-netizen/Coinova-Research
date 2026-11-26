@@ -47,6 +47,74 @@ function Rebalancing() {
   );
 }
 
+const GRID_ROWS: [string, string][] = [["v1_fee1", "v1 (pause)"], ["v2_fee1", "v2 (sell)"], ["v1_fee2", "v1, 2x fees"], ["v2_fee2", "v2, 2x fees"]];
+const GATE_LABELS: Record<string, string> = {
+  net_positive: "net above zero", profit_factor_ge_1_1: "profit factor at least 1.1", drawdown_le_15pct: "worst drop within 15%",
+  positive_2_of_4_periods: "positive in 2 of 4 periods", positive_at_2x_fees: "positive at 2x fees", positive_without_best: "positive without the best coin",
+  better_than_v1: "better than v1", sharpe_above_hold: "Sharpe above holding", drawdown_10pts_smaller: "worst drop 10 points smaller",
+  sharpe_above_hold_both_halves: "Sharpe above holding in both halves", holds_at_2x_costs: "still better at 2x costs", sharpe_ge_0_5: "Sharpe at least 0.5",
+  significant_p_lt_0_05: "statistically significant", positive_2_of_3_years: "positive in 2 of 3 years", positive_at_2x_costs: "positive at 2x costs",
+};
+const VOL_NAMES: Record<string, string> = { BTC: "BTC", ETH: "ETH", BTC_ETH_50_50: "BTC/ETH 50/50" };
+
+function failed(gates: Record<string, boolean> | undefined) {
+  return Object.entries(gates ?? {}).filter(([, ok]) => !ok).map(([g]) => GATE_LABELS[g] ?? g.replaceAll("_", " ")).join(", ") || DASH;
+}
+
+function Batch3() {
+  const { data: r } = useApi<Any>("/research/batch3", 60_000);
+  const bt = r?.backtest;
+  if (!bt) return null;
+  const g = bt.grid_v2;
+  const p = bt.pairs;
+  const f = r.forward;
+  const grid = GRID_ROWS.map(([k, label]) => ({ key: k, label, ...(g?.results?.[k] ?? {}) }));
+  const vol = Object.entries(bt.vol_target ?? {}).map(([k, v]: [string, Any]) => ({ key: k, ...v }));
+  return (
+    <>
+      <Card title="Grid v2 on unseen 2020-07 – 2023-12 data (10 coins, 1,000 USDT each)" actions={<Badge tone={g?.passed ? "good" : "bad"}>{g?.passed ? "passed" : "failed"}</Badge>}>
+        <Table rows={grid} empty="No result." columns={[
+          { key: "label", label: "Version" },
+          { key: "n", label: "Net", numeric: true, render: (x: Any) => <span className={x.net_return > 0 ? "text-up" : "text-down"}>{pct(x.net_return, 1)}</span> },
+          { key: "dd", label: "Worst drop", numeric: true, render: (x: Any) => pct(x.max_drawdown, 1) },
+          { key: "pf", label: "Profit factor", numeric: true, render: (x: Any) => num(x.profit_factor, 2) },
+          { key: "t", label: "Round trips", numeric: true, render: (x: Any) => num(x.trips, 0) },
+          { key: "rc", label: "Forced sales", numeric: true, render: (x: Any) => num(x.regime_closes, 0) },
+          { key: "s", label: "Stop-losses", numeric: true, render: (x: Any) => x.stops_total },
+        ]} />
+        <p className="mt-2 text-xs text-muted">v1 pauses new buying when the market changes character; v2 sells the coins it holds. Failed checks (v2): {failed(g?.gates)}. Selling held coins whenever the market changed character made things worse: it forced {num(g?.results?.v2_fee1?.regime_closes, 0)} sales and lost more than v1. Grids earned money in sideways and gently rising markets and lost it in falling ones, the same pattern as on 2024–2026 data.</p>
+      </Card>
+      <Card title="Volatility-targeted holding (Jul 2020 – Oct 2026)" actions={<Badge tone={bt.summary?.vol_target_passed?.length ? "good" : "bad"}>{bt.summary?.vol_target_passed?.length ? `${bt.summary.vol_target_passed.length} of 3 passed` : "none passed"}</Badge>}>
+        <Table rows={vol} empty="No result." columns={[
+          { key: "key", label: "Asset", render: (x: Any) => VOL_NAMES[x.key] ?? x.key },
+          { key: "n", label: "Strategy net", numeric: true, render: (x: Any) => pct(x.target_40?.net_return, 0) },
+          { key: "h", label: "Just held", numeric: true, render: (x: Any) => pct(x.hold?.net_return, 0) },
+          { key: "sh", label: "Sharpe (held)", numeric: true, render: (x: Any) => `${num(x.target_40?.sharpe, 3)} (${num(x.hold?.sharpe, 3)})` },
+          { key: "dd", label: "Worst drop (held)", numeric: true, render: (x: Any) => `${pct(x.target_40?.max_drawdown, 0)} (${pct(x.hold?.max_drawdown, 0)})` },
+          { key: "v", label: "Verdict", render: (x: Any) => <Badge tone={x.passed ? "good" : "bad"}>{x.passed ? "passed" : "failed"}</Badge> },
+          { key: "why", label: "Failed checks", render: (x: Any) => <span className="text-xs text-muted">{failed(x.gates)}</span> },
+        ]} />
+        <p className="mt-2 text-xs text-muted">The rule holds less of the coins when prices swing wildly (target 40% yearly volatility) and the rest in USDT. It earned less than holding, with a smaller worst drop and slightly better return per unit of risk. Its worst drop was still large.</p>
+      </Card>
+      <Card title="Volatility-targeted BTC/ETH 50/50: paper forward test">
+        {f?.days ? (
+          <p className="text-sm">Started {time(f.started_at)} with {num(f.initial, 0)} paper USDT: now {num(f.equity, 2)} ({pct(f.return_since_start, 2)}), holding {pct(f.weight, 0)} in coins. Holding the same mix fully would be {num(f.hold_equity, 2)} ({pct(f.hold_return, 2)}). {f.trades?.length ?? 0} trades so far.</p>
+        ) : <p className="text-sm">{f?.message ?? "Waiting for the first closed day."}</p>}
+      </Card>
+      <Card title="BTC/ETH pairs trade on perpetual futures (Jan 2024 – Oct 2026)" actions={<Badge tone={p?.passed ? "good" : "bad"}>{p?.passed ? "passed" : "failed"}</Badge>}>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat label="Net after costs and funding" value={pct(p?.stats?.net_return, 1)} tone={p?.stats?.net_return > 0 ? "up" : "down"} hint={`at 2x costs ${pct(p?.stress_2x?.net_return, 1)}`} />
+          <Stat label="Sharpe" value={num(p?.stats?.sharpe, 2)} hint={`p-value ${num(p?.p_value, 2)}`} />
+          <Stat label="Trades" value={p?.trades ?? DASH} hint={`${p?.stops ?? 0} stopped out`} />
+          <Stat label="Weeks the pair was linked" value={`${p?.cointegrated_refits ?? DASH} of ${p?.refits ?? DASH}`} hint="cointegrated at 5%" />
+        </div>
+        <p className="mt-2 text-xs text-muted">Failed checks: {failed(p?.gates)}. BTC and ETH rarely moved together tightly enough to trade, and trades lost before costs.</p>
+      </Card>
+      <p className="text-xs text-muted">Historical backtests, no orders placed. Rules written before the run: {r.preregistration}</p>
+    </>
+  );
+}
+
 export default function StrategyTestPage() {
   const { data: r, error, loading } = useApi<Any>("/research/freqtrade-community");
   const s = r?.summary;
@@ -88,6 +156,7 @@ export default function StrategyTestPage() {
             ]} />
           </Card>
           <Rebalancing />
+          <Batch3 />
           <p className="text-xs text-muted">Generated {time(r.generated_at)} by {r.engine} from {r.source}. A strategy passes only if it made money, had a profit factor of at least 1.2, never fell more than 25%, made at least 50 trades, was positive in 2 of 3 years, stayed profitable at double fees, and its edge was statistically significant after correcting for testing many strategies at once.</p>
         </div>
       )}

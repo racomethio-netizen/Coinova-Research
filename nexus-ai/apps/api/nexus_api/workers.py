@@ -41,6 +41,7 @@ WORKERS: dict[str, list[str]] = {
     "grid-paper": ["-m", "nexus_execution.grid_paper"],
     "adaptive-grid": ["-m", "nexus_execution.adaptive_grid_paper"],
     "rebalance-paper": ["-m", "nexus_backtest.rebalance_paper"],
+    "voltarget-paper": ["-m", "nexus_backtest.voltarget_paper"],
     "x-sentiment": ["-m", "nexus_social.service"],
 }
 
@@ -148,6 +149,7 @@ class InlineWorkers:
             library_forward,
             rebalance_paper,
             trend_paper,
+            voltarget_paper,
         )
         from nexus_execution import adaptive_grid_paper, bot, grid_paper, spot_paper, trader
         from nexus_market import carry_paper, derivatives, runner
@@ -172,7 +174,8 @@ class InlineWorkers:
             "bot": lambda stop: bot.serve(settings, stop),
             "grid-paper": lambda stop: grid_paper.serve(settings, stop),
             "adaptive-grid": lambda stop: adaptive_grid_paper.serve(settings, stop),
-            "rebalance-paper": lambda stop: rebalance_paper.serve(settings, stop)}
+            "rebalance-paper": lambda stop: rebalance_paper.serve(settings, stop),
+            "voltarget-paper": lambda stop: voltarget_paper.serve(settings, stop)}
         if settings.x_bearer_token is not None:
             workers["x-sentiment"] = lambda stop: social.serve(settings, stop)
         if only is not None:

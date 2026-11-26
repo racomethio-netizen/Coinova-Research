@@ -4,6 +4,17 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-26
 
+- **Batch 3 (pre-registered, one run): grid v2, volatility targeting, BTC/ETH pairs.**
+  * Grid v2 (sell held coins on a regime change), on unseen 2020–2023 data: FAILED, worse
+    than v1 (−51.1% vs −43.5%).
+  * Volatility-targeted holding:
+    * BTC/ETH 50/50 PASSED: Sharpe 0.94 vs 0.86 held, worst drop −59% vs −77%, lower
+      return than holding;
+    * BTC alone and ETH alone failed.
+    * Paper forward test from 2026-11-27 (worker `voltarget-paper`).
+  * BTC/ETH pairs on perpetuals: FAILED (−13.2%).
+  * Results are on the Strategy test page (`/api/v1/research/batch3`).
+
 - **Rebalancing bot and cross-sectional momentum (pre-registered).**
   * Rebalancing R3 (BTC 40 / ETH 40 / USDT 20, 5-point band) PASSED: +38.4% vs +28.4%
     held, worst drop −51.0% vs −53.0%.

@@ -1931,6 +1931,35 @@ async def rebalancing_status(s: Session = Depends(db),
     return out
 
 
+@router.get("/research/batch3")
+async def batch3_status(s: Session = Depends(db),
+                        redis: Any = Depends(redis_dep)) -> dict[str, Any]:
+    """Grid v2, volatility-targeted holding and BTC/ETH pairs: the committed pre-registered
+    result, and the PAPER forward test of the variant that passed (nothing is executed)."""
+    from datetime import UTC
+    from datetime import datetime as _dt
+    from pathlib import Path
+
+    import nexus_backtest
+    from nexus_backtest.voltarget_paper import RUN, STATUS_KEY, summary
+
+    def load() -> dict[str, Any]:
+        f = Path(nexus_backtest.__file__).with_name("results") / "batch3_2026-11.json"
+        bt = json.loads(f.read_text()) if f.exists() else None
+        rows = s.scalars(select(models.ForwardTestEvent).where(
+            models.ForwardTestEvent.run == RUN).order_by(models.ForwardTestEvent.at)).all()
+        days = [r.data for r in rows if r.kind == "day"]
+        div = sum(1 for r in rows if r.kind == "divergence")
+        gaps = [r.key for r in rows if r.kind == "gap"]
+        return {"backtest": bt, "forward": summary(days, div, gaps, _dt.now(UTC))}
+
+    out = await asyncio.to_thread(load)
+    raw = await redis.get(STATUS_KEY)
+    out["forward"]["status"] = json.loads(raw) if raw else None
+    out["preregistration"] = "docs/research/2026-11-26-batch3-preregistration.md"
+    return out
+
+
 @router.get("/trading-bot")
 async def trading_bot_status(s: Session = Depends(db), redis: Any = Depends(redis_dep),
                              settings: Settings = Depends(settings_dep)) -> dict[str, Any]:

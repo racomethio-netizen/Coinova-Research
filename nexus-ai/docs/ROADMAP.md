@@ -32,6 +32,24 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-26 evening: batch 3 tests ("Test next three"), single pre-registered run.**
+  See docs/research/2026-11-26-batch3-preregistration.md.
+  * Grid v2 (sell held coins on a regime change), on unseen 2020-07 to 2023-12 data:
+    FAILED 0 of 7.
+    * −51.1% vs v1 −43.5%.
+    * Every coin lost.
+  * Volatility-targeted holding (weight = min(1, 40% / 30-day vol)):
+    * the BTC/ETH 50/50 mix PASSED: Sharpe 0.94 vs 0.86 held, worst drop −59% vs −77%,
+      but +612% vs +824% held;
+    * BTC alone and ETH alone FAILED.
+  * BTC/ETH pairs on perpetuals: FAILED 1 of 6, −13.2%.
+  * Built:
+    * worker `voltarget-paper`: paper forward test from 2026-11-27, 180-day review;
+    * API `/api/v1/research/batch3`;
+    * a Strategy test page section.
+  * Not yet deployed. Next: the owner says "Deploy". The worker then starts recording
+    after the 27 Nov 00:00 UTC close.
+
 * **2026-11-26 15:26 UTC: deployed 630f5d9 (adaptive grid, paper).**
   * Migration 0020 applied; the adaptive-grid worker started in paper mode.
   * Incident: the first spot universe scan failed. Redis rejected the 25 MB+ write of the
