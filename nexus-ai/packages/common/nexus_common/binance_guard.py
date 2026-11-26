@@ -92,6 +92,7 @@ CCXT_WEIGHTS = {"fetch_ohlcv": 2, "fetch_time": 1, "load_markets": 20, "fetch_ba
 def endpoint_weight(scope: str, endpoint: str, params: dict[str, Any] | None = None) -> int:
     """Binance's documented weight for an endpoint (conservative where it depends on
     parameters). Unknown endpoints count as 5."""
+    known = params is not None                 # params given: we know if a symbol is set
     params = params or {}
     name = endpoint.rsplit("/v1/", 1)[-1].rsplit("/v3/", 1)[-1].strip("/")
     limit = int(params.get("limit") or 100)
@@ -100,7 +101,7 @@ def endpoint_weight(scope: str, endpoint: str, params: dict[str, Any] | None = N
     if scope == "futures" and name.endswith("klines"):
         return 1 if limit < 100 else 2 if limit < 500 else 5 if limit <= 1000 else 10
     # Whole-market requests (no symbol) cost far more than per-symbol ones.
-    whole = "symbol" not in params and "symbols" not in params
+    whole = known and "symbol" not in params and "symbols" not in params
     if name.endswith("ticker/24hr"):
         return (40 if scope == "futures" else 80) if whole else (
             40 if "symbols" in params else 1 if scope == "futures" else 2)
