@@ -32,6 +32,15 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-26 11:10 UTC: deployed 398b2f4 (live on Render).**
+  * The owner had `NEXUS_LIVE_TRADING_ENABLED=true` in paper mode, which blocked every deploy
+    since 23 Nov. At the owner's request ("Set it for me") it was set to false, a merge
+    of that one key only.
+  * Grid bot verified in production:
+    * run `grid-202611261110`, BTC 60,524;
+    * range 57,189.81 to 64,052.59, 20 levels, 0.60% step;
+    * 10 resting paper buys;
+    * worst case 83.05 USDT, 8.3% of the 1,000 paper capital.
 * **2026-11-26: Freqtrade community test and the paper grid bot.**
   * Strategy test: 0 of 44 passed; the closest is UniversalMACD (drawdown −32.9%). See
     `docs/research/2026-11-23-freqtrade-community-preregistration.md`.
