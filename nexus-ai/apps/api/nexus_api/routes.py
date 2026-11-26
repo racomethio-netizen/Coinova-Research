@@ -1010,6 +1010,7 @@ async def markets_overview(s: Session = Depends(db), redis: Any = Depends(redis_
     """Every market with its autonomy switch, what it supports, its venues and connector
     status, and (crypto) the paper book's open and closed positions. Nothing is shown as
     connected unless NEXUS has a working connector for it."""
+    from nexus_backtest import multiasset_paper as mp
     from nexus_common.markets import (
         MARKETS,
         Autonomy,
@@ -1026,6 +1027,12 @@ async def markets_overview(s: Session = Depends(db), redis: Any = Depends(redis_
     op_row = repo.operating_mode_db_state(s)
     op = parse_op(op_row.get("mode") if op_row else None)
     crypto_blockers = await _live_mode_blockers(s, redis, settings)
+    raw_research = await redis.get(mp.STATUS_KEY)
+    research = json.loads(raw_research) if raw_research else None
+    fwd_rows = s.scalars(select(models.ForwardTestEvent).where(
+        models.ForwardTestEvent.run == mp.RUN).order_by(models.ForwardTestEvent.at)).all()
+    stocks_forward = mp.summary([r.data for r in fwd_rows if r.kind == "day"],
+                                sum(1 for r in fwd_rows if r.kind == "divergence"))
     positions = {k: int(v) for k, v in s.execute(
         select(models.Position.status, func.count()).where(models.Position.mode == "paper")
         .group_by(models.Position.status)).all()}
@@ -1046,9 +1053,32 @@ async def markets_overview(s: Session = Depends(db), redis: Any = Depends(redis_
         else:
             d["live_blockers"] = MARKETS[mk].missing_for(Autonomy.LIVE)
             d["paper_positions"] = None
+            d["research"] = ((research or {}).get("markets") or {}).get(mk.value)
+            d["research_at"] = (research or {}).get("at")
+            if mk is Market.STOCKS:
+                d["paper_forward"] = stocks_forward
         out.append(d)
     return {"operating_mode": op.value, "markets": out,
             "server_trading_mode": settings.trading_mode.value}
+
+
+@router.get("/research/multi-asset")
+async def multi_asset_research() -> dict[str, Any]:
+    """Multi-asset Stage 3: the committed pre-registered results (forex and NASDAQ-100
+    trend following; volatility-managed NASDAQ-100)."""
+    from pathlib import Path
+
+    import nexus_backtest
+
+    def load(name: str) -> Any:
+        f = Path(nexus_backtest.__file__).with_name("results") / name
+        return json.loads(f.read_text()) if f.exists() else None
+
+    return {"trend": await asyncio.to_thread(load, "multi_asset_trend_2026-11.json"),
+            "ndx_voltarget": await asyncio.to_thread(load, "ndx_voltarget_2026-11.json"),
+            "preregistrations": [
+                "docs/research/2026-11-26-multi-asset-trend-preregistration.md",
+                "docs/research/2026-11-26-ndx-voltarget-preregistration.md"]}
 
 
 @router.post("/markets/{market}/autonomy", dependencies=[Depends(owner)])

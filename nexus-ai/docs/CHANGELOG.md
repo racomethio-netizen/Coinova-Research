@@ -4,6 +4,16 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-26
 
+- **Multi-asset Stage 3: research data, two pre-registered tests, research worker.**
+  * Forex majors and NASDAQ-100 trend following (2004–2026): FAILED.
+  * Volatility-managed NASDAQ-100 (1990–2026): PASSED. Calmer than holding, but lower
+    return.
+  * New worker `multiasset-research`:
+    * stocks research plus the NASDAQ-100 paper forward test from 2026-11-27;
+    * forex and commodities research (FRED and Binance stock and commodity perpetuals).
+  * Defaults: stocks PAPER (paper only), forex and commodities RESEARCH. No broker
+    connector exists, so LIVE is impossible for them.
+
 - **Multi-asset platform, Stage 1** (owner brief "Universal multi-asset autonomous trading
   platform").
   * Audit with 5 reports: docs/MULTI_ASSET_AUDIT_2026-11-26.md.

@@ -54,6 +54,35 @@ def vol_target(px: pd.Series, target: float, *, cost: float = COST,
     return pd.Series(out, index=px.index)
 
 
+def ledger(px: pd.Series, target: float = TARGET, *, start: pd.Timestamp | None = None,
+           initial: float = 1.0, cost: float = COST) -> pd.DataFrame:
+    """``vol_target`` (cash earning nothing) as a ledger from ``start``: equity, held
+    weight, target and trades. A unit test checks it matches ``vol_target``."""
+    r = px.pct_change()
+    vol = r.rolling(WINDOW, min_periods=WINDOW).std() * math.sqrt(ANN)
+    want = (target / vol).clip(upper=1.0)
+    cash, units = initial, 0.0
+    rows = []
+    for d, p, w, v in zip(px.index, px.to_numpy(float), want.to_numpy(float),
+                          vol.to_numpy(float), strict=True):
+        if start is not None and d < start:
+            continue
+        eq = cash + units * p
+        trade = fee = 0.0
+        if not math.isnan(w) and abs(w - units * p / eq) > BAND:
+            trade = w * eq - units * p
+            fee = abs(trade) * cost
+            units += trade / p
+            cash -= trade + fee
+            eq -= fee
+        rows.append({"date": d, "equity": eq, "weight": units * p / eq,
+                     "target": None if math.isnan(w) else float(w),
+                     "vol": None if math.isnan(v) else float(v), "trade": trade, "fee": fee,
+                     "close": float(p)})
+    return pd.DataFrame(rows).set_index("date") if rows else pd.DataFrame(
+        columns=["equity", "weight", "target", "vol", "trade", "fee", "close"])
+
+
 def stats(r: pd.Series) -> dict[str, Any]:
     r = r.dropna()
     eq = (1 + r).cumprod()

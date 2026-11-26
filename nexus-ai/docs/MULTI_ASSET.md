@@ -10,7 +10,7 @@ docs/MULTI_ASSET_AUDIT_2026-11-26.md.
 |---|---|
 | 1. Market registry and per-market autonomy switches | **done** (2026-11-26) |
 | 2. Instrument and session model, base-currency accounting | not started |
-| 3. Research data and pre-registered backtests for stocks, commodities, forex | not started; needs the owner to approve a data source |
+| 3. Research data and pre-registered backtests for stocks, commodities, forex | **done for what free data allows** (2026-11-26): see "Stage 3" below |
 | 4. Interactive Brokers connector (stocks, ETFs, commodity futures), paper account first | not started; needs an IBKR account and a host for IB Gateway |
 | 5. Forex connector (MT5 on a Windows host, or a Linux-native broker API) | not started; needs the owner's choice of broker and host |
 | 6. Cross-market risk budget and consolidated dashboard | not started |
@@ -34,13 +34,18 @@ Code: `packages/common/nexus_common/markets.py`.
   * global PAPER_TRADING + crypto LIVE = still paper.
 * **Durable and audited.** Each change is a `market_autonomy_set` row in the append-only
   audit log (actor, reason, previous value). Only the owner's rows count.
-* **Defaults.** Crypto defaults to PAPER, today's behaviour. Stocks, commodities and
-  forex default to OFF.
+* **Defaults:**
+  * Crypto: PAPER, today's behaviour.
+  * Stocks: PAPER. That is the paper forward test of the one stock rule that passed; no
+    broker orders exist.
+  * Forex and commodities: RESEARCH (analysis only).
 * **Fail closed.** A stored value that can't be read, or one the market can't support,
   means OFF.
-* **Only supported modes can be chosen.** Stocks, commodities and forex accept only OFF
-  until their data source, paper engine and broker connector exist; the API explains
-  what is missing.
+* **Only supported modes can be chosen.**
+  * Stocks: OFF, RESEARCH or PAPER.
+  * Forex and commodities: OFF or RESEARCH.
+  * None of the three can be LIVE until a broker connector exists. The API explains what
+    is missing.
 * **Where it is enforced for crypto:**
   * the main trader (paper and live), which combines the switch with the operating mode
     each cycle;
@@ -70,6 +75,35 @@ curl -X POST https://<host>/api/v1/markets/crypto/autonomy \
   -H 'Content-Type: application/json' -H 'x-nexus-csrf: 1' -b cookies.txt \
   -d '{"autonomy": "RESEARCH", "reason": "observe before resuming paper"}'
 ```
+
+## Stage 3: research data, tests and the research worker
+
+* **Data sources.** Free, official, no account needed:
+  * FRED: daily NASDAQ-100, the 7 major currencies against USD, and 3-month interest
+    rates;
+  * Binance USD-M stock, ETF and commodity perpetuals: QQQ, SPY, NVDA, AAPL, MSFT, TSLA,
+    gold, silver, platinum, palladium, crude oil, natural gas, copper.
+  * Excluded: `SPXUSDT`, a memecoin, not the S&P 500.
+  * Stooq, Yahoo and Dukascopy refused this environment, and Alpha Vantage needs a key.
+* **Pre-registered tests (one run each):**
+  * Trend following on the forex majors and the NASDAQ-100, 2004–2026: **failed**
+    (Sharpe 0.04 and 0.06). See
+    docs/research/2026-11-26-multi-asset-trend-preregistration.md.
+  * Volatility-managed NASDAQ-100, 1990–2026: **passed**. Sharpe 0.79 vs 0.63 held, worst
+    drop −44% vs −83%, but 11.5% vs 14.1% a year. See
+    docs/research/2026-11-26-ndx-voltarget-preregistration.md.
+  * Commodities: not testable yet. No free tradable history is long enough (Binance's
+    commodity perpetuals start late 2025 / 2026).
+* **Worker `multiasset-research`** (every 6 hours), each part obeying its market's
+  switch:
+  * stocks: a NASDAQ-100 and stock-perpetual research view; under PAPER, the paper
+    forward test of the volatility-managed NASDAQ-100 from 2026-11-27 (10,000 virtual
+    USD, 180-day review);
+  * forex: majors with their carry;
+  * commodities: Binance commodity perpetuals.
+
+  It shows descriptive numbers only (returns, 200-day trend, volatility). A failed
+  download is shown as "not available", never estimated.
 
 ## Deployment notes for the coming connectors
 

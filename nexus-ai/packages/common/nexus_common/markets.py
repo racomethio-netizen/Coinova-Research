@@ -65,6 +65,7 @@ class Venue:
     access: str                       # how NEXUS talks to it
     owner_needs: tuple[str, ...] = ()
     notes: str = ""
+    role: str = "broker"              # "broker" (can trade) | "data" (research data only)
 
 
 @dataclass(frozen=True)
@@ -111,6 +112,8 @@ IBKR = Venue(
     "Contract specifications (multiplier, tick, currency, trading hours) will be read "
     "from IBKR at connection time, never typed in by hand.")
 
+FRED = "FRED (Federal Reserve Bank of St. Louis)"
+
 MARKETS: dict[Market, MarketSpec] = {
     Market.CRYPTO: MarketSpec(
         Market.CRYPTO, "Cryptocurrency",
@@ -125,19 +128,39 @@ MARKETS: dict[Market, MarketSpec] = {
         research_data=True, paper_engine=True, live_connector=True, default=Autonomy.PAPER,
         notes=("Existing NEXUS crypto stack; behaviour unchanged at the default (PAPER).",)),
     Market.STOCKS: MarketSpec(
-        Market.STOCKS, "Stocks and ETFs", (IBKR,),
-        research_data=False, paper_engine=False, live_connector=False, default=Autonomy.OFF,
-        notes=("US pattern-day-trader rule applies to US margin accounts under $25,000 "
+        Market.STOCKS, "Stocks and ETFs",
+        (IBKR,
+         Venue("fred_stocks", FRED, ("NASDAQ-100 index (daily close)", "3-month T-bill"),
+               "built", "public CSV, daily", role="data",
+               notes="Research data; the NASDAQ-100 volatility-managed rule passed its "
+                     "pre-registered test (2026-11-26)."),
+         Venue("binance_stock_perps", "Binance USD-M stock and ETF perpetuals",
+               ("QQQ, SPY, NVDA, AAPL, TSLA, MSFT and other price-tracking contracts",),
+               "built", "existing Binance futures market data (public klines)", role="data",
+               notes="Derivatives that follow a share price; not the shares. History only "
+                     "since late 2025, too short for a strategy test.")),
+        research_data=True, paper_engine=True, live_connector=False, default=Autonomy.PAPER,
+        notes=("PAPER runs the paper forward test of the volatility-managed NASDAQ-100 rule "
+               "(the only stock strategy that passed); no broker orders exist yet.",
+               "US pattern-day-trader rule applies to US margin accounts under $25,000 "
                "(check the current FINRA rule).", "T+1 settlement; short sales need borrow.")),
     Market.COMMODITIES: MarketSpec(
         Market.COMMODITIES, "Commodities",
         (IBKR, Venue("mt5_cfd", "MetaTrader 5 broker (CFDs)",
                       ("gold, silver, oil, gas CFDs (broker-dependent)",), "not_built",
                       "MetaTrader5 Python package (Windows only, Stage 5)",
-                      ("an MT5 broker account", "a Windows host running the MT5 terminal"))),
-        research_data=False, paper_engine=False, live_connector=False, default=Autonomy.OFF,
-        notes=("Futures expire and must be rolled; even micro contracts can exceed a small "
-               "account's risk budget, in which case NEXUS refuses the trade.",)),
+                      ("an MT5 broker account", "a Windows host running the MT5 terminal")),
+         Venue("binance_commodity_perps", "Binance USD-M commodity perpetuals",
+               ("gold, silver, platinum, palladium, crude oil, natural gas, copper",), "built",
+               "existing Binance futures market data (public klines)", role="data",
+               notes="History only since late 2025 or 2026: too short for a strategy test; "
+                     "research view only.")),
+        research_data=True, paper_engine=False, live_connector=False,
+        default=Autonomy.RESEARCH,
+        notes=("No commodity strategy has passed a test: no free tradable history long "
+               "enough exists yet.", "Futures expire and must be rolled; even micro "
+               "contracts can exceed a small account's risk budget, in which case NEXUS "
+               "refuses the trade.")),
     Market.FOREX: MarketSpec(
         Market.FOREX, "Forex",
         (Venue("mt5", "MetaTrader 5 broker", ("major, minor and supported exotic pairs",),
@@ -146,10 +169,17 @@ MARKETS: dict[Market, MarketSpec] = {
                 "terminal")),
          Venue("oanda", "OANDA v20 (alternative)", ("major and minor pairs",), "not_built",
                "REST API, runs on Linux (Stage 5 option)",
-               ("an OANDA account available in the owner's country",))),
-        research_data=False, paper_engine=False, live_connector=False, default=Autonomy.OFF,
-        notes=("Forex is leveraged by default; NEXUS keeps notional at or below equity "
-               "(1x) unless the owner changes the mandate.",)),
+               ("an OANDA account available in the owner's country",)),
+         Venue("fred_fx", FRED, ("EUR, GBP, AUD, NZD, JPY, CAD, CHF against USD (H.10)",
+                                 "3-month interest rates"), "built", "public CSV, weekly "
+               "release of daily rates", role="data",
+               notes="Trend following on these pairs failed its pre-registered test "
+                     "(2026-11-26).")),
+        research_data=True, paper_engine=False, live_connector=False,
+        default=Autonomy.RESEARCH,
+        notes=("No forex strategy has passed a test.", "Forex is leveraged by default; "
+               "NEXUS keeps notional at or below equity (1x) unless the owner changes the "
+               "mandate.")),
 }
 
 
@@ -184,6 +214,10 @@ def allows_entries(autonomy: Autonomy, broker_mode: str) -> bool:
     return _RANK[autonomy] >= _RANK[Autonomy.PAPER]
 
 
+def at_least(autonomy: Autonomy, level: Autonomy) -> bool:
+    return _RANK[autonomy] >= _RANK[level]
+
+
 def live_phrase(market: Market) -> str:
     return f"ENABLE LIVE {market.value.upper()}"
 
@@ -195,7 +229,7 @@ def describe() -> list[dict[str, Any]]:
              "capabilities": {"research_data": s.research_data, "paper_engine": s.paper_engine,
                               "live_connector": s.live_connector},
              "venues": [{"code": v.code, "name": v.name, "instruments": list(v.instruments),
-                         "connector": v.connector, "access": v.access,
+                         "connector": v.connector, "access": v.access, "role": v.role,
                          "owner_needs": list(v.owner_needs), "notes": v.notes}
                         for v in s.venues],
              "notes": list(s.notes)} for s in MARKETS.values()]

@@ -1,0 +1,103 @@
+{
+ "hold": {
+  "net_return": 125.80865796997858,
+  "annual_return": 0.14054754269662362,
+  "sharpe": 0.6277543815910448,
+  "max_drawdown": -0.828972119547774
+ },
+ "target_15": {
+  "net_return": 53.76238274191974,
+  "annual_return": 0.11483465126733838,
+  "sharpe": 0.791172604733527,
+  "max_drawdown": -0.43996568980547013
+ },
+ "target_15_2x_costs": {
+  "net_return": 53.06769759462842,
+  "annual_return": 0.11444821482391143,
+  "sharpe": 0.7888602668141786,
+  "max_drawdown": -0.4402180352820484
+ },
+ "halves": {
+  "1990_2007": {
+   "strategy": {
+    "net_return": 4.958370124162641,
+    "annual_return": 0.10427952236424165,
+    "sharpe": 0.7116331789315377,
+    "max_drawdown": -0.43996568980547013
+   },
+   "hold": {
+    "net_return": 8.314376340243038,
+    "annual_return": 0.13204152644708045,
+    "sharpe": 0.5626334279485032,
+    "max_drawdown": -0.828972119547774
+   }
+  },
+  "2008_2026": {
+   "strategy": {
+    "net_return": 8.19083266073804,
+    "annual_return": 0.12505297647527702,
+    "sharpe": 0.8724200170335362,
+    "max_drawdown": -0.2695990282585792
+   },
+   "hold": {
+    "net_return": 12.61429400507451,
+    "annual_return": 0.14878116518776818,
+    "sharpe": 0.7226962293360302,
+    "max_drawdown": -0.49564256901090453
+   }
+  }
+ },
+ "target_10": {
+  "net_return": 17.54513346147844,
+  "annual_return": 0.08253070259612572,
+  "sharpe": 0.785832517352868,
+  "max_drawdown": -0.30155277297527716
+ },
+ "target_20": {
+  "net_return": 96.44454135987483,
+  "annual_return": 0.13241852492070438,
+  "sharpe": 0.7784820804406029,
+  "max_drawdown": -0.5363039870705137
+ },
+ "target_15_cash_earns_tbill": {
+  "net_return": 70.86647228652795,
+  "annual_return": 0.1230939232307322,
+  "sharpe": 0.8426829557423925,
+  "max_drawdown": -0.39341010163744927
+ },
+ "avg_weight_target_15": 0.7340615859261909,
+ "gates": {
+  "sharpe_above_hold": true,
+  "drawdown_10pts_smaller": true,
+  "net_positive": true,
+  "sharpe_above_hold_both_halves": true,
+  "holds_at_2x_costs": true
+ },
+ "passed": true,
+ "generated_at": "2026-11-26T21:15:23.391120+00:00",
+ "harness_commit": "f7ee0d1",
+ "kind": "historical backtest (no orders placed)",
+ "paper": false,
+ "window": [
+  "1990-01-01",
+  "2026-10-31"
+ ],
+ "preregistration": "docs/research/2026-11-26-ndx-voltarget-preregistration.md",
+ "data": {
+  "source": "FRED, Federal Reserve Bank of St. Louis",
+  "series": {
+   "NASDAQ100": {
+    "rows": 10307,
+    "first": "1986-01-02",
+    "last": "2026-11-25",
+    "sha256": "be6a8d99cfbca733f196db6756725f0a8856deee3b58daa72d0c1aee16784fe9"
+   },
+   "DTB3": {
+    "rows": 18215,
+    "first": "1954-01-04",
+    "last": "2026-11-24",
+    "sha256": "8d1365a8dc37a412a2525b894edb980d4c4bf0dca664eae290b5b98e71787afc"
+   }
+  }
+ }
+}

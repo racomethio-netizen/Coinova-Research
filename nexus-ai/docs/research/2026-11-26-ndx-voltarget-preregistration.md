@@ -63,3 +63,36 @@ These are the same gates as the BTC/ETH test.
 ## Results
 
 _(appended after the single run)_
+
+### Results of the single run (2026-11-26, harness commit f7ee0d1)
+
+Output: `research/backtesting/nexus_backtest/results/ndx_voltarget_2026-11.json`. The FRED
+file hashes are recorded in it. Historical backtest only; no order was placed.
+
+**PASSED: all 5 gates.**
+
+| NASDAQ-100, 1990-01 to 2026-10 | Per year | Sharpe | Worst drop | Net |
+|---|---|---|---|---|
+| **Volatility-managed, 15% target** | **+11.5%** | **0.79** | **−44.0%** | +5,376% |
+| at 2× costs | +11.4% | 0.79 | −44.0% | |
+| Held at 100% (price index) | +14.1% | 0.63 | −82.9% | +12,581% |
+| 10% target (reported) | +8.3% | 0.79 | −30.2% | |
+| 20% target (reported) | +13.2% | 0.78 | −53.6% | |
+| 15%, with cash earning the T-bill (reported) | +12.3% | 0.84 | −39.3% | |
+
+* **By half** (Sharpe, strategy vs held):
+  * 1990–2007: 0.71 vs 0.56; worst drop −44% vs −83%.
+  * 2008–2026: 0.87 vs 0.72; worst drop −27% vs −50%.
+* **Average weight in the index:** 0.73.
+
+**What the pass means.**
+* Same as for BTC/ETH: it earns **less** than holding (11.5% vs 14.1% a year), with a
+  much smaller worst drop (−44% vs −83%) and a better return per unit of risk.
+* It is a calmer way to hold the index, not a trading edge, and it can still lose almost
+  half the money.
+* Dividends (about 1% a year) are missing on both sides.
+
+**Consequence.**
+* The stocks market gets RESEARCH signals and a paper forward test from 2026-11-27
+  (daily closes, 10,000 virtual USD).
+* Live needs an IBKR (or other) connector and the owner's authorization for stocks.

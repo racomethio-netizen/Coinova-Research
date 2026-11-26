@@ -17,19 +17,23 @@ from nexus_common.markets import (
 from nexus_common.opmode import OperatingMode as Op
 
 
-def test_only_crypto_supports_anything_beyond_off_today():
+def test_only_crypto_can_go_live_and_only_stocks_has_a_paper_engine():
     assert MARKETS[Market.CRYPTO].allowed() == (Autonomy.OFF, Autonomy.RESEARCH,
                                                 Autonomy.PAPER, Autonomy.LIVE)
+    assert MARKETS[Market.STOCKS].allowed() == (Autonomy.OFF, Autonomy.RESEARCH,
+                                                Autonomy.PAPER)
+    for m in (Market.COMMODITIES, Market.FOREX):
+        assert MARKETS[m].allowed() == (Autonomy.OFF, Autonomy.RESEARCH)
+        assert MARKETS[m].missing_for(Autonomy.PAPER) == ["no paper trading engine is built yet"]
     for m in (Market.STOCKS, Market.COMMODITIES, Market.FOREX):
-        assert MARKETS[m].allowed() == (Autonomy.OFF,)
-        assert MARKETS[m].missing_for(Autonomy.PAPER) == [
-            "no historical data source is built yet", "no paper trading engine is built yet"]
+        assert MARKETS[m].missing_for(Autonomy.LIVE)[-1] == "no broker connector is built yet"
         assert MARKETS[m].missing_for(Autonomy.OFF) == []
 
 
 def test_defaults_preserve_crypto_paper_and_fail_closed():
     assert parse(Market.CRYPTO, None) is Autonomy.PAPER          # today's behaviour
-    assert parse(Market.FOREX, None) is Autonomy.OFF
+    assert parse(Market.FOREX, None) is Autonomy.RESEARCH
+    assert parse(Market.STOCKS, None) is Autonomy.PAPER
     assert parse(Market.CRYPTO, "bogus") is Autonomy.OFF
     assert effective(Market.CRYPTO, {}) is Autonomy.PAPER
     assert effective(Market.CRYPTO, {"crypto": {"autonomy": "RESEARCH"}}) is Autonomy.RESEARCH
@@ -54,10 +58,11 @@ def test_entries_need_paper_or_live_and_live_needs_live():
     assert not allows_entries(Autonomy.PAPER, "live")
 
 
-def test_nothing_is_described_as_connected_without_a_connector():
+def test_no_broker_is_described_as_connected_outside_crypto():
     for d in describe():
         if d["market"] != "crypto":
-            assert all(v["connector"] == "not_built" for v in d["venues"])
-            assert d["capabilities"] == {"research_data": False, "paper_engine": False,
-                                         "live_connector": False}
+            brokers = [v for v in d["venues"] if v["role"] == "broker"]
+            assert brokers and all(v["connector"] == "not_built" for v in brokers)
+            assert all(v["role"] == "data" for v in d["venues"] if v["connector"] == "built")
+            assert d["capabilities"]["live_connector"] is False
     assert live_phrase(Market.FOREX) == "ENABLE LIVE FOREX"

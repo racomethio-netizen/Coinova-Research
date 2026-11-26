@@ -42,6 +42,7 @@ WORKERS: dict[str, list[str]] = {
     "adaptive-grid": ["-m", "nexus_execution.adaptive_grid_paper"],
     "rebalance-paper": ["-m", "nexus_backtest.rebalance_paper"],
     "voltarget-paper": ["-m", "nexus_backtest.voltarget_paper"],
+    "multiasset-research": ["-m", "nexus_backtest.multiasset_paper"],
     "x-sentiment": ["-m", "nexus_social.service"],
 }
 
@@ -147,6 +148,7 @@ class InlineWorkers:
         from nexus_backtest import (
             forward_taker,
             library_forward,
+            multiasset_paper,
             rebalance_paper,
             trend_paper,
             voltarget_paper,
@@ -175,7 +177,8 @@ class InlineWorkers:
             "grid-paper": lambda stop: grid_paper.serve(settings, stop),
             "adaptive-grid": lambda stop: adaptive_grid_paper.serve(settings, stop),
             "rebalance-paper": lambda stop: rebalance_paper.serve(settings, stop),
-            "voltarget-paper": lambda stop: voltarget_paper.serve(settings, stop)}
+            "voltarget-paper": lambda stop: voltarget_paper.serve(settings, stop),
+            "multiasset-research": lambda stop: multiasset_paper.serve(settings, stop)}
         if settings.x_bearer_token is not None:
             workers["x-sentiment"] = lambda stop: social.serve(settings, stop)
         if only is not None:

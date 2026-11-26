@@ -32,6 +32,23 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-26 night: multi-asset Stage 3 (owner: "do it all").**
+  * Stage 1 deployed at 21:2x UTC (Render 036dd07).
+  * Tests:
+    * forex and NASDAQ-100 trend following FAILED;
+    * volatility-managed NASDAQ-100 PASSED.
+  * Built:
+    * the `multiasset-research` worker (stocks, forex, commodities research; NASDAQ-100
+      paper forward test from 2026-11-27);
+    * `/api/v1/research/multi-asset`;
+    * All markets research tables;
+    * a Strategy test card.
+  * Blocked on the owner, by nature:
+    * IBKR account and IB Gateway host (Stage 4);
+    * forex broker and host (Stage 5).
+  * Stage 2 (instrument and session model with a migration) is still to do; it is
+    needed only once a broker connector exists.
+
 * **2026-11-26 late: multi-asset Stage 1 built and tested; NOT yet deployed.**
   * Audit: docs/MULTI_ASSET_AUDIT_2026-11-26.md.
   * Stage plan and the switch: docs/MULTI_ASSET.md.

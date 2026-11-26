@@ -825,13 +825,24 @@ def test_markets_overview_and_per_market_switch(client: TestClient) -> None:
     by = {x["market"]: x for x in m["markets"]}
     assert set(by) == {"crypto", "stocks", "commodities", "forex"}
     assert by["crypto"]["autonomy"] == "PAPER" and by["crypto"]["paper_orders"] is True
+    assert by["stocks"]["autonomy"] == "PAPER" and by["stocks"]["allowed"] == [
+        "OFF", "RESEARCH", "PAPER"]
+    assert by["stocks"]["paper_forward"]["paper"] is True
+    for k in ("commodities", "forex"):
+        assert by[k]["autonomy"] == "RESEARCH" and by[k]["allowed"] == ["OFF", "RESEARCH"]
     for k in ("stocks", "commodities", "forex"):
-        assert by[k]["autonomy"] == "OFF" and by[k]["allowed"] == ["OFF"]
-        assert all(v["connector"] == "not_built" for v in by[k]["venues"])
+        assert all(v["connector"] == "not_built" for v in by[k]["venues"]
+                   if v["role"] == "broker")
         assert by[k]["live_blockers"] and by[k]["paper_positions"] is None
-    r = client.post("/api/v1/markets/stocks/autonomy",
-                    json={"autonomy": "PAPER", "reason": "try stocks"}, headers=CSRF)
+    r = client.post("/api/v1/markets/forex/autonomy",
+                    json={"autonomy": "PAPER", "reason": "try forex"}, headers=CSRF)
     assert r.status_code == 409 and "no paper trading engine" in r.json()["detail"]
+    r = client.post("/api/v1/markets/stocks/autonomy",
+                    json={"autonomy": "LIVE", "reason": "try stocks live"}, headers=CSRF)
+    assert r.status_code == 409 and "no broker connector" in r.json()["detail"]
+    m2 = client.get("/api/v1/research/multi-asset").json()
+    assert m2["ndx_voltarget"]["passed"] is True
+    assert m2["trend"]["summary"]["passed"] == []
     assert client.post("/api/v1/markets/gold/autonomy",
                        json={"autonomy": "OFF", "reason": "unknown"},
                        headers=CSRF).status_code == 404

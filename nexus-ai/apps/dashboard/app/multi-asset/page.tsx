@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
-import { Badge, Button, Card, Field, Loading, PageHeader } from "@/components/ui";
-import { time } from "@/lib/format";
+import { Badge, Button, Card, Field, Loading, PageHeader, Table } from "@/components/ui";
+import { DASH, num, pct, time } from "@/lib/format";
 import { useApi } from "@/lib/hooks";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,6 +16,39 @@ const MEANING: Record<string, string> = {
   LIVE: "Signals that pass every check become REAL orders with real money.",
 };
 const TONE: Record<string, "bad" | "info" | "muted"> = { LIVE: "bad", PAPER: "info", RESEARCH: "muted", OFF: "muted" };
+
+function Research({ m }: { m: Any }) {
+  const r = m.research;
+  if (!r || r.autonomy === "OFF" || !r.instruments) return <p className="mt-3 text-sm text-muted">{m.autonomy === "OFF" ? "Switched OFF: no data is collected." : "Waiting for the first research run (every 6 hours)."}</p>;
+  return (
+    <div className="mt-3">
+      <p className="mb-1 text-sm font-medium">Research view {m.research_at ? `(updated ${time(m.research_at)})` : ""}: descriptive, not a prediction</p>
+      <Table rows={r.instruments} empty="No data." columns={[
+        { key: "name", label: "Instrument" },
+        { key: "last", label: "Last", numeric: true, render: (x: Any) => num(x.last, x.last < 10 ? 4 : 2) },
+        { key: "as_of", label: "As of" },
+        { key: "r1", label: "1 month", numeric: true, render: (x: Any) => pct(x.return_1m, 1) },
+        { key: "r12", label: "12 months", numeric: true, render: (x: Any) => pct(x.return_12m, 1) },
+        { key: "t", label: "Trend (200 days)", render: (x: Any) => x.above_200d === null || x.above_200d === undefined ? DASH : x.above_200d ? "above average" : "below average" },
+        { key: "v", label: "Volatility (30 d)", numeric: true, render: (x: Any) => pct(x.vol_30d, 0) },
+        { key: "c", label: "Carry for a long / rule weight", numeric: true, render: (x: Any) => x.carry !== undefined ? `${pct(x.carry, 2)} (rates ${x.rate_as_of?.slice(0, 7)})` : x.voltarget_weight !== undefined && x.voltarget_weight !== null ? `${pct(x.voltarget_weight, 0)} held` : DASH },
+      ]} />
+      {r.errors?.length > 0 && <p className="mt-1 text-xs text-down">Not available: {r.errors.join("; ")}</p>}
+    </div>
+  );
+}
+
+function Forward({ f }: { f: Any }) {
+  if (!f) return null;
+  return (
+    <div className="mt-3 rounded-lg border border-line p-3 text-sm">
+      <p className="font-medium">Paper forward test: {f.strategy} (no real money)</p>
+      {f.days ? (
+        <p className="mt-1">Started {f.started_at} with {num(f.initial, 0)} virtual USD: now {num(f.equity, 2)} ({pct(f.return_since_start, 2)}), holding {pct(f.weight, 0)} in the index. Holding the index fully would be {num(f.hold_equity, 2)} ({pct(f.hold_return, 2)}). Review on {f.review_at}.</p>
+      ) : <p className="mt-1 text-muted">{f.message}; it starts {f.started_at}.</p>}
+    </div>
+  );
+}
 
 function MarketCard({ m, reload }: { m: Any; reload: () => Promise<void> }) {
   const [mode, setMode] = useState("");
@@ -44,7 +77,7 @@ function MarketCard({ m, reload }: { m: Any; reload: () => Promise<void> }) {
           <div key={v.code} className="rounded-lg border border-line p-3 text-sm">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-medium">{v.name}</span>
-              <Badge tone={v.connector === "built" ? "good" : "muted"}>{v.connector === "built" ? "connector built" : "not built yet"}</Badge>
+              <Badge tone={v.connector === "built" ? "good" : "muted"}>{v.role === "data" ? (v.connector === "built" ? "data source" : "data: not built") : v.connector === "built" ? "trading connector built" : "broker: not connected"}</Badge>
             </div>
             <p className="mt-1 text-xs text-muted">{v.instruments.join("; ")}. Access: {v.access}.</p>
             {v.notes && <p className="mt-1 text-xs text-muted">{v.notes}</p>}
@@ -53,6 +86,8 @@ function MarketCard({ m, reload }: { m: Any; reload: () => Promise<void> }) {
         ))}
       </div>
       {m.notes.length > 0 && <ul className="mt-2 list-disc pl-5 text-xs text-muted">{m.notes.map((n: string) => <li key={n}>{n}</li>)}</ul>}
+      {m.market !== "crypto" && <Research m={m} />}
+      {m.paper_forward && m.autonomy === "PAPER" && <Forward f={m.paper_forward} />}
       {m.allowed.length > 1 ? (
         <div className="mt-3 grid gap-3 md:grid-cols-4">
           <div>
@@ -68,7 +103,7 @@ function MarketCard({ m, reload }: { m: Any; reload: () => Promise<void> }) {
           <div className="flex items-end"><Button tone={live ? "danger" : "default"} disabled={!mode || reason.trim().length < 5} onClick={submit}>Change</Button></div>
         </div>
       ) : (
-        <p className="mt-3 text-sm">Stays OFF until NEXUS has a data source, a paper engine and a broker connector for this market.</p>
+        <p className="mt-3 text-sm">Stays OFF until NEXUS has a data source for this market.</p>
       )}
       {msg && <p role="alert" className="mt-2 text-sm text-down">{msg}</p>}
       {m.live_blockers?.length > 0 && (

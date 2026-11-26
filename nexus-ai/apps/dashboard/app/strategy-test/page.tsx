@@ -50,7 +50,7 @@ function Rebalancing() {
 const GRID_ROWS: [string, string][] = [["v1_fee1", "v1 (pause)"], ["v2_fee1", "v2 (sell)"], ["v1_fee2", "v1, 2x fees"], ["v2_fee2", "v2, 2x fees"]];
 const GATE_LABELS: Record<string, string> = {
   net_positive: "net above zero", profit_factor_ge_1_1: "profit factor at least 1.1", drawdown_le_15pct: "worst drop within 15%",
-  positive_2_of_4_periods: "positive in 2 of 4 periods", positive_at_2x_fees: "positive at 2x fees", positive_without_best: "positive without the best coin",
+  positive_2_of_4_periods: "positive in 2 of 4 periods", positive_at_2x_fees: "positive at 2x fees", positive_without_best: "positive without the best coin or instrument",
   better_than_v1: "better than v1", sharpe_above_hold: "Sharpe above holding", drawdown_10pts_smaller: "worst drop 10 points smaller",
   sharpe_above_hold_both_halves: "Sharpe above holding in both halves", holds_at_2x_costs: "still better at 2x costs", sharpe_ge_0_5: "Sharpe at least 0.5",
   significant_p_lt_0_05: "statistically significant", positive_2_of_3_years: "positive in 2 of 3 years", positive_at_2x_costs: "positive at 2x costs",
@@ -58,6 +58,8 @@ const GATE_LABELS: Record<string, string> = {
   positive_strict_fill: "positive with stricter fills",
   drawdown_le_25pct: "worst drop within 25%", positive_4_of_5_years: "positive in 4 of 5 years", beats_reversal_baseline: "better than the simple reversal",
   positive_without_top3: "positive without the 3 best coins",
+  drawdown_le_20pct: "worst drop within 20%", positive_both_halves: "positive in both halves",
+  positive_60pct_of_years: "positive in 60% of years",
 };
 const VOL_NAMES: Record<string, string> = { BTC: "BTC", ETH: "ETH", BTC_ETH_50_50: "BTC/ETH 50/50" };
 
@@ -167,6 +169,46 @@ function StatArb() {
   );
 }
 
+const TREND_NAMES: Record<string, string> = { tsmom_12m: "12-month momentum", sma_200: "200-day trend filter" };
+
+function MultiAsset() {
+  const { data: r } = useApi<Any>("/research/multi-asset", 60_000);
+  if (!r?.trend && !r?.ndx_voltarget) return null;
+  const t = r.trend;
+  const v = r.ndx_voltarget;
+  const trows = Object.entries(t?.strategies ?? {}).map(([k, x]: [string, Any]) => ({ key: k, ...x }));
+  const vrows = v ? [{ key: "Volatility-managed (15% target)", ...v.target_15 }, { key: "Held at 100%", ...v.hold }] : [];
+  return (
+    <>
+      {t && (
+        <Card title="Forex majors and NASDAQ-100: trend following (2004 – Oct 2026)" actions={<Badge tone={t.summary?.passed?.length ? "good" : "bad"}>{t.summary?.passed?.length ? "passed" : "none passed"}</Badge>}>
+          <Table rows={trows} empty="No result." columns={[
+            { key: "key", label: "Strategy", render: (x: Any) => TREND_NAMES[x.key] ?? x.key },
+            { key: "a", label: "Per year", numeric: true, render: (x: Any) => pct(x.annual_return, 2) },
+            { key: "s", label: "Sharpe", numeric: true, render: (x: Any) => num(x.sharpe, 2) },
+            { key: "d", label: "Worst drop", numeric: true, render: (x: Any) => pct(x.max_drawdown, 1) },
+            { key: "h1", label: "2004–2015", numeric: true, render: (x: Any) => pct(x.halves?.["2004_2015"]?.net_return, 1) },
+            { key: "h2", label: "2016–2026", numeric: true, render: (x: Any) => pct(x.halves?.["2016_2026"]?.net_return, 1) },
+            { key: "why", label: "Failed checks", render: (x: Any) => <span className="text-xs text-muted">{failed(x.gates)}</span> },
+          ]} />
+          <p className="mt-2 text-xs text-muted">Seven currencies against the dollar (with their interest-rate carry) and the NASDAQ-100, official Federal Reserve (FRED) data, never more exposure than the money in the account. Trend following earned a little before 2016 and lost it afterwards. Holding the NASDAQ-100 over the same years: {pct(t.ndx_price_hold?.annual_return, 1)} a year (worst drop {pct(t.ndx_price_hold?.max_drawdown, 0)}).</p>
+        </Card>
+      )}
+      {v && (
+        <Card title="NASDAQ-100: hold less when prices swing wildly (1990 – Oct 2026)" actions={<Badge tone={v.passed ? "good" : "bad"}>{v.passed ? "passed" : "failed"}</Badge>}>
+          <Table rows={vrows} empty="No result." columns={[
+            { key: "key", label: "" },
+            { key: "a", label: "Per year", numeric: true, render: (x: Any) => pct(x.annual_return, 1) },
+            { key: "s", label: "Sharpe", numeric: true, render: (x: Any) => num(x.sharpe, 2) },
+            { key: "d", label: "Worst drop", numeric: true, render: (x: Any) => pct(x.max_drawdown, 0) },
+          ]} />
+          <p className="mt-2 text-xs text-muted">The same rule that passed for BTC/ETH: it earned less than holding but its worst drop was about half as deep. Paper forward test from 27 Nov 2026 on the All markets page. Rules written before the run: {r.preregistrations?.join(", ")}</p>
+        </Card>
+      )}
+    </>
+  );
+}
+
 export default function StrategyTestPage() {
   const { data: r, error, loading } = useApi<Any>("/research/freqtrade-community");
   const s = r?.summary;
@@ -211,6 +253,7 @@ export default function StrategyTestPage() {
           <Batch3 />
           <MarketMaking />
           <StatArb />
+          <MultiAsset />
           <p className="text-xs text-muted">Generated {time(r.generated_at)} by {r.engine} from {r.source}. A strategy passes only if it made money, had a profit factor of at least 1.2, never fell more than 25%, made at least 50 trades, was positive in 2 of 3 years, stayed profitable at double fees, and its edge was statistically significant after correcting for testing many strategies at once.</p>
         </div>
       )}

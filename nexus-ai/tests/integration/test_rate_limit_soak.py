@@ -48,7 +48,9 @@ async def test_429_storm_is_contained_and_recovers_without_a_burst(
     monkeypatch.setattr(g, "OWN_BUDGET", {"spot": 10**9, "futures": 10**9})  # own test
     client = FakeCcxtClient()
     sent: list[tuple[float, str]] = []          # (time, outcome) of requests that LEFT
-    phase = {"ban": False}
+    phase = {"ban": False, "lifted": False}
+    recovered = asyncio.Event()                  # 3 successful requests after the ban
+    after_ok = [0]
     t0 = time.monotonic()
 
     def ohlcv(*_: Any) -> list[Any]:
@@ -56,6 +58,10 @@ async def test_429_storm_is_contained_and_recovers_without_a_burst(
             sent.append((time.monotonic() - t0, "429"))
             raise ccxt.RateLimitExceeded("binance 429 Too Many Requests")
         sent.append((time.monotonic() - t0, "200"))
+        if phase["lifted"]:
+            after_ok[0] += 1
+            if after_ok[0] >= 3:
+                recovered.set()
         return []
 
     client.responses["fetch_ohlcv"] = ohlcv
@@ -80,9 +86,15 @@ async def test_429_storm_is_contained_and_recovers_without_a_burst(
     phase["ban"] = True
     ban_start = time.monotonic() - t0
     await asyncio.sleep(3.0)
-    phase["ban"] = False
+    phase["ban"], phase["lifted"] = False, True
     ban_end = time.monotonic() - t0
-    await asyncio.sleep(3.0)
+    # Wait for the gate to recover by itself. A probe that failed just before the ban
+    # ended waits one more back-off step (up to ~5.8 s), so a fixed 3 s window was flaky
+    # on a loaded machine; the bound is generous, the recovery is what is tested.
+    try:
+        await asyncio.wait_for(recovered.wait(), timeout=12.0)
+    except TimeoutError:
+        pass                                     # the assertions below report it
     stop.set()
     await asyncio.gather(*tasks)
 
