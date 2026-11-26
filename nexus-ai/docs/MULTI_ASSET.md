@@ -12,7 +12,7 @@ docs/MULTI_ASSET_AUDIT_2026-11-26.md.
 | 2. Instrument and session model, base-currency accounting | **done** (2026-11-26): see "Stage 2" below |
 | 3. Research data and pre-registered backtests for stocks, commodities, forex | **done for what free data allows** (2026-11-26): see "Stage 3" below |
 | 4. Interactive Brokers connector (stocks, ETFs, commodity futures), paper account first | not started; needs an IBKR account and a host for IB Gateway |
-| 5. Forex connector (MT5 on a Windows host, or a Linux-native broker API) | not started; needs the owner's choice of broker and host |
+| 5. Forex connector: **Exness via MetaTrader 5** (owner's broker) | **read-only bridge built** (2026-11-26). Needs the owner to run it on Windows; the order path (demo only first) comes next |
 | 6. Cross-market risk budget and consolidated dashboard | not started |
 | 7. LIVE, one market at a time | owner authorization per market |
 
@@ -132,6 +132,54 @@ curl -X POST https://<host>/api/v1/markets/crypto/autonomy \
 
   It shows descriptive numbers only (returns, 200-day trend, volatility). A failed
   download is shown as "not available", never estimated.
+
+## Exness (MetaTrader 5): read-only bridge
+
+The owner trades forex at Exness. Exness is reached through MetaTrader 5, whose Python
+interface runs only on Windows next to the terminal.
+
+* **Bridge** (`apps/mt5_bridge`, setup in its README.md). A small program on the owner's
+  Windows PC or VPS.
+  * It attaches to the logged-in MT5 terminal and, every 5 minutes, sends to NEXUS over
+    HTTPS: contract details, closed daily bars, quotes, the account summary and open
+    positions.
+  * Its source contains no order or position-closing calls, and a unit test checks this.
+  * It never asks for the MT5 password.
+  * It only ever sends: NEXUS never connects to the owner's machine.
+* **Server time.**
+  * The bridge measures the broker's server-time offset from the freshest tick.
+  * Bars are sent only when that offset is known (or set by
+    `NEXUS_SERVER_UTC_OFFSET`).
+  * NEXUS stores them in UTC and drops the forming bar.
+* **NEXUS side** (`apps/api/nexus_api/bridge.py`):
+  * `POST /api/v1/bridge/mt5/snapshot` with `Authorization: Bearer <token>`.
+  * Rate-limited, with a 4 MB body limit.
+  * Every field is validated; symbol names are checked with a strict pattern.
+  * Contract details go to `trading_pairs` (exchange `exness`, classified as forex,
+    commodities or stock/index CFDs, with the contract size as the multiplier).
+  * Closed daily bars go to `market_candles` (source `mt5`). The account summary goes to
+    Redis with the account number masked (`***321`).
+  * It asks the bridge for full history until 300 daily bars are stored.
+  * Snapshots that are not read-only are refused.
+* **Tokens.**
+  * Created by the owner on All markets ("Create bridge token"), shown once, stored as a
+    SHA-256 hash (table `broker_bridges`, migration 0022), and revocable.
+  * Creating and revoking are recorded in the audit log.
+* **Dashboard.** All markets shows:
+  * the bridge's status (connected, account type, last seen);
+  * the masked account summary;
+  * the owner's own open positions;
+  * symbols with bid, ask, spread, contract size, minimum lot and swaps.
+
+  The research view includes Exness's daily prices per market.
+* **Safety.** No order path to Exness exists. Exness's high leverage is never used: NEXUS
+  keeps notional at or below 1× equity. A real-money account is shown as such and only
+  read.
+* **Next** (after the owner runs the bridge on a demo account):
+  * pre-registered tests on Exness's own prices, spreads and swaps (gold, oil, indices,
+    forex);
+  * then a demo-only order path, with the same rules as Binance (intent first, one
+    submission, reconcile by a client ID in the order comment).
 
 ## Deployment notes for the coming connectors
 

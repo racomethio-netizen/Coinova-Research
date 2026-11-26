@@ -117,6 +117,76 @@ function MarketCard({ m, reload }: { m: Any; reload: () => Promise<void> }) {
   );
 }
 
+function ExnessBridge({ ex, reload }: { ex: Any; reload: () => Promise<void> }) {
+  const { data: tokens, reload: reloadTokens } = useApi<Any>("/bridge-tokens", 30000);
+  const [name, setName] = useState("");
+  const [reason, setReason] = useState("");
+  const [created, setCreated] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const create = async () => {
+    setMsg(null); setCreated(null);
+    try {
+      const r = await api.post<Any>("/bridge-tokens", { name, reason });
+      setCreated(r.token); setName(""); setReason(""); await reloadTokens();
+    } catch (e) { setMsg(e instanceof Error ? e.message : String(e)); }
+  };
+  const revoke = async (id: number) => {
+    setMsg(null);
+    try { await api.post(`/bridge-tokens/${id}/revoke`); await reloadTokens(); await reload(); } catch (e) { setMsg(e instanceof Error ? e.message : String(e)); }
+  };
+  const state = !ex ? "never connected" : ex.connected ? `connected (${ex.trade_mode} account, read-only)` : `not connected (last seen ${time(ex.at)})`;
+  return (
+    <Card title="Exness (MetaTrader 5) bridge" actions={<Badge tone={ex?.connected ? (ex.trade_mode === "real" ? "bad" : "good") : "muted"}>{state}</Badge>}>
+      <p className="text-sm">A small read-only program on your Windows PC or VPS sends prices, contract details and your account summary from your logged-in MT5 terminal to NEXUS. It cannot place orders, and your MT5 password never leaves the terminal. Setup: apps/mt5_bridge/README.md in the repository.</p>
+      {ex && (
+        <div className="mt-3 space-y-2 text-sm">
+          <p>Account {ex.account} on {ex.server} ({ex.company}): balance {num(ex.balance, 2)} {ex.currency}, equity {num(ex.equity, 2)}, free margin {num(ex.margin_free, 2)}. Account leverage 1:{ex.leverage}; NEXUS never uses more than 1x of equity.</p>
+          {ex.trade_mode === "real" && <p role="alert" className="text-down">This is a REAL-money account. The bridge only reads it; NEXUS places no orders on Exness.</p>}
+          {ex.positions?.length > 0 && <p>Open positions (yours, not NEXUS's): {ex.positions.map((p: Any) => `${p.symbol} ${p.side} ${p.volume} lot (P/L ${p.profit})`).join("; ")}</p>}
+          <Table rows={ex.symbols ?? []} empty="No symbols reported." columns={[
+            { key: "name", label: "Symbol" },
+            { key: "class", label: "Market" },
+            { key: "bid", label: "Bid", numeric: true, render: (x: Any) => x.bid ?? DASH },
+            { key: "ask", label: "Ask", numeric: true, render: (x: Any) => x.ask ?? DASH },
+            { key: "sp", label: "Spread (points)", numeric: true, render: (x: Any) => x.spread_points ?? DASH },
+            { key: "cs", label: "Contract size", numeric: true, render: (x: Any) => num(x.contract_size, 0) },
+            { key: "vm", label: "Min lot", numeric: true, render: (x: Any) => x.volume_min },
+            { key: "sw", label: "Swap long / short", numeric: true, render: (x: Any) => `${x.swap_long ?? DASH} / ${x.swap_short ?? DASH}` },
+          ]} />
+          {ex.unresolved?.length > 0 && <p className="text-xs text-muted">Not offered on this account: {ex.unresolved.join(", ")}</p>}
+        </div>
+      )}
+      <div className="mt-4 border-t border-line pt-3">
+        <p className="mb-2 text-sm font-medium">Bridge tokens</p>
+        {(tokens?.bridges ?? []).length > 0 && (
+          <ul className="mb-3 space-y-1 text-sm">
+            {tokens.bridges.map((b: Any) => (
+              <li key={b.id} className="flex flex-wrap items-center gap-2">
+                <span>{b.name}</span>
+                <span className="text-xs text-muted">created {time(b.created_at)}, last seen {b.last_seen_at ? time(b.last_seen_at) : "never"}</span>
+                {b.revoked ? <Badge tone="muted">revoked</Badge> : <Button tone="danger" onClick={() => revoke(b.id)}>Revoke</Button>}
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="grid gap-3 md:grid-cols-3">
+          <Field id="bridge-name" label="Name (for example: home PC)" value={name} onChange={setName} />
+          <Field id="bridge-reason" label="Reason" value={reason} onChange={setReason} />
+          <div className="flex items-end"><Button disabled={name.trim().length < 2 || reason.trim().length < 5} onClick={create}>Create bridge token</Button></div>
+        </div>
+        {created && (
+          <div role="status" className="mt-3 rounded-lg border border-warn p-3 text-sm">
+            <p className="font-medium">Copy this token now. It is shown only once:</p>
+            <code className="mt-1 block break-all">{created}</code>
+            <p className="mt-1 text-xs text-muted">Put it in NEXUS_BRIDGE_TOKEN on your Windows machine. Never paste it in chat or email. Revoke it here if it is ever exposed.</p>
+          </div>
+        )}
+        {msg && <p role="alert" className="mt-2 text-sm text-down">{msg}</p>}
+      </div>
+    </Card>
+  );
+}
+
 export default function MultiAssetPage() {
   const { data, error, loading, reload } = useApi<Any>("/markets", 15000);
   return (
@@ -128,6 +198,7 @@ export default function MultiAssetPage() {
           <p className="rounded-lg border border-line bg-elevated p-3 text-sm">
             Global operating mode: <strong>{data.operating_mode}</strong>; server trading mode: <strong>{data.server_trading_mode}</strong>. A market switch can only narrow the operating mode, never widen it. Live trading is never switched on by code: each market needs its own typed phrase, your two-factor code and its live checks.
           </p>
+          <ExnessBridge ex={data.exness} reload={reload} />
           {data.markets.map((m: Any) => <MarketCard key={m.market} m={m} reload={reload} />)}
         </div>
       )}

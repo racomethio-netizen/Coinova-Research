@@ -32,6 +32,15 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-26 night: Exness (owner's forex broker): read-only MT5 bridge built.**
+  * Owner to do:
+    1. Open an Exness MT5 demo account and log in to it in MT5 on Windows.
+    2. Install Python 3.12 and run `pip install -r apps/mt5_bridge/requirements.txt`.
+    3. Create a token on All markets.
+    4. Run `nexus_mt5_bridge.py` with `NEXUS_URL` and `NEXUS_BRIDGE_TOKEN`.
+  * Then: pre-registered tests on Exness prices, spreads and swaps; the demo-only order
+    path after that.
+
 * **2026-11-26 night: multi-asset Stage 3 (owner: "do it all").**
   * Stage 1 deployed at 21:2x UTC (Render 036dd07).
   * Tests:

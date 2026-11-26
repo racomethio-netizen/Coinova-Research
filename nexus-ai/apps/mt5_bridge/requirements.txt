@@ -1,0 +1,2 @@
+# Windows only. Pinned; released 2026-09-27.
+MetaTrader5==5.0.6231

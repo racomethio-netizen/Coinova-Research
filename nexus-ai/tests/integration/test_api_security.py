@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import os
+import time
 from collections.abc import Iterator
 from typing import Any
 
@@ -831,7 +833,7 @@ def test_markets_overview_and_per_market_switch(client: TestClient) -> None:
     for k in ("commodities", "forex"):
         assert by[k]["autonomy"] == "RESEARCH" and by[k]["allowed"] == ["OFF", "RESEARCH"]
     for k in ("stocks", "commodities", "forex"):
-        assert all(v["connector"] == "not_built" for v in by[k]["venues"]
+        assert all(v["connector"] in ("not_built", "read_only") for v in by[k]["venues"]
                    if v["role"] == "broker")
         assert by[k]["live_blockers"] and by[k]["paper_positions"] is None
     r = client.post("/api/v1/markets/forex/autonomy",
@@ -863,3 +865,88 @@ def test_markets_overview_and_per_market_switch(client: TestClient) -> None:
     assert r.status_code == 200
     audit = client.get("/api/v1/security").json()["audit"]
     assert sum(1 for a in audit if a["action"] == "market_autonomy_set") >= 2
+
+
+def _snapshot(**over: Any) -> dict[str, Any]:
+    day = 86400
+    now = int(time.time())
+    base = now - now % day                              # today 00:00 UTC
+    offset = 2                                          # broker server time UTC+2
+    bars = [[base - day * (i + 1) + offset * 3600, 1.1, 1.2, 1.0, 1.15, 100]
+            for i in range(3)][::-1]
+    bars.append([base + offset * 3600, 1.15, 1.16, 1.14, 1.155, 5])     # forming: dropped
+    snap = {"bridge_version": "1.0", "read_only": True, "server_utc_offset_hours": offset,
+            "account": {"login": 87654321, "trade_mode": "demo", "currency": "USD",
+                        "balance": "10000", "equity": "10010", "margin": "0",
+                        "margin_free": "10010", "leverage": 2000, "server": "Exness-MT5Trial",
+                        "company": "Exness"},
+            "symbols": [
+                {"name": n, "base_name": b, "digits": 5, "point": "0.00001",
+                 "contract_size": cs, "volume_min": "0.01", "volume_step": "0.01",
+                 "volume_max": "200", "swap_long": "-7.1", "swap_short": "1.2",
+                 "spread_points": 12, "currency_base": cb, "currency_profit": "USD",
+                 "bid": "1.0981", "ask": "1.0982", "quote_time": now}
+                for n, b, cs, cb in (("EURUSDm", "EURUSD", "100000", "EUR"),
+                                     ("XAUUSDm", "XAUUSD", "100", "XAU"),
+                                     ("US500m", "US500", "1", "US500"))],
+            "bars": {"EURUSDm": bars},
+            "positions": [{"symbol": "EURUSDm", "side": "sell", "volume": "0.01",
+                           "price_open": "1.1", "profit": "-1.5", "swap": "-0.2"}],
+            "unresolved": ["USOIL"]}
+    snap.update(over)
+    return snap
+
+
+def test_exness_bridge_tokens_and_read_only_snapshots(client: TestClient,
+                                                      migrated_engine: Engine) -> None:
+    url = "/api/v1/bridge/mt5/snapshot"
+    assert client.post(url, json=_snapshot()).status_code == 401                # no token
+    assert client.post(url, json=_snapshot(),
+                       headers={"Authorization": "Bearer nxb_wrong"}).status_code == 401
+    assert client.post("/api/v1/bridge-tokens", json={"name": "pc", "reason": "x"},
+                       headers=CSRF).status_code == 401                          # signed out
+    login(client)
+    r = client.post("/api/v1/bridge-tokens", json={"name": "home pc", "reason": "exness demo"},
+                    headers=CSRF)
+    assert r.status_code == 200 and r.json()["token"].startswith("nxb_")
+    token, bid = r.json()["token"], r.json()["id"]
+    listed = client.get("/api/v1/bridge-tokens").json()["bridges"]
+    assert listed[0]["name"] == "home pc" and "token" not in listed[0]       # never shown again
+    auth = {"Authorization": f"Bearer {token}"}
+    bad = client.post(url, json=_snapshot(read_only=False), headers=auth)
+    assert bad.status_code == 409
+    assert client.post(url, json=_snapshot(symbols=[{"name": "EUR;DROP", "base_name": "x"}]),
+                       headers=auth).status_code == 422
+    ok = client.post(url, json=_snapshot(), headers=auth)
+    assert ok.status_code == 200, ok.text
+    body = ok.json()
+    assert body["bars_written"] == 3                                    # forming bar dropped
+    assert set(body["need_history"]) == {"EURUSDm", "XAUUSDm", "US500m"}
+    with migrated_engine.begin() as c:
+        from sqlalchemy import text
+        pairs = {r[0]: r[1:] for r in c.execute(text(
+            "SELECT p.symbol, p.asset_class, p.instrument_type, p.contract_multiplier, "
+            "p.exchange_symbol FROM trading_pairs p JOIN exchanges e ON e.id = p.exchange_id "
+            "WHERE e.code = 'exness'"))}
+        assert pairs["EURUSD"][:2] == ("forex", "fx_spot") and pairs["EURUSD"][3] == "EURUSDm"
+        assert pairs["XAUUSD"][:2] == ("commodities", "cfd") and pairs["XAUUSD"][2] == 100
+        assert pairs["US500"][:2] == ("stocks", "cfd")
+        times = [r[0] for r in c.execute(text(
+            "SELECT c.open_time FROM market_candles c JOIN trading_pairs p ON p.id = c.pair_id "
+            "WHERE p.exchange_symbol = 'EURUSDm' ORDER BY 1"))]
+        assert len(times) == 3 and all(t.hour == 0 for t in times)       # UTC+2 -> UTC
+    m = {x["market"]: x for x in client.get("/api/v1/markets").json()["markets"]}
+    ex = m["forex"]["exness"]
+    assert ex["connected"] is True and ex["trade_mode"] == "demo" and ex["read_only"] is True
+    assert ex["account"] == "***321" and "87654321" not in json.dumps(m)  # login masked
+    assert [s["base_name"] for s in ex["symbols"]] == ["EURUSD"]
+    assert [s["base_name"] for s in m["commodities"]["exness"]["symbols"]] == ["XAUUSD"]
+    assert client.post(f"/api/v1/bridge-tokens/{bid}/revoke", headers=CSRF).status_code == 200
+    assert client.post(url, json=_snapshot(), headers=auth).status_code == 401  # revoked
+    audit = {a["action"] for a in client.get("/api/v1/security").json()["audit"]}
+    assert {"bridge_token_created", "bridge_token_revoked"} <= audit
+    with migrated_engine.begin() as c:
+        c.execute(text("DELETE FROM market_candles WHERE source = 'mt5'"))
+        c.execute(text("DELETE FROM trading_pairs WHERE exchange_id = "
+                       "(SELECT id FROM exchanges WHERE code = 'exness')"))
+        c.execute(text("DELETE FROM exchanges WHERE code = 'exness'"))

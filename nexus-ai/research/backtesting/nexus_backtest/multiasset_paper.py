@@ -102,6 +102,34 @@ def replay(ndx: pd.Series) -> list[dict[str, Any]]:
              if row["trade"] else None} for d, row in led.iterrows()]
 
 
+def exness_rows(factory: Any, market: Market) -> list[dict[str, Any]]:
+    """Analysis of the daily bars the read-only Exness bridge has stored for this market
+    (``market_candles``, source mt5). Empty when no bridge has reported."""
+    from nexus_db import models, transaction
+    from sqlalchemy import select
+
+    out = []
+    with transaction(factory) as s:
+        pairs = s.execute(select(models.TradingPair.id, models.TradingPair.symbol,
+                                 models.TradingPair.exchange_symbol)
+                          .join(models.Exchange, models.Exchange.id == models.TradingPair.exchange_id)
+                          .where(models.Exchange.code == "exness",
+                                 models.TradingPair.asset_class == market.value)
+                          .order_by(models.TradingPair.symbol)).all()
+        for pid, sym, native in pairs:
+            rows = s.execute(select(models.MarketCandle.open_time, models.MarketCandle.close)
+                             .where(models.MarketCandle.pair_id == pid,
+                                    models.MarketCandle.timeframe == "1d")
+                             .order_by(models.MarketCandle.open_time.desc()).limit(400)).all()
+            if not rows:
+                continue
+            ser = pd.Series([float(c) for _, c in rows][::-1],
+                            index=pd.DatetimeIndex([t for t, _ in rows][::-1]))
+            out.append({"symbol": f"EXNESS:{sym}", "name": f"{sym} (Exness {native})",
+                        **analyse(ser, ann=252)})
+    return out
+
+
 # ---------------------------------------------------------------------------- fetch
 async def fetch_fred(client: httpx.AsyncClient, series: str, since: datetime) -> pd.Series:
     r = await client.get(FRED_URL, params={"id": series, "cosd": since.strftime("%Y-%m-%d")})
@@ -166,7 +194,8 @@ async def step(factory: Any, redis: Any, client: httpx.AsyncClient,
             ndx_row, st_errors = None, [f"NDX: {type(exc).__name__}: {str(exc)[:120]}"]
         perps = await _section({k: fetch_perp(client, redis, k, now) for k in STOCK_PERPS},
                                ann=365, names=STOCK_PERPS, now=now)
-        st["instruments"] = ([ndx_row] if ndx_row else []) + perps["instruments"]
+        st["instruments"] = ([ndx_row] if ndx_row else []) + perps["instruments"] + \
+            exness_rows(factory, Market.STOCKS)
         st["errors"] = st_errors + perps["errors"]
         if at_least(auto[Market.STOCKS], Autonomy.PAPER) and ndx is not None:
             st["forward"] = _record(factory, replay(ndx))
@@ -196,7 +225,7 @@ async def step(factory: Any, redis: Any, client: httpx.AsyncClient,
                 out.append(row)
             except Exception as exc:
                 errors.append(f"{cur}: {type(exc).__name__}: {str(exc)[:120]}")
-        fx.update(instruments=out, errors=errors)
+        fx.update(instruments=out + exness_rows(factory, Market.FOREX), errors=errors)
     status["markets"]["forex"] = fx
 
     # Commodities: Binance commodity perpetuals.
@@ -205,6 +234,7 @@ async def step(factory: Any, redis: Any, client: httpx.AsyncClient,
         co.update(await _section({k: fetch_perp(client, redis, k, now)
                                   for k in COMMODITY_PERPS}, ann=365, names=COMMODITY_PERPS,
                                  now=now))
+        co["instruments"] = co["instruments"] + exness_rows(factory, Market.COMMODITIES)
     status["markets"]["commodities"] = co
 
     await redis.set(STATUS_KEY, json.dumps(status, default=str), ex=3 * 86400)

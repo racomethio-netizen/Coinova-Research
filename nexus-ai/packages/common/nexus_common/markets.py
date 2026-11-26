@@ -61,7 +61,7 @@ class Venue:
     code: str
     name: str
     instruments: tuple[str, ...]
-    connector: str                    # "built" | "not_built"
+    connector: str                    # "built" | "read_only" (data only) | "not_built"
     access: str                       # how NEXUS talks to it
     owner_needs: tuple[str, ...] = ()
     notes: str = ""
@@ -114,6 +114,20 @@ IBKR = Venue(
 
 FRED = "FRED (Federal Reserve Bank of St. Louis)"
 
+EXNESS = Venue(
+    "exness_mt5", "Exness (MetaTrader 5)",
+    ("forex pairs", "gold, silver, oil and other CFDs", "index and stock CFDs"),
+    "read_only",
+    "NEXUS bridge next to the owner's logged-in MT5 terminal on Windows; it sends data "
+    "out to NEXUS, nothing comes in",
+    ("an Exness MT5 account (a demo account first)",
+     "a Windows PC or VPS running the MT5 terminal, logged in",
+     "the NEXUS bridge (apps/mt5_bridge) running there with a token created on the All "
+     "markets page"),
+    "Read-only: prices, contract details, account summary and positions. NEXUS has no "
+    "order path to Exness. Exness offers high leverage; NEXUS's 1x notional ceiling "
+    "applies whatever the account allows.")
+
 MARKETS: dict[Market, MarketSpec] = {
     Market.CRYPTO: MarketSpec(
         Market.CRYPTO, "Cryptocurrency",
@@ -129,7 +143,7 @@ MARKETS: dict[Market, MarketSpec] = {
         notes=("Existing NEXUS crypto stack; behaviour unchanged at the default (PAPER).",)),
     Market.STOCKS: MarketSpec(
         Market.STOCKS, "Stocks and ETFs",
-        (IBKR,
+        (IBKR, EXNESS,
          Venue("fred_stocks", FRED, ("NASDAQ-100 index (daily close)", "3-month T-bill"),
                "built", "public CSV, daily", role="data",
                notes="Research data; the NASDAQ-100 volatility-managed rule passed its "
@@ -146,10 +160,7 @@ MARKETS: dict[Market, MarketSpec] = {
                "(check the current FINRA rule).", "T+1 settlement; short sales need borrow.")),
     Market.COMMODITIES: MarketSpec(
         Market.COMMODITIES, "Commodities",
-        (IBKR, Venue("mt5_cfd", "MetaTrader 5 broker (CFDs)",
-                      ("gold, silver, oil, gas CFDs (broker-dependent)",), "not_built",
-                      "MetaTrader5 Python package (Windows only, Stage 5)",
-                      ("an MT5 broker account", "a Windows host running the MT5 terminal")),
+        (IBKR, EXNESS,
          Venue("binance_commodity_perps", "Binance USD-M commodity perpetuals",
                ("gold, silver, platinum, palladium, crude oil, natural gas, copper",), "built",
                "existing Binance futures market data (public klines)", role="data",
@@ -163,13 +174,7 @@ MARKETS: dict[Market, MarketSpec] = {
                "refuses the trade.")),
     Market.FOREX: MarketSpec(
         Market.FOREX, "Forex",
-        (Venue("mt5", "MetaTrader 5 broker", ("major, minor and supported exotic pairs",),
-               "not_built", "MetaTrader5 Python package (Windows only, Stage 5)",
-               ("an MT5 broker account (demo first)", "a Windows host running the MT5 "
-                "terminal")),
-         Venue("oanda", "OANDA v20 (alternative)", ("major and minor pairs",), "not_built",
-               "REST API, runs on Linux (Stage 5 option)",
-               ("an OANDA account available in the owner's country",)),
+        (EXNESS,
          Venue("fred_fx", FRED, ("EUR, GBP, AUD, NZD, JPY, CAD, CHF against USD (H.10)",
                                  "3-month interest rates"), "built", "public CSV, weekly "
                "release of daily rates", role="data",

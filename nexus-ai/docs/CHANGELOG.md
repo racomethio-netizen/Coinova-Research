@@ -4,6 +4,15 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-26
 
+- **Exness (MetaTrader 5) read-only bridge.** The owner's forex broker.
+  * The Windows bridge program (`apps/mt5_bridge`) has no order code.
+  * The bridge API uses hashed, revocable tokens (migration 0022).
+  * NEXUS stores contract details and closed daily bars in UTC, and keeps a masked
+    account summary.
+  * All markets has an Exness card and token management. The research view includes
+    Exness prices.
+  * There is no order path.
+
 - **Multi-asset Stage 2:** trading sessions (24/7, FX 24/5, NYSE, CME via
   `exchange_calendars` 4.13.2), the instrument registry, base-currency conversion that
   never guesses, and migration 0021 (asset class, instrument type, contract multiplier on

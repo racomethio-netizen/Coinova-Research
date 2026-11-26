@@ -62,7 +62,10 @@ def test_no_broker_is_described_as_connected_outside_crypto():
     for d in describe():
         if d["market"] != "crypto":
             brokers = [v for v in d["venues"] if v["role"] == "broker"]
-            assert brokers and all(v["connector"] == "not_built" for v in brokers)
+            assert brokers and all(v["connector"] in ("not_built", "read_only")
+                                   for v in brokers)
+            assert any(v["code"] == "exness_mt5" and v["connector"] == "read_only"
+                       for v in brokers)
             assert all(v["role"] == "data" for v in d["venues"] if v["connector"] == "built")
             assert d["capabilities"]["live_connector"] is False
     assert live_phrase(Market.FOREX) == "ENABLE LIVE FOREX"

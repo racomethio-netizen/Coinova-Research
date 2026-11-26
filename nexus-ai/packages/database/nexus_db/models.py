@@ -662,6 +662,26 @@ class SystemEvent(Base):
     created_at: Mapped[created_at]
 
 
+class BrokerBridge(Base):
+    """A read-only broker bridge (Exness MT5 first). Only the token's SHA-256 is stored."""
+
+    __tablename__ = "broker_bridges"
+    __table_args__ = (
+        CheckConstraint(in_list("venue", ("exness_mt5",)), name="venue_valid"),
+        CheckConstraint("length(token_hash) = 64", name="hash_len"),
+        UniqueConstraint("token_hash"),
+    )
+
+    id: Mapped[bigint_pk]
+    name: Mapped[str] = mapped_column(String(64))
+    venue: Mapped[str] = mapped_column(String(32))
+    token_hash: Mapped[str] = mapped_column(String(64))
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    created_at: Mapped[created_at]
+    last_seen_at: Mapped[datetime | None]
+    revoked_at: Mapped[datetime | None]
+
+
 class AuditLog(Base):
     """Append-only (UPDATE/DELETE blocked by a trigger in the initial migration)."""
 

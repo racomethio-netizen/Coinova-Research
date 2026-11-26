@@ -1029,6 +1029,16 @@ async def markets_overview(s: Session = Depends(db), redis: Any = Depends(redis_
     crypto_blockers = await _live_mode_blockers(s, redis, settings)
     raw_research = await redis.get(mp.STATUS_KEY)
     research = json.loads(raw_research) if raw_research else None
+    from nexus_api.bridge import STATUS_KEY as EXNESS_KEY
+
+    raw_exness = await redis.get(EXNESS_KEY)
+    exness = json.loads(raw_exness) if raw_exness else None
+    if exness:
+        from datetime import UTC as _UTC
+        from datetime import datetime as _dt
+
+        seen = _dt.fromisoformat(exness["at"])
+        exness["connected"] = (_dt.now(_UTC) - seen).total_seconds() < 900
     fwd_rows = s.scalars(select(models.ForwardTestEvent).where(
         models.ForwardTestEvent.run == mp.RUN).order_by(models.ForwardTestEvent.at)).all()
     stocks_forward = mp.summary([r.data for r in fwd_rows if r.kind == "day"],
@@ -1054,12 +1064,68 @@ async def markets_overview(s: Session = Depends(db), redis: Any = Depends(redis_
             d["live_blockers"] = MARKETS[mk].missing_for(Autonomy.LIVE)
             d["paper_positions"] = None
             d["research"] = ((research or {}).get("markets") or {}).get(mk.value)
+            if exness:
+                cls = {"stocks": "stocks", "forex": "forex", "commodities": "commodities"}
+                d["exness"] = {**{k: v for k, v in exness.items() if k != "symbols"},
+                               "symbols": [x for x in exness.get("symbols", [])
+                                           if x.get("class") == cls[mk.value]]}
             d["research_at"] = (research or {}).get("at")
             if mk is Market.STOCKS:
                 d["paper_forward"] = stocks_forward
         out.append(d)
-    return {"operating_mode": op.value, "markets": out,
+    return {"operating_mode": op.value, "markets": out, "exness": exness,
             "server_trading_mode": settings.trading_mode.value}
+
+
+class BridgeTokenBody(BaseModel):
+    name: str = Field(min_length=2, max_length=64, pattern=r"^[A-Za-z0-9 ._-]+$")
+    reason: str = Field(min_length=5, max_length=500)
+
+
+@router.get("/bridge-tokens", dependencies=[Depends(owner)])
+async def list_bridge_tokens(s: Session = Depends(db)) -> dict[str, Any]:
+    rows = s.scalars(select(models.BrokerBridge).order_by(models.BrokerBridge.id.desc())).all()
+    return {"bridges": [{"id": b.id, "name": b.name, "venue": b.venue,
+                         "created_at": b.created_at.isoformat() if b.created_at else None,
+                         "last_seen_at": b.last_seen_at.isoformat() if b.last_seen_at else None,
+                         "revoked": b.revoked_at is not None} for b in rows]}
+
+
+@router.post("/bridge-tokens", dependencies=[Depends(owner)])
+async def create_bridge_token(body: BridgeTokenBody, s: Session = Depends(db),
+                              viewer: Viewer = Depends(current_viewer)) -> dict[str, Any]:
+    """A token for a read-only Exness MT5 bridge. Shown ONCE; only its hash is stored."""
+    import secrets
+
+    from nexus_api.bridge import token_hash
+
+    token = "nxb_" + secrets.token_urlsafe(32)
+    bridge = models.BrokerBridge(name=body.name, venue="exness_mt5",
+                                 token_hash=token_hash(token), created_by=viewer.user.id)
+    s.add(bridge)
+    s.flush()
+    repo.record_audit(s, actor=viewer.actor, action="bridge_token_created", user_id=viewer.user.id,
+                      target_type="broker_bridge", target_id=str(bridge.id),
+                      details={"name": body.name, "venue": "exness_mt5", "reason": body.reason})
+    return {"id": bridge.id, "token": token,
+            "note": "Copy it now: it is shown only once. Put it in the bridge's settings on "
+                    "your Windows machine, never in chat or email."}
+
+
+@router.post("/bridge-tokens/{bridge_id}/revoke", dependencies=[Depends(owner)])
+async def revoke_bridge_token(bridge_id: int, s: Session = Depends(db),
+                              viewer: Viewer = Depends(current_viewer)) -> dict[str, Any]:
+    from nexus_common.timeutil import utcnow as _now
+
+    bridge = s.get(models.BrokerBridge, bridge_id)
+    if bridge is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unknown bridge")
+    if bridge.revoked_at is None:
+        bridge.revoked_at = _now()
+        repo.record_audit(s, actor=viewer.actor, action="bridge_token_revoked",
+                          user_id=viewer.user.id, target_type="broker_bridge",
+                          target_id=str(bridge.id), details={"name": bridge.name})
+    return {"id": bridge.id, "revoked": True}
 
 
 @router.get("/research/multi-asset")

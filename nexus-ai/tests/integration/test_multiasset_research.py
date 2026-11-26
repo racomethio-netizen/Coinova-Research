@@ -44,7 +44,8 @@ def setup(migrated_engine: Any, monkeypatch: pytest.MonkeyPatch) -> Any:
 
     monkeypatch.setattr(mp, "fetch_fred", fred)
     monkeypatch.setattr(mp, "fetch_perp", perp)
-    return factory, MemRedis(), calls
+    yield factory, MemRedis(), calls
+    truncate(migrated_engine, "forward_test_events, audit_logs")   # leave nothing behind
 
 
 def _set(factory: Any, market: str, autonomy: str) -> None:
@@ -92,3 +93,39 @@ async def test_switches_are_obeyed(setup: Any) -> None:
     calls.clear()
     st = await mp.step(factory, redis, None)  # type: ignore[arg-type]
     assert st["markets"]["stocks"] == {"autonomy": "OFF"} and calls == []
+
+
+async def test_exness_bars_join_the_research_view(setup: Any, migrated_engine: Any) -> None:
+    from datetime import UTC, datetime, timedelta
+    from decimal import Decimal
+
+    factory, redis, _ = setup
+    with transaction(factory) as s:
+        ex = models.Exchange(id=99, code="exness", name="Exness (MetaTrader 5)",
+                             is_enabled=False, capabilities={})
+        s.add(ex)
+        s.flush()
+        pid = repo.upsert_trading_pair(
+            s, exchange_id=99, symbol="XAUUSD", exchange_symbol="XAUUSDm", base="XAU",
+            quote="USD", price_tick=Decimal("0.01"), amount_step=Decimal("0.01"),
+            min_amount=Decimal("0.01"), min_notional=None, maker_fee=None, taker_fee=None,
+            synced_at=datetime.now(UTC))
+        s.get(models.TradingPair, pid).asset_class = "commodities"
+        t0 = datetime(2026, 1, 1, tzinfo=UTC)
+        repo.upsert_candles(s, pid, "1d", [
+            repo.CandleRow(t0 + timedelta(days=i), Decimal(3000 + i), Decimal(3010 + i),
+                           Decimal(2990 + i), Decimal(3005 + i), Decimal(1)) for i in range(60)],
+            source="mt5")
+    try:
+        st = await mp.step(factory, redis, None)  # type: ignore[arg-type]
+        rows = [i for i in st["markets"]["commodities"]["instruments"]
+                if i["symbol"] == "EXNESS:XAUUSD"]
+        assert rows and rows[0]["last"] == 3064.0 and rows[0]["name"] == "XAUUSD (Exness XAUUSDm)"
+        assert not [i for i in st["markets"]["forex"]["instruments"]
+                    if i["symbol"].startswith("EXNESS:")]
+    finally:
+        from sqlalchemy import text
+        with migrated_engine.begin() as c:
+            c.execute(text("DELETE FROM market_candles WHERE source = 'mt5'"))
+            c.execute(text("DELETE FROM trading_pairs WHERE exchange_id = 99"))
+            c.execute(text("DELETE FROM exchanges WHERE id = 99"))
