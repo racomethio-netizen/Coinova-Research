@@ -4,6 +4,13 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-26
 
+- **Rebalancing bot and cross-sectional momentum (pre-registered).**
+  * Rebalancing R3 (BTC 40 / ETH 40 / USDT 20, 5-point band) PASSED: +38.4% vs +28.4%
+    held, worst drop −51.0% vs −53.0%.
+    * Paper forward test from 2026-11-27 (worker `rebalance-paper`).
+  * Cross-sectional momentum: 0 of 6 passed.
+  * Results are on the Strategy test page.
+
 - **Adaptive grid system (PAPER ONLY), owner master command.** See docs/ADAPTIVE_GRID.md.
   * Built:
     * dynamic universe (spot and futures);

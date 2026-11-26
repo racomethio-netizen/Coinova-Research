@@ -777,3 +777,12 @@ def test_adaptive_grid_endpoints_controls_and_limits(client: TestClient) -> None
     assert good.status_code == 200 and good.json()["limits"]["daily_loss"] == "0.005"
     audit = client.get("/api/v1/security").json()["audit"]
     assert {"agrid_emergency_shutdown", "agrid_limits"} <= {a["action"] for a in audit}
+
+
+def test_rebalancing_research_endpoint(client: TestClient) -> None:
+    assert client.get("/api/v1/research/rebalancing").status_code == 401
+    login(client)
+    r = client.get("/api/v1/research/rebalancing").json()
+    assert r["backtest"]["summary"]["rebalancing_passed"] == ["R3_BTC40_ETH40_USDT20:band"]
+    assert r["backtest"]["summary"]["xsmom_passed"] == []
+    assert r["forward"]["paper"] is True and r["forward"]["days"] == 0

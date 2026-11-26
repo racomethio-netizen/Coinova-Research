@@ -43,18 +43,20 @@ def load_closes(data: Path) -> pd.DataFrame:
 
 # ------------------------------------------------------------------------ rebalancing
 def rebalance(closes: pd.DataFrame, target: dict[str, float], *, mode: str = "band",
-              cost: float = COST) -> dict[str, Any]:
+              cost: float = COST, start: pd.Timestamp = START, end: pd.Timestamp = END,
+              initial: float = 10_000.0) -> dict[str, Any]:
     """Equity of a basket rebalanced to ``target`` (threshold band or weekly), and of the
     same basket held without rebalancing. Both start fully invested on the first day."""
-    px = closes.loc[(closes.index >= START) & (closes.index < END)]
+    px = closes.loc[(closes.index >= start) & (closes.index < end)]
     assets = list(target)
     w = np.array([target[a] for a in assets])
     prices = np.column_stack([px[a].to_numpy() if a != "USDT" else np.ones(len(px))
                               for a in assets])
-    equity0 = 10_000.0
+    equity0 = initial
     units = equity0 * (1 - cost * (1 - target.get("USDT", 0))) * w / prices[0]
     hold_units = units.copy()
     eq, hold, trades, turnover = [], [], 0, 0.0
+    log: list[dict[str, Any]] = []
     for i in range(len(px)):
         val = units * prices[i]
         total = val.sum()
@@ -70,10 +72,14 @@ def rebalance(closes: pd.DataFrame, target: dict[str, float], *, mode: str = "ba
             units = total * w / prices[i]
             trades += 1
             turnover += traded.sum()
+            log.append({"date": str(px.index[i].date()), "fee": float(fee),
+                        "traded": float(traded.sum()),
+                        "weights_before": {a: float(x) for a, x in zip(assets, cur,
+                                                                      strict=True)}})
         eq.append((units * prices[i]).sum())
         hold.append((hold_units * prices[i]).sum())
     return {"equity": pd.Series(eq, index=px.index), "hold": pd.Series(hold, index=px.index),
-            "rebalances": trades, "turnover": turnover / equity0}
+            "rebalances": trades, "turnover": turnover / equity0, "log": log}
 
 
 # ------------------------------------------------------------- cross-sectional momentum

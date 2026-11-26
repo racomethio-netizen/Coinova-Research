@@ -39,3 +39,21 @@ def test_xsmom_has_no_lookahead_and_respects_filter():
     crash["BTC"] = 100 * np.exp(-np.linspace(0, 3, len(px)))      # BTC always below its MA
     f = rx.xsmom(crash, 1, True)
     assert f["exposure"] < 0.05
+
+
+def test_forward_replay_starts_on_start_day_and_matches_backtest_code():
+    from datetime import timedelta
+
+    from nexus_backtest import rebalance_paper as rp
+
+    idx = pd.date_range(rp.START - timedelta(days=30), periods=60, freq="D", tz="UTC")
+    rng = np.random.default_rng(5)
+    bars = {s: pd.DataFrame({"open": 1.0, "close": 100 * np.exp(np.cumsum(
+        rng.normal(0, 0.04, 60)))}, index=idx) for s in rp.SYMBOLS.values()}
+    days = rp.replay(bars)
+    assert days and days[0]["date"] == str(rp.START.date())
+    assert abs(days[0]["equity"] - rp.INITIAL) / rp.INITIAL < 0.01   # entry costs only
+    s = rp.summary(days, 0, [], rp.START + timedelta(days=40))
+    assert s["paper"] is True and s["days"] == len(days)
+    early = {k: v[v.index < rp.START] for k, v in bars.items()}
+    assert rp.replay(early) == []

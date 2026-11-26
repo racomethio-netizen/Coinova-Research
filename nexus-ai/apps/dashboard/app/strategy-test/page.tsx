@@ -7,6 +7,46 @@ import { useApi } from "@/lib/hooks";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
 
+function Rebalancing() {
+  const { data: r } = useApi<Any>("/research/rebalancing", 60_000);
+  const bt = r?.backtest;
+  if (!bt) return null;
+  const f = r.forward;
+  const rows = Object.entries(bt.rebalancing ?? {}).map(([k, v]: [string, Any]) => ({ key: k, ...v }));
+  const mom = Object.entries(bt.xsmom ?? {}).map(([k, v]: [string, Any]) => ({ key: k, ...v }));
+  return (
+    <>
+      <Card title="Rebalancing bot vs holding the same coins (Jan 2024 – Oct 2026)" actions={<Badge tone={bt.summary?.rebalancing_passed?.length ? "good" : "bad"}>{bt.summary?.rebalancing_passed?.length ? `${bt.summary.rebalancing_passed.length} passed` : "none passed"}</Badge>}>
+        <Table rows={rows} empty="No result." columns={[
+          { key: "key", label: "Basket : rule" },
+          { key: "s", label: "Rebalanced", numeric: true, render: (x: Any) => pct(x.strategy?.net_return, 1) },
+          { key: "h", label: "Just held", numeric: true, render: (x: Any) => pct(x.buy_and_hold?.net_return, 1) },
+          { key: "dd", label: "Worst drop", numeric: true, render: (x: Any) => pct(x.strategy?.max_drawdown, 1) },
+          { key: "n", label: "Rebalances", numeric: true, render: (x: Any) => x.rebalances },
+          { key: "v", label: "Verdict", render: (x: Any) => x.key.endsWith(":weekly") ? <span className="text-xs text-muted">reported only</span> : <Badge tone={x.passed ? "good" : "bad"}>{x.passed ? "passed" : "failed"}</Badge> },
+        ]} />
+        <p className="mt-2 text-xs text-muted">Passing means it beat holding the same basket after costs. It still carries the full market risk: its worst drop was about half the money, like holding.</p>
+      </Card>
+      <Card title="Rebalancing bot: paper forward test (BTC 40% / ETH 40% / USDT 20%)">
+        {f?.days ? (
+          <p className="text-sm">Started {time(f.started_at)} with {num(f.initial, 0)} paper USDT: now {num(f.equity, 2)} ({pct(f.return_since_start, 2)}); holding the same basket would be {num(f.hold_equity, 2)} ({pct(f.hold_return, 2)}). {f.rebalances?.length ?? 0} rebalances so far.</p>
+        ) : <p className="text-sm">{f?.message ?? "Waiting for the first closed day."}</p>}
+      </Card>
+      <Card title="Cross-sectional momentum (top 3 of 10 coins, weekly)" actions={<Badge tone={bt.summary?.xsmom_passed?.length ? "good" : "bad"}>{bt.summary?.xsmom_passed?.length ? "passed" : "none passed"}</Badge>}>
+        <Table rows={mom} empty="No result." columns={[
+          { key: "key", label: "Variant" },
+          { key: "r", label: "Net", numeric: true, render: (x: Any) => pct(x.strategy?.net_return, 1) },
+          { key: "sh", label: "Sharpe", numeric: true, render: (x: Any) => num(x.strategy?.sharpe, 2) },
+          { key: "dd", label: "Worst drop", numeric: true, render: (x: Any) => pct(x.strategy?.max_drawdown, 1) },
+          { key: "p", label: "p-value", numeric: true, render: (x: Any) => num(x.p_value, 3) },
+          { key: "why", label: "Failed checks", render: (x: Any) => <span className="text-xs text-muted">{Object.entries(x.gates ?? {}).filter(([, ok]) => !ok).map(([g]) => g).join(", ") || DASH}</span> },
+        ]} />
+        <p className="mt-2 text-xs text-muted">Holding BTC over the same period: {pct(bt.btc_hold?.net_return, 1)} (worst drop {pct(bt.btc_hold?.max_drawdown, 1)}). Rules written before the run: {r.preregistration}</p>
+      </Card>
+    </>
+  );
+}
+
 export default function StrategyTestPage() {
   const { data: r, error, loading } = useApi<Any>("/research/freqtrade-community");
   const s = r?.summary;
@@ -47,6 +87,7 @@ export default function StrategyTestPage() {
               { key: "reason", label: "Reason", render: (x: Any) => <span className="text-xs">{x.excluded || x.error || DASH}</span> },
             ]} />
           </Card>
+          <Rebalancing />
           <p className="text-xs text-muted">Generated {time(r.generated_at)} by {r.engine} from {r.source}. A strategy passes only if it made money, had a profit factor of at least 1.2, never fell more than 25%, made at least 50 trades, was positive in 2 of 3 years, stayed profitable at double fees, and its edge was statistically significant after correcting for testing many strategies at once.</p>
         </div>
       )}

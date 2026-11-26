@@ -35,7 +35,7 @@ def test_paper_mode_builds_both_workers():
     assert set(sup.commands) == {"market-data", "trader", "notifier", "news", "derivatives",
                                  "carry-paper", "forward-taker", "decision-log",
                                  "trend-paper", "spot-engine", "library-paper", "bot", "grid-paper",
-                                 "adaptive-grid"}
+                                 "adaptive-grid", "rebalance-paper"}
 
 
 def test_restarts_a_crashed_worker_and_stops_cleanly():
@@ -60,7 +60,7 @@ def test_inline_mode_selected():
     assert set(sup.workers) == {"market-data", "trader", "notifier", "news", "derivatives",
                                  "carry-paper", "forward-taker", "decision-log",
                                  "trend-paper", "spot-engine", "library-paper", "bot", "grid-paper",
-                                 "adaptive-grid"}
+                                 "adaptive-grid", "rebalance-paper"}
 
 
 def test_inline_restarts_crashes_and_stops_cleanly():
