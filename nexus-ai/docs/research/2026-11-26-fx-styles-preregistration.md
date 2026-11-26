@@ -129,3 +129,44 @@ The strategies:
 ## Results
 
 _(appended after the single run)_
+
+### Results of the single run (2026-11-26, harness commit 56e4b52)
+
+Output: `research/backtesting/nexus_backtest/results/fx_styles_2026-11.json`, with the FRED
+file hashes. Historical backtest only; no order was placed.
+
+**FAILED: none of the 5 passes. Carry came closest.**
+
+| G10, 2004-01 to 2026-10, 1× gross | Per year | Sharpe | Worst drop | p-value | 2004–2015 | 2016–2026 | Positive years | Failed gates |
+|---|---|---|---|---|---|---|---|---|
+| **Carry** | **+1.13%** | **0.30** | −16.2% | 0.07 | +13.4% | +14.0% | 16 of 23 | Sharpe ≥ 0.5, significance |
+| Dollar carry | +0.07% | 0.05 | −31.5% | 0.39 | −7.3% | +9.7% | 12 of 23 | 5 of 8 |
+| Momentum (3 months) | −1.18% | −0.28 | −34.5% | 0.93 | −2.1% | −22.0% | 5 of 23 | all 8 |
+| Value (5-year reversal) | +0.30% | 0.10 | −10.4% | 0.32 | +4.2% | +2.7% | 12 of 23 | Sharpe, significance, years |
+| Combined (carry + momentum + value) | +0.18% | 0.07 | −17.5% | 0.38 | +7.8% | −3.4% | 12 of 23 | 6 of 8 |
+
+**Carry in detail.**
+* Its worst year was 2008 (−10.9%); its best years were 2009 (+8.9%) and 2026 to date
+  (+5.6%).
+* Gains came from AUD (+10.2 points), JPY (+8.9, the funding side) and NZD (+8.1).
+* It held at 2× costs (+28.5% over the window) and without the best currency (+17.3%).
+* Turnover was low: about 0.8× a year.
+
+**Other details.**
+* Momentum lost mainly after 2016: Sharpe −0.74 in 2016–2026.
+* Correlations between styles were low (−0.21 to +0.24), as the literature says, but the
+  combination still earned almost nothing because momentum lost.
+
+**What it means.**
+* The institutional styles are real but **small** in G10 at NEXUS's 1× leverage ceiling.
+* Carry, the best of them, earned about 1.1% a year on top of the cash return, with a
+  2008-style crash risk.
+* Institutions run these styles with several times more leverage for a 5–10% volatility
+  target. NEXUS does not, by mandate.
+* **At Exness, carry depends on Exness's swap rates, not interbank rates.** Swap-free
+  accounts earn no carry at all. The read-only bridge already reports each symbol's swap
+  long/short, so the next honest step is to measure whether Exness's swaps pay positive
+  carry before testing anything on Exness.
+* Momentum, which most retail "trend" bots use, lost money in G10 since 2016.
+
+**Consequence.** Nothing is adopted and nothing is re-tuned. Forex stays RESEARCH.

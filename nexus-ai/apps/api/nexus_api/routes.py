@@ -1142,9 +1142,11 @@ async def multi_asset_research() -> dict[str, Any]:
 
     return {"trend": await asyncio.to_thread(load, "multi_asset_trend_2026-11.json"),
             "ndx_voltarget": await asyncio.to_thread(load, "ndx_voltarget_2026-11.json"),
+            "fx_styles": await asyncio.to_thread(load, "fx_styles_2026-11.json"),
             "preregistrations": [
                 "docs/research/2026-11-26-multi-asset-trend-preregistration.md",
-                "docs/research/2026-11-26-ndx-voltarget-preregistration.md"]}
+                "docs/research/2026-11-26-ndx-voltarget-preregistration.md",
+                "docs/research/2026-11-26-fx-styles-preregistration.md"]}
 
 
 @router.post("/markets/{market}/autonomy", dependencies=[Depends(owner)])

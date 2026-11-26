@@ -122,6 +122,14 @@ curl -X POST https://<host>/api/v1/markets/crypto/autonomy \
     docs/research/2026-11-26-ndx-voltarget-preregistration.md.
   * Commodities: not testable yet. No free tradable history is long enough (Binance's
     commodity perpetuals start late 2025 / 2026).
+  * **Forex institutional styles** on the 9 G10 currencies (carry, dollar carry, momentum,
+    value, combined), 2004–2026: **none passed**. See
+    docs/research/2026-11-26-fx-styles-preregistration.md.
+    * Carry came closest: +1.1% a year, Sharpe 0.30, 16 of 23 years positive, a 2008
+      crash.
+    * Momentum lost money.
+    * On Exness, carry depends on the broker's swap rates; measure them with the bridge
+      first.
 * **Worker `multiasset-research`** (every 6 hours), each part obeying its market's
   switch:
   * stocks: a NASDAQ-100 and stock-perpetual research view; under PAPER, the paper

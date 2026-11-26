@@ -32,6 +32,16 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-26 night: forex deep dive.**
+  * Institutional FX styles test on the G10 currencies: none passed. Carry came closest
+    (+1.1% a year at 1×).
+  * Next forex steps (need the Exness bridge running):
+    1. Record Exness swap long/short per pair, to check whether the broker pays carry.
+    2. Test the month-end London 4pm fix effect on Exness hourly bars (pre-registered).
+    3. Only a pass would get a demo-only order path.
+  * The Exness bridge and these results are committed, NOT deployed: waiting for the
+    owner's "Deploy".
+
 * **2026-11-26 night: Exness (owner's forex broker): read-only MT5 bridge built.**
   * Owner to do:
     1. Open an Exness MT5 demo account and log in to it in MT5 on Windows.

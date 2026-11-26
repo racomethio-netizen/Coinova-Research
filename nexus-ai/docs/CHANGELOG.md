@@ -4,6 +4,15 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-26
 
+- **Forex research (owner: "institutions and banks").**
+  * Researched bank and institutional FX practice: BIS on internalisation and execution
+    algorithms, academic carry, momentum and value, Deutsche Bank's Currency Returns
+    index.
+  * Pre-registered test of 5 styles on the G10 currencies, 2004–2026: none passed.
+    * Carry: +1.1% a year, Sharpe 0.30.
+    * Momentum: −1.2% a year.
+  * Results are on the Strategy test page.
+
 - **Exness (MetaTrader 5) read-only bridge.** The owner's forex broker.
   * The Windows bridge program (`apps/mt5_bridge`) has no order code.
   * The bridge API uses hashed, revocable tokens (migration 0022).

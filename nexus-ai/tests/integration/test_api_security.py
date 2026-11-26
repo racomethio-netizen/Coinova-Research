@@ -845,6 +845,9 @@ def test_markets_overview_and_per_market_switch(client: TestClient) -> None:
     m2 = client.get("/api/v1/research/multi-asset").json()
     assert m2["ndx_voltarget"]["passed"] is True
     assert m2["trend"]["summary"]["passed"] == []
+    assert m2["fx_styles"]["summary"]["passed"] == []
+    assert set(m2["fx_styles"]["strategies"]) == {"carry", "dollar_carry", "momentum", "value",
+                                                  "combined"}
     assert client.post("/api/v1/markets/gold/autonomy",
                        json={"autonomy": "OFF", "reason": "unknown"},
                        headers=CSRF).status_code == 404

@@ -58,7 +58,7 @@ const GATE_LABELS: Record<string, string> = {
   positive_strict_fill: "positive with stricter fills",
   drawdown_le_25pct: "worst drop within 25%", positive_4_of_5_years: "positive in 4 of 5 years", beats_reversal_baseline: "better than the simple reversal",
   positive_without_top3: "positive without the 3 best coins",
-  drawdown_le_20pct: "worst drop within 20%", positive_both_halves: "positive in both halves",
+  drawdown_le_20pct: "worst drop within 20%", positive_55pct_of_years: "positive in 55% of years", positive_both_halves: "positive in both halves",
   positive_60pct_of_years: "positive in 60% of years",
 };
 const VOL_NAMES: Record<string, string> = { BTC: "BTC", ETH: "ETH", BTC_ETH_50_50: "BTC/ETH 50/50" };
@@ -178,6 +178,9 @@ function MultiAsset() {
   const v = r.ndx_voltarget;
   const trows = Object.entries(t?.strategies ?? {}).map(([k, x]: [string, Any]) => ({ key: k, ...x }));
   const vrows = v ? [{ key: "Volatility-managed (15% target)", ...v.target_15 }, { key: "Held at 100%", ...v.hold }] : [];
+  const f = r.fx_styles;
+  const FX_NAMES: Record<string, string> = { carry: "Carry (buy high-interest, sell low-interest)", dollar_carry: "Dollar carry", momentum: "Momentum (3 months)", value: "Value (5-year reversal)", combined: "Combined (Deutsche Bank style)" };
+  const frows = Object.entries(f?.strategies ?? {}).map(([k, x]: [string, Any]) => ({ key: k, ...x }));
   return (
     <>
       {t && (
@@ -192,6 +195,19 @@ function MultiAsset() {
             { key: "why", label: "Failed checks", render: (x: Any) => <span className="text-xs text-muted">{failed(x.gates)}</span> },
           ]} />
           <p className="mt-2 text-xs text-muted">Seven currencies against the dollar (with their interest-rate carry) and the NASDAQ-100, official Federal Reserve (FRED) data, never more exposure than the money in the account. Trend following earned a little before 2016 and lost it afterwards. Holding the NASDAQ-100 over the same years: {pct(t.ndx_price_hold?.annual_return, 1)} a year (worst drop {pct(t.ndx_price_hold?.max_drawdown, 0)}).</p>
+        </Card>
+      )}
+      {f && (
+        <Card title="Forex: the institutional styles on the 9 G10 currencies (2004 – Oct 2026)" actions={<Badge tone={f.summary?.passed?.length ? "good" : "bad"}>{f.summary?.passed?.length ? "passed" : "none passed"}</Badge>}>
+          <Table rows={frows} empty="No result." columns={[
+            { key: "key", label: "Strategy", render: (x: Any) => FX_NAMES[x.key] ?? x.key },
+            { key: "a", label: "Per year", numeric: true, render: (x: Any) => <span className={x.annual_return > 0 ? "text-up" : "text-down"}>{pct(x.annual_return, 2)}</span> },
+            { key: "s", label: "Sharpe", numeric: true, render: (x: Any) => num(x.sharpe, 2) },
+            { key: "d", label: "Worst drop", numeric: true, render: (x: Any) => pct(x.max_drawdown, 1) },
+            { key: "p", label: "p-value", numeric: true, render: (x: Any) => num(x.p_value, 2) },
+            { key: "why", label: "Failed checks", render: (x: Any) => <span className="text-xs text-muted">{failed(x.gates)}</span> },
+          ]} />
+          <p className="mt-2 text-xs text-muted">The systematic styles banks and funds publish (carry, momentum, value; Deutsche Bank's Currency Returns index combines them), tested with interest-rate carry, real costs and no more exposure than the money in the account. Carry came closest: about 1.1% a year, positive in 16 of 23 years, with a 2008-style crash. At a retail broker such as Exness, carry depends on the broker's swap rates, which the Exness bridge reports. Banks' own forex profits come mostly from market making and internal matching of client orders, which a retail account cannot copy.</p>
         </Card>
       )}
       {v && (
