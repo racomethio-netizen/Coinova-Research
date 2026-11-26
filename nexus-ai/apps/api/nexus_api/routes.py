@@ -1209,6 +1209,18 @@ async def bot_action(action: Literal["start", "pause", "stop"], body: BotAction,
     return {"state": target.value}
 
 
+@router.get("/research/freqtrade-community")
+async def freqtrade_community() -> dict[str, Any]:
+    """Out-of-sample test of the public Freqtrade strategy collection (pre-registered
+    2026-11-23; one run). A backtest on historical data: no trade was placed."""
+    from nexus_backtest.freqtrade_community import load_result
+
+    res = await asyncio.to_thread(load_result)
+    if res is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no result recorded yet")
+    return res
+
+
 class GridRestartBody(BaseModel):
     reason: str = Field(min_length=5, max_length=300)
 

@@ -2,6 +2,18 @@
 
 Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
+## 2026-11-26
+
+- **Freqtrade community strategy test (pre-registered, one run).**
+  * 44 public strategies ran unchanged in Freqtrade 2026.9 on 2024-01 to 2026-10 Binance
+    data with 0.1% fees.
+  * 0 passed, 6 made money and 38 lost; BTC hold made +83.5% over the same window.
+  * Results are on the dashboard page **Strategy test**.
+- **Grid bot (paper).**
+  * Worker, append-only `grid_paper_events` (migration 0019), `/api/v1/grid-bot`, and an
+    owner-only restart after a stop-loss.
+  * Dashboard page **Grid bot**.
+
 ## 2026-11-23
 
 - **Live switch fix (owner: "real money switch doesn't work"):**

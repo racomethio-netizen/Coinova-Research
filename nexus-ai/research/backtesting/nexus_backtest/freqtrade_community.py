@@ -43,6 +43,17 @@ FEES = (0.001, 0.002)
 WALLET = 10_000.0
 
 
+RESULT_FILE = Path(__file__).with_name("results") / "freqtrade_community_2026-11.json"
+
+
+def load_result() -> dict[str, Any] | None:
+    """The committed result of the single pre-registered run (None if absent)."""
+    if not RESULT_FILE.exists():
+        return None
+    data: dict[str, Any] = json.loads(RESULT_FILE.read_text())
+    return data
+
+
 # ------------------------------------------------------------------------------ data
 def months(start: str, end: str) -> list[str]:
     out, y, m = [], int(start[:4]), int(start[5:])

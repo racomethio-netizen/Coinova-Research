@@ -725,3 +725,21 @@ def test_testnet_round_trip_needs_totp_and_a_testnet_key(client: TestClient) -> 
                     json={"totp": _fresh_code(secret, used)}, headers=CSRF)
     assert r.status_code == 409 and "TESTNET key" in r.json()["detail"]
     assert client.get("/api/v1/system/testnet/round-trip").json() == {"runs": []}
+
+
+def test_strategy_test_and_grid_bot_endpoints(client: TestClient) -> None:
+    assert client.get("/api/v1/research/freqtrade-community").status_code == 401
+    assert client.get("/api/v1/grid-bot").status_code == 401
+    login(client)
+    r = client.get("/api/v1/research/freqtrade-community")
+    assert r.status_code == 200
+    doc = r.json()
+    assert doc["summary"]["tested"] == len(doc["ranked"]) and doc["summary"]["passed"] == 0
+    assert all(not x["passed"] and x["gate_failures"] for x in doc["ranked"])
+    g = client.get("/api/v1/grid-bot")
+    assert g.status_code == 200 and g.json()["paper"] is True
+    assert client.post("/api/v1/grid-bot/restart", json={"reason": "x"},
+                       headers=CSRF).status_code == 422          # reason too short
+    ok = client.post("/api/v1/grid-bot/restart", json={"reason": "after stop-loss"},
+                     headers=CSRF)
+    assert ok.status_code == 200 and ok.json() == {"requested": True}

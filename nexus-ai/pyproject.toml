@@ -68,6 +68,9 @@ where = [
   "apps/api",
 ]
 
+[tool.setuptools.package-data]
+nexus_backtest = ["results/*.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"

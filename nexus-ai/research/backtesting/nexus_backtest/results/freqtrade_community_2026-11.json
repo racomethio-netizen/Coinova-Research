@@ -1,0 +1,2459 @@
+{
+ "generated_at": "2026-11-26T10:06:29.017987+00:00",
+ "preregistration": "docs/research/2026-11-23-freqtrade-community-preregistration.md",
+ "source": "github.com/freqtrade/freqtrade-strategies@f3340ce",
+ "engine": "freqtrade 2026.9 backtesting",
+ "window": [
+  "20240101",
+  "20261101"
+ ],
+ "fees": [
+  0.001,
+  0.002
+ ],
+ "pairs": [
+  "BTC/USDT",
+  "ETH/USDT",
+  "BNB/USDT",
+  "SOL/USDT",
+  "XRP/USDT",
+  "ADA/USDT",
+  "DOGE/USDT",
+  "LINK/USDT",
+  "AVAX/USDT",
+  "LTC/USDT"
+ ],
+ "wallet": 10000.0,
+ "benchmarks": {
+  "btc_hold": 0.8348025403714634,
+  "equal_weight_hold": 0.09922630786861139,
+  "per_coin": {
+   "BTC": 0.8348025403714634,
+   "ETH": -0.011486193341426087,
+   "BNB": 1.256973388906701,
+   "SOL": -0.06075501376327164,
+   "XRP": 1.0339561332250202,
+   "ADA": -0.6750294662401077,
+   "DOGE": -0.1555381866904868,
+   "LINK": -0.21898005621737382,
+   "AVAX": -0.7775732434534612,
+   "LTC": -0.2341068241109433
+  }
+ },
+ "summary": {
+  "files": 68,
+  "strategies": 68,
+  "tested": 44,
+  "errors": 4,
+  "excluded": 20,
+  "profitable": 6,
+  "passed": 0
+ },
+ "ranked": [
+  {
+   "strategy": "ADXMomentum",
+   "file": "berlinguyinca/ADXMomentum.py",
+   "timeframe": "1h",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 3356,
+    "net_profit": 17790.11279041,
+    "net_return": 1.779011279041,
+    "profit_factor": 1.0969784462427292,
+    "win_rate": 0.8563766388557806,
+    "max_drawdown": -0.364640174635529,
+    "avg_trade_return": 0.0010903277081289213,
+    "avg_duration_min": 779.7497020262217,
+    "fees_paid": 47142.472702577,
+    "by_year": {
+     "2024": 14550.87873356,
+     "2025": 684.4778874000017,
+     "2026": 2554.75616945
+    },
+    "sharpe": 0.580895863760473,
+    "sortino": 0.4321273379171068,
+    "best_pair": [
+     "LINK/USDT",
+     5674.00438708
+    ],
+    "worst_pair": [
+     "BTC/USDT",
+     -3959.12115302
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -5713.298582040001,
+    "net_return": -0.5713298582040001,
+    "trades": 2859
+   },
+   "gate_failures": [
+    "profit factor 1.1 < 1.2",
+    "max drawdown -36.5% worse than -25%",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.003999600039996,
+   "passed": false
+  },
+  {
+   "strategy": "MultiMa",
+   "file": "MultiMa.py",
+   "timeframe": "4h",
+   "published": "2021-05-18",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 249,
+    "net_profit": 13072.416673,
+    "net_return": 1.3072416673,
+    "profit_factor": 1.5328819895251211,
+    "win_rate": 0.6184738955823293,
+    "max_drawdown": -0.2643038863443216,
+    "avg_trade_return": 0.011259010437187284,
+    "avg_duration_min": 3878.5542168674697,
+    "fees_paid": 3011.7243949169997,
+    "by_year": {
+     "2024": 16807.03535449,
+     "2025": -3347.72534138,
+     "2026": -386.89334011000017
+    },
+    "sharpe": 0.9855415987310464,
+    "sortino": 0.44256187312854955,
+    "best_pair": [
+     "XRP/USDT",
+     4592.52984398
+    ],
+    "worst_pair": [
+     "BNB/USDT",
+     -3946.2736559400005
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": 7220.65308217,
+    "net_return": 0.722065308217,
+    "trades": 243
+   },
+   "gate_failures": [
+    "max drawdown -26.4% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.0033996600339966003,
+   "passed": false
+  },
+  {
+   "strategy": "UniversalMACD",
+   "file": "UniversalMACD.py",
+   "timeframe": "5m",
+   "published": "2023-02-12",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 366,
+    "net_profit": 8972.58743938,
+    "net_return": 0.8972587439380001,
+    "profit_factor": 1.7662839377956439,
+    "win_rate": 0.7513661202185792,
+    "max_drawdown": -0.3287895401726666,
+    "avg_trade_return": 0.005925254668992136,
+    "avg_duration_min": 1423.3879781420765,
+    "fees_paid": 3896.8996014117997,
+    "by_year": {
+     "2024": 6875.2801348,
+     "2025": 1330.0746179600005,
+     "2026": 767.2326866199999
+    },
+    "sharpe": 1.0788627632686045,
+    "sortino": 0.2489897327894776,
+    "best_pair": [
+     "XRP/USDT",
+     3123.51847511
+    ],
+    "worst_pair": [
+     "SOL/USDT",
+     -1509.32801783
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": 6888.41725251,
+    "net_return": 0.6888417252510001,
+    "trades": 363
+   },
+   "gate_failures": [
+    "max drawdown -32.9% worse than -25%",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.0011998800119988001,
+   "passed": false
+  },
+  {
+   "strategy": "ReinforcedAverageStrategy",
+   "file": "berlinguyinca/ReinforcedAverageStrategy.py",
+   "timeframe": "4h",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 290,
+    "net_profit": 6483.197732340001,
+    "net_return": 0.648319773234,
+    "profit_factor": 1.2130667617660478,
+    "win_rate": 0.3,
+    "max_drawdown": -0.303209918529344,
+    "avg_trade_return": 0.007852422933985316,
+    "avg_duration_min": 4785.103448275862,
+    "fees_paid": 2772.5763423401995,
+    "by_year": {
+     "2024": 5883.753172339999,
+     "2025": 1162.1726138200002,
+     "2026": -562.7280538200001
+    },
+    "sharpe": 0.5254000149757914,
+    "sortino": 0.42346330427648093,
+    "best_pair": [
+     "DOGE/USDT",
+     2422.3951149500003
+    ],
+    "worst_pair": [
+     "SOL/USDT",
+     -817.8962603800001
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": 3709.9640405000005,
+    "net_return": 0.37099640405000006,
+    "trades": 290
+   },
+   "gate_failures": [
+    "max drawdown -30.3% worse than -25%",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.07589241075892411,
+   "passed": false
+  },
+  {
+   "strategy": "CustomStoplossWithPSAR",
+   "file": "CustomStoplossWithPSAR.py",
+   "timeframe": "1h",
+   "published": "2021-03-03",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 6,
+    "net_profit": 5556.1847816,
+    "net_return": 0.55561847816,
+    "profit_factor": 4.418955583380709,
+    "win_rate": 0.5,
+    "max_drawdown": -0.1625111717920001,
+    "avg_trade_return": 0.28039193675557844,
+    "avg_duration_min": 745130.0,
+    "fees_paid": 32.6904828654,
+    "by_year": {
+     "2025": -665.89591375,
+     "2026": 6222.08069535
+    },
+    "sharpe": 0.4553747733218137,
+    "sortino": 0.18630791456165063,
+    "best_pair": [
+     "BNB/USDT",
+     4073.4272176
+    ],
+    "worst_pair": [
+     "SOL/USDT",
+     -959.21580417
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": 5518.389525590001,
+    "net_return": 0.5518389525590001,
+    "trades": 6
+   },
+   "gate_failures": [
+    "6 trades < 50",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": null,
+   "passed": false
+  },
+  {
+   "strategy": "AverageStrategy",
+   "file": "berlinguyinca/AverageStrategy.py",
+   "timeframe": "4h",
+   "published": "2018-01-21",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 585,
+    "net_profit": 4777.239300149998,
+    "net_return": 0.47772393001499974,
+    "profit_factor": 1.0758224607681375,
+    "win_rate": 0.28547008547008546,
+    "max_drawdown": -0.5695004875590888,
+    "avg_trade_return": 0.004213344137604523,
+    "avg_duration_min": 4694.153846153846,
+    "fees_paid": 5930.7995286836,
+    "by_year": {
+     "2024": 10609.37156783,
+     "2025": -4935.540265930001,
+     "2026": -896.5920017499998
+    },
+    "sharpe": 0.2707979106593816,
+    "sortino": 0.2929169603210203,
+    "best_pair": [
+     "XRP/USDT",
+     3768.6005291
+    ],
+    "worst_pair": [
+     "LTC/USDT",
+     -3175.01855065
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": 188.48732089999976,
+    "net_return": 0.018848732089999976,
+    "trades": 585
+   },
+   "gate_failures": [
+    "profit factor 1.08 < 1.2",
+    "max drawdown -57.0% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.12198780121987801,
+   "passed": false
+  },
+  {
+   "strategy": "BreakEven",
+   "file": "BreakEven.py",
+   "timeframe": "5m",
+   "published": "2021-08-09",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 0,
+    "net_profit": 0.0,
+    "net_return": 0.0
+   },
+   "stress_2x_fees": {
+    "net_profit": 0.0,
+    "net_return": 0.0,
+    "trades": 0
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor None < 1.2",
+    "0 trades < 50",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": null,
+   "passed": false
+  },
+  {
+   "strategy": "CombinedBinHAndCluc",
+   "file": "berlinguyinca/CombinedBinHAndCluc.py",
+   "timeframe": "5m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 547,
+    "net_profit": -1030.70037858,
+    "net_return": -0.103070037858,
+    "profit_factor": 0.9509661029526274,
+    "win_rate": 0.7276051188299817,
+    "max_drawdown": -0.394611934025957,
+    "avg_trade_return": -0.00024149405848399952,
+    "avg_duration_min": 109.88117001828154,
+    "fees_paid": 2949.2150001536,
+    "by_year": {
+     "2024": -1210.2581659999998,
+     "2025": -913.6700954899999,
+     "2026": 1093.2278829099998
+    },
+    "sharpe": -0.20137407302544746,
+    "sortino": -0.04651677416686516,
+    "best_pair": [
+     "BTC/USDT",
+     500.03712989999997
+    ],
+    "worst_pair": [
+     "LINK/USDT",
+     -718.7124327500001
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -4095.43776134,
+    "net_return": -0.409543776134,
+    "trades": 545
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.95 < 1.2",
+    "max drawdown -39.5% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.563943605639436,
+   "passed": false
+  },
+  {
+   "strategy": "InformativeSample",
+   "file": "InformativeSample.py",
+   "timeframe": "5m",
+   "published": "2018-01-21",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 2562,
+    "net_profit": -3019.4529845200013,
+    "net_return": -0.30194529845200013,
+    "profit_factor": 0.9610782658429096,
+    "win_rate": 0.9067135050741608,
+    "max_drawdown": -0.623781933785416,
+    "avg_trade_return": 1.3014645255837571e-05,
+    "avg_duration_min": 1700.267369242779,
+    "fees_paid": 16036.5653294336,
+    "by_year": {
+     "2024": -908.2511245699998,
+     "2025": 79.5971977299996,
+     "2026": -2190.7990576800003
+    },
+    "sharpe": -0.22107205455124396,
+    "sortino": -0.09653831797739558,
+    "best_pair": [
+     "BNB/USDT",
+     1647.04174967
+    ],
+    "worst_pair": [
+     "BTC/USDT",
+     -2535.23658673
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -8260.612194790001,
+    "net_return": -0.8260612194790001,
+    "trades": 2182
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.96 < 1.2",
+    "max drawdown -62.4% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.4971502849715029,
+   "passed": false
+  },
+  {
+   "strategy": "Supertrend",
+   "file": "Supertrend.py",
+   "timeframe": "1h",
+   "published": "2021-06-20",
+   "changed_in_window": true,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 1477,
+    "net_profit": -3365.7708567400005,
+    "net_return": -0.336577085674,
+    "profit_factor": 0.9585207807147949,
+    "win_rate": 0.5836154366960055,
+    "max_drawdown": -0.6765539985350365,
+    "avg_trade_return": -0.00029887751118984595,
+    "avg_duration_min": 1907.8537576167907,
+    "fees_paid": 9596.3973229168,
+    "by_year": {
+     "2024": 2165.66919272,
+     "2025": -5024.65224182,
+     "2026": -506.78780764
+    },
+    "sharpe": -0.24562540801505034,
+    "sortino": -0.16525125262872342,
+    "best_pair": [
+     "ADA/USDT",
+     1847.80111358
+    ],
+    "worst_pair": [
+     "AVAX/USDT",
+     -4199.044609
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -7548.330577060001,
+    "net_return": -0.7548330577060001,
+    "trades": 1438
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.96 < 1.2",
+    "max drawdown -67.7% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.6039396060393961,
+   "passed": false
+  },
+  {
+   "strategy": "ClucMay72018",
+   "file": "berlinguyinca/ClucMay72018.py",
+   "timeframe": "5m",
+   "published": "2018-01-21",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 519,
+    "net_profit": -3913.0464114999995,
+    "net_return": -0.39130464114999997,
+    "profit_factor": 0.6976054467878011,
+    "win_rate": 0.7572254335260116,
+    "max_drawdown": -0.46240170458700003,
+    "avg_trade_return": -0.0027645864392888395,
+    "avg_duration_min": 14.865125240847783,
+    "fees_paid": 2450.4986619730003,
+    "by_year": {
+     "2024": -1610.73385668,
+     "2025": -2714.0746170599996,
+     "2026": 411.76206224
+    },
+    "sharpe": -0.7103571810845736,
+    "sortino": -0.12655480441971179,
+    "best_pair": [
+     "LTC/USDT",
+     101.03798973
+    ],
+    "worst_pair": [
+     "LINK/USDT",
+     -816.74010044
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -5191.7439432,
+    "net_return": -0.51917439432,
+    "trades": 503
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.7 < 1.2",
+    "max drawdown -46.2% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.9951004899510049,
+   "passed": false
+  },
+  {
+   "strategy": "TrendRiderStrategy",
+   "file": "TrendRiderStrategy.py",
+   "timeframe": "1h",
+   "published": "2026-04-15",
+   "changed_in_window": true,
+   "excluded": null,
+   "window_start": "20260501",
+   "short_window": true,
+   "stats": {
+    "trades": 695,
+    "net_profit": -4050.468475259999,
+    "net_return": -0.4050468475259999,
+    "profit_factor": 0.6179334357233682,
+    "win_rate": 0.2446043165467626,
+    "max_drawdown": -0.4192850576839782,
+    "avg_trade_return": -0.0022047020567435745,
+    "avg_duration_min": 333.58273381294964,
+    "fees_paid": 3667.2274568116,
+    "by_year": {
+     "2026": -4050.468475259999
+    },
+    "sharpe": -4.103048795619013,
+    "sortino": -4.1953227212146755,
+    "best_pair": [
+     "LINK/USDT",
+     -40.492374560000044
+    ],
+    "worst_pair": [
+     "XRP/USDT",
+     -761.97779485
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -6221.10479003,
+    "net_return": -0.622110479003,
+    "trades": 718
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.62 < 1.2",
+    "max drawdown -41.9% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 1.0,
+   "passed": false
+  },
+  {
+   "strategy": "hlhb",
+   "file": "hlhb.py",
+   "timeframe": "4h",
+   "published": "2021-03-25",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 338,
+    "net_profit": -5152.006125329999,
+    "net_return": -0.5152006125329999,
+    "profit_factor": 0.624132570706023,
+    "win_rate": 0.7337278106508875,
+    "max_drawdown": -0.574764586970829,
+    "avg_trade_return": -0.0056125747539432355,
+    "avg_duration_min": 3632.662721893491,
+    "fees_paid": 1641.3632951168001,
+    "by_year": {
+     "2024": -2095.8974175800004,
+     "2025": -1551.7868124599997,
+     "2026": -1504.32189529
+    },
+    "sharpe": -1.0171773434552138,
+    "sortino": -0.28877284079773496,
+    "best_pair": [
+     "BNB/USDT",
+     255.743958
+    ],
+    "worst_pair": [
+     "DOGE/USDT",
+     -1424.8226868
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -6448.812701550001,
+    "net_return": -0.6448812701550001,
+    "trades": 327
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.62 < 1.2",
+    "max drawdown -57.5% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.9623037696230377,
+   "passed": false
+  },
+  {
+   "strategy": "AwesomeMacd",
+   "file": "berlinguyinca/AwesomeMacd.py",
+   "timeframe": "1h",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 914,
+    "net_profit": -5159.678552070001,
+    "net_return": -0.5159678552070002,
+    "profit_factor": 0.9209136406020595,
+    "win_rate": 0.2855579868708972,
+    "max_drawdown": -0.7546482039155544,
+    "avg_trade_return": -0.0015590657377945259,
+    "avg_duration_min": 3228.8402625820568,
+    "fees_paid": 6174.5797748404,
+    "by_year": {
+     "2024": 6847.39482825,
+     "2025": -8896.67716589,
+     "2026": -3110.3962144300003
+    },
+    "sharpe": -0.4262502226022633,
+    "sortino": -0.3636580318049945,
+    "best_pair": [
+     "BNB/USDT",
+     1262.53566612
+    ],
+    "worst_pair": [
+     "LINK/USDT",
+     -3041.6699696
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -7812.088270790001,
+    "net_return": -0.7812088270790001,
+    "trades": 902
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.92 < 1.2",
+    "max drawdown -75.5% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.8102189781021898,
+   "passed": false
+  },
+  {
+   "strategy": "PowerTower",
+   "file": "PowerTower.py",
+   "timeframe": "5m",
+   "published": "2023-02-12",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 1419,
+    "net_profit": -5214.6249672799995,
+    "net_return": -0.5214624967279999,
+    "profit_factor": 0.8884892081391813,
+    "win_rate": 0.6737138830162086,
+    "max_drawdown": -0.702863020587232,
+    "avg_trade_return": -0.00040362087422035945,
+    "avg_duration_min": 2384.8238195912613,
+    "fees_paid": 9442.07552504,
+    "by_year": {
+     "2024": 4518.225319710002,
+     "2025": -6282.02092716,
+     "2026": -3450.8293598299997
+    },
+    "sharpe": -0.39683543072955846,
+    "sortino": -0.1330348945760931,
+    "best_pair": [
+     "XRP/USDT",
+     696.8452847099999
+    ],
+    "worst_pair": [
+     "DOGE/USDT",
+     -3889.5368944999996
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -7739.00598806,
+    "net_return": -0.773900598806,
+    "trades": 1298
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.89 < 1.2",
+    "max drawdown -70.3% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.6207379262073792,
+   "passed": false
+  },
+  {
+   "strategy": "Strategy002",
+   "file": "Strategy002.py",
+   "timeframe": "5m",
+   "published": "2018-01-21",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 744,
+    "net_profit": -5331.62192194,
+    "net_return": -0.533162192194,
+    "profit_factor": 0.673345713754197,
+    "win_rate": 0.9126344086021505,
+    "max_drawdown": -0.5718952099773876,
+    "avg_trade_return": -0.002799581040612498,
+    "avg_duration_min": 1310.6787634408602,
+    "fees_paid": 3560.731323973,
+    "by_year": {
+     "2024": -678.7965927699998,
+     "2025": -3254.09503623,
+     "2026": -1398.73029294
+    },
+    "sharpe": -1.2343516951318805,
+    "sortino": -0.28430860387622436,
+    "best_pair": [
+     "DOGE/USDT",
+     20.56454980999996
+    ],
+    "worst_pair": [
+     "ADA/USDT",
+     -1996.48044273
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -7385.950691800001,
+    "net_return": -0.7385950691800001,
+    "trades": 721
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.67 < 1.2",
+    "max drawdown -57.2% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.9907009299070093,
+   "passed": false
+  },
+  {
+   "strategy": "PatternRecognition",
+   "file": "PatternRecognition.py",
+   "timeframe": "1d",
+   "published": "2022-05-19",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 162,
+    "net_profit": -5365.772708790001,
+    "net_return": -0.5365772708790001,
+    "profit_factor": 0.8251193285814307,
+    "win_rate": 0.7407407407407407,
+    "max_drawdown": -0.734719025725908,
+    "avg_trade_return": -0.00393003362716408,
+    "avg_duration_min": 23688.88888888889,
+    "fees_paid": 917.7658432276,
+    "by_year": {
+     "2024": 236.12958839999894,
+     "2025": -3080.557054709999,
+     "2026": -2521.3452424800003
+    },
+    "sharpe": -0.4184920427399467,
+    "sortino": -0.08051555590729088,
+    "best_pair": [
+     "XRP/USDT",
+     2251.4108975
+    ],
+    "worst_pair": [
+     "ADA/USDT",
+     -3327.8284246000003
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -4998.783154669999,
+    "net_return": -0.4998783154669999,
+    "trades": 161
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.83 < 1.2",
+    "max drawdown -73.5% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.6231376862313769,
+   "passed": false
+  },
+  {
+   "strategy": "Quickie",
+   "file": "berlinguyinca/Quickie.py",
+   "timeframe": "5m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 824,
+    "net_profit": -5705.89011918,
+    "net_return": -0.5705890119179999,
+    "profit_factor": 0.8071815424918131,
+    "win_rate": 0.9393203883495146,
+    "max_drawdown": -0.64533243130143,
+    "avg_trade_return": -0.0016785036018768936,
+    "avg_duration_min": 4968.72572815534,
+    "fees_paid": 4529.6662536508,
+    "by_year": {
+     "2024": 731.4928442000005,
+     "2025": -3085.28021388,
+     "2026": -3352.1027495
+    },
+    "sharpe": -0.5840061979046948,
+    "sortino": -0.11736529025939975,
+    "best_pair": [
+     "ADA/USDT",
+     945.8929045
+    ],
+    "worst_pair": [
+     "ETH/USDT",
+     -3962.58744367
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -6892.935866840002,
+    "net_return": -0.6892935866840002,
+    "trades": 791
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.81 < 1.2",
+    "max drawdown -64.5% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.8067193280671933,
+   "passed": false
+  },
+  {
+   "strategy": "Strategy004",
+   "file": "Strategy004.py",
+   "timeframe": "5m",
+   "published": "2018-01-21",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 1739,
+    "net_profit": -5728.82650098,
+    "net_return": -0.572882650098,
+    "profit_factor": 0.8051771616989537,
+    "win_rate": 0.9304197814836113,
+    "max_drawdown": -0.6448745156659724,
+    "avg_trade_return": -0.0011876130515808554,
+    "avg_duration_min": 915.3795284646349,
+    "fees_paid": 7874.320959534,
+    "by_year": {
+     "2024": -582.1791963800006,
+     "2025": -3990.0079887800002,
+     "2026": -1156.63931582
+    },
+    "sharpe": -0.9505588051175435,
+    "sortino": -0.27713440150529167,
+    "best_pair": [
+     "XRP/USDT",
+     590.0510331199999
+    ],
+    "worst_pair": [
+     "ETH/USDT",
+     -2185.1357679
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -8508.132898229998,
+    "net_return": -0.8508132898229999,
+    "trades": 1607
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.81 < 1.2",
+    "max drawdown -64.5% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.9568043195680432,
+   "passed": false
+  },
+  {
+   "strategy": "Diamond",
+   "file": "Diamond.py",
+   "timeframe": "5m",
+   "published": "2021-08-19",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 1170,
+    "net_profit": -5840.46711756,
+    "net_return": -0.584046711756,
+    "profit_factor": 0.6573523373704592,
+    "win_rate": 0.6948717948717948,
+    "max_drawdown": -0.640958052611666,
+    "avg_trade_return": -0.0017386459957787115,
+    "avg_duration_min": 2546.9273504273506,
+    "fees_paid": 6247.0124743060005,
+    "by_year": {
+     "2024": 586.9737188499998,
+     "2025": -3628.9228213999995,
+     "2026": -2798.51801501
+    },
+    "sharpe": -0.8095231690716681,
+    "sortino": -0.2518091292600746,
+    "best_pair": [
+     "LINK/USDT",
+     45.87239788
+    ],
+    "worst_pair": [
+     "ETH/USDT",
+     -4505.39000374
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -7512.68272886,
+    "net_return": -0.751268272886,
+    "trades": 1001
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.66 < 1.2",
+    "max drawdown -64.1% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.9362063793620637,
+   "passed": false
+  },
+  {
+   "strategy": "Simple",
+   "file": "berlinguyinca/Simple.py",
+   "timeframe": "5m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 3008,
+    "net_profit": -6337.1337157200005,
+    "net_return": -0.633713371572,
+    "profit_factor": 0.9108666966586264,
+    "win_rate": 0.8517287234042553,
+    "max_drawdown": -0.7382884324412855,
+    "avg_trade_return": -0.0004674908232890061,
+    "avg_duration_min": 1476.7985372340424,
+    "fees_paid": 15459.757998757002,
+    "by_year": {
+     "2024": -356.9485930500002,
+     "2025": -3298.23474301,
+     "2026": -2681.95037966
+    },
+    "sharpe": -0.5507512080684054,
+    "sortino": -0.3044078676712224,
+    "best_pair": [
+     "BNB/USDT",
+     3806.48651498
+    ],
+    "worst_pair": [
+     "AVAX/USDT",
+     -3693.72976465
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9619.012842450002,
+    "net_return": -0.9619012842450002,
+    "trades": 2548
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.91 < 1.2",
+    "max drawdown -73.8% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.7801219878012199,
+   "passed": false
+  },
+  {
+   "strategy": "BbandRsi",
+   "file": "berlinguyinca/BbandRsi.py",
+   "timeframe": "1h",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 393,
+    "net_profit": -6369.85145175,
+    "net_return": -0.6369851451749999,
+    "profit_factor": 0.816813069887592,
+    "win_rate": 0.6208651399491094,
+    "max_drawdown": -0.7682273195645243,
+    "avg_trade_return": -0.005338530667261685,
+    "avg_duration_min": 7205.6488549618325,
+    "fees_paid": 2059.3071142057997,
+    "by_year": {
+     "2024": 535.1645770499995,
+     "2025": -5019.87946457,
+     "2026": -1885.1365642299997
+    },
+    "sharpe": -0.5694122151281755,
+    "sortino": -0.1843861054116232,
+    "best_pair": [
+     "BNB/USDT",
+     2299.909227
+    ],
+    "worst_pair": [
+     "AVAX/USDT",
+     -4942.39254992
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -7155.472836089999,
+    "net_return": -0.7155472836089999,
+    "trades": 393
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.82 < 1.2",
+    "max drawdown -76.8% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.8906109389061094,
+   "passed": false
+  },
+  {
+   "strategy": "Freqtrade_backtest_validation_freqtrade1",
+   "file": "berlinguyinca/Freqtrade_backtest_validation_freqtrade1.py",
+   "timeframe": "1h",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 2795,
+    "net_profit": -6487.696410629997,
+    "net_return": -0.6487696410629997,
+    "profit_factor": 0.9244184181972486,
+    "win_rate": 0.3527728085867621,
+    "max_drawdown": -0.8127545460240149,
+    "avg_trade_return": -0.0006763815762918316,
+    "avg_duration_min": 1129.6314847942756,
+    "fees_paid": 15088.8262306864,
+    "by_year": {
+     "2024": 4778.557145770001,
+     "2025": -9496.81500717,
+     "2026": -1769.4385492299996
+    },
+    "sharpe": -0.4414897348813908,
+    "sortino": -0.5629931569153684,
+    "best_pair": [
+     "ADA/USDT",
+     3350.5481402500004
+    ],
+    "worst_pair": [
+     "LINK/USDT",
+     -5550.9731317
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9438.24205256,
+    "net_return": -0.9438242052559999,
+    "trades": 2795
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.92 < 1.2",
+    "max drawdown -81.3% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.8246175382461753,
+   "passed": false
+  },
+  {
+   "strategy": "MACDStrategy",
+   "file": "berlinguyinca/MACDStrategy.py",
+   "timeframe": "5m",
+   "published": "2018-01-21",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 793,
+    "net_profit": -6857.35338805,
+    "net_return": -0.685735338805,
+    "profit_factor": 0.7399915886035133,
+    "win_rate": 0.9558638083228247,
+    "max_drawdown": -0.7673199284817006,
+    "avg_trade_return": -0.0025073713681435634,
+    "avg_duration_min": 5427.112232030265,
+    "fees_paid": 3868.9472310500005,
+    "by_year": {
+     "2024": 1020.2443954299997,
+     "2025": -5188.64255434,
+     "2026": -2688.95522914
+    },
+    "sharpe": -0.7203110877847966,
+    "sortino": -0.12109768886282646,
+    "best_pair": [
+     "BNB/USDT",
+     552.5105753099999
+    ],
+    "worst_pair": [
+     "ETH/USDT",
+     -2728.91525391
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -8265.81163515,
+    "net_return": -0.8265811635149999,
+    "trades": 618
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.74 < 1.2",
+    "max drawdown -76.7% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.8711128887111289,
+   "passed": false
+  },
+  {
+   "strategy": "SwingHighToSky",
+   "file": "SwingHighToSky.py",
+   "timeframe": "15m",
+   "published": "2021-02-22",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 1032,
+    "net_profit": -7156.297537049999,
+    "net_return": -0.7156297537049999,
+    "profit_factor": 0.5661641704224039,
+    "win_rate": 0.7025193798449613,
+    "max_drawdown": -0.7623571289089597,
+    "avg_trade_return": -0.0026162691982853474,
+    "avg_duration_min": 3550.9883720930234,
+    "fees_paid": 4665.2359269604,
+    "by_year": {
+     "2024": -81.93626314000039,
+     "2025": -4555.924502259999,
+     "2026": -2518.4367716499996
+    },
+    "sharpe": -0.8219905396545787,
+    "sortino": -0.2760803019442379,
+    "best_pair": [
+     "BNB/USDT",
+     858.97293972
+    ],
+    "worst_pair": [
+     "ETH/USDT",
+     -2470.30074636
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -7119.38954605,
+    "net_return": -0.711938954605,
+    "trades": 880
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.57 < 1.2",
+    "max drawdown -76.2% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.957004299570043,
+   "passed": false
+  },
+  {
+   "strategy": "AdxSmas",
+   "file": "berlinguyinca/AdxSmas.py",
+   "timeframe": "1h",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 1747,
+    "net_profit": -7262.51679749,
+    "net_return": -0.726251679749,
+    "profit_factor": 0.8669624455496374,
+    "win_rate": 0.4253005151688609,
+    "max_drawdown": -0.8135291396651,
+    "avg_trade_return": -0.001512747880549966,
+    "avg_duration_min": 1825.7240984544935,
+    "fees_paid": 7246.8642016308,
+    "by_year": {
+     "2024": -2127.67638321,
+     "2025": -3870.4288692600003,
+     "2026": -1264.41154502
+    },
+    "sharpe": -0.8654044998670161,
+    "sortino": -0.7873395413749139,
+    "best_pair": [
+     "XRP/USDT",
+     1779.98953499
+    ],
+    "worst_pair": [
+     "AVAX/USDT",
+     -2408.28703701
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9095.985965599999,
+    "net_return": -0.9095985965599999,
+    "trades": 1742
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.87 < 1.2",
+    "max drawdown -81.4% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.9286071392860714,
+   "passed": false
+  },
+  {
+   "strategy": "Strategy003",
+   "file": "Strategy003.py",
+   "timeframe": "5m",
+   "published": "2018-01-21",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 1359,
+    "net_profit": -7897.6545315700005,
+    "net_return": -0.7897654531570001,
+    "profit_factor": 0.6340572138991075,
+    "win_rate": 0.9102281089036056,
+    "max_drawdown": -0.8037190459260541,
+    "avg_trade_return": -0.0031519920007843137,
+    "avg_duration_min": 1261.6629874908022,
+    "fees_paid": 4520.9863497122005,
+    "by_year": {
+     "2024": -3446.28911608,
+     "2025": -3904.9865342000003,
+     "2026": -546.3788812899999
+    },
+    "sharpe": -1.6803686163202107,
+    "sortino": -0.49724612785101624,
+    "best_pair": [
+     "LTC/USDT",
+     -9.549978309999958
+    ],
+    "worst_pair": [
+     "ADA/USDT",
+     -1749.59156606
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9091.771103449999,
+    "net_return": -0.9091771103449999,
+    "trades": 1274
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.63 < 1.2",
+    "max drawdown -80.4% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 1.0,
+   "passed": false
+  },
+  {
+   "strategy": "MACDStrategy_crossed",
+   "file": "berlinguyinca/MACDStrategy_crossed.py",
+   "timeframe": "5m",
+   "published": "2018-01-21",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 1154,
+    "net_profit": -8291.476749360001,
+    "net_return": -0.8291476749360002,
+    "profit_factor": 0.7095468095986075,
+    "win_rate": 0.8622183708838822,
+    "max_drawdown": -0.8458463475299993,
+    "avg_trade_return": -0.0035479321383396134,
+    "avg_duration_min": 2934.428076256499,
+    "fees_paid": 4428.0502138642005,
+    "by_year": {
+     "2024": -1056.9003744099996,
+     "2025": -5488.538437529999,
+     "2026": -1746.03793742
+    },
+    "sharpe": -1.1310872016820281,
+    "sortino": -0.4091577348377704,
+    "best_pair": [
+     "LINK/USDT",
+     1219.2478911
+    ],
+    "worst_pair": [
+     "AVAX/USDT",
+     -2643.3096968600003
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -8992.97518651,
+    "net_return": -0.899297518651,
+    "trades": 1037
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.71 < 1.2",
+    "max drawdown -84.6% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.9907009299070093,
+   "passed": false
+  },
+  {
+   "strategy": "CMCWinner",
+   "file": "berlinguyinca/CMCWinner.py",
+   "timeframe": "15m",
+   "published": "2018-01-21",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 2117,
+    "net_profit": -8331.527133840002,
+    "net_return": -0.8331527133840002,
+    "profit_factor": 0.4986589639569707,
+    "win_rate": 0.6088804912612187,
+    "max_drawdown": -0.8384850691929948,
+    "avg_trade_return": -0.0024704912936825666,
+    "avg_duration_min": 247.11384034010393,
+    "fees_paid": 7045.7707093782,
+    "by_year": {
+     "2024": -3538.6725398,
+     "2025": -3689.98242008,
+     "2026": -1102.87217396
+    },
+    "sharpe": -2.3854716311297337,
+    "sortino": -1.1887030620702632,
+    "best_pair": [
+     "LINK/USDT",
+     -76.17380401000001
+    ],
+    "worst_pair": [
+     "ETH/USDT",
+     -1919.288839
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9472.68641937,
+    "net_return": -0.947268641937,
+    "trades": 1982
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.5 < 1.2",
+    "max drawdown -83.8% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 1.0,
+   "passed": false
+  },
+  {
+   "strategy": "Strategy001",
+   "file": "Strategy001.py",
+   "timeframe": "5m",
+   "published": "2018-01-21",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 2177,
+    "net_profit": -8502.058101450002,
+    "net_return": -0.8502058101450002,
+    "profit_factor": 0.8183583950157426,
+    "win_rate": 0.8833256775378961,
+    "max_drawdown": -0.8643139127904123,
+    "avg_trade_return": -0.002100958846649938,
+    "avg_duration_min": 1831.9361506660541,
+    "fees_paid": 7796.2298200318,
+    "by_year": {
+     "2024": -3807.12580756,
+     "2025": -2928.1040991700006,
+     "2026": -1766.8281947199998
+    },
+    "sharpe": -1.0887755725925417,
+    "sortino": -0.4606171467226619,
+    "best_pair": [
+     "BNB/USDT",
+     199.22217375999992
+    ],
+    "worst_pair": [
+     "ADA/USDT",
+     -2036.80588003
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9358.64160067,
+    "net_return": -0.935864160067,
+    "trades": 1908
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.82 < 1.2",
+    "max drawdown -86.4% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.9963003699630038,
+   "passed": false
+  },
+  {
+   "strategy": "mabStra",
+   "file": "mabStra.py",
+   "timeframe": "4h",
+   "published": "2021-04-08",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 544,
+    "net_profit": -8724.21363547,
+    "net_return": -0.872421363547,
+    "profit_factor": 0.7421654565870454,
+    "win_rate": 0.5643382352941176,
+    "max_drawdown": -0.9344792027984516,
+    "avg_trade_return": -0.00872695506425732,
+    "avg_duration_min": 8176.323529411765,
+    "fees_paid": 1727.4872526506,
+    "by_year": {
+     "2024": -4468.34316603,
+     "2025": -3323.10423506,
+     "2026": -932.76623438
+    },
+    "sharpe": -0.6664400690749133,
+    "sortino": -0.26109459617883973,
+    "best_pair": [
+     "BTC/USDT",
+     866.9480437599999
+    ],
+    "worst_pair": [
+     "DOGE/USDT",
+     -1894.2382342
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9033.5959399,
+    "net_return": -0.90335959399,
+    "trades": 547
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.74 < 1.2",
+    "max drawdown -93.4% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.99000099990001,
+   "passed": false
+  },
+  {
+   "strategy": "BinHV27",
+   "file": "berlinguyinca/BinHV27.py",
+   "timeframe": "5m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 3673,
+    "net_profit": -8814.568836450002,
+    "net_return": -0.8814568836450002,
+    "profit_factor": 0.7518440947679148,
+    "win_rate": 0.5502314184590253,
+    "max_drawdown": -0.8941252165457496,
+    "avg_trade_return": -0.0016554660774050235,
+    "avg_duration_min": 296.2360468282058,
+    "fees_paid": 11142.711807939002,
+    "by_year": {
+     "2024": -3725.365776089999,
+     "2025": -4081.39604665,
+     "2026": -1007.8070137100001
+    },
+    "sharpe": -1.9988753150536032,
+    "sortino": -1.485573674583603,
+    "best_pair": [
+     "DOGE/USDT",
+     524.84720787
+    ],
+    "worst_pair": [
+     "ETH/USDT",
+     -2377.13014298
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9895.619537229999,
+    "net_return": -0.9895619537229999,
+    "trades": 3673
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.75 < 1.2",
+    "max drawdown -89.4% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 1.0,
+   "passed": false
+  },
+  {
+   "strategy": "Strategy005",
+   "file": "Strategy005.py",
+   "timeframe": "5m",
+   "published": "2018-01-21",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 1256,
+    "net_profit": -8909.15917149,
+    "net_return": -0.8909159171490001,
+    "profit_factor": 0.7203468986225446,
+    "win_rate": 0.820859872611465,
+    "max_drawdown": -0.9024276084631971,
+    "avg_trade_return": -0.0045049293459083865,
+    "avg_duration_min": 2603.459394904459,
+    "fees_paid": 3333.4124486976,
+    "by_year": {
+     "2024": -4750.73617949,
+     "2025": -3347.17927162,
+     "2026": -811.24372038
+    },
+    "sharpe": -1.5425971425249874,
+    "sortino": -0.6072237241725381,
+    "best_pair": [
+     "LTC/USDT",
+     774.2766146700001
+    ],
+    "worst_pair": [
+     "AVAX/USDT",
+     -2202.69863455
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9413.97695497,
+    "net_return": -0.9413976954969999,
+    "trades": 1192
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.72 < 1.2",
+    "max drawdown -90.2% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.9995000499950005,
+   "passed": false
+  },
+  {
+   "strategy": "HourBasedStrategy",
+   "file": "HourBasedStrategy.py",
+   "timeframe": "1h",
+   "published": "2021-11-05",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 1377,
+    "net_profit": -9041.724327,
+    "net_return": -0.9041724327,
+    "profit_factor": 0.701952841519062,
+    "win_rate": 0.6122004357298475,
+    "max_drawdown": -0.9251713260627873,
+    "avg_trade_return": -0.004313574848854479,
+    "avg_duration_min": 3219.607843137255,
+    "fees_paid": 3066.4570241635997,
+    "by_year": {
+     "2024": -7132.255424700001,
+     "2025": -1528.6423435299998,
+     "2026": -380.82655877000013
+    },
+    "sharpe": -1.050273155028439,
+    "sortino": -0.5655479370706198,
+    "best_pair": [
+     "BNB/USDT",
+     498.5757893000001
+    ],
+    "worst_pair": [
+     "SOL/USDT",
+     -2455.34286126
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9539.6279077,
+    "net_return": -0.95396279077,
+    "trades": 1354
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.7 < 1.2",
+    "max drawdown -92.5% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 0.9988001199880012,
+   "passed": false
+  },
+  {
+   "strategy": "TDSequentialStrategy",
+   "file": "berlinguyinca/TDSequentialStrategy.py",
+   "timeframe": "1h",
+   "published": "2020-04-17",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 1221,
+    "net_profit": -9248.325066590001,
+    "net_return": -0.9248325066590002,
+    "profit_factor": 0.7811301947360887,
+    "win_rate": 0.4856674856674857,
+    "max_drawdown": -0.9291487889606722,
+    "avg_trade_return": -0.005691821238185192,
+    "avg_duration_min": 2153.3660933660935,
+    "fees_paid": 3751.7766354066007,
+    "by_year": {
+     "2024": -2990.70773592,
+     "2025": -3952.71962315,
+     "2026": -2304.8977075199996
+    },
+    "sharpe": -1.3339332707208007,
+    "sortino": -0.878471175000942,
+    "best_pair": [
+     "ADA/USDT",
+     -292.80417022999995
+    ],
+    "worst_pair": [
+     "LTC/USDT",
+     -1227.97901159
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9664.1528077,
+    "net_return": -0.96641528077,
+    "trades": 1221
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.78 < 1.2",
+    "max drawdown -92.9% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 1.0,
+   "passed": false
+  },
+  {
+   "strategy": "Strategy001_custom_exit",
+   "file": "Strategy001_custom_exit.py",
+   "timeframe": "5m",
+   "published": "2018-01-21",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 3624,
+    "net_profit": -9515.95971408,
+    "net_return": -0.951595971408,
+    "profit_factor": 0.6636721810469328,
+    "win_rate": 0.9268763796909493,
+    "max_drawdown": -0.9554767909155386,
+    "avg_trade_return": -0.002205438814378329,
+    "avg_duration_min": 1044.4633002207506,
+    "fees_paid": 7009.586129648,
+    "by_year": {
+     "2024": -6995.7957843799995,
+     "2025": -1843.6069586700003,
+     "2026": -676.55697103
+    },
+    "sharpe": -1.8979378919620935,
+    "sortino": -0.7936597535628092,
+    "best_pair": [
+     "LINK/USDT",
+     89.38203785000002
+    ],
+    "worst_pair": [
+     "AVAX/USDT",
+     -2112.40502506
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9880.9365088,
+    "net_return": -0.9880936508799999,
+    "trades": 3050
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.66 < 1.2",
+    "max drawdown -95.5% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 1.0,
+   "passed": false
+  },
+  {
+   "strategy": "SmoothOperator",
+   "file": "berlinguyinca/SmoothOperator.py",
+   "timeframe": "5m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 3945,
+    "net_profit": -9614.067478660001,
+    "net_return": -0.9614067478660001,
+    "profit_factor": 0.7614116598801158,
+    "win_rate": 0.5893536121673004,
+    "max_drawdown": -0.9634284686178705,
+    "avg_trade_return": -0.002250121907427071,
+    "avg_duration_min": 675.5893536121673,
+    "fees_paid": 7278.0371733249995,
+    "by_year": {
+     "2024": -6973.97184534,
+     "2025": -2069.5409315100005,
+     "2026": -570.55470181
+    },
+    "sharpe": -1.9179214806390776,
+    "sortino": -1.4098081637791007,
+    "best_pair": [
+     "LTC/USDT",
+     -411.07136002000004
+    ],
+    "worst_pair": [
+     "DOGE/USDT",
+     -1388.4519465800001
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9971.01891087,
+    "net_return": -0.997101891087,
+    "trades": 3945
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.76 < 1.2",
+    "max drawdown -96.3% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 1.0,
+   "passed": false
+  },
+  {
+   "strategy": "ReinforcedQuickie",
+   "file": "berlinguyinca/ReinforcedQuickie.py",
+   "timeframe": "5m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 5196,
+    "net_profit": -9634.97033445,
+    "net_return": -0.9634970334449999,
+    "profit_factor": 0.7646803677578901,
+    "win_rate": 0.6633949191685913,
+    "max_drawdown": -0.9654143112533803,
+    "avg_trade_return": -0.00181226302907451,
+    "avg_duration_min": 504.50250192455735,
+    "fees_paid": 11209.4347794536,
+    "by_year": {
+     "2024": -6371.683686979999,
+     "2025": -2745.18443408,
+     "2026": -518.10221339
+    },
+    "sharpe": -2.0690953044266847,
+    "sortino": -1.6226071639821904,
+    "best_pair": [
+     "DOGE/USDT",
+     -315.43447822999997
+    ],
+    "worst_pair": [
+     "LINK/USDT",
+     -2209.49093498
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9981.11230928,
+    "net_return": -0.998111230928,
+    "trades": 4933
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.76 < 1.2",
+    "max drawdown -96.5% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 1.0,
+   "passed": false
+  },
+  {
+   "strategy": "Bandtastic",
+   "file": "Bandtastic.py",
+   "timeframe": "15m",
+   "published": "2022-08-07",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 6554,
+    "net_profit": -9830.456097740001,
+    "net_return": -0.9830456097740001,
+    "profit_factor": 0.7739444058634671,
+    "win_rate": 0.6010070186145865,
+    "max_drawdown": -0.9834532657764796,
+    "avg_trade_return": -0.001705152459480905,
+    "avg_duration_min": 530.3692401586817,
+    "fees_paid": 12238.2535655538,
+    "by_year": {
+     "2024": -5974.753001879999,
+     "2025": -3232.06040811,
+     "2026": -623.6426877499999
+    },
+    "sharpe": -1.9123355950255674,
+    "sortino": -1.6128871632503514,
+    "best_pair": [
+     "DOGE/USDT",
+     227.31823225000002
+    ],
+    "worst_pair": [
+     "ETH/USDT",
+     -2430.44689064
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9991.92840044,
+    "net_return": -0.999192840044,
+    "trades": 5677
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.77 < 1.2",
+    "max drawdown -98.3% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 1.0,
+   "passed": false
+  },
+  {
+   "strategy": "MultiRSI",
+   "file": "berlinguyinca/MultiRSI.py",
+   "timeframe": "5m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 9542,
+    "net_profit": -9977.24314663,
+    "net_return": -0.997724314663,
+    "profit_factor": 0.6262682503298449,
+    "win_rate": 0.5083839865856215,
+    "max_drawdown": -0.9977853545109392,
+    "avg_trade_return": -0.0018932082714041853,
+    "avg_duration_min": 139.82708027667155,
+    "fees_paid": 10140.4622196996,
+    "by_year": {
+     "2024": -9019.99476183,
+     "2025": -880.1994692400001,
+     "2026": -77.04891556000001
+    },
+    "sharpe": -3.4004449992791375,
+    "sortino": -2.940026652753832,
+    "best_pair": [
+     "DOGE/USDT",
+     -375.7261380299999
+    ],
+    "worst_pair": [
+     "XRP/USDT",
+     -1741.856651
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9994.69864476,
+    "net_return": -0.999469864476,
+    "trades": 5913
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.63 < 1.2",
+    "max drawdown -99.8% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 1.0,
+   "passed": false
+  },
+  {
+   "strategy": "CofiBitStrategy",
+   "file": "berlinguyinca/CofiBitStrategy.py",
+   "timeframe": "5m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 12193,
+    "net_profit": -9993.02813814,
+    "net_return": -0.999302813814,
+    "profit_factor": 0.3781641081324854,
+    "win_rate": 0.4003936684983187,
+    "max_drawdown": -0.9993028138139973,
+    "avg_trade_return": -0.0017925546917573498,
+    "avg_duration_min": 33.29123267448536,
+    "fees_paid": 10754.510908105,
+    "by_year": {
+     "2024": -9801.11537696,
+     "2025": -188.52103055000003,
+     "2026": -3.3917306299999996
+    },
+    "sharpe": -4.317156611142199,
+    "sortino": -3.710328505676179,
+    "best_pair": [
+     "XRP/USDT",
+     -620.87954414
+    ],
+    "worst_pair": [
+     "AVAX/USDT",
+     -1622.5654177
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9997.424431200001,
+    "net_return": -0.99974244312,
+    "trades": 6479
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.38 < 1.2",
+    "max drawdown -99.9% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 1.0,
+   "passed": false
+  },
+  {
+   "strategy": "EMASkipPump",
+   "file": "berlinguyinca/EMASkipPump.py",
+   "timeframe": "5m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 10885,
+    "net_profit": -9995.56752838,
+    "net_return": -0.9995567528379999,
+    "profit_factor": 0.5997709395315128,
+    "win_rate": 0.5581993569131832,
+    "max_drawdown": -0.9995708264473245,
+    "avg_trade_return": -0.0020799105717659804,
+    "avg_duration_min": 187.40009186954524,
+    "fees_paid": 8400.7052706062,
+    "by_year": {
+     "2024": -9868.83889405,
+     "2025": -122.31479168000001,
+     "2026": -4.413842649999999
+    },
+    "sharpe": -2.2766670459126965,
+    "sortino": -1.815612961105128,
+    "best_pair": [
+     "AVAX/USDT",
+     -391.4705444
+    ],
+    "worst_pair": [
+     "XRP/USDT",
+     -1305.27829805
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9997.46016668,
+    "net_return": -0.9997460166680001,
+    "trades": 5889
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.6 < 1.2",
+    "max drawdown -100.0% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 1.0,
+   "passed": false
+  },
+  {
+   "strategy": "TechnicalExampleStrategy",
+   "file": "berlinguyinca/TechnicalExampleStrategy.py",
+   "timeframe": "5m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 13669,
+    "net_profit": -9997.425287070002,
+    "net_return": -0.9997425287070002,
+    "profit_factor": 0.3214632623174895,
+    "win_rate": 0.3583290657692589,
+    "max_drawdown": -0.9997425287070068,
+    "avg_trade_return": -0.0018260400528291988,
+    "avg_duration_min": 42.99875630989831,
+    "fees_paid": 8488.9054440232,
+    "by_year": {
+     "2024": -9997.425287070002
+    },
+    "sharpe": -2.163424136295828,
+    "sortino": -1.1559764303242475,
+    "best_pair": [
+     "ADA/USDT",
+     -711.14949132
+    ],
+    "worst_pair": [
+     "SOL/USDT",
+     -1398.0159718099999
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9997.430114040002,
+    "net_return": -0.9997430114040002,
+    "trades": 6157
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.32 < 1.2",
+    "max drawdown -100.0% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 1.0,
+   "passed": false
+  },
+  {
+   "strategy": "ASDTSRockwellTrading",
+   "file": "berlinguyinca/ASDTSRockwellTrading.py",
+   "timeframe": "5m",
+   "published": "2018-01-21",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "stats": {
+    "trades": 13159,
+    "net_profit": -9997.4323723,
+    "net_return": -0.99974323723,
+    "profit_factor": 0.4484256725926413,
+    "win_rate": 0.21855764115814272,
+    "max_drawdown": -0.9997445129701716,
+    "avg_trade_return": -0.0019158327208515437,
+    "avg_duration_min": 40.45102211414241,
+    "fees_paid": 10362.927177817,
+    "by_year": {
+     "2024": -9995.680565839999,
+     "2025": -1.75180646
+    },
+    "sharpe": -3.5592464751466917,
+    "sortino": -2.1716287738704603,
+    "best_pair": [
+     "AVAX/USDT",
+     -609.0046286
+    ],
+    "worst_pair": [
+     "BNB/USDT",
+     -1381.5010199
+    ]
+   },
+   "stress_2x_fees": {
+    "net_profit": -9997.43310688,
+    "net_return": -0.999743310688,
+    "trades": 6527
+   },
+   "gate_failures": [
+    "net profit <= 0",
+    "profit factor 0.45 < 1.2",
+    "max drawdown -100.0% worse than -25%",
+    "positive in fewer than 2 of 2024 / 2025 / 2026",
+    "not profitable at 2x fees",
+    "not significant after Holm correction"
+   ],
+   "bootstrap_p": 1.0,
+   "passed": false
+  }
+ ],
+ "not_tested": [
+  {
+   "strategy": "AlmgrenChrissStrategy",
+   "file": "AlmgrenChrissStrategy.py",
+   "timeframe": "15m",
+   "published": "2026-08-09",
+   "changed_in_window": false,
+   "excluded": "execution algorithm or template, not a trading signal"
+  },
+  {
+   "strategy": "FixedRiskRewardLoss",
+   "file": "FixedRiskRewardLoss.py",
+   "timeframe": null,
+   "published": "2021-03-15",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "error": "2026-11-26 08:49:06,741 - freqtrade.resolvers.strategy_resolver - INFO - Strategy using max_open_trades: 3 | 2026-11-26 08:49:06,741 - freqtrade.configuration.config_validation - INFO - Validating configuration ... | 2026-11-26 08:49:06,742 - freqtrade - ERROR - Timeframe needs to be set in either configuration or as cli argument `--timeframe 5m`"
+  },
+  {
+   "strategy": "GodStra",
+   "file": "GodStra.py",
+   "timeframe": "12h",
+   "published": "2021-04-13",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "error": "2026-11-26 08:49:15,675 - freqtrade.resolvers.iresolver - WARNING - Could not import /tmp/claude-0/-home-user/53124341-bcd6-59e1-a12d-6e6e8647b056/scratchpad/fts/user_data/strategies/GodStra.py due to | 'cannot import name 'math' from 'numpy.lib' (/tmp/claude-0/-home-user/53124341-bcd6-59e1-a12d-6e6e8647b056/scratchpad/ftv/lib/python3.13/site-packages/numpy/lib/__init__.py)' | 2026-11-26 08:49:15,676 - freqtrade - ERROR - Impossible to load Strategy 'GodStra'. This class does not exist or contains Python code errors."
+  },
+  {
+   "strategy": "Heracles",
+   "file": "Heracles.py",
+   "timeframe": "4h",
+   "published": "2021-04-15",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "error": "2026-11-26 08:49:08,585 - freqtrade.resolvers.iresolver - WARNING - Could not import /tmp/claude-0/-home-user/53124341-bcd6-59e1-a12d-6e6e8647b056/scratchpad/fts/user_data/strategies/Heracles.py due  | to 'No module named 'ta'' | 2026-11-26 08:49:08,586 - freqtrade - ERROR - Impossible to load Strategy 'Heracles'. This class does not exist or contains Python code errors."
+  },
+  {
+   "strategy": "TWAPStrategy",
+   "file": "TWAPStrategy.py",
+   "timeframe": "15m",
+   "published": "2026-08-09",
+   "changed_in_window": false,
+   "excluded": "execution algorithm or template, not a trading signal"
+  },
+  {
+   "strategy": "BinHV45",
+   "file": "berlinguyinca/BinHV45.py",
+   "timeframe": "1m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": "1-minute timeframe (no 1m history in this test)"
+  },
+  {
+   "strategy": "CCIStrategy",
+   "file": "berlinguyinca/CCIStrategy.py",
+   "timeframe": "1m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": "1-minute timeframe (no 1m history in this test)"
+  },
+  {
+   "strategy": "DoesNothingStrategy",
+   "file": "berlinguyinca/DoesNothingStrategy.py",
+   "timeframe": "5m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": "execution algorithm or template, not a trading signal"
+  },
+  {
+   "strategy": "Low_BB",
+   "file": "berlinguyinca/Low_BB.py",
+   "timeframe": "1m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": "1-minute timeframe (no 1m history in this test)"
+  },
+  {
+   "strategy": "ReinforcedSmoothScalp",
+   "file": "berlinguyinca/ReinforcedSmoothScalp.py",
+   "timeframe": "1m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": "1-minute timeframe (no 1m history in this test)"
+  },
+  {
+   "strategy": "Scalp",
+   "file": "berlinguyinca/Scalp.py",
+   "timeframe": "1m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": "1-minute timeframe (no 1m history in this test)"
+  },
+  {
+   "strategy": "SmoothScalp",
+   "file": "berlinguyinca/SmoothScalp.py",
+   "timeframe": "1m",
+   "published": "2018-06-27",
+   "changed_in_window": false,
+   "excluded": "1-minute timeframe (no 1m history in this test)"
+  },
+  {
+   "strategy": "FAdxSmaStrategy",
+   "file": "futures/FAdxSmaStrategy.py",
+   "timeframe": "1h",
+   "published": "2022-05-12",
+   "changed_in_window": false,
+   "excluded": "excluded folder futures/"
+  },
+  {
+   "strategy": "FOttStrategy",
+   "file": "futures/FOttStrategy.py",
+   "timeframe": "1h",
+   "published": "2022-05-12",
+   "changed_in_window": false,
+   "excluded": "excluded folder futures/"
+  },
+  {
+   "strategy": "FReinforcedStrategy",
+   "file": "futures/FReinforcedStrategy.py",
+   "timeframe": "5m",
+   "published": "2022-05-12",
+   "changed_in_window": false,
+   "excluded": "excluded folder futures/"
+  },
+  {
+   "strategy": "FSampleStrategy",
+   "file": "futures/FSampleStrategy.py",
+   "timeframe": "1h",
+   "published": "2022-05-12",
+   "changed_in_window": false,
+   "excluded": "excluded folder futures/"
+  },
+  {
+   "strategy": "FSupertrendStrategy",
+   "file": "futures/FSupertrendStrategy.py",
+   "timeframe": "1h",
+   "published": "2022-05-12",
+   "changed_in_window": false,
+   "excluded": "excluded folder futures/"
+  },
+  {
+   "strategy": "TrendFollowingStrategy",
+   "file": "futures/TrendFollowingStrategy.py",
+   "timeframe": "5m",
+   "published": "2023-01-07",
+   "changed_in_window": false,
+   "excluded": "excluded folder futures/"
+  },
+  {
+   "strategy": "VolatilitySystem",
+   "file": "futures/VolatilitySystem.py",
+   "timeframe": "1h",
+   "published": "2023-01-08",
+   "changed_in_window": false,
+   "excluded": "excluded folder futures/"
+  },
+  {
+   "strategy": "DevilStra",
+   "file": "lookahead_bias/DevilStra.py",
+   "timeframe": "4h",
+   "published": "2021-05-18",
+   "changed_in_window": false,
+   "excluded": "excluded folder lookahead_bias/"
+  },
+  {
+   "strategy": "GodStraNew",
+   "file": "lookahead_bias/GodStraNew.py",
+   "timeframe": "4h",
+   "published": "2021-05-18",
+   "changed_in_window": false,
+   "excluded": "excluded folder lookahead_bias/"
+  },
+  {
+   "strategy": "Zeus",
+   "file": "lookahead_bias/Zeus.py",
+   "timeframe": "4h",
+   "published": "2021-05-18",
+   "changed_in_window": false,
+   "excluded": "excluded folder lookahead_bias/"
+  },
+  {
+   "strategy": "wtc",
+   "file": "lookahead_bias/wtc.py",
+   "timeframe": "30m",
+   "published": "2021-06-05",
+   "changed_in_window": false,
+   "excluded": "excluded folder lookahead_bias/"
+  },
+  {
+   "strategy": "multi_tf",
+   "file": "multi_tf.py",
+   "timeframe": "5m",
+   "published": "2022-05-20",
+   "changed_in_window": false,
+   "excluded": null,
+   "window_start": "20240101",
+   "short_window": false,
+   "error": "2026-11-26 09:03:00,354 - freqtrade.exchange.exchange - INFO - Using Exchange \"Binance\" | 2026-11-26 09:03:00,356 - freqtrade.resolvers.exchange_resolver - INFO - Using resolved exchange class 'Binance' ... | 2026-11-26 09:03:00,358 - freqtrade - ERROR - Impossible to load Strategy 'multi_tf'. This class does not exist or contains Python code errors."
+  }
+ ]
+}

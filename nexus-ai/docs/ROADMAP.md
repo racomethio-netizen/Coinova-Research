@@ -32,6 +32,16 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-26: Freqtrade community test and the paper grid bot.**
+  * Strategy test: 0 of 44 passed; the closest is UniversalMACD (drawdown −32.9%). See
+    `docs/research/2026-11-23-freqtrade-community-preregistration.md`.
+  * Paper grid bot built (worker, ledger, API, page) and tested; not yet deployed.
+  * **Blocker (owner).** Render env `NEXUS_LIVE_TRADING_ENABLED=true` with
+    `NEXUS_TRADING_MODE=paper`: every deploy since 23 Nov 21:01 fails settings validation
+    and the 19:00 build is still serving.
+    * Fix: set `NEXUS_LIVE_TRADING_ENABLED=false`.
+  * Paper results after 3 days: 0 orders in main, spot-engine and nexus-bot.
+
 * **2026-11-23 late: live switch.**
   * Live mode now runs the live workers (it started none before).
   * The 2FA approval button now sends a single request per tap.
