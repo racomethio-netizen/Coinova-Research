@@ -56,6 +56,8 @@ const GATE_LABELS: Record<string, string> = {
   significant_p_lt_0_05: "statistically significant", positive_2_of_3_years: "positive in 2 of 3 years", positive_at_2x_costs: "positive at 2x costs",
   significant_holm: "statistically significant", sharpe_ge_1: "Sharpe at least 1", drawdown_le_10pct: "worst drop within 10%",
   positive_strict_fill: "positive with stricter fills",
+  drawdown_le_25pct: "worst drop within 25%", positive_4_of_5_years: "positive in 4 of 5 years", beats_reversal_baseline: "better than the simple reversal",
+  positive_without_top3: "positive without the 3 best coins",
 };
 const VOL_NAMES: Record<string, string> = { BTC: "BTC", ETH: "ETH", BTC_ETH_50_50: "BTC/ETH 50/50" };
 
@@ -139,6 +141,30 @@ function MarketMaking() {
   );
 }
 
+const MODEL_NAMES: Record<string, string> = { ridge: "Model A: linear (Ridge)", xgboost: "Model B: trees (XGBoost)", baseline: "Simple 1-day reversal (comparison)" };
+
+function StatArb() {
+  const { data: r } = useApi<Any>("/research/statarb-ml", 60_000);
+  const bt = r?.backtest;
+  if (!bt) return null;
+  const rows = [...Object.entries(bt.models ?? {}).map(([k, v]: [string, Any]) => ({ key: k, ...v })), { key: "baseline", ...bt.baseline_reversal_1d, baseline: true }];
+  const passed = bt.summary?.passed ?? [];
+  return (
+    <Card title="Medallion-style: many signals, long 10 / short 10 coins, daily (2022 – Oct 2026)" actions={<Badge tone={passed.length ? "good" : "bad"}>{passed.length ? `${passed.length} passed` : "none passed"}</Badge>}>
+      <Table rows={rows} empty="No result." columns={[
+        { key: "key", label: "Model", render: (x: Any) => MODEL_NAMES[x.key] ?? x.key },
+        { key: "n", label: "Net", numeric: true, render: (x: Any) => <span className={x.net_return > 0 ? "text-up" : "text-down"}>{pct(x.net_return, 1)}</span> },
+        { key: "sh", label: "Sharpe", numeric: true, render: (x: Any) => num(x.sharpe, 2) },
+        { key: "dd", label: "Worst drop", numeric: true, render: (x: Any) => pct(x.max_drawdown, 1) },
+        { key: "c2", label: "At 2x costs", numeric: true, render: (x: Any) => pct(x.stress_2x?.net_return, 1) },
+        { key: "v", label: "Verdict", render: (x: Any) => x.baseline ? <span className="text-xs text-muted">comparison</span> : <Badge tone={x.passed ? "good" : "bad"}>{x.passed ? "passed" : "failed"}</Badge> },
+        { key: "why", label: "Failed checks", render: (x: Any) => x.baseline ? DASH : <span className="text-xs text-muted">{failed(x.gates)}</span> },
+      ]} />
+      <p className="mt-2 text-xs text-muted">Every Binance USDT perpetual that ever traded, delisted ones included; each day the 60 most traded were eligible. 16 signals per coin, models retrained every month on the past year only, then traded on the next month they had never seen. Equal long and short, so the market's direction does not matter. Fees, slippage and real funding are included. Historical backtest, no orders placed. Rules written before the run: {r.preregistration}</p>
+    </Card>
+  );
+}
+
 export default function StrategyTestPage() {
   const { data: r, error, loading } = useApi<Any>("/research/freqtrade-community");
   const s = r?.summary;
@@ -182,6 +208,7 @@ export default function StrategyTestPage() {
           <Rebalancing />
           <Batch3 />
           <MarketMaking />
+          <StatArb />
           <p className="text-xs text-muted">Generated {time(r.generated_at)} by {r.engine} from {r.source}. A strategy passes only if it made money, had a profit factor of at least 1.2, never fell more than 25%, made at least 50 trades, was positive in 2 of 3 years, stayed profitable at double fees, and its edge was statistically significant after correcting for testing many strategies at once.</p>
         </div>
       )}
