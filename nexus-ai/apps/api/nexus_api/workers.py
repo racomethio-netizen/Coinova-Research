@@ -39,6 +39,7 @@ WORKERS: dict[str, list[str]] = {
     "library-paper": ["-m", "nexus_backtest.library_forward"],
     "bot": ["-m", "nexus_execution.bot"],
     "grid-paper": ["-m", "nexus_execution.grid_paper"],
+    "adaptive-grid": ["-m", "nexus_execution.adaptive_grid_paper"],
     "x-sentiment": ["-m", "nexus_social.service"],
 }
 
@@ -142,7 +143,7 @@ class InlineWorkers:
     def for_settings(cls, settings: Settings, *,
                      only: Sequence[str] | None = None) -> InlineWorkers:
         from nexus_backtest import forward_taker, library_forward, trend_paper
-        from nexus_execution import bot, grid_paper, spot_paper, trader
+        from nexus_execution import adaptive_grid_paper, bot, grid_paper, spot_paper, trader
         from nexus_market import carry_paper, derivatives, runner
         from nexus_news import service as news
         from nexus_notify import service as notifier
@@ -163,7 +164,8 @@ class InlineWorkers:
             "spot-engine": lambda stop: spot_paper.serve(settings, stop),
             "library-paper": lambda stop: library_forward.serve(settings, stop),
             "bot": lambda stop: bot.serve(settings, stop),
-            "grid-paper": lambda stop: grid_paper.serve(settings, stop)}
+            "grid-paper": lambda stop: grid_paper.serve(settings, stop),
+            "adaptive-grid": lambda stop: adaptive_grid_paper.serve(settings, stop)}
         if settings.x_bearer_token is not None:
             workers["x-sentiment"] = lambda stop: social.serve(settings, stop)
         if only is not None:

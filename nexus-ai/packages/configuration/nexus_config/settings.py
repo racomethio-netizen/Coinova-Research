@@ -230,6 +230,12 @@ class Settings(BaseSettings):
     grid_bot_mode: Literal["off", "paper"] = "paper"
     grid_symbol: str = "BTC/USDT"
     grid_capital: Decimal = Field(default=Decimal("1000"), gt=0, le=Decimal("100000"))
+    # Adaptive grid system (owner request 2026-11-26): PAPER ONLY, independent spot and
+    # futures paper accounts. There is no live setting for this system.
+    agrid_mode: Literal["off", "paper"] = "paper"
+    agrid_spot_capital: Decimal = Field(default=Decimal("5000"), gt=0, le=Decimal("1000000"))
+    agrid_futures_capital: Decimal = Field(default=Decimal("5000"), gt=0,
+                                           le=Decimal("1000000"))
     # Bearer token for GET /metrics (Prometheus). Unset = the endpoint does not exist.
     metrics_token: SecretStr | None = None
     minute_retention_days: int = Field(default=30, ge=1, le=90)

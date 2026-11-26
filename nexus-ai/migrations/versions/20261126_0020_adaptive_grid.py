@@ -26,6 +26,7 @@ KINDS = ("decision", "regime", "grid_start", "grid_refused", "arm", "fill", "fun
 
 
 def _protect(table: str) -> None:
+    # ``table`` is one of the two constant names below, never user input.
     op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
     op.execute(f"""
     CREATE OR REPLACE FUNCTION {table}_append_only() RETURNS trigger
@@ -51,7 +52,7 @@ def _protect(table: str) -> None:
         EXECUTE 'GRANT SELECT, INSERT ON {table} TO nexus_app';
       END IF;
     END $$;
-    """)
+    """)  # noqa: S608 - ``table`` is one of two constant names, never user input
 
 
 def upgrade() -> None:
