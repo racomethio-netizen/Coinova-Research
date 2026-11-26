@@ -4,6 +4,19 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-26
 
+- **Multi-asset platform, Stage 1** (owner brief "Universal multi-asset autonomous trading
+  platform").
+  * Audit with 5 reports: docs/MULTI_ASSET_AUDIT_2026-11-26.md.
+  * Shared market registry for crypto, stocks, commodities and forex
+    (`nexus_common.markets`), with honest connector status: only crypto connectors exist.
+  * A per-market switch OFF / RESEARCH / PAPER / LIVE:
+    * durable in the audit log;
+    * narrows, never widens, the operating mode;
+    * LIVE needs the market's own phrase, 2FA and its live checks.
+  * Wired into the crypto trader, the spot engine and the bot. The default (PAPER) leaves
+    behaviour unchanged.
+  * API `/api/v1/markets` and dashboard **All markets**. Docs: docs/MULTI_ASSET.md.
+
 - **Medallion-style market-neutral model (pre-registered, one run): FAILED.**
   * Tested on all 918 Binance USDT perpetuals, delisted included: 16 signals, Ridge and
     XGBoost walk-forward, long 10 / short 10 daily, 2022-01 to 2026-10.

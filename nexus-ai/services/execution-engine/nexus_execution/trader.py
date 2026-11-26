@@ -178,6 +178,7 @@ class TradingEngine:
         self.risk_status = RiskStatus(RiskState.NORMAL, (), Decimal(1))
         self._recorded_state: str | None = None
         self.operating_mode = parse_opmode(None)
+        self.market_autonomy: str | None = None      # crypto switch, read each cycle
 
     # ------------------------------------------------------------------ bootstrap
     def bootstrap(self) -> int:
@@ -976,7 +977,8 @@ class TradingEngine:
             await self.evaluate_entries(v, day0, week0, peak)
         else:
             log.info("entries_paused", state=state.value, risk_state=status.state.value,
-                     operating_mode=self.operating_mode.value)
+                     operating_mode=self.operating_mode.value,
+                     crypto_market=str(self.market_autonomy))
         await self.redis.set(events.heartbeat_key(f"trader:{self.mode}"), utcnow().isoformat(),
                              ex=300)
 
@@ -1002,14 +1004,20 @@ class TradingEngine:
         return False
 
     def _read_operating_mode(self) -> OperatingMode:
-        """Owner's operating mode from the audit log; unreadable = ANALYSIS_ONLY."""
+        """Owner's operating mode from the audit log, narrowed by the crypto market's
+        autonomy switch (``nexus_common.markets``); unreadable = ANALYSIS_ONLY."""
+        from nexus_common.markets import Market, combine
+
+        from nexus_execution.markets_gate import read_autonomy
+
         try:
             with transaction(self.factory) as s:
                 row = repo.operating_mode_db_state(s)
         except Exception as exc:
             log.error("operating_mode_unreadable", error=type(exc).__name__)
             return OperatingMode.ANALYSIS_ONLY
-        return parse_opmode(row.get("mode") if row else None)
+        self.market_autonomy = read_autonomy(self.factory, Market.CRYPTO)
+        return combine(parse_opmode(row.get("mode") if row else None), self.market_autonomy)
 
     def _owner_floor(self) -> RiskState:
         """Owner's minimum state from the audit log; unreadable = NO_NEW_TRADES."""

@@ -1386,3 +1386,86 @@ async def test_edge_monitor_stops_a_decaying_strategy_and_only_the_owner_resets(
     with transaction(factory) as s:
         st = edge.update(s, pid, "momentum")
         assert st is not None and st.state.name == "NORMAL" and st.trades == 0
+
+
+# ------------------------------------------------- multi-asset Stage 1: crypto market switch
+def _set_market(factory: Any, autonomy: str, actor: str = "user:1",
+                market: str = "crypto") -> None:
+    with transaction(factory) as s:
+        repo.record_audit(s, actor=actor, action="market_autonomy_set", target_type="market",
+                          target_id=market, details={"autonomy": autonomy})
+
+
+async def test_crypto_market_switch_narrows_the_trader(engine_setup: tuple[Any, ...]) -> None:
+    eng, factory, _, redis = engine_setup
+    eng.bootstrap()
+    from nexus_common.botstate import BotState, set_state
+
+    await set_state(redis, BotState.RUNNING, actor="user:1", reason="test")
+    calls: list[int] = []
+
+    async def spy(*_: Any) -> None:
+        calls.append(1)
+
+    eng.evaluate_entries = spy  # type: ignore[method-assign]
+    await eng.cycle()
+    assert calls == [1] and eng.operating_mode.value == "PAPER_TRADING"   # default unchanged
+    _set_market(factory, "OFF")
+    await eng.cycle()
+    assert calls == [1] and eng.operating_mode.value == "ANALYSIS_ONLY"
+    _set_market(factory, "PAPER", actor="system:x")      # not the owner: ignored
+    await eng.cycle()
+    assert calls == [1]
+    _set_market(factory, "PAPER", market="stocks")       # another market: no effect
+    await eng.cycle()
+    assert calls == [1]
+    _set_market(factory, "bogus")                        # unrecognised: fail closed
+    await eng.cycle()
+    assert calls == [1] and eng.operating_mode.value == "ANALYSIS_ONLY"
+    _set_market(factory, "RESEARCH")
+    await eng.cycle()
+    assert calls == [1, 1] and eng.operating_mode.value == "SIGNALS_ONLY"
+    await eng.handle_signal(1, signal(), await eng.valuation(), D(10_000), D(10_000), D(10_000))
+    status, reason = await _decision(factory)
+    assert status == "approved" and reason.startswith("SIGNALS_ONLY: passed all checks")
+    with transaction(factory) as s:
+        assert s.scalar(select(func.count()).select_from(models.Order)) == 0
+
+
+async def test_spot_runner_respects_the_crypto_market_switch(
+        engine_setup: tuple[Any, ...], monkeypatch: pytest.MonkeyPatch) -> None:
+    """Crypto switch at RESEARCH: the spot engine (and the bot, which uses the same
+    runner) records the signal with the reason and places no order."""
+    import numpy as np
+    import pandas as pd
+    from nexus_execution import spot_paper as sp
+
+    eng, factory, _state, redis = engine_setup
+    end = utcnow().replace(second=0, microsecond=0)
+    end -= timedelta(minutes=end.minute % 15)
+    idx = pd.date_range(end=end - timedelta(minutes=15), periods=sp.WARMUP_BARS, freq="15min",
+                        tz="UTC")
+    close = 60_000 * np.exp(np.cumsum(np.random.default_rng(0).normal(0, 0.0005, len(idx))))
+    close *= 60_000 / close[-1]
+    with transaction(factory) as s:
+        pid = repo.pair_id(s, "binance", "BTC/USDT")
+        repo.upsert_candles(s, pid, "15m", [
+            repo.CandleRow(t.to_pydatetime(), D(str(round(c, 2))), D(str(round(c * 1.001, 2))),
+                           D(str(round(c * 0.999, 2))), D(str(round(c, 2))), D(100))
+            for t, c in zip(idx, close, strict=True)])
+    candidate = {"strategy": "trend_pullback", "timeframe": "15m", "bar": idx[-1], "entry": True,
+                 "candidate": True, "reason": None, "stop": 59_400.0, "r": 600.0, "tp1": 60_900.0,
+                 "tp2": 61_800.0, "score": 1.0, "chk_volume_confirmed": True}
+    real_latest = sp.latest_candidates
+    monkeypatch.setattr(sp, "latest_candidates",
+                        lambda sym, m15, btc_h4: (real_latest(sym, m15, btc_h4)[0], [candidate]))
+    _set_market(factory, "RESEARCH")
+    runner = sp.SpotPaperRunner(eng.settings, factory, redis, eng.adapters, eng.books, eng.broker)
+    runner.bootstrap()
+    status = await runner.cycle(end + timedelta(minutes=1))
+    assert status["crypto_market"] == "RESEARCH"
+    rec = status["signals"][0]
+    assert rec["status"] == "rejected"
+    assert any("crypto market switch is RESEARCH" in r for r in rec["reasons"])
+    with transaction(factory) as s:
+        assert s.scalar(select(func.count()).select_from(models.Order)) == 0

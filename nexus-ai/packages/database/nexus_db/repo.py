@@ -203,6 +203,21 @@ def operating_mode_db_state(session: Session) -> dict[str, Any] | None:
             "at": row.created_at.isoformat() if row.created_at else None}
 
 
+def market_autonomy_db_state(session: Session) -> dict[str, dict[str, Any]]:
+    """Latest owner choice of autonomy per market (audit log), keyed by market."""
+    from nexus_common.markets import AUDIT_ACTION
+
+    rows = session.scalars(select(m.AuditLog).where(
+        m.AuditLog.action == AUDIT_ACTION, m.AuditLog.target_type == "market",
+        m.AuditLog.actor.like("user:%")).order_by(m.AuditLog.id.desc()).limit(500))
+    out: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if row.target_id and row.target_id not in out:
+            out[row.target_id] = {**(row.details or {}), "actor": row.actor,
+                                  "at": row.created_at.isoformat() if row.created_at else None}
+    return out
+
+
 def first_gap(session: Session, pair_id: int, timeframe: str, start: datetime,
               end: datetime, step_seconds: int) -> datetime | None:
     """Open time of the first MISSING closed bar in [start, end), or None if complete.

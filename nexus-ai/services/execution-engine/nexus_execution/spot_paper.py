@@ -30,6 +30,7 @@ from typing import Any
 import pandas as pd
 from nexus_common.decimals import floor_to_step
 from nexus_common.logging import get_logger
+from nexus_common.markets import Autonomy, Market, allows_entries
 from nexus_common.timeutil import utcnow
 from nexus_config import Settings, TradingMode
 from nexus_db import models, repo, transaction
@@ -43,6 +44,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from nexus_execution import protection
 from nexus_execution.brokers import PaperBroker
+from nexus_execution.markets_gate import read_autonomy
 from nexus_execution.order_manager import (
     DuplicateOrder,
     InsufficientBalance,
@@ -167,6 +169,7 @@ class SpotPaperRunner:
         self.p = profile or SPOT
         self.orders = OrderManager(factory, broker, redis=redis)
         self.portfolio_id = 0
+        self.market_autonomy = Autonomy.OFF        # read at the start of every cycle
 
     # ------------------------------------------------------------------ setup
     def bootstrap(self) -> int:
@@ -281,6 +284,7 @@ class SpotPaperRunner:
                 btc = None
         btc_h4 = resample(btc, "4h", self.p.btc_per_4h) if btc is not None and len(btc) else None
         killed = await KillSwitch(self.redis).is_engaged()
+        self.market_autonomy = read_autonomy(self.factory, Market.CRYPTO)
         books = {s: await self.books.get(EXCHANGE, s) for s in symbols}
         marks = {s: float(b.mid) for s, b in books.items() if b is not None and b.mid}
         held = self._positions()
@@ -295,6 +299,7 @@ class SpotPaperRunner:
         status: dict[str, Any] = {"at": now.isoformat(), "live_trading": "DISABLED",
                                   "mode": "monitor" if self.p.monitor_only else "paper",
                                   "engine": self.p.engine, "kill_switch": killed,
+                                  "crypto_market": self.market_autonomy.value,
                                   "symbols": {}, "risk": {}, "signals": []}
         # Positions as rule objects (levels from the entry order; stop from the position row).
         rule_pos: dict[int, tuple[Position, models.Position, str]] = {}
@@ -412,6 +417,9 @@ class SpotPaperRunner:
         if bool(c["entry"]):
             if self.p.monitor_only:
                 reasons.append("monitor mode: signals only, no orders")
+            if not allows_entries(self.market_autonomy, "paper"):
+                reasons.append(f"crypto market switch is {self.market_autonomy.value}: "
+                               "no new orders")
             if killed:
                 reasons.append("kill switch engaged")
             if not fresh:

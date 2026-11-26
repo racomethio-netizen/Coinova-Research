@@ -997,6 +997,97 @@ async def set_operating_mode(body: OperatingModeBody, s: Session = Depends(db),
     return {"mode": body.mode, "note": "Applied by the trader on its next cycle (about 30 s)."}
 
 
+class MarketAutonomyBody(BaseModel):
+    autonomy: Literal["OFF", "RESEARCH", "PAPER", "LIVE"]
+    reason: str = Field(min_length=5, max_length=500)
+    confirm: str | None = Field(default=None, max_length=64)
+    totp: str | None = Field(default=None, max_length=6)
+
+
+@router.get("/markets", dependencies=[Depends(owner)])
+async def markets_overview(s: Session = Depends(db), redis: Any = Depends(redis_dep),
+                           settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Every market with its autonomy switch, what it supports, its venues and connector
+    status, and (crypto) the paper book's open and closed positions. Nothing is shown as
+    connected unless NEXUS has a working connector for it."""
+    from nexus_common.markets import (
+        MARKETS,
+        Autonomy,
+        Market,
+        combine,
+        describe,
+        effective,
+        live_phrase,
+    )
+    from nexus_common.opmode import parse as parse_op
+    from nexus_common.opmode import places_orders
+
+    rows = repo.market_autonomy_db_state(s)
+    op_row = repo.operating_mode_db_state(s)
+    op = parse_op(op_row.get("mode") if op_row else None)
+    crypto_blockers = await _live_mode_blockers(s, redis, settings)
+    positions = {k: int(v) for k, v in s.execute(
+        select(models.Position.status, func.count()).where(models.Position.mode == "paper")
+        .group_by(models.Position.status)).all()}
+    out = []
+    for d in describe():
+        mk = Market(d["market"])
+        auto = effective(mk, rows)
+        row = rows.get(mk.value) or {}
+        eff = combine(op, auto)
+        d.update(autonomy=auto.value, set_by=row.get("actor"), at=row.get("at"),
+                 reason=row.get("reason"), live_confirm_phrase=live_phrase(mk),
+                 effective_mode=eff.value,
+                 paper_orders=places_orders(eff, "paper"), live_orders=places_orders(eff, "live"))
+        if mk is Market.CRYPTO:
+            d["live_blockers"] = crypto_blockers
+            d["paper_positions"] = {"open": positions.get("open", 0),
+                                    "closed": positions.get("closed", 0)}
+        else:
+            d["live_blockers"] = MARKETS[mk].missing_for(Autonomy.LIVE)
+            d["paper_positions"] = None
+        out.append(d)
+    return {"operating_mode": op.value, "markets": out,
+            "server_trading_mode": settings.trading_mode.value}
+
+
+@router.post("/markets/{market}/autonomy", dependencies=[Depends(owner)])
+async def set_market_autonomy(market: str, body: MarketAutonomyBody, s: Session = Depends(db),
+                              redis: Any = Depends(redis_dep),
+                              viewer: Viewer = Depends(current_viewer),
+                              settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Set one market's switch. A less active mode is always allowed (if the market
+    supports it). LIVE needs that market's exact phrase, 2FA and its live gates."""
+    from nexus_common.markets import AUDIT_ACTION, MARKETS, Autonomy, Market, live_phrase
+
+    try:
+        mk = Market(market)
+    except ValueError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unknown market") from None
+    want = Autonomy(body.autonomy)
+    missing = MARKETS[mk].missing_for(want)
+    if missing:
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            f"{mk.value} cannot be set to {want.value}: " + "; ".join(missing))
+    if want is Autonomy.LIVE:
+        if body.confirm != live_phrase(mk):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"type exactly: {live_phrase(mk)}")
+        await check_totp(viewer, body.totp, settings, redis)
+        blockers = await _live_mode_blockers(s, redis, settings) if mk is Market.CRYPTO else \
+            ["no live connector"]
+        if blockers:
+            raise HTTPException(status.HTTP_409_CONFLICT,
+                                f"live trading for {mk.value} not permitted: " + "; ".join(blockers))
+    previous = repo.market_autonomy_db_state(s).get(mk.value)
+    repo.record_audit(s, actor=viewer.actor, action=AUDIT_ACTION, user_id=viewer.user.id,
+                      target_type="market", target_id=mk.value,
+                      details={"autonomy": want.value, "reason": body.reason,
+                               "previous": previous.get("autonomy") if previous else None})
+    return {"market": mk.value, "autonomy": want.value,
+            "note": "Applied by the workers on their next cycle (about 30 s). Open positions "
+                    "stay protected."}
+
+
 class FundLiveBody(BaseModel):
     amount: Decimal = Field(gt=0)
     asset: str = Field(default="USDT", pattern=r"^[A-Z0-9]{2,10}$")

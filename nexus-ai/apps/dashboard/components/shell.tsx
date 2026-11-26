@@ -8,7 +8,7 @@ import { ModeProvider, useMode } from "@/lib/hooks";
 
 // Fifteen sections; each section's first link is its landing page.
 export const SECTIONS: [string, [string, string][]][] = [
-  ["Overview", [["/", "Overview"]]],
+  ["Overview", [["/", "Overview"], ["/multi-asset/", "All markets"]]],
   ["Live Markets", [["/markets/", "Live markets"], ["/data-quality/", "Data quality"]]],
   ["AI Analysis", [["/intelligence/", "Market analysis"], ["/technical/", "Technical analysis"], ["/candidates/", "Trade candidates"], ["/decisions/", "Decision log"], ["/proposals/", "Trade proposals"], ["/signals/", "Signals"], ["/models/", "AI models"]]],
   ["Strategy Center", [["/strategies/", "Strategies"], ["/carry/", "Funding carry test"], ["/taker-test/", "Taker flow test"], ["/trend-test/", "Trend strategy test"], ["/spot-engine/", "Spot strategy engine"], ["/strategy-lab/", "Strategy lab"], ["/trading-bot/", "Trading bot"], ["/adaptive-grid/", "Adaptive grid"], ["/grid-bot/", "Grid bot"], ["/strategy-test/", "Strategy test"]]],

@@ -816,3 +816,39 @@ def test_statarb_research_endpoint(client: TestClient) -> None:
     assert set(r["backtest"]["models"]) == {"ridge", "xgboost"}
     assert r["backtest"]["models"]["ridge"]["breakdown"]["price_moves"] > 0
     assert r["preregistration"].endswith("statarb-ml-preregistration.md")
+
+
+def test_markets_overview_and_per_market_switch(client: TestClient) -> None:
+    assert client.get("/api/v1/markets").status_code == 401
+    login(client)
+    m = client.get("/api/v1/markets").json()
+    by = {x["market"]: x for x in m["markets"]}
+    assert set(by) == {"crypto", "stocks", "commodities", "forex"}
+    assert by["crypto"]["autonomy"] == "PAPER" and by["crypto"]["paper_orders"] is True
+    for k in ("stocks", "commodities", "forex"):
+        assert by[k]["autonomy"] == "OFF" and by[k]["allowed"] == ["OFF"]
+        assert all(v["connector"] == "not_built" for v in by[k]["venues"])
+        assert by[k]["live_blockers"] and by[k]["paper_positions"] is None
+    r = client.post("/api/v1/markets/stocks/autonomy",
+                    json={"autonomy": "PAPER", "reason": "try stocks"}, headers=CSRF)
+    assert r.status_code == 409 and "no paper trading engine" in r.json()["detail"]
+    assert client.post("/api/v1/markets/gold/autonomy",
+                       json={"autonomy": "OFF", "reason": "unknown"},
+                       headers=CSRF).status_code == 404
+    r = client.post("/api/v1/markets/crypto/autonomy",
+                    json={"autonomy": "RESEARCH", "reason": "watch crypto first"}, headers=CSRF)
+    assert r.status_code == 200
+    c = {x["market"]: x for x in client.get("/api/v1/markets").json()["markets"]}["crypto"]
+    assert c["autonomy"] == "RESEARCH" and c["effective_mode"] == "SIGNALS_ONLY"
+    assert c["paper_orders"] is False and c["set_by"].startswith("user:")
+    live = {"autonomy": "LIVE", "reason": "go live on crypto"}
+    assert client.post("/api/v1/markets/crypto/autonomy", json=live,
+                       headers=CSRF).status_code == 400                       # phrase
+    live["confirm"] = c["live_confirm_phrase"]
+    assert client.post("/api/v1/markets/crypto/autonomy", json=live,
+                       headers=CSRF).status_code == 403                       # 2FA
+    r = client.post("/api/v1/markets/crypto/autonomy",
+                    json={"autonomy": "PAPER", "reason": "back to paper"}, headers=CSRF)
+    assert r.status_code == 200
+    audit = client.get("/api/v1/security").json()["audit"]
+    assert sum(1 for a in audit if a["action"] == "market_autonomy_set") >= 2

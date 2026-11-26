@@ -32,6 +32,17 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-26 late: multi-asset Stage 1 built and tested; NOT yet deployed.**
+  * Audit: docs/MULTI_ASSET_AUDIT_2026-11-26.md.
+  * Stage plan and the switch: docs/MULTI_ASSET.md.
+  * Stocks, commodities and forex stay OFF: no data source, paper engine or broker
+    connector yet, and none is claimed.
+  * Next stages need owner input:
+    * Stage 3: approve a data source.
+    * Stage 4: an IBKR account (paper is enough) and a host for IB Gateway.
+    * Stage 5: choose the forex broker and host (MT5 needs Windows).
+  * Stage 2 (instruments, sessions, base currency) needs nothing from the owner.
+
 * **2026-11-26 late: "Medallion-style" model (owner request), single pre-registered run:
   FAILED.** See docs/research/2026-11-26-statarb-ml-preregistration.md.
   * Ridge −85.5%, XGBoost −65.8% (2022-01 to 2026-10, all 918 USDT perpetuals).
