@@ -46,8 +46,18 @@ something passes, which would be data snooping.
   * Blocked on the owner, by nature:
     * IBKR account and IB Gateway host (Stage 4);
     * forex broker and host (Stage 5).
-  * Stage 2 done the same night: sessions, instruments, base currency, migration 0021
-    (applies automatically on deploy).
+  * Stage 2 done the same night: sessions, instruments, base currency, migration 0021.
+  * **Deployed and verified:**
+    * Stage 3 at 21:31 UTC (Render 82af32d).
+    * Stage 2 at 21:37 UTC (Render af64397).
+    * Production `alembic_version` = 0021; both trading pairs default to crypto/spot/x1.
+    * The `multiasset-research` worker's first run fetched all 13 Binance stock and
+      commodity perpetuals (HTTP 200 from Frankfurt) and FRED data. The stocks paper
+      forward test starts after the 27 Nov trading day.
+  * Next:
+    * Check the NASDAQ-100 and crypto paper tests after their first days.
+    * Stage 4 and Stage 5 wait for the owner's broker accounts and hosts.
+    * Stage 6 (cross-market risk budget) only makes sense once two markets trade.
 
 * **2026-11-26 late: multi-asset Stage 1 built and tested; NOT yet deployed.**
   * Audit: docs/MULTI_ASSET_AUDIT_2026-11-26.md.
