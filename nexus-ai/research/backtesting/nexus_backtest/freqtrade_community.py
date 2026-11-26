@@ -193,14 +193,18 @@ def ft_config(path: Path, datadir: Path, fee: float) -> None:
     path.write_text(json.dumps(cfg, indent=1))
 
 
-def run_one(ft: Path, repo: Path, row: dict[str, Any], datadir: Path, work: Path,
-            fee: float) -> dict[str, Any]:
+def run_one(ft_python: Path, repo: Path, row: dict[str, Any], datadir: Path, work: Path,
+            fee: float, exinfo: Path) -> dict[str, Any]:
+    """One Freqtrade backtest, run by Freqtrade's own interpreter through
+    ``freqtrade_offline`` (market rules from the saved ``exinfo`` file, no exchange call)."""
     start, short = window(row["published"])
     cfg = work / f"config-{fee}.json"
     ft_config(cfg, datadir, fee)
     out = work / f"{row['strategy']}-{fee}.json"
     spath = repo / "user_data" / "strategies" / Path(row["file"]).parent
-    cmd = [str(ft), "backtesting", "-c", str(cfg), "--strategy", row["strategy"],
+    offline = Path(__file__).with_name("freqtrade_offline.py")
+    cmd = [str(ft_python), "-I", str(offline), str(exinfo), "backtesting", "-c", str(cfg),
+           "--strategy", row["strategy"],
            "--strategy-path", str(spath), "--timerange", f"{start}-{OOS_END}",
            "--export", "trades", "--export-filename", str(out), "--cache", "none",
            "--userdir", str(work / "ud"), "--datadir", str(datadir), "--fee", str(fee)]
@@ -329,7 +333,8 @@ def main() -> None:
     ap.add_argument("step", choices=("data", "run", "report"))
     ap.add_argument("--work", type=Path, required=True)
     ap.add_argument("--repo", type=Path)
-    ap.add_argument("--freqtrade", type=Path)
+    ap.add_argument("--ft-python", type=Path, help="python of the Freqtrade environment")
+    ap.add_argument("--exinfo", type=Path, help="saved Binance exchangeInfo JSON")
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--out", type=Path)
     a = ap.parse_args()
@@ -352,7 +357,7 @@ def main() -> None:
                     continue
                 w = a.work / "tmp" / f"{row['strategy']}-{fee}"
                 w.mkdir(parents=True, exist_ok=True)
-                res = run_one(a.freqtrade, a.repo, row, datadir, w, fee)
+                res = run_one(a.ft_python, a.repo, row, datadir, w, fee, a.exinfo)
                 dest.write_text(json.dumps(res))
                 print(row["strategy"], fee, res.get("error") or f"{len(res['trades'])} trades",
                       flush=True)
