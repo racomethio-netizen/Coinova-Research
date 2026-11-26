@@ -106,3 +106,11 @@ def test_xgboost_path_trains_walk_forward():
     pred, imp = sm.walk_forward(df, "xgboost", start=start, end=START + pd.Timedelta(days=520))
     assert len(pred) > 0 and max(imp.values()) > 0
     assert pred.index.get_level_values("date").min() >= start
+
+
+def test_plain_terms_breakdown_adds_up():
+    m = {"sum_daily_returns": -0.5, "costs": 0.8, "funding": -0.9}
+    rep = sm.plain_terms({"models": {"ridge": dict(m)}, "baseline_reversal_1d": dict(m)})
+    b = rep["models"]["ridge"]["breakdown"]
+    assert b["price_moves"] == pytest.approx(1.2)
+    assert b["price_moves"] + b["trading_costs"] + b["funding"] == pytest.approx(b["total"])

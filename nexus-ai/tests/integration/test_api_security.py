@@ -806,3 +806,13 @@ def test_market_making_research_endpoint(client: TestClient) -> None:
     assert r["backtest"]["summary"] == {"passed": [], "tested": 8}
     assert all(v["plain"]["pnl_before_fees"] < 0 for v in r["backtest"]["variants"].values())
     assert r["preregistration"].endswith("market-making-preregistration.md")
+
+
+def test_statarb_research_endpoint(client: TestClient) -> None:
+    assert client.get("/api/v1/research/statarb-ml").status_code == 401
+    login(client)
+    r = client.get("/api/v1/research/statarb-ml").json()
+    assert r["backtest"]["summary"]["passed"] == []
+    assert set(r["backtest"]["models"]) == {"ridge", "xgboost"}
+    assert r["backtest"]["models"]["ridge"]["breakdown"]["price_moves"] > 0
+    assert r["preregistration"].endswith("statarb-ml-preregistration.md")

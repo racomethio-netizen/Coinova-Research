@@ -143,3 +143,50 @@ Each model is judged separately; a model passes only if all hold.
 ## Results
 
 _(appended after the single run)_
+
+### Results of the single run (2026-11-26, harness commit 9722774)
+
+Output: `research/backtesting/nexus_backtest/results/statarb_ml_2026-11.json`, also on the
+dashboard page **Strategy test**. Historical backtest only; no order was placed.
+* **Data:**
+  * 918 USDT perpetuals, delisted included.
+  * 23,108 kline and 21,818 funding archives, all matching their checksums.
+  * 60 eligible coins on every out-of-sample day.
+* **Before the run:** a first attempt did not start, because a timing tool was missing,
+  and produced no output. It was re-run unchanged.
+
+**FAILED: neither model passes. Each failed 7 of 8 gates and passed only "better than the
+1-day reversal baseline".**
+
+| Model, 2022-01 to 2026-10 | Net | Sharpe | Worst drop | p-value | At 2× costs |
+|---|---|---|---|---|---|
+| A: Ridge | −85.5% | −0.65 | −92.4% | 0.94 | −96.0% |
+| B: XGBoost | −65.8% | −0.33 | −74.7% | 0.79 | −93.5% |
+| Baseline: 1-day reversal | −94.1% | −1.09 | −95.0% | — | −99.6% |
+
+* **By year:**
+  * Ridge: −3.5%, −45.3%, −26.9%, −35.4%, −41.9%.
+  * XGBoost: −8.9%, −25.0%, −12.0%, −33.4%, −14.5%.
+* **Where the result came from** (simple sums of daily returns, as a share of the book):
+
+  | | Price moves | Trading costs | Funding | Total |
+  |---|---|---|---|---|
+  | Ridge | **+173%** | −128% | −187% | −142% |
+  | XGBoost | **+280%** | −166% | −181% | −66% |
+  | 1-day reversal | +52% | −276% | −10% | −234% |
+
+**What this shows.**
+* **The models found real price patterns.** Before costs and funding, both earned on
+  price, out of sample.
+* **Mostly, the patterns were funding in disguise.** The models sold short volatile coins
+  that tended to fall. On exactly those coins, crowded short sellers pay funding.
+  * The most volatile third of the universe averaged −0.069% funding a day; the least
+    volatile third averaged +0.025%.
+  * The funding the models paid (about 0.1% of the book a day) cancelled the price gains.
+* **Trading every day cost more again:** 0.7–0.9 of the book traded per day.
+* **The market is efficient here.** The price drift is paid back through funding.
+* The pre-registered target was the price return only. Training on price plus funding
+  would be a **new** hypothesis needing its own pre-registration. It is not re-tuned
+  here.
+
+**Consequence.** No bot is built. Recorded and shown in the app.

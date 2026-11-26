@@ -32,6 +32,16 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-26 late: "Medallion-style" model (owner request), single pre-registered run:
+  FAILED.** See docs/research/2026-11-26-statarb-ml-preregistration.md.
+  * Ridge −85.5%, XGBoost −65.8% (2022-01 to 2026-10, all 918 USDT perpetuals).
+  * Price gains of +173% / +280% (simple sums) were cancelled by funding on the shorts
+    and by trading costs.
+  * Possible NEW hypothesis, needing its own pre-registration: train on price + funding
+    with lower turnover.
+  * Harness and API route deployed at 20:44 UTC (Render b9b7313). The results file needs
+    one more "Deploy".
+
 * **2026-11-26 evening: market making (owner chose it as the method of the world's top
   bots), single pre-registered run: FAILED 0 of 8 variants.**
   See docs/research/2026-11-26-market-making-preregistration.md.

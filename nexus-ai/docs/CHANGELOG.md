@@ -4,6 +4,14 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-26
 
+- **Medallion-style market-neutral model (pre-registered, one run): FAILED.**
+  * Tested on all 918 Binance USDT perpetuals, delisted included: 16 signals, Ridge and
+    XGBoost walk-forward, long 10 / short 10 daily, 2022-01 to 2026-10.
+  * Net: Ridge −85.5%, XGBoost −65.8%.
+  * The models earned on price, but the funding paid on their shorts and the daily
+    trading costs cancelled it.
+  * Results are on the Strategy test page (`/api/v1/research/statarb-ml`).
+
 - **Market making (pre-registered, one run): FAILED, 0 of 8 variants.**
   * Tested Hummingbot-style two-sided quoting on 6 coins, perpetuals and spot, 2024-01 to
     2026-10.

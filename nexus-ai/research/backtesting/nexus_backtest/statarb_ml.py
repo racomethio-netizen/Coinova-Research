@@ -279,6 +279,18 @@ def report(results: dict[str, dict[str, Any]], baseline: dict[str, Any]) -> dict
             "summary": {"passed": [k for k, v in out.items() if v["passed"]]}}
 
 
+def plain_terms(rep: dict[str, Any]) -> dict[str, Any]:
+    """Where the result came from, as simple sums of daily returns (fractions of the
+    book): price moves of the positions, minus trading costs, plus funding (negative =
+    paid). Arithmetic on the report's own fields."""
+    rows = [*rep["models"].values(), rep["baseline_reversal_1d"]]
+    for v in rows:
+        v["breakdown"] = {"price_moves": v["sum_daily_returns"] + v["costs"] - v["funding"],
+                          "trading_costs": -v["costs"], "funding": v["funding"],
+                          "total": v["sum_daily_returns"]}
+    return rep
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--klines", type=Path, required=True)
@@ -301,8 +313,8 @@ def main() -> None:
     oos = df[(df.index.get_level_values("date") >= OOS_START) &
              (df.index.get_level_values("date") < OOS_END)]
     baseline = evaluate(-oos["r1"], ret, panel["funding"])
-    rep = report(results, baseline)
-    per_day = universe.loc[(universe.index >= OOS_START) & (universe.index < OOS_END)].sum(1)
+    rep = plain_terms(report(results, baseline))
+    per_day = universe.loc[(universe.index >= OOS_START) & (universe.index < OOS_END)].sum(axis=1)
     rep.update(importances=importances, generated_at=datetime.now(UTC).isoformat(),
                harness_commit=a.commit, kind="historical backtest (no orders placed)",
                paper=False, window=[str(OOS_START.date()), "2026-10-31"],

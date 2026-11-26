@@ -156,11 +156,13 @@ function StatArb() {
         { key: "n", label: "Net", numeric: true, render: (x: Any) => <span className={x.net_return > 0 ? "text-up" : "text-down"}>{pct(x.net_return, 1)}</span> },
         { key: "sh", label: "Sharpe", numeric: true, render: (x: Any) => num(x.sharpe, 2) },
         { key: "dd", label: "Worst drop", numeric: true, render: (x: Any) => pct(x.max_drawdown, 1) },
-        { key: "c2", label: "At 2x costs", numeric: true, render: (x: Any) => pct(x.stress_2x?.net_return, 1) },
+        { key: "pm", label: "Price gains", numeric: true, render: (x: Any) => pct(x.breakdown?.price_moves, 0) },
+        { key: "tc", label: "Trading costs", numeric: true, render: (x: Any) => pct(x.breakdown?.trading_costs, 0) },
+        { key: "fu", label: "Funding", numeric: true, render: (x: Any) => pct(x.breakdown?.funding, 0) },
         { key: "v", label: "Verdict", render: (x: Any) => x.baseline ? <span className="text-xs text-muted">comparison</span> : <Badge tone={x.passed ? "good" : "bad"}>{x.passed ? "passed" : "failed"}</Badge> },
         { key: "why", label: "Failed checks", render: (x: Any) => x.baseline ? DASH : <span className="text-xs text-muted">{failed(x.gates)}</span> },
       ]} />
-      <p className="mt-2 text-xs text-muted">Every Binance USDT perpetual that ever traded, delisted ones included; each day the 60 most traded were eligible. 16 signals per coin, models retrained every month on the past year only, then traded on the next month they had never seen. Equal long and short, so the market's direction does not matter. Fees, slippage and real funding are included. Historical backtest, no orders placed. Rules written before the run: {r.preregistration}</p>
+      <p className="mt-2 text-xs text-muted">Every Binance USDT perpetual that ever traded, delisted ones included; each day the 60 most traded were eligible. 16 signals per coin, models retrained every month on the past year only, then traded on the next month they had never seen. Equal long and short, so the market's direction does not matter. Fees, slippage and real funding are included. Price gains, costs and funding are simple sums of daily results, as a share of the book. The models did find price patterns, but the coins they sold short were the ones where short sellers pay heavy funding, and trading every day cost more again. Historical backtest, no orders placed. Rules written before the run: {r.preregistration}</p>
     </Card>
   );
 }
