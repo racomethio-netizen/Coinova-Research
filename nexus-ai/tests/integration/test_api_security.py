@@ -743,3 +743,34 @@ def test_strategy_test_and_grid_bot_endpoints(client: TestClient) -> None:
     ok = client.post("/api/v1/grid-bot/restart", json={"reason": "after stop-loss"},
                      headers=CSRF)
     assert ok.status_code == 200 and ok.json() == {"requested": True}
+
+
+def test_adaptive_grid_endpoints_controls_and_limits(client: TestClient) -> None:
+    import json as _json
+
+    for path in ("/api/v1/adaptive-grid", "/api/v1/adaptive-grid/universe"):
+        assert client.get(path).status_code == 401
+    assert client.post("/api/v1/adaptive-grid/control", json={"action": "pause",
+                       "reason": "testing"}, headers=CSRF).status_code == 401
+    login(client)
+    r = client.get("/api/v1/adaptive-grid")
+    assert r.status_code == 200 and r.json()["paper"] is True and "PAPER" in r.json()["note"]
+    assert client.get("/api/v1/adaptive-grid/universe").json() == {"spot": None,
+                                                                   "futures": None}
+    bad = client.post("/api/v1/adaptive-grid/control", json={"action": "go_live",
+                      "reason": "testing"}, headers=CSRF)
+    assert bad.status_code == 422                                # no such action exists
+    ok = client.post("/api/v1/adaptive-grid/control", json={"action": "emergency_shutdown",
+                     "reason": "drill"}, headers=CSRF)
+    assert ok.status_code == 200
+    rds = sync_redis.from_url(os.environ["NEXUS_TEST_REDIS_URL"])
+    queued = [_json.loads(x) for x in rds.lrange("nexus:agrid:commands", 0, -1)]
+    assert queued[-1]["action"] == "emergency_shutdown"
+    over = client.post("/api/v1/adaptive-grid/limits", json={
+        "limits": {"daily_loss": "0.05"}, "reason": "too loose"}, headers=CSRF)
+    assert over.status_code == 422 and "daily_loss" in over.text
+    good = client.post("/api/v1/adaptive-grid/limits", json={
+        "limits": {"daily_loss": "0.005"}, "reason": "tighter"}, headers=CSRF)
+    assert good.status_code == 200 and good.json()["limits"]["daily_loss"] == "0.005"
+    audit = client.get("/api/v1/security").json()["audit"]
+    assert {"agrid_emergency_shutdown", "agrid_limits"} <= {a["action"] for a in audit}

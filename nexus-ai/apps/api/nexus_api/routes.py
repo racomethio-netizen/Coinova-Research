@@ -1221,6 +1221,128 @@ async def freqtrade_community() -> dict[str, Any]:
     return res
 
 
+AgridAction = Literal["start", "pause", "resume", "stop_all", "emergency_shutdown"]
+
+
+class AgridControlBody(BaseModel):
+    action: AgridAction
+    symbol: str | None = Field(default=None, max_length=24, pattern=r"^[A-Z0-9]{2,24}$")
+    reason: str = Field(min_length=5, max_length=300)
+
+
+class AgridLimitsBody(BaseModel):
+    limits: dict[str, Any]
+    reason: str = Field(min_length=5, max_length=300)
+
+
+@router.get("/adaptive-grid")
+async def adaptive_grid(s: Session = Depends(db), redis: Any = Depends(redis_dep),
+                        settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """Adaptive grid system (PAPER ONLY): live status, recent fills and decisions, and
+    performance computed from the append-only ledger."""
+    from nexus_execution.adaptive_grid_paper import STATUS_KEY
+
+    raw = await redis.get(STATUS_KEY)
+
+    def history() -> dict[str, Any]:
+        E = models.AdaptiveGridEvent
+
+        def rows(kinds: tuple[str, ...], n: int) -> list[dict[str, Any]]:
+            q = select(E).where(E.kind.in_(kinds)).order_by(desc(E.id)).limit(n)
+            return [{"seq": r.seq, "at": ser(r.at), "account": r.account, "kind": r.kind,
+                     "grid_id": r.grid_id, "symbol": r.symbol,
+                     **{k: v for k, v in r.data.items() if k != "state"}}
+                    for r in s.scalars(q).all()]
+        perf: dict[str, dict[str, Any]] = {}
+        for r in s.scalars(select(E).where(E.kind.in_(("fill", "funding")))).all():
+            key = f"{r.account}:{r.symbol}"
+            p = perf.setdefault(key, {"market": r.account, "symbol": r.symbol, "fills": 0,
+                                      "round_trip_exits": 0, "realized": 0.0, "fees": 0.0,
+                                      "funding": 0.0, "wins": 0, "losses": 0})
+            if r.kind == "funding":
+                p["funding"] += float(r.data.get("paid") or 0)
+                continue
+            p["fills"] += 1
+            p["fees"] += float(r.data.get("fee") or 0)
+            if r.data.get("pnl") is not None:
+                pnl = float(r.data["pnl"])
+                p["realized"] += pnl
+                p["round_trip_exits"] += 1
+                p["wins" if pnl > 0 else "losses"] += 1
+        for p in perf.values():
+            p["net_after_costs"] = p["realized"] - p["fees"] - p["funding"]
+        return {"fills": rows(("fill",), 100),
+                "decisions": rows(("decision", "regime", "grid_start", "grid_refused",
+                                   "suspend", "resume", "stop", "retire", "risk", "control",
+                                   "funding", "gap"), 100),
+                "performance": sorted(perf.values(), key=lambda p: -p["net_after_costs"])}
+
+    return {"mode": settings.agrid_mode, "paper": True,
+            "status": json.loads(raw) if raw else None, **await asyncio.to_thread(history),
+            "note": "PAPER TRADING: simulated orders and balances on live Binance market "
+                    "data. No real order can be placed by this system."}
+
+
+@router.get("/adaptive-grid/universe")
+async def adaptive_grid_universe(s: Session = Depends(db)) -> dict[str, Any]:
+    """The latest dynamic-universe scan per market: selected, ranked and rejected."""
+    def load() -> dict[str, Any]:
+        out: dict[str, Any] = {}
+        for market in ("spot", "futures"):
+            r = s.scalar(select(models.GridUniverseScan)
+                         .where(models.GridUniverseScan.market == market)
+                         .order_by(desc(models.GridUniverseScan.id)).limit(1))
+            out[market] = None if r is None else {
+                "at": ser(r.at), "selected": r.data.get("selected", []),
+                "ranked": r.data.get("ranked", []),
+                "symbols_seen": r.data.get("symbols_seen"),
+                "rejected_count": len(r.data.get("rejected_stage_one", []))}
+        return out
+    return await asyncio.to_thread(load)
+
+
+@router.post("/adaptive-grid/control", dependencies=[Depends(owner)])
+async def adaptive_grid_control(body: AgridControlBody, s: Session = Depends(db),
+                                redis: Any = Depends(redis_dep),
+                                viewer: Viewer = Depends(current_viewer)) -> dict[str, Any]:
+    """Owner control of the PAPER grid system (audited). None of these can enable live
+    trading: the system has no live path."""
+    from nexus_execution.adaptive_grid_paper import COMMANDS_KEY
+
+    cmd = {"action": body.action, "symbol": body.symbol, "by": viewer.actor,
+           "reason": body.reason}
+    await redis.rpush(COMMANDS_KEY, json.dumps(cmd))
+    repo.record_audit(s, actor=viewer.actor, action=f"agrid_{body.action}",
+                      user_id=viewer.user.id, target_type="adaptive_grid",
+                      details={**cmd, "paper": True})
+    return {"queued": cmd}
+
+
+@router.post("/adaptive-grid/limits", dependencies=[Depends(owner)])
+async def adaptive_grid_limits(body: AgridLimitsBody, s: Session = Depends(db),
+                               redis: Any = Depends(redis_dep),
+                               viewer: Viewer = Depends(current_viewer)) -> dict[str, Any]:
+    """Set the grid risk limits (only within the hard ceilings; audited)."""
+    from nexus_execution.adaptive_grid_paper import COMMANDS_KEY, LIMITS_KEY
+    from nexus_risk.grid_risk import GridRiskLimits
+
+    try:
+        lim = GridRiskLimits.from_json(body.limits)
+    except (ValueError, ArithmeticError) as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "invalid limit value") \
+            from exc
+    problems = lim.problems()
+    if problems:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "; ".join(problems))
+    await redis.set(LIMITS_KEY, json.dumps(lim.to_json()))
+    await redis.rpush(COMMANDS_KEY, json.dumps({"action": "set_limits",
+                                                "limits": lim.to_json()}))
+    repo.record_audit(s, actor=viewer.actor, action="agrid_limits", user_id=viewer.user.id,
+                      target_type="adaptive_grid",
+                      details={"limits": lim.to_json(), "reason": body.reason})
+    return {"limits": lim.to_json()}
+
+
 class GridRestartBody(BaseModel):
     reason: str = Field(min_length=5, max_length=300)
 
