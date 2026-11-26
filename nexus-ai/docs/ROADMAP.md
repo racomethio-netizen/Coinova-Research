@@ -39,7 +39,11 @@ something passes, which would be data snooping.
     the order (adverse selection). A random walk with no fees reproduces the loss.
   * Built: API `/api/v1/research/market-making` and a Strategy test card. No bot (the
     test failed).
-  * Not yet deployed; it needs the owner's "Deploy".
+  * **Deployed 19:59 UTC 26 Nov** (Render commit afe9b4e = repo b1a3990). Readiness is
+    OK and the endpoint is live (401 when signed out).
+  * Small follow-up: on each restart the grid bot's first cycle hits one Redis connection
+    timeout, while every worker connects at once. It recovers on the next tick. A short
+    start-up delay or retry would remove the error line.
 
 * **2026-11-26 evening: batch 3 tests ("Test next three"), single pre-registered run.**
   See docs/research/2026-11-26-batch3-preregistration.md.
