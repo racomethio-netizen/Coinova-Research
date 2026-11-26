@@ -54,6 +54,8 @@ const GATE_LABELS: Record<string, string> = {
   better_than_v1: "better than v1", sharpe_above_hold: "Sharpe above holding", drawdown_10pts_smaller: "worst drop 10 points smaller",
   sharpe_above_hold_both_halves: "Sharpe above holding in both halves", holds_at_2x_costs: "still better at 2x costs", sharpe_ge_0_5: "Sharpe at least 0.5",
   significant_p_lt_0_05: "statistically significant", positive_2_of_3_years: "positive in 2 of 3 years", positive_at_2x_costs: "positive at 2x costs",
+  significant_holm: "statistically significant", sharpe_ge_1: "Sharpe at least 1", drawdown_le_10pct: "worst drop within 10%",
+  positive_strict_fill: "positive with stricter fills",
 };
 const VOL_NAMES: Record<string, string> = { BTC: "BTC", ETH: "ETH", BTC_ETH_50_50: "BTC/ETH 50/50" };
 
@@ -115,6 +117,28 @@ function Batch3() {
   );
 }
 
+function MarketMaking() {
+  const { data: r } = useApi<Any>("/research/market-making", 60_000);
+  const bt = r?.backtest;
+  if (!bt) return null;
+  const rows = Object.entries(bt.variants ?? {}).map(([k, v]: [string, Any]) => ({ key: k, ...v }));
+  const passed = bt.summary?.passed ?? [];
+  return (
+    <Card title="Market making: buy just below, sell just above, every minute (Jan 2024 – Oct 2026)" actions={<Badge tone={passed.length ? "good" : "bad"}>{passed.length ? `${passed.length} passed` : "none passed"}</Badge>}>
+      <Table rows={rows} empty="No result." columns={[
+        { key: "key", label: "Market : spread" },
+        { key: "n", label: "Net (6 coins)", numeric: true, render: (x: Any) => <span className={x.net_pnl > 0 ? "text-up" : "text-down"}>{pct(x.net_return, 1)}</span> },
+        { key: "sh", label: "Sharpe", numeric: true, render: (x: Any) => num(x.sharpe, 2) },
+        { key: "dd", label: "Worst drop", numeric: true, render: (x: Any) => pct(x.max_drawdown, 1) },
+        { key: "f", label: "Fills a day", numeric: true, render: (x: Any) => num(x.activity?.fills_per_day, 0) },
+        { key: "v", label: "Verdict", render: (x: Any) => <Badge tone={x.passed ? "good" : "bad"}>{x.passed ? "passed" : "failed"}</Badge> },
+        { key: "why", label: "Failed checks", render: (x: Any) => <span className="text-xs text-muted">{failed(x.gates)}</span> },
+      ]} />
+      <p className="mt-2 text-xs text-muted">Each coin had its own 10,000 USDT paper book with orders of 500 USDT. A fill counted only when the price traded through the order. Perpetuals paid real funding; spot is measured against simply holding the same coins. Historical backtest, no orders placed. Rules written before the run: {r.preregistration}</p>
+    </Card>
+  );
+}
+
 export default function StrategyTestPage() {
   const { data: r, error, loading } = useApi<Any>("/research/freqtrade-community");
   const s = r?.summary;
@@ -157,6 +181,7 @@ export default function StrategyTestPage() {
           </Card>
           <Rebalancing />
           <Batch3 />
+          <MarketMaking />
           <p className="text-xs text-muted">Generated {time(r.generated_at)} by {r.engine} from {r.source}. A strategy passes only if it made money, had a profit factor of at least 1.2, never fell more than 25%, made at least 50 trades, was positive in 2 of 3 years, stayed profitable at double fees, and its edge was statistically significant after correcting for testing many strategies at once.</p>
         </div>
       )}

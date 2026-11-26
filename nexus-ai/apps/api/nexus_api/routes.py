@@ -1960,6 +1960,21 @@ async def batch3_status(s: Session = Depends(db),
     return out
 
 
+@router.get("/research/market-making")
+async def market_making_research() -> dict[str, Any]:
+    """Market making (two-sided quoting): the committed pre-registered backtest result."""
+    from pathlib import Path
+
+    import nexus_backtest
+
+    def load() -> Any:
+        f = Path(nexus_backtest.__file__).with_name("results") / "market_making_2026-11.json"
+        return json.loads(f.read_text()) if f.exists() else None
+
+    return {"backtest": await asyncio.to_thread(load),
+            "preregistration": "docs/research/2026-11-26-market-making-preregistration.md"}
+
+
 @router.get("/trading-bot")
 async def trading_bot_status(s: Session = Depends(db), redis: Any = Depends(redis_dep),
                              settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
