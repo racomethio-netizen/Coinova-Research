@@ -213,7 +213,7 @@ def test_kill_switch_stale_data_and_trend_handoff():
 
 
 def test_drawdown_shutdown_closes_everything():
-    s, data, led = system()
+    s, data, _led = system()
     started(s, data)
     g = s.accounts["spot"].grids["BTCUSDT"]
     s.peak = D("20000")                                       # equity 5000+5000 = -50%
