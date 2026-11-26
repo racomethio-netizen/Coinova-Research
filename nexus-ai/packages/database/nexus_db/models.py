@@ -730,6 +730,53 @@ class GridPaperEvent(Base):
     created_at: Mapped[created_at]
 
 
+class GridUniverseScan(Base):
+    """Append-only record of every dynamic-universe scan: the selected symbols, every
+    ranked candidate with its scores and reasons, and the stage-one rejection count."""
+
+    __tablename__ = "grid_universe_scans"
+    __table_args__ = (
+        CheckConstraint(in_list("market", ("spot", "futures")), name="market_valid"),
+        Index("ix_grid_universe_scans_market_at", "market", "at"),
+    )
+
+    id: Mapped[bigint_pk]
+    market: Mapped[str] = mapped_column(String(8))
+    at: Mapped[datetime]
+    data: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
+    created_at: Mapped[created_at]
+
+
+AGRID_KINDS = ("decision", "regime", "grid_start", "grid_refused", "arm", "fill", "funding",
+               "suspend", "resume", "stop", "retire", "risk", "control", "gap", "snapshot")
+
+
+class AdaptiveGridEvent(Base):
+    """Append-only ledger of the adaptive grid system (PAPER ONLY). ``snapshot`` rows hold
+    the complete state of both paper accounts, so a restart resumes exactly; ``seq`` is
+    unique, so an event is never written twice."""
+
+    __tablename__ = "adaptive_grid_events"
+    __table_args__ = (
+        CheckConstraint(in_list("kind", AGRID_KINDS), name="kind_valid"),
+        CheckConstraint(in_list("account", ("spot", "futures", "system")),
+                        name="account_valid"),
+        UniqueConstraint("seq", name="agrid_one_event_per_seq"),
+        Index("ix_adaptive_grid_events_kind_id", "kind", "id"),
+        Index("ix_adaptive_grid_events_grid", "grid_id"),
+    )
+
+    id: Mapped[bigint_pk]
+    seq: Mapped[int] = mapped_column(BigInteger)
+    at: Mapped[datetime]
+    account: Mapped[str] = mapped_column(String(8))
+    grid_id: Mapped[str | None] = mapped_column(String(64))
+    symbol: Mapped[str | None] = mapped_column(String(24))
+    kind: Mapped[str] = mapped_column(String(16))
+    data: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
+    created_at: Mapped[created_at]
+
+
 class DecisionLog(Base):
     """One explained trading decision per pair (LONG / SHORT / WAIT / NO_TRADE) from the
     signal-fusion layer, with the inputs it used. Append-only: rows cannot be edited, and
