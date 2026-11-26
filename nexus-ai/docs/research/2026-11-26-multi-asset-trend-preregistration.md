@@ -99,3 +99,36 @@ Each strategy passes only if all hold.
 ## Results
 
 _(appended after the single run)_
+
+### Results of the single run (2026-11-26, harness commit 06e359a)
+
+Output: `research/backtesting/nexus_backtest/results/multi_asset_trend_2026-11.json`, also
+on the dashboard page **Strategy test**.
+* The FRED files' SHA-256 hashes and row counts are recorded in the output.
+* Historical backtest only; no order was placed.
+
+**FAILED: neither strategy passes.**
+
+| 2004-01 to 2026-10, gross ≤ 1× | Net | Per year | Sharpe | Worst drop | p-value | 2004–2015 | 2016–2026 | Positive years |
+|---|---|---|---|---|---|---|---|---|
+| A: 12-month momentum | +1.5% | +0.07% | 0.04 | −19.6% | 0.42 | +7.8% | −5.8% | 12 of 23 |
+| B: 200-day trend filter | +4.8% | +0.21% | 0.06 | −19.5% | 0.36 | +21.1% | −13.4% | 10 of 23 |
+| NASDAQ-100 held (price only, for context) | +1,846% | +13.9% | 0.70 | −53.7% | | | | |
+
+* **Gates.**
+  * Both failed: Sharpe ≥ 0.5, significance, both halves, 60% of years, without the best
+    instrument.
+  * A also failed at 2× costs (−2.3%). B was +0.1% at 2× costs.
+  * Both passed net > 0 and drawdown ≤ 20%.
+* **Contributions.**
+  * A's gains came from JPY (+11.1 points) and the index (+6.0); CHF (−5.5) and EUR
+    (−3.5) lost.
+  * B's gains came from the index (+13.6) and EUR (+7.5); CHF lost 8.3.
+* **What it shows.**
+  * Trend following on these 7 currencies and the NASDAQ-100 earned a little before 2016
+    and lost it afterwards.
+  * This matches published evidence that currency trend returns have faded since about
+    2010.
+  * At NEXUS's 1× leverage ceiling, even the good years were small (−9% to +14% a year).
+* **Consequence.** Neither strategy is adopted, and neither is re-tuned. Stocks and forex
+  get no trading strategy from this test.
