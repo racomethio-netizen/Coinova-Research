@@ -1277,8 +1277,25 @@ async def adaptive_grid(s: Session = Depends(db), redis: Any = Depends(redis_dep
                                    "funding", "gap"), 100),
                 "performance": sorted(perf.values(), key=lambda p: -p["net_after_costs"])}
 
+    def backtest() -> dict[str, Any] | None:
+        from pathlib import Path
+
+        import nexus_backtest
+
+        f = Path(nexus_backtest.__file__).with_name("results") / "adaptive_grid_2026-11.json"
+        if not f.exists():
+            return None
+        r = json.loads(f.read_text())
+        return {"passed": r["passed"], "gates": r["gates"], "oos": r["oos_walk_forward"],
+                "by_regime": r["by_regime_oos"], "by_symbol": r["by_symbol_oos"],
+                "sensitivity": r["sensitivity_full_window"],
+                "stress_2x_fees": r["stress_2x_fees_default_set"],
+                "buy_and_hold": r["buy_and_hold"],
+                "preregistration": "docs/research/2026-11-26-adaptive-grid-preregistration.md"}
+
     return {"mode": settings.agrid_mode, "paper": True,
             "status": json.loads(raw) if raw else None, **await asyncio.to_thread(history),
+            "backtest": await asyncio.to_thread(backtest),
             "note": "PAPER TRADING: simulated orders and balances on live Binance market "
                     "data. No real order can be placed by this system."}
 

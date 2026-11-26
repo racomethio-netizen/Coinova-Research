@@ -117,6 +117,19 @@ export default function AdaptiveGridPage() {
       <div className="sticky top-0 z-10 mb-3 rounded-lg border border-warn bg-warn/15 p-2 text-center text-sm font-semibold text-warn" role="status">PAPER TRADING: simulated orders and balances on live Binance data. Live trading is disabled for this system.</div>
       <PageHeader title="Adaptive grid" subtitle="Autonomous adaptive grids on dynamically selected Binance spot and USD-M futures markets, behind one central risk manager" />
       <Loading error={error} loading={loading && !r} />
+      {r?.backtest && (
+        <Card title="Backtest before paper trading (pre-registered, out of sample)" actions={<Badge tone={r.backtest.passed ? "good" : "bad"}>{r.backtest.passed ? "passed" : "FAILED"}</Badge>}>
+          <p className="mb-2 text-sm">Walk-forward on 12 Binance markets, Jul 2024 – Oct 2026, with real fees and funding: net <b>{pct(r.backtest.oos?.net_return, 1)}</b>, worst drop {pct(r.backtest.oos?.max_drawdown, 1)}, profit factor {num(r.backtest.oos?.profit_factor, 2)}, win rate {pct(r.backtest.oos?.win_rate, 0)} over {r.backtest.oos?.trips} trips. Holding BTC over the same period: {pct(r.backtest.buy_and_hold?.BTC, 1)}.</p>
+          <p className="mb-2 text-sm">The grid made money in sideways and weak-bull markets and lost more when the market turned down while it still held coins. It therefore runs here as a <b>paper forward test only</b>; its settings were not re-tuned to the past.</p>
+          <Table rows={Object.entries(r.backtest.by_regime ?? {}).map(([k, v]: [string, Any]) => ({ regime: k, ...v }))} empty="No breakdown." columns={[
+            { key: "regime", label: "Regime at exit" },
+            { key: "trips", label: "Trips", numeric: true },
+            { key: "pnl", label: "P&L (USDT)", numeric: true, render: (x: Any) => <span className={x.pnl >= 0 ? "text-up" : "text-down"}>{num(x.pnl, 0)}</span> },
+            { key: "stops", label: "Stop exits", numeric: true },
+          ]} />
+          <p className="mt-2 text-xs text-muted">Details and the rules written before the run: {r.backtest.preregistration}</p>
+        </Card>
+      )}
       {r && !st && <Card title="Status"><p className="text-sm">The adaptive grid worker has not reported yet. It starts when the server runs this version.</p></Card>}
       {st && (
         <div className="space-y-4">

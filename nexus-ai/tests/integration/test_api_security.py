@@ -755,6 +755,9 @@ def test_adaptive_grid_endpoints_controls_and_limits(client: TestClient) -> None
     login(client)
     r = client.get("/api/v1/adaptive-grid")
     assert r.status_code == 200 and r.json()["paper"] is True and "PAPER" in r.json()["note"]
+    bt = r.json()["backtest"]                     # the committed, pre-registered result
+    assert bt["passed"] is False and not any(bt["gates"].values())
+    assert bt["oos"]["net_return"] < 0 and "SIDEWAYS" in bt["by_regime"]
     assert client.get("/api/v1/adaptive-grid/universe").json() == {"spot": None,
                                                                    "futures": None}
     bad = client.post("/api/v1/adaptive-grid/control", json={"action": "go_live",

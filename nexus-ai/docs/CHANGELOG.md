@@ -4,6 +4,24 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-26
 
+- **Adaptive grid system (PAPER ONLY), owner master command.** See docs/ADAPTIVE_GRID.md.
+  * Built:
+    * dynamic universe (spot and futures);
+    * 8-class grid regime;
+    * adaptive grid engine (spot long; futures long, short and neutral at 1x isolated,
+      with funding and liquidation);
+    * central grid risk manager and allocator;
+    * autonomous orchestrator worker with atomic persistence and exact restart recovery;
+    * migration 0020;
+    * API with owner controls and limits;
+    * Adaptive grid dashboard;
+    * backtester.
+  * Backtest (pre-registered, walk-forward, 12 markets): **FAILED**, −24.6% out of
+    sample.
+    * Profitable in sideways and weak-bull markets.
+    * Losses when ranges break down while holding inventory.
+    * Not re-tuned. The system runs as a paper forward test.
+
 - **Freqtrade community strategy test (pre-registered, one run).**
   * 44 public strategies ran unchanged in Freqtrade 2026.9 on 2024-01 to 2026-10 Binance
     data with 0.1% fees.

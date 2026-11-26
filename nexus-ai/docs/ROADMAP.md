@@ -32,6 +32,19 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-26 afternoon: adaptive grid system (paper only), built and tested; NOT yet
+  deployed.**
+  * Stages 1 to 7 are committed separately: universe, regime, engine, risk, orchestrator
+    and persistence, API and dashboard, backtest.
+  * Real spot universe scan: 788 symbols scanned; BTC, ETH and SOL selected.
+  * Backtest FAILED: 0 of 6 gates, OOS −24.6%; see
+    docs/research/2026-11-26-adaptive-grid-preregistration.md.
+  * Next:
+    1. Owner says "Deploy". Migration 0020 runs automatically.
+    2. Watch the paper forward test.
+    3. If the owner wants it: a NEW pre-registration of "close inventory on regime break",
+       judged on forward data only.
+
 * **2026-11-26 11:10 UTC: deployed 398b2f4 (live on Render).**
   * The owner had `NEXUS_LIVE_TRADING_ENABLED=true` in paper mode, which blocked every deploy
     since 23 Nov. At the owner's request ("Set it for me") it was set to false, a merge
