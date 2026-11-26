@@ -99,6 +99,16 @@ def endpoint_weight(scope: str, endpoint: str, params: dict[str, Any] | None = N
         return 5 if limit <= 100 else 25 if limit <= 500 else 50
     if scope == "futures" and name.endswith("klines"):
         return 1 if limit < 100 else 2 if limit < 500 else 5 if limit <= 1000 else 10
+    # Whole-market requests (no symbol) cost far more than per-symbol ones.
+    whole = "symbol" not in params and "symbols" not in params
+    if name.endswith("ticker/24hr"):
+        return (40 if scope == "futures" else 80) if whole else (
+            40 if "symbols" in params else 1 if scope == "futures" else 2)
+    if name.endswith("ticker/bookTicker"):
+        return (5 if scope == "futures" else 4) if whole else (
+            4 if "symbols" in params else 2)
+    if scope == "futures" and name.endswith("premiumIndex"):
+        return 10 if whole else 1
     table = CCXT_WEIGHTS if endpoint.startswith(("fetch_", "load_", "create_", "cancel_")) \
         else FUTURES_WEIGHTS if scope == "futures" else SPOT_WEIGHTS
     for key, w in table.items():
