@@ -39,8 +39,11 @@ something passes, which would be data snooping.
     and by trading costs.
   * Possible NEW hypothesis, needing its own pre-registration: train on price + funding
     with lower turnover.
-  * Harness and API route deployed at 20:44 UTC (Render b9b7313). The results file needs
-    one more "Deploy".
+  * Harness and API route deployed at 20:44 UTC (Render b9b7313). Results deployed at
+    20:52 UTC (Render 176a59a = repo 75c0a13). Readiness is OK.
+  * Known flaky test: `test_rate_limit_soak.py::test_429_storm_is_contained_and_recovers_
+    without_a_burst`. It failed twice inside the full suite (timing) and passes on its
+    own (4 of 4). Next: make its "traffic resumed" wait robust to a loaded machine.
 
 * **2026-11-26 evening: market making (owner chose it as the method of the world's top
   bots), single pre-registered run: FAILED 0 of 8 variants.**
