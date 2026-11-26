@@ -138,6 +138,25 @@ async def test_shared_cache_turns_concurrent_identical_requests_into_one() -> No
     assert all(x.json() == {"markPrice": "1"} for x in got)
 
 
+async def test_large_responses_are_never_cached_in_redis() -> None:
+    """Production incident 2026-11-26: caching a whole-market exchangeInfo (several MB)
+    hit the 25 MB Key Value limit. Bodies above MAX_CACHE_BYTES are returned but never
+    stored."""
+    r = MemRedis()
+    big = "x" * (g.MAX_CACHE_BYTES + 1)
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, text=big if "exchangeInfo" in str(req.url) else "{}")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as c:
+        res = await g.guarded_get(c, r, "https://api.binance.com/api/v3/exchangeInfo", {},
+                                  cache_ttl=3600)
+        small = await g.guarded_get(c, r, FAPI, {"symbol": "BTCUSDT"}, cache_ttl=60)
+    assert len(res.content) > g.MAX_CACHE_BYTES and small.status_code == 200
+    cached = [k for k in r.kv if str(k).startswith("nexus:binance:cache:")]
+    assert len(cached) == 1                              # only the small response
+
+
 async def test_gated_raw_client_proxy() -> None:
     r = MemRedis()
 

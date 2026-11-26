@@ -32,6 +32,17 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-26 15:26 UTC: deployed 630f5d9 (adaptive grid, paper).**
+  * Migration 0020 applied; the adaptive-grid worker started in paper mode.
+  * Incident: the first spot universe scan failed. Redis rejected the 25 MB+ write of the
+    whole-market exchangeInfo cache (`OutOfMemoryError`, 25 MB free Key Value).
+    * Nothing was stored. Redis stayed at about 7 MB and other components were
+      unaffected.
+  * Fix (pending owner "Deploy"):
+    * whole-market universe requests are not cached;
+    * `guarded_get` never caches bodies above 512 KB;
+    * regression test added.
+
 * **2026-11-26 afternoon: adaptive grid system (paper only), built and tested; NOT yet
   deployed.**
   * Stages 1 to 7 are committed separately: universe, regime, engine, risk, orchestrator

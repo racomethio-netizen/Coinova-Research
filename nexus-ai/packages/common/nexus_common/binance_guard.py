@@ -320,6 +320,9 @@ async def status(redis: Any) -> dict[str, Any]:
 _inflight: dict[str, asyncio.Lock] = {}
 
 
+MAX_CACHE_BYTES = 512_000
+
+
 def _cache_key(url: str, params: dict[str, Any]) -> str:
     h = hashlib.sha256(f"{url}?{sorted(params.items())}".encode()).hexdigest()[:32]
     return f"nexus:binance:cache:{h}"
@@ -342,7 +345,9 @@ async def guarded_get(client: Any, redis: Any, url: str, params: dict[str, Any],
                 return httpx.Response(200, content=cached, request=httpx.Request("GET", url),
                                       headers={"x-nexus-cache": "hit"})
             r = await _send(client, redis, scope, url, params)
-            if r.status_code == 200:
+            # Only small bodies are shared through Redis (the free Key Value plan has
+            # 25 MB, and a whole-market exchangeInfo is several MB on its own).
+            if r.status_code == 200 and len(r.content) <= MAX_CACHE_BYTES:
                 await redis.set(ckey, r.content, ex=cache_ttl)
             return r
     return await _send(client, redis, scope, url, params)

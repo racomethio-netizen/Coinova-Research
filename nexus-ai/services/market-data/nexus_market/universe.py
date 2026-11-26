@@ -353,7 +353,7 @@ async def _get(client: Any, redis: Any, url: str, params: dict[str, Any],
                ttl: int) -> Any:
     from nexus_common.binance_guard import guarded_get
 
-    r = await guarded_get(client, redis, url, params, cache_ttl=ttl)
+    r = await guarded_get(client, redis, url, params, cache_ttl=ttl or None)
     if r.status_code != 200:
         raise RuntimeError(f"{url.rsplit('/', 1)[-1]}: HTTP {r.status_code}")
     return r.json()
@@ -364,11 +364,13 @@ async def scan_market(client: Any, redis: Any, rules: UniverseRules, incumbents:
     """One full scan of one market. Raises on any data failure (the caller keeps the
     previous universe). ``api`` overrides the base URL (tests, public data host)."""
     api = api or (SPOT_API if rules.market == "spot" else FUTURES_API)
-    info = await _get(client, redis, f"{api}/exchangeInfo", {}, 3600)
+    # Whole-market responses are large (spot exchangeInfo is several MB): they are not
+    # shared through Redis (ttl 0 = no cache); the scan runs once an hour.
+    info = await _get(client, redis, f"{api}/exchangeInfo", {}, 0)
     infos = (SymbolDiscoveryService.parse_spot(info) if rules.market == "spot"
              else SymbolDiscoveryService.parse_futures(info))
-    tickers = await _get(client, redis, f"{api}/ticker/24hr", {}, 300)
-    books = await _get(client, redis, f"{api}/ticker/bookTicker", {}, 30)
+    tickers = await _get(client, redis, f"{api}/ticker/24hr", {}, 0)
+    books = await _get(client, redis, f"{api}/ticker/bookTicker", {}, 0)
     tk = {t["symbol"]: t for t in tickers}
     bk = {b["symbol"]: b for b in books}
     stats: dict[str, MarketStats] = {}
