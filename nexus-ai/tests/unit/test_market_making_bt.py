@@ -135,3 +135,15 @@ def test_report_judges_every_variant_with_the_gates(monkeypatch):
                                    "positive_strict_fill"}
         assert v["passed"] == all(v["gates"].values())
         assert v["activity"]["fills_per_day"] >= 0
+
+
+def test_plain_terms_days_until_empty():
+    rep = {"variants": {"x": {"days": 100, "net_pnl": -6 * 50 * 100.0,
+                              "activity": {"fees": 1_000.0, "fills_per_day": 10.0}},
+                        "y": {"days": 100, "net_pnl": 600.0,
+                              "activity": {"fees": 10.0, "fills_per_day": 1.0}}}}
+    out = mm.plain_terms(rep)["variants"]
+    assert out["x"]["plain"]["pnl_per_day_per_book"] == pytest.approx(-50.0)
+    assert out["x"]["plain"]["days_until_book_empty"] == pytest.approx(200.0)
+    assert out["x"]["plain"]["pnl_before_fees"] == pytest.approx(-29_000.0)
+    assert out["y"]["plain"]["days_until_book_empty"] is None

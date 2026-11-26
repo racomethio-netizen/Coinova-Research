@@ -4,6 +4,13 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-26
 
+- **Market making (pre-registered, one run): FAILED, 0 of 8 variants.**
+  * Tested Hummingbot-style two-sided quoting on 6 coins, perpetuals and spot, 2024-01 to
+    2026-10.
+  * Every variant lost money even before fees. A real 10,000 USDT book would have been
+    empty in 111 to 623 days.
+  * Results are on the Strategy test page (`/api/v1/research/market-making`).
+
 - **Batch 3 (pre-registered, one run): grid v2, volatility targeting, BTC/ETH pairs.**
   * Grid v2 (sell held coins on a regime change), on unseen 2020–2023 data: FAILED, worse
     than v1 (−51.1% vs −43.5%).

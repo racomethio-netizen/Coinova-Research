@@ -1,0 +1,677 @@
+{
+ "variants": {
+  "perp:h0.05%": {
+   "net_pnl": -558392.6207404904,
+   "net_return": -9.306543679008174,
+   "sharpe": -95.46038812222723,
+   "max_drawdown": -9.36999274508103,
+   "by_year": {
+    "2024": -204759.3037470854,
+    "2025": -201499.97357478185,
+    "2026": -152133.34341862315
+   },
+   "days": 1035,
+   "fee2x": {
+    "net_pnl": -608894.0500206756,
+    "net_return": -10.14823416701126,
+    "sharpe": -166.54738085001716,
+    "max_drawdown": -10.23484547489585,
+    "by_year": {
+     "2024": -219792.6217041568,
+     "2025": -215653.68386876653,
+     "2026": -173447.7444477523
+    },
+    "days": 1035
+   },
+   "strict_fill": {
+    "net_pnl": -549949.3463115945,
+    "net_return": -9.165822438526575,
+    "sharpe": -86.0523537440762,
+    "max_drawdown": -9.226934463140616,
+    "by_year": {
+     "2024": -203365.15396551555,
+     "2025": -197963.39216795375,
+     "2026": -148620.80017812515
+    },
+    "days": 1035
+   },
+   "p_value": 1.0,
+   "per_symbol": {
+    "BTCUSDT": -78778.4820484377,
+    "ETHUSDT": -95852.1009295029,
+    "SOLUSDT": -102916.44596436985,
+    "BNBUSDT": -84689.18852206056,
+    "XRPUSDT": -94214.46530867055,
+    "DOGEUSDT": -101941.9379674488
+   },
+   "best_symbol": "BTCUSDT",
+   "without_best": -479614.1386920527,
+   "activity": {
+    "fills_per_day": 617.126731078905,
+    "fills_total": 3832357,
+    "avg_inventory_usdt": 422.1199736084978,
+    "max_inventory_usdt": 2509.1102387969486,
+    "stopped_days": 4310,
+    "fees": 386693.40560818627,
+    "funding": -62.45709301141088,
+    "ticks": {
+     "BTCUSDT": 0.01,
+     "ETHUSDT": 0.01,
+     "SOLUSDT": 0.001,
+     "BNBUSDT": 0.001,
+     "XRPUSDT": 0.0001,
+     "DOGEUSDT": 1e-05
+    }
+   },
+   "gates": {
+    "net_positive": false,
+    "significant_holm": false,
+    "sharpe_ge_1": false,
+    "drawdown_le_10pct": false,
+    "positive_2_of_3_years": false,
+    "positive_at_2x_fees": false,
+    "positive_without_best": false,
+    "positive_strict_fill": false
+   },
+   "passed": false,
+   "plain": {
+    "pnl_before_fees": -171699.21513230412,
+    "pnl_per_day_per_book": -89.91829641553791,
+    "days_until_book_empty": 111.21207138742007,
+    "fills_per_day_per_coin": 617.126731078905
+   }
+  },
+  "perp:h0.10%": {
+   "net_pnl": -334227.26429926103,
+   "net_return": -5.570454404987684,
+   "sharpe": -35.4328016826326,
+   "max_drawdown": -5.5810646555579515,
+   "by_year": {
+    "2024": -128782.1360268982,
+    "2025": -128979.14464773021,
+    "2026": -76465.98362463267
+   },
+   "days": 1035,
+   "fee2x": {
+    "net_pnl": -446060.7724070488,
+    "net_return": -7.434346206784147,
+    "sharpe": -50.4331394146404,
+    "max_drawdown": -7.456234196331088,
+    "by_year": {
+     "2024": -169122.60227806467,
+     "2025": -166868.5520957161,
+     "2026": -110069.61803326805
+    },
+    "days": 1035
+   },
+   "strict_fill": {
+    "net_pnl": -366307.4673125235,
+    "net_return": -6.105124455208725,
+    "sharpe": -38.18562778490415,
+    "max_drawdown": -6.116533810414487,
+    "by_year": {
+     "2024": -140757.27093270217,
+     "2025": -140363.49822172365,
+     "2026": -85186.69815809764
+    },
+    "days": 1035
+   },
+   "p_value": 1.0,
+   "per_symbol": {
+    "BTCUSDT": -31714.11417635501,
+    "ETHUSDT": -54383.803632910734,
+    "SOLUSDT": -74698.4078085292,
+    "BNBUSDT": -40013.368491491965,
+    "XRPUSDT": -58113.313680368155,
+    "DOGEUSDT": -75304.25650960603
+   },
+   "best_symbol": "BTCUSDT",
+   "without_best": -302513.1501229061,
+   "activity": {
+    "fills_per_day": 380.45909822866344,
+    "fills_total": 2362651,
+    "avg_inventory_usdt": 414.8396396148443,
+    "max_inventory_usdt": 2511.0775002580112,
+    "stopped_days": 1594,
+    "fees": 237584.59853782956,
+    "funding": -52.1559092485309,
+    "ticks": {
+     "BTCUSDT": 0.01,
+     "ETHUSDT": 0.01,
+     "SOLUSDT": 0.001,
+     "BNBUSDT": 0.001,
+     "XRPUSDT": 0.0001,
+     "DOGEUSDT": 1e-05
+    }
+   },
+   "gates": {
+    "net_positive": false,
+    "significant_holm": false,
+    "sharpe_ge_1": false,
+    "drawdown_le_10pct": false,
+    "positive_2_of_3_years": false,
+    "positive_at_2x_fees": false,
+    "positive_without_best": false,
+    "positive_strict_fill": false
+   },
+   "passed": false,
+   "plain": {
+    "pnl_before_fees": -96642.66576143148,
+    "pnl_per_day_per_book": -53.82081550712738,
+    "days_until_book_empty": 185.80171827154348,
+    "fills_per_day_per_coin": 380.45909822866344
+   }
+  },
+  "perp:h0.20%": {
+   "net_pnl": -99693.10052334555,
+   "net_return": -1.6615516753890924,
+   "sharpe": -13.80032592681809,
+   "max_drawdown": -1.662097248540992,
+   "by_year": {
+    "2024": -42311.77970636639,
+    "2025": -37870.45390828982,
+    "2026": -19510.866908689335
+   },
+   "days": 1035,
+   "fee2x": {
+    "net_pnl": -165916.34422553418,
+    "net_return": -2.765272403758903,
+    "sharpe": -19.43759295524163,
+    "max_drawdown": -2.767275895153899,
+    "by_year": {
+     "2024": -68587.43617248627,
+     "2025": -64114.36137209636,
+     "2026": -33214.546680951564
+    },
+    "days": 1035
+   },
+   "strict_fill": {
+    "net_pnl": -131764.78292627662,
+    "net_return": -2.1960797154379437,
+    "sharpe": -16.34022158565416,
+    "max_drawdown": -2.1977044566975046,
+    "by_year": {
+     "2024": -55253.69269165651,
+     "2025": -50974.94609234402,
+     "2026": -25536.144142276094
+    },
+    "days": 1035
+   },
+   "p_value": 1.0,
+   "per_symbol": {
+    "BTCUSDT": -5633.809013010655,
+    "ETHUSDT": -13999.752368915184,
+    "SOLUSDT": -22411.332976059395,
+    "BNBUSDT": -9235.066211601345,
+    "XRPUSDT": -19509.640778338267,
+    "DOGEUSDT": -28903.499175420704
+   },
+   "best_symbol": "BTCUSDT",
+   "without_best": -94059.2915103349,
+   "activity": {
+    "fills_per_day": 126.79500805152979,
+    "fills_total": 787397,
+    "avg_inventory_usdt": 363.861360334796,
+    "max_inventory_usdt": 2516.1592319673823,
+    "stopped_days": 307,
+    "fees": 78991.8714394671,
+    "funding": -16.52915780520514,
+    "ticks": {
+     "BTCUSDT": 0.01,
+     "ETHUSDT": 0.01,
+     "SOLUSDT": 0.001,
+     "BNBUSDT": 0.001,
+     "XRPUSDT": 0.0001,
+     "DOGEUSDT": 1e-05
+    }
+   },
+   "gates": {
+    "net_positive": false,
+    "significant_holm": false,
+    "sharpe_ge_1": false,
+    "drawdown_le_10pct": false,
+    "positive_2_of_3_years": false,
+    "positive_at_2x_fees": false,
+    "positive_without_best": false,
+    "positive_strict_fill": false
+   },
+   "passed": false,
+   "plain": {
+    "pnl_before_fees": -20701.229083878454,
+    "pnl_per_day_per_book": -16.053639375740026,
+    "days_until_book_empty": 622.9117127865611,
+    "fills_per_day_per_coin": 126.79500805152979
+   }
+  },
+  "perp:vol2x_min0.03%": {
+   "net_pnl": -126382.66129535745,
+   "net_return": -2.1063776882559577,
+   "sharpe": -23.65897369604031,
+   "max_drawdown": -2.108021984518362,
+   "by_year": {
+    "2024": -42519.3465471876,
+    "2025": -46116.9172409241,
+    "2026": -37746.39750724573
+   },
+   "days": 1035,
+   "fee2x": {
+    "net_pnl": -228518.9480533282,
+    "net_return": -3.808649134222137,
+    "sharpe": -42.52691218117356,
+    "max_drawdown": -3.816848039854236,
+    "by_year": {
+     "2024": -78586.01673579024,
+     "2025": -82533.64512148318,
+     "2026": -67399.28619605482
+    },
+    "days": 1035
+   },
+   "strict_fill": {
+    "net_pnl": -140837.3712846802,
+    "net_return": -2.3472895214113367,
+    "sharpe": -24.5270704582099,
+    "max_drawdown": -2.3487712204093842,
+    "by_year": {
+     "2024": -50149.113508712566,
+     "2025": -51809.30301057572,
+     "2026": -38878.95476539193
+    },
+    "days": 1035
+   },
+   "p_value": 1.0,
+   "per_symbol": {
+    "BTCUSDT": -19688.517394454408,
+    "ETHUSDT": -22022.374028146936,
+    "SOLUSDT": -19722.868431443134,
+    "BNBUSDT": -23049.25944326871,
+    "XRPUSDT": -20053.11802081057,
+    "DOGEUSDT": -21846.523977233686
+   },
+   "best_symbol": "BTCUSDT",
+   "without_best": -106694.14390090303,
+   "activity": {
+    "fills_per_day": 162.29951690821255,
+    "fills_total": 1007880,
+    "avg_inventory_usdt": 392.4646583273043,
+    "max_inventory_usdt": 2517.5091942344875,
+    "stopped_days": 95,
+    "fees": 100862.22709987329,
+    "funding": -35.45762366944142,
+    "ticks": {
+     "BTCUSDT": 0.01,
+     "ETHUSDT": 0.01,
+     "SOLUSDT": 0.001,
+     "BNBUSDT": 0.001,
+     "XRPUSDT": 0.0001,
+     "DOGEUSDT": 1e-05
+    }
+   },
+   "gates": {
+    "net_positive": false,
+    "significant_holm": false,
+    "sharpe_ge_1": false,
+    "drawdown_le_10pct": false,
+    "positive_2_of_3_years": false,
+    "positive_at_2x_fees": false,
+    "positive_without_best": false,
+    "positive_strict_fill": false
+   },
+   "passed": false,
+   "plain": {
+    "pnl_before_fees": -25520.434195484166,
+    "pnl_per_day_per_book": -20.35147524884983,
+    "days_until_book_empty": 491.36487049336404,
+    "fills_per_day_per_coin": 162.29951690821255
+   }
+  },
+  "spot:h0.15%": {
+   "net_pnl": -410927.59812923695,
+   "net_return": -6.8487933021539495,
+   "sharpe": -43.51205299629292,
+   "max_drawdown": -6.864987565837366,
+   "by_year": {
+    "2024": -157867.50006300898,
+    "2025": -154555.71363646397,
+    "2026": -98504.38442976397
+   },
+   "days": 1035,
+   "fee2x": {
+    "net_pnl": -500653.2864741103,
+    "net_return": -8.344221441235172,
+    "sharpe": -61.083845529855694,
+    "max_drawdown": -8.374987551826976,
+    "by_year": {
+     "2024": -189245.17272367305,
+     "2025": -181147.5079532056,
+     "2026": -130260.60579723162
+    },
+    "days": 1035
+   },
+   "strict_fill": {
+    "net_pnl": -382143.7931322502,
+    "net_return": -6.369063218870837,
+    "sharpe": -39.262328675560774,
+    "max_drawdown": -6.38281743229802,
+    "by_year": {
+     "2024": -147570.8799036902,
+     "2025": -144647.69145192095,
+     "2026": -89925.22177663914
+    },
+    "days": 1035
+   },
+   "p_value": 1.0,
+   "per_symbol": {
+    "BTCUSDT": -42457.07522187833,
+    "ETHUSDT": -70604.90116922602,
+    "SOLUSDT": -86884.88573698426,
+    "BNBUSDT": -49513.022872778456,
+    "XRPUSDT": -73682.32890347617,
+    "DOGEUSDT": -87785.38422489369
+   },
+   "best_symbol": "BTCUSDT",
+   "without_best": -368470.5229073586,
+   "activity": {
+    "fills_per_day": 114.20805152979067,
+    "fills_total": 709232,
+    "avg_inventory_usdt": 299.90775668197983,
+    "max_inventory_usdt": 2507.4237963214578,
+    "stopped_days": 2664,
+    "fees": 357910.7496900339,
+    "funding": 0.0,
+    "ticks": {
+     "BTCUSDT": 0.01,
+     "ETHUSDT": 0.01,
+     "SOLUSDT": 0.01,
+     "BNBUSDT": 0.01,
+     "XRPUSDT": 1e-05,
+     "DOGEUSDT": 1e-05
+    }
+   },
+   "gates": {
+    "net_positive": false,
+    "significant_holm": false,
+    "sharpe_ge_1": false,
+    "drawdown_le_10pct": false,
+    "positive_2_of_3_years": false,
+    "positive_at_2x_fees": false,
+    "positive_without_best": false,
+    "positive_strict_fill": false
+   },
+   "passed": false,
+   "plain": {
+    "pnl_before_fees": -53016.84843920305,
+    "pnl_per_day_per_book": -66.17191596284009,
+    "days_until_book_empty": 151.1215121172502,
+    "fills_per_day_per_coin": 114.20805152979067
+   }
+  },
+  "spot:h0.20%": {
+   "net_pnl": -285214.83867226087,
+   "net_return": -4.753580644537681,
+   "sharpe": -28.808968134436768,
+   "max_drawdown": -4.761090590109309,
+   "by_year": {
+    "2024": -113625.59957730377,
+    "2025": -110244.1114312456,
+    "2026": -61345.12766371149
+   },
+   "days": 1035,
+   "fee2x": {
+    "net_pnl": -384432.32766460965,
+    "net_return": -6.407205461076828,
+    "sharpe": -38.844410923465794,
+    "max_drawdown": -6.420368862058819,
+    "by_year": {
+     "2024": -148286.95389527752,
+     "2025": -144666.27509571397,
+     "2026": -91479.09867361821
+    },
+    "days": 1035
+   },
+   "strict_fill": {
+    "net_pnl": -268802.02349076536,
+    "net_return": -4.4800337248460895,
+    "sharpe": -27.18481185576383,
+    "max_drawdown": -4.487624151429387,
+    "by_year": {
+     "2024": -107386.26673466002,
+     "2025": -103497.75432364964,
+     "2026": -57918.0024324557
+    },
+    "days": 1035
+   },
+   "p_value": 1.0,
+   "per_symbol": {
+    "BTCUSDT": -22950.25318762241,
+    "ETHUSDT": -47224.00591500489,
+    "SOLUSDT": -64234.65720312267,
+    "BNBUSDT": -29432.639551408825,
+    "XRPUSDT": -52603.01408732516,
+    "DOGEUSDT": -68770.26872777693
+   },
+   "best_symbol": "BTCUSDT",
+   "without_best": -262264.58548463846,
+   "activity": {
+    "fills_per_day": 80.00644122383251,
+    "fills_total": 496840,
+    "avg_inventory_usdt": 324.43389977127464,
+    "max_inventory_usdt": 2512.2340512678916,
+    "stopped_days": 1459,
+    "fees": 250283.62940757675,
+    "funding": 0.0,
+    "ticks": {
+     "BTCUSDT": 0.01,
+     "ETHUSDT": 0.01,
+     "SOLUSDT": 0.01,
+     "BNBUSDT": 0.01,
+     "XRPUSDT": 1e-05,
+     "DOGEUSDT": 1e-05
+    }
+   },
+   "gates": {
+    "net_positive": false,
+    "significant_holm": false,
+    "sharpe_ge_1": false,
+    "drawdown_le_10pct": false,
+    "positive_2_of_3_years": false,
+    "positive_at_2x_fees": false,
+    "positive_without_best": false,
+    "positive_strict_fill": false
+   },
+   "passed": false,
+   "plain": {
+    "pnl_before_fees": -34931.20926468412,
+    "pnl_per_day_per_book": -45.92831540616117,
+    "days_until_book_empty": 217.73060717699488,
+    "fills_per_day_per_coin": 80.00644122383251
+   }
+  },
+  "spot:h0.30%": {
+   "net_pnl": -132817.55704934083,
+   "net_return": -2.213625950822347,
+   "sharpe": -16.688539268247354,
+   "max_drawdown": -2.214174113681702,
+   "by_year": {
+    "2024": -56925.07292898498,
+    "2025": -50479.58558466946,
+    "2026": -25412.898535686378
+   },
+   "days": 1035,
+   "fee2x": {
+    "net_pnl": -206345.82849442225,
+    "net_return": -3.439097141573704,
+    "sharpe": -21.95233352661036,
+    "max_drawdown": -3.4417295767950895,
+    "by_year": {
+     "2024": -84194.03289234392,
+     "2025": -79363.68295987576,
+     "2026": -42788.112642202585
+    },
+    "days": 1035
+   },
+   "strict_fill": {
+    "net_pnl": -129052.42922773071,
+    "net_return": -2.1508738204621785,
+    "sharpe": -16.074113169688506,
+    "max_drawdown": -2.151179953461762,
+    "by_year": {
+     "2024": -55220.51203734096,
+     "2025": -49533.127629205046,
+     "2026": -24298.789561184713
+    },
+    "days": 1035
+   },
+   "p_value": 1.0,
+   "per_symbol": {
+    "BTCUSDT": -8045.25204104233,
+    "ETHUSDT": -19248.34754784091,
+    "SOLUSDT": -30112.665507855185,
+    "BNBUSDT": -11382.90508545358,
+    "XRPUSDT": -26314.834832097855,
+    "DOGEUSDT": -37713.552035050954
+   },
+   "best_symbol": "BTCUSDT",
+   "without_best": -124772.30500829848,
+   "activity": {
+    "fills_per_day": 37.707729468599034,
+    "fills_total": 234165,
+    "avg_inventory_usdt": 340.30086479638754,
+    "max_inventory_usdt": 2511.125880051162,
+    "stopped_days": 477,
+    "fees": 117727.50603979883,
+    "funding": 0.0,
+    "ticks": {
+     "BTCUSDT": 0.01,
+     "ETHUSDT": 0.01,
+     "SOLUSDT": 0.01,
+     "BNBUSDT": 0.01,
+     "XRPUSDT": 1e-05,
+     "DOGEUSDT": 1e-05
+    }
+   },
+   "gates": {
+    "net_positive": false,
+    "significant_holm": false,
+    "sharpe_ge_1": false,
+    "drawdown_le_10pct": false,
+    "positive_2_of_3_years": false,
+    "positive_at_2x_fees": false,
+    "positive_without_best": false,
+    "positive_strict_fill": false
+   },
+   "passed": false,
+   "plain": {
+    "pnl_before_fees": -15090.051009542003,
+    "pnl_per_day_per_book": -21.387690346109636,
+    "days_until_book_empty": 467.55866754069467,
+    "fills_per_day_per_coin": 37.707729468599034
+   }
+  },
+  "spot:vol2x_min0.12%": {
+   "net_pnl": -367049.70664323925,
+   "net_return": -6.117495110720654,
+   "sharpe": -50.03225994809682,
+   "max_drawdown": -6.13438146425416,
+   "by_year": {
+    "2024": -139285.70018317798,
+    "2025": -136156.61854170245,
+    "2026": -91607.38791835876
+   },
+   "days": 1035,
+   "fee2x": {
+    "net_pnl": -534514.0720949069,
+    "net_return": -8.908567868248449,
+    "sharpe": -78.90127812723635,
+    "max_drawdown": -8.954399934828434,
+    "by_year": {
+     "2024": -200067.60226658004,
+     "2025": -192202.6760982976,
+     "2026": -142243.7937300293
+    },
+    "days": 1035
+   },
+   "strict_fill": {
+    "net_pnl": -308978.36042122816,
+    "net_return": -5.1496393403538026,
+    "sharpe": -41.412925535962366,
+    "max_drawdown": -5.161253515184453,
+    "by_year": {
+     "2024": -118396.33695999673,
+     "2025": -114600.57520840364,
+     "2026": -75981.44825282777
+    },
+    "days": 1035
+   },
+   "p_value": 1.0,
+   "per_symbol": {
+    "BTCUSDT": -40983.40698712167,
+    "ETHUSDT": -64627.60085268732,
+    "SOLUSDT": -71074.86964048303,
+    "BNBUSDT": -50036.39236229843,
+    "XRPUSDT": -67074.84730176973,
+    "DOGEUSDT": -73252.58949887902
+   },
+   "best_symbol": "BTCUSDT",
+   "without_best": -326066.2996561175,
+   "activity": {
+    "fills_per_day": 105.35652173913043,
+    "fills_total": 654264,
+    "avg_inventory_usdt": 359.76043972406325,
+    "max_inventory_usdt": 2510.014512711157,
+    "stopped_days": 879,
+    "fees": 328235.0458057237,
+    "funding": 0.0,
+    "ticks": {
+     "BTCUSDT": 0.01,
+     "ETHUSDT": 0.01,
+     "SOLUSDT": 0.01,
+     "BNBUSDT": 0.01,
+     "XRPUSDT": 1e-05,
+     "DOGEUSDT": 1e-05
+    }
+   },
+   "gates": {
+    "net_positive": false,
+    "significant_holm": false,
+    "sharpe_ge_1": false,
+    "drawdown_le_10pct": false,
+    "positive_2_of_3_years": false,
+    "positive_at_2x_fees": false,
+    "positive_without_best": false,
+    "positive_strict_fill": false
+   },
+   "passed": false,
+   "plain": {
+    "pnl_before_fees": -38814.66083751555,
+    "pnl_per_day_per_book": -59.10623295382275,
+    "days_until_book_empty": 169.18689451605866,
+    "fills_per_day_per_coin": 105.35652173913043
+   }
+  }
+ },
+ "summary": {
+  "passed": [],
+  "tested": 8
+ },
+ "generated_at": "2026-11-26T19:43:46.255883+00:00",
+ "harness_commit": "ab2b88d",
+ "preregistration": "docs/research/2026-11-26-market-making-preregistration.md",
+ "kind": "historical backtest (no orders placed)",
+ "paper": false,
+ "window": [
+  "2024-01-01",
+  "2026-10-31"
+ ],
+ "symbols": [
+  "BTCUSDT",
+  "ETHUSDT",
+  "SOLUSDT",
+  "BNBUSDT",
+  "XRPUSDT",
+  "DOGEUSDT"
+ ],
+ "data": {
+  "fut": "Binance 1m klines, 408 archives, checksums verified",
+  "spot": "Binance 1m klines, 204 archives, checksums verified"
+ }
+}

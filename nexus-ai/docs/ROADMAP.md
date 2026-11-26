@@ -32,6 +32,15 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-26 evening: market making (owner chose it as the method of the world's top
+  bots), single pre-registered run: FAILED 0 of 8 variants.**
+  See docs/research/2026-11-26-market-making-preregistration.md.
+  * Every variant lost money before fees: a fill only happens once the price runs through
+    the order (adverse selection). A random walk with no fees reproduces the loss.
+  * Built: API `/api/v1/research/market-making` and a Strategy test card. No bot (the
+    test failed).
+  * Not yet deployed; it needs the owner's "Deploy".
+
 * **2026-11-26 evening: batch 3 tests ("Test next three"), single pre-registered run.**
   See docs/research/2026-11-26-batch3-preregistration.md.
   * Grid v2 (sell held coins on a regime change), on unseen 2020-07 to 2023-12 data:

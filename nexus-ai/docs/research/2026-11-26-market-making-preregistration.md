@@ -123,3 +123,52 @@ daily P&L divided by 60,000.
 ## Results
 
 _(appended after the single run)_
+
+### Results of the single run (2026-11-26, harness commit ab2b88d)
+
+Output: `research/backtesting/nexus_backtest/results/market_making_2026-11.json`, also on
+the dashboard page **Strategy test**.
+* **Data checked:** 408 perpetual archives (klines and funding) and 204 spot archives,
+  all matching their checksums.
+* Historical backtest only; no order was placed.
+
+**FAILED: 0 of 8 variants pass. Every variant failed all 8 gates.**
+
+| Variant | Fills a day per coin | P&L before fees (6 books) | Fees | P&L per day per 10,000 book | A real book empty after |
+|---|---|---|---|---|---|
+| perp h 0.05% | 617 | −171,699 | 386,693 | −89.9 | 111 days |
+| perp h 0.10% | 380 | −96,643 | 237,585 | −53.8 | 186 days |
+| perp h 0.20% | 127 | −20,701 | 78,992 | −16.1 | 623 days |
+| perp vol-scaled | 162 | −25,520 | 100,862 | −20.4 | 491 days |
+| spot h 0.15% | 114 | −53,017 | 357,911 | −66.2 | 151 days |
+| spot h 0.20% | 80 | −34,931 | 250,284 | −45.9 | 218 days |
+| spot h 0.30% | 38 | −15,090 | 117,728 | −21.4 | 468 days |
+| spot vol-scaled | 105 | −38,815 | 328,235 | −59.1 | 169 days |
+
+All figures are in USDT. The backtest kept trading past zero, so its percentage returns
+(−166% to −931% of 60,000) mean that real books would have been emptied, as shown in the
+last column.
+
+* **Every year and every coin lost, in every variant.** Bootstrap p-values were 1.0.
+* **The daily 1% loss stop fired on 95 to 4,310 of the 6,210 coin-days.**
+* **The stricter-fill and 2× fee checks also lost.** The strict-fill rule lost slightly
+  less on some variants, because it took fewer fills.
+* **Funding was negligible:** −17 to −62 USDT in total. Inventory stayed near zero on
+  average (about 300–420 USDT).
+
+**Why.**
+* **It lost even before fees.** A resting order is filled only when the price runs
+  *through* it, so at the moment of the fill the price has already moved against the
+  order. That loss is larger than the spread it earns.
+* **A random walk with no fees reproduces it.** On a pure random walk with 60 price steps
+  a minute, the same code lost about 19 USDT a day per book at h = 0.05%. The predicted
+  overshoot effect for that walk was about 24 USDT a day. So this is the known
+  adverse-selection effect, not a code error.
+* **Why professional firms still profit.** They:
+  * sit first in the queue, so they are filled on touches, not only on run-throughs;
+  * pay zero or negative maker fees;
+  * cancel within microseconds when the price moves.
+
+  A small account refreshing once a minute behind the queue has none of these.
+
+**Consequence.** No market-making bot is built. Not re-tuned.

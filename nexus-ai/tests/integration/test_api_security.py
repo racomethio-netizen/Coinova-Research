@@ -797,3 +797,12 @@ def test_batch3_research_endpoint(client: TestClient) -> None:
     assert s["vol_target_passed"] == ["BTC_ETH_50_50"]
     assert r["forward"]["paper"] is True and r["forward"]["days"] == 0
     assert r["preregistration"].endswith("batch3-preregistration.md")
+
+
+def test_market_making_research_endpoint(client: TestClient) -> None:
+    assert client.get("/api/v1/research/market-making").status_code == 401
+    login(client)
+    r = client.get("/api/v1/research/market-making").json()
+    assert r["backtest"]["summary"] == {"passed": [], "tested": 8}
+    assert all(v["plain"]["pnl_before_fees"] < 0 for v in r["backtest"]["variants"].values())
+    assert r["preregistration"].endswith("market-making-preregistration.md")

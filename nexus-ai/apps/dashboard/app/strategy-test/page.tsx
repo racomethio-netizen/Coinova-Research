@@ -127,14 +127,14 @@ function MarketMaking() {
     <Card title="Market making: buy just below, sell just above, every minute (Jan 2024 – Oct 2026)" actions={<Badge tone={passed.length ? "good" : "bad"}>{passed.length ? `${passed.length} passed` : "none passed"}</Badge>}>
       <Table rows={rows} empty="No result." columns={[
         { key: "key", label: "Market : spread" },
-        { key: "n", label: "Net (6 coins)", numeric: true, render: (x: Any) => <span className={x.net_pnl > 0 ? "text-up" : "text-down"}>{pct(x.net_return, 1)}</span> },
-        { key: "sh", label: "Sharpe", numeric: true, render: (x: Any) => num(x.sharpe, 2) },
-        { key: "dd", label: "Worst drop", numeric: true, render: (x: Any) => pct(x.max_drawdown, 1) },
-        { key: "f", label: "Fills a day", numeric: true, render: (x: Any) => num(x.activity?.fills_per_day, 0) },
+        { key: "f", label: "Fills a day per coin", numeric: true, render: (x: Any) => num(x.plain?.fills_per_day_per_coin, 0) },
+        { key: "b", label: "Before fees (USDT)", numeric: true, render: (x: Any) => <span className={x.plain?.pnl_before_fees > 0 ? "text-up" : "text-down"}>{num(x.plain?.pnl_before_fees, 0)}</span> },
+        { key: "d", label: "Per day, 10,000 book", numeric: true, render: (x: Any) => <span className={x.plain?.pnl_per_day_per_book > 0 ? "text-up" : "text-down"}>{num(x.plain?.pnl_per_day_per_book, 1)}</span> },
+        { key: "e", label: "Book empty after", numeric: true, render: (x: Any) => x.plain?.days_until_book_empty ? `${num(x.plain.days_until_book_empty, 0)} days` : DASH },
         { key: "v", label: "Verdict", render: (x: Any) => <Badge tone={x.passed ? "good" : "bad"}>{x.passed ? "passed" : "failed"}</Badge> },
         { key: "why", label: "Failed checks", render: (x: Any) => <span className="text-xs text-muted">{failed(x.gates)}</span> },
       ]} />
-      <p className="mt-2 text-xs text-muted">Each coin had its own 10,000 USDT paper book with orders of 500 USDT. A fill counted only when the price traded through the order. Perpetuals paid real funding; spot is measured against simply holding the same coins. Historical backtest, no orders placed. Rules written before the run: {r.preregistration}</p>
+      <p className="mt-2 text-xs text-muted">Each coin had its own 10,000 USDT paper book with orders of 500 USDT. A fill counted only when the price traded through the order, so the price had usually moved against the order the moment it filled. Every version lost money even before fees. Professional market makers win by being first in the queue, paying almost no fees and reacting in microseconds, which a small account cannot do. Perpetuals paid real funding; spot is measured against simply holding the same coins. Historical backtest, no orders placed. Rules written before the run: {r.preregistration}</p>
     </Card>
   );
 }

@@ -293,6 +293,21 @@ def report(results: list[dict[str, Any]]) -> dict[str, Any]:
                         "tested": len(out)}}
 
 
+def plain_terms(rep: dict[str, Any]) -> dict[str, Any]:
+    """Arithmetic on the report's own fields, for people: P&L before fees, loss per day per
+    10,000 USDT book, and how long a real book would have lasted (the backtest itself keeps
+    trading past zero, so returns below -100% mean the book would have been emptied)."""
+    for v in rep["variants"].values():
+        days = max(v["days"], 1)
+        per_book_day = v["net_pnl"] / len(SYMBOLS) / days
+        v["plain"] = {
+            "pnl_before_fees": v["net_pnl"] + v["activity"]["fees"],
+            "pnl_per_day_per_book": per_book_day,
+            "days_until_book_empty": (CAPITAL / -per_book_day) if per_book_day < 0 else None,
+            "fills_per_day_per_coin": v["activity"]["fills_per_day"]}
+    return rep
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", type=Path, required=True)
@@ -307,7 +322,7 @@ def main() -> None:
     jobs = [(m, s, str(a.data)) for m in ("perp", "spot") for s in SYMBOLS]
     with ProcessPoolExecutor(a.workers) as ex:
         results = [r for rs in ex.map(_job, jobs) for r in rs]
-    rep = report(results)
+    rep = plain_terms(report(results))
     rep.update(generated_at=datetime.now(UTC).isoformat(), harness_commit=a.commit,
                preregistration="docs/research/2026-11-26-market-making-preregistration.md",
                kind="historical backtest (no orders placed)", paper=False,
