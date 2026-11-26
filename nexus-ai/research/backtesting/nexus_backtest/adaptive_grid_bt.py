@@ -112,24 +112,50 @@ def run_symbol(job: dict[str, Any]) -> dict[str, Any]:
     spacing, rng = job["params"]
     fee_mult = D(str(job.get("fee_mult", 1)))
     alloc, filters = job["alloc"], job["filters"]
+    start, end = job.get("start", START), job.get("end", END)
+    close_on_break = bool(job.get("close_on_regime_break", False))   # grid v2 rule
     params = replace(ag.GridParams(), spacing_atr=spacing, range_atr=rng)
     lab = gr.classify(h1)
     lab.index = lab.index + pd.Timedelta(hours=1)           # usable once the hour closed
     reg = lab.reindex(m15.index, method="ffill")
-    m15 = m15[(m15.index >= START) & (m15.index < END)]
+    m15 = m15[(m15.index >= start) & (m15.index < end)]
     reg = reg.loc[m15.index]
-    fund = funding[(funding.index >= START) & (funding.index < END)] if funding is not None \
+    fund = funding[(funding.index >= start) & (funding.index < end)] if funding is not None \
         else None
     fund_iter = iter(fund.items()) if fund is not None else iter(())
     next_fund = next(fund_iter, None)
     cash, g = alloc, None
-    stopped_until = START
+    stopped_until = start
+    regime_closes = 0
     trips: list[dict[str, Any]] = []
     entry_time: dict[tuple[int, str], pd.Timestamp] = {}
     fees_total, funding_total = ZERO, ZERO
     daily: dict[str, float] = {}
     exposure_bars = 0
     grids = stops = 0
+    def record(g: ag.GridState, fills: list[dict[str, Any]], t: pd.Timestamp,
+               regime: str) -> None:
+        nonlocal fees_total
+        for f in fills:
+            fee = D(f["fee"])
+            fees_total += fee
+            key = (f["slot"], g.grid_id)
+            if f["kind"] == "entry":
+                entry_time.setdefault(key, t)
+            elif f["pnl"] is not None:
+                q_, pr = D(f["qty"]), D(f["price"])
+                slot = next(s for s in g.slots if s.idx == f["slot"])
+                entry_fee = q_ * slot.entry_price * g.fees["maker"]
+                trips.append({"exit": t, "pnl": float(D(f["pnl"]) - fee - entry_fee),
+                              "duration_h": (t - entry_time.get(key, t))
+                              .total_seconds() / 3600, "regime": regime,
+                              "stop": bool(f.get("reason")) and "regime break" not in
+                              str(f.get("reason")),
+                              "regime_close": "regime break" in str(f.get("reason") or ""),
+                              "notional": float(q_ * pr)})
+                if slot.held == 0:
+                    entry_time.pop(key, None)
+
     o, h, low, c, v = (m15[k].to_numpy() for k in ("open", "high", "low", "close", "volume"))
     idx = m15.index
     regimes = reg["regime"].to_numpy()
@@ -162,23 +188,7 @@ def run_symbol(job: dict[str, Any]) -> dict[str, Any]:
             for p in path:
                 px = D(str(p))
                 fills = ag.step(g, ag.Book(px, px * D("1.0001"), disp, disp), t.timestamp())
-                for f in fills:
-                    fee = D(f["fee"])
-                    fees_total += fee
-                    key = (f["slot"], g.grid_id)
-                    if f["kind"] == "entry":
-                        entry_time.setdefault(key, t)
-                    elif f["pnl"] is not None:
-                        q_, pr = D(f["qty"]), D(f["price"])
-                        slot = next(s for s in g.slots if s.idx == f["slot"])
-                        entry_fee = q_ * slot.entry_price * g.fees["maker"]
-                        trips.append({"exit": t, "pnl": float(D(f["pnl"]) - fee - entry_fee),
-                                      "duration_h": (t - entry_time.get(key, t))
-                                      .total_seconds() / 3600, "regime": regime,
-                                      "stop": bool(f.get("reason")), "notional":
-                                      float(q_ * pr)})
-                        if slot.held == 0:
-                            entry_time.pop(key, None)
+                record(g, fills, t, regime)
                 if g.status == "STOPPED":
                     break
             if g.long_qty or g.short_qty:
@@ -188,12 +198,22 @@ def run_symbol(job: dict[str, Any]) -> dict[str, Any]:
                 cash += g.quote
                 g, stopped_until = None, t + STOP_COOLDOWN
             else:
-                if mode != g.mode and g.status == "RUNNING":
+                if mode != g.mode and close_on_break:
+                    # Grid v2: close every held lot at the book and retire the grid.
+                    px = D(str(c[i]))
+                    record(g, ag.close_all(g, ag.Book(px, px * D("1.0001"), D(0), D(0)),
+                                           "regime break"), t, regime)
+                    cash += g.quote
+                    g = None
+                    regime_closes += 1
+                elif mode != g.mode and g.status == "RUNNING":
                     ag.disarm(g)
                     g.status = "SUSPENDED"
                 elif mode == g.mode and g.status == "SUSPENDED" and 30 <= rsis[i] <= 70:
                     g.status = "RUNNING"
-                if ag.should_rebuild(g, t.timestamp(), mode) and \
+                if g is None:
+                    pass
+                elif ag.should_rebuild(g, t.timestamp(), mode) and \
                         (g.status != "RUNNING" or g.out_of_range_since):
                     cash += g.quote
                     g = None
@@ -206,7 +226,8 @@ def run_symbol(job: dict[str, Any]) -> dict[str, Any]:
             "fee_mult": str(fee_mult), "alloc": float(alloc), "daily": daily,
             "trips": [{**x, "exit": x["exit"].isoformat()} for x in trips],
             "fees": float(fees_total), "funding": float(funding_total),
-            "exposure": exposure_bars / max(len(idx), 1), "grids": grids, "stops": stops}
+            "exposure": exposure_bars / max(len(idx), 1), "grids": grids, "stops": stops,
+            "regime_closes": regime_closes}
 
 
 ZERO = D(0)

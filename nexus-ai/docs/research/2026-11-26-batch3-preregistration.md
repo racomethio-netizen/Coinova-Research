@@ -97,4 +97,40 @@ A pass means a paper test first.
 
 ## Results
 
-_(appended after the single run)_
+### Implementation notes (committed with the harness, before the run)
+
+These details were not specified above. Each was fixed before any result was seen.
+
+* **Data checks.**
+  * Spot 15m archives for 2020–2023: 465, every one matching Binance's `.CHECKSUM`.
+  * Futures archives: 164, all matching.
+  * Each coin is missing the same 93 fifteen-minute bars, which are exchange-wide
+    downtime.
+* **Tick sizes (grid).** Today's exchange filters are used, except where today's tick is
+  coarser than 0.01% of a coin's lowest 2020–2023 price. There the tick is divided by 10
+  until it is not.
+  * Why: Binance quoted low-priced coins with more decimals then. DOGE at $0.0023 has
+    today's tick of 0.00001, which is 0.4% of its price and would distort the grid
+    spacing.
+  * Affected: BNB, SOL, XRP, ADA, DOGE, LINK, AVAX, LTC.
+  * Unchanged: BTC, ETH.
+  * Code: `batch3.refine_tick`.
+* **Volatility targeting.**
+  * Positions are units of the coin plus cash, so the held weight drifts with price
+    between trades.
+  * At each daily close the target weight is compared with the held weight, and the
+    position trades to target only if they differ by more than 10 points. Cost is paid on
+    the traded notional.
+  * The 50/50 mix is bought at the window start and held.
+  * Daily closes come from two sources, both official Binance klines with checksums
+    verified: 2020-01 to 2023-12 from the spot 15m archives, and 2024-01 to 2026-10 from
+    the hourly series used in the rebalancing test.
+* **Pairs.**
+  * The 2× cost stress keeps the same trades and pays double fees and slippage, as in the
+    adaptive-grid stress. Funding is not multiplied.
+  * Funding is charged at the hourly close price for any settlement inside a bar the
+    position was held through.
+  * A position's model (beta, intercept) is kept from entry to exit.
+  * Size: 1x gross on current equity.
+
+_(Results appended below after the single run.)_
