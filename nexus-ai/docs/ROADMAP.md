@@ -47,8 +47,15 @@ something passes, which would be data snooping.
     * worker `voltarget-paper`: paper forward test from 2026-11-27, 180-day review;
     * API `/api/v1/research/batch3`;
     * a Strategy test page section.
-  * Not yet deployed. Next: the owner says "Deploy". The worker then starts recording
-    after the 27 Nov 00:00 UTC close.
+  * **Deployed 19:24 UTC 26 Nov** (Render commit 12e4f61 = repo ec3eca6).
+    * Health and readiness are OK (database and Redis).
+    * `voltarget-paper` started. Its first step fetched prices and recorded 0 days, as
+      expected before the start; the first day is recorded after the 27 Nov 00:00 UTC
+      close.
+    * The grid bot logged 2 Redis connection timeouts during startup (19:24:46,
+      19:25:02), then none.
+  * Next: check the forward tests around 2026-12-03 (rebalancing R3, volatility target,
+    grid bot, adaptive grid).
 
 * **2026-11-26 15:26 UTC: deployed 630f5d9 (adaptive grid, paper).**
   * Migration 0020 applied; the adaptive-grid worker started in paper mode.
