@@ -706,6 +706,30 @@ class ForwardTestEvent(Base):
     created_at: Mapped[created_at]
 
 
+class GridPaperEvent(Base):
+    """Append-only ledger of the paper grid bot: grid start (configuration and worst
+    case), every simulated fill, hourly marks, stops and owner restarts. Each row carries
+    the full grid state after the event, so the bot resumes exactly after a restart.
+    PAPER ONLY: no real order is behind any row."""
+
+    __tablename__ = "grid_paper_events"
+    __table_args__ = (
+        CheckConstraint(in_list("kind", ("start", "fill", "mark", "stop", "restart", "gap")),
+                        name="kind_valid"),
+        UniqueConstraint("run", "seq", name="one_event_per_seq"),
+        Index("ix_grid_paper_events_run_at", "run", "at"),
+    )
+
+    id: Mapped[bigint_pk]
+    run: Mapped[str] = mapped_column(String(32))
+    seq: Mapped[int]
+    symbol: Mapped[str] = mapped_column(String(16))
+    kind: Mapped[str] = mapped_column(String(12))
+    at: Mapped[datetime]
+    data: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
+    created_at: Mapped[created_at]
+
+
 class DecisionLog(Base):
     """One explained trading decision per pair (LONG / SHORT / WAIT / NO_TRADE) from the
     signal-fusion layer, with the inputs it used. Append-only: rows cannot be edited, and

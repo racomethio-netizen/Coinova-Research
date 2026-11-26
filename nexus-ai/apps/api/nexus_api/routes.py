@@ -1209,6 +1209,48 @@ async def bot_action(action: Literal["start", "pause", "stop"], body: BotAction,
     return {"state": target.value}
 
 
+class GridRestartBody(BaseModel):
+    reason: str = Field(min_length=5, max_length=300)
+
+
+@router.get("/grid-bot")
+async def grid_bot(s: Session = Depends(db), redis: Any = Depends(redis_dep),
+                   settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """PAPER grid bot: the grid, resting orders, simulated fills and P&L. No real order."""
+    from nexus_execution.grid_paper import STATUS_KEY
+
+    raw = await redis.get(STATUS_KEY)
+
+    def history() -> list[dict[str, Any]]:
+        rows = s.scalars(select(models.GridPaperEvent)
+                         .where(models.GridPaperEvent.kind.in_(("start", "restart", "fill",
+                                                                "stop", "mark")))
+                         .order_by(desc(models.GridPaperEvent.id)).limit(200)).all()
+        return [{"run": r.run, "kind": r.kind, "at": ser(r.at),
+                 **{k: v for k, v in r.data.items() if k not in ("state", "config")}}
+                for r in rows]
+
+    return {"mode": settings.grid_bot_mode, "paper": True,
+            "status": json.loads(raw) if raw else None,
+            "history": await asyncio.to_thread(history),
+            "note": "Simulated money on the live Binance order book. No real order is "
+                    "placed."}
+
+
+@router.post("/grid-bot/restart", dependencies=[Depends(owner)])
+async def grid_restart(body: GridRestartBody, s: Session = Depends(db),
+                       redis: Any = Depends(redis_dep),
+                       viewer: Viewer = Depends(current_viewer)) -> dict[str, Any]:
+    """Owner restart after a stop-loss: a new grid is built from the current market. The
+    bot never restarts itself after a stop (no automatic recovery trading)."""
+    from nexus_execution.grid_paper import RESTART_KEY
+
+    await redis.set(RESTART_KEY, viewer.actor, ex=600)
+    repo.record_audit(s, actor=viewer.actor, action="grid_restart", user_id=viewer.user.id,
+                      target_type="grid_bot", details={"reason": body.reason, "paper": True})
+    return {"requested": True}
+
+
 @router.get("/account/{market}")
 async def live_account(market: Literal["spot", "futures"], s: Session = Depends(db),
                        redis: Any = Depends(redis_dep), viewer: Viewer = Depends(current_viewer),

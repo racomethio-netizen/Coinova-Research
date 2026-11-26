@@ -226,6 +226,10 @@ class Settings(BaseSettings):
     # on live Binance order books). Live bot orders are not available in this build: real
     # orders go only through the main trader's live gate after the owner's activation.
     bot_mode: Literal["off", "monitor", "paper"] = "paper"
+    # Paper grid bot (owner request 2026-11-23): simulated capital on the live order book.
+    grid_bot_mode: Literal["off", "paper"] = "paper"
+    grid_symbol: str = "BTC/USDT"
+    grid_capital: Decimal = Field(default=Decimal("1000"), gt=0, le=Decimal("100000"))
     # Bearer token for GET /metrics (Prometheus). Unset = the endpoint does not exist.
     metrics_token: SecretStr | None = None
     minute_retention_days: int = Field(default=30, ge=1, le=90)
