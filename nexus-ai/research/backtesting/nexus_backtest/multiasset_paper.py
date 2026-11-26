@@ -33,8 +33,10 @@ from typing import Any
 import httpx
 import pandas as pd
 from nexus_common.binance_guard import guarded_get
+from nexus_common.instruments import BY_SYMBOL, of_market
 from nexus_common.logging import get_logger
 from nexus_common.markets import Autonomy, Market, at_least, effective
+from nexus_common.sessions import is_open, next_open
 from nexus_common.timeutil import utcnow
 
 from nexus_backtest.multi_asset_trend import FX
@@ -52,12 +54,21 @@ FAPI = "https://fapi.binance.com/fapi/v1/klines"
 HISTORY_DAYS = 500
 DIVERGENCE_TOL = 0.001
 REVIEW_DAYS = 180
-STOCK_PERPS = {"QQQUSDT": "QQQ (NASDAQ-100 ETF)", "SPYUSDT": "SPY (S&P 500 ETF)",
-               "NVDAUSDT": "Nvidia", "AAPLUSDT": "Apple", "MSFTUSDT": "Microsoft",
-               "TSLAUSDT": "Tesla"}
-COMMODITY_PERPS = {"XAUUSDT": "Gold", "XAGUSDT": "Silver", "XPTUSDT": "Platinum",
-                   "XPDUSDT": "Palladium", "CLUSDT": "Crude oil", "NATGASUSDT": "Natural gas",
-                   "COPPERUSDT": "Copper"}
+STOCK_PERPS = of_market(Market.STOCKS, "binance_stock_perps")
+COMMODITY_PERPS = of_market(Market.COMMODITIES, "binance_commodity_perps")
+
+
+def with_session(row: dict[str, Any], now: datetime) -> dict[str, Any]:
+    """Add the instrument's trading session: open now, or when it reopens."""
+    inst = BY_SYMBOL.get(str(row.get("symbol")))
+    if inst is None:
+        return row
+    row["session"] = inst.session
+    row["open_now"] = is_open(inst.session, now)
+    if not row["open_now"]:
+        nxt = next_open(inst.session, now)
+        row["next_open"] = nxt.isoformat() if nxt else None
+    return row
 
 
 # ------------------------------------------------------------------------- analysis
@@ -112,13 +123,14 @@ async def fetch_perp(client: httpx.AsyncClient, redis: Any, symbol: str,
 
 
 # ----------------------------------------------------------------------------- step
-async def _section(fetches: dict[str, Any], *, ann: int,
-                   names: dict[str, str]) -> dict[str, Any]:
+async def _section(fetches: dict[str, Any], *, ann: int, names: dict[str, str],
+                   now: datetime) -> dict[str, Any]:
     out, errors = [], []
     for key, coro in fetches.items():
         try:
             series = await coro
-            out.append({"symbol": key, "name": names.get(key, key), **analyse(series, ann=ann)})
+            out.append(with_session({"symbol": key, "name": names.get(key, key),
+                                     **analyse(series, ann=ann)}, now))
         except Exception as exc:              # reported, never estimated
             errors.append(f"{key}: {type(exc).__name__}: {str(exc)[:120]}")
     return {"instruments": out, "errors": errors}
@@ -145,14 +157,15 @@ async def step(factory: Any, redis: Any, client: httpx.AsyncClient,
         ndx: pd.Series | None = None
         try:
             ndx = await fetch_fred(client, "NASDAQ100", since)
-            ndx_row = {"symbol": "NDX", "name": "NASDAQ-100 (FRED)", **analyse(ndx, ann=252)}
+            ndx_row = with_session({"symbol": "NDX", "name": "NASDAQ-100 (FRED)",
+                                    **analyse(ndx, ann=252)}, now)
             vol = ndx_row.get("vol_30d")
             ndx_row["voltarget_weight"] = min(1.0, TARGET / vol) if vol else None
             st_errors: list[str] = []
         except Exception as exc:
             ndx_row, st_errors = None, [f"NDX: {type(exc).__name__}: {str(exc)[:120]}"]
         perps = await _section({k: fetch_perp(client, redis, k, now) for k in STOCK_PERPS},
-                               ann=365, names=STOCK_PERPS)
+                               ann=365, names=STOCK_PERPS, now=now)
         st["instruments"] = ([ndx_row] if ndx_row else []) + perps["instruments"]
         st["errors"] = st_errors + perps["errors"]
         if at_least(auto[Market.STOCKS], Autonomy.PAPER) and ndx is not None:
@@ -173,7 +186,8 @@ async def step(factory: Any, redis: Any, client: httpx.AsyncClient,
                 # publishes them); EURUSD, GBPUSD, AUDUSD, NZDUSD in USD per unit.
                 spot = await fetch_fred(client, sid, since)
                 pair = f"USD{cur}" if inv else f"{cur}USD"
-                row = {"symbol": pair, "name": pair, **analyse(spot, ann=252)}
+                row = with_session({"symbol": pair, "name": pair, **analyse(spot, ann=252)},
+                                   now)
                 rate = await fetch_fred(client, rid, since - timedelta(days=400))
                 if len(rate) and len(usd):
                     diff = float(rate.iloc[-1] - usd.iloc[-1]) / 100
@@ -189,7 +203,8 @@ async def step(factory: Any, redis: Any, client: httpx.AsyncClient,
     co: dict[str, Any] = {"autonomy": auto[Market.COMMODITIES].value}
     if at_least(auto[Market.COMMODITIES], Autonomy.RESEARCH):
         co.update(await _section({k: fetch_perp(client, redis, k, now)
-                                  for k in COMMODITY_PERPS}, ann=365, names=COMMODITY_PERPS))
+                                  for k in COMMODITY_PERPS}, ann=365, names=COMMODITY_PERPS,
+                                 now=now))
     status["markets"]["commodities"] = co
 
     await redis.set(STATUS_KEY, json.dumps(status, default=str), ex=3 * 86400)

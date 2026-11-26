@@ -46,8 +46,8 @@ something passes, which would be data snooping.
   * Blocked on the owner, by nature:
     * IBKR account and IB Gateway host (Stage 4);
     * forex broker and host (Stage 5).
-  * Stage 2 (instrument and session model with a migration) is still to do; it is
-    needed only once a broker connector exists.
+  * Stage 2 done the same night: sessions, instruments, base currency, migration 0021
+    (applies automatically on deploy).
 
 * **2026-11-26 late: multi-asset Stage 1 built and tested; NOT yet deployed.**
   * Audit: docs/MULTI_ASSET_AUDIT_2026-11-26.md.

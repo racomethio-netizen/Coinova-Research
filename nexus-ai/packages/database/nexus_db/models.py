@@ -31,7 +31,16 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import INET
 from sqlalchemy.orm import Mapped, mapped_column
 
-from nexus_db.base import TRADING_MODES, Base, Ratio, bigint_pk, created_at, in_list, updated_at
+from nexus_db.base import (
+    TRADING_MODES,
+    Base,
+    Money,
+    Ratio,
+    bigint_pk,
+    created_at,
+    in_list,
+    updated_at,
+)
 
 TIMEFRAMES = ("1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d")
 SIDES = ("buy", "sell")
@@ -128,6 +137,12 @@ class TradingPair(Base):
         UniqueConstraint("exchange_id", "symbol"),
         CheckConstraint("price_tick IS NULL OR price_tick > 0", name="price_tick_positive"),
         CheckConstraint("amount_step IS NULL OR amount_step > 0", name="amount_step_positive"),
+        CheckConstraint(in_list("asset_class", ("crypto", "stocks", "commodities", "forex")),
+                        name="asset_class_valid"),
+        CheckConstraint(in_list("instrument_type", ("spot", "perpetual", "stock", "etf",
+                                                    "future", "fx_spot", "cfd", "index")),
+                        name="instrument_type_valid"),
+        CheckConstraint("contract_multiplier > 0", name="contract_multiplier_positive"),
     )
 
     id: Mapped[bigint_pk]
@@ -142,6 +157,10 @@ class TradingPair(Base):
     min_notional: Mapped[Decimal | None]
     maker_fee: Mapped[Decimal | None] = mapped_column(Ratio)
     taker_fee: Mapped[Decimal | None] = mapped_column(Ratio)
+    # Multi-asset (Stage 2): what the instrument is. Existing rows: crypto spot, x1.
+    asset_class: Mapped[str] = mapped_column(String(16), server_default="crypto")
+    instrument_type: Mapped[str] = mapped_column(String(16), server_default="spot")
+    contract_multiplier: Mapped[Decimal] = mapped_column(Money, server_default="1")
     is_active: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
     metadata_synced_at: Mapped[datetime | None]
     created_at: Mapped[created_at]

@@ -4,6 +4,11 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-26
 
+- **Multi-asset Stage 2:** trading sessions (24/7, FX 24/5, NYSE, CME via
+  `exchange_calendars` 4.13.2), the instrument registry, base-currency conversion that
+  never guesses, and migration 0021 (asset class, instrument type, contract multiplier on
+  `trading_pairs`). The research view shows open or closed per instrument.
+
 - **Multi-asset Stage 3: research data, two pre-registered tests, research worker.**
   * Forex majors and NASDAQ-100 trend following (2004–2026): FAILED.
   * Volatility-managed NASDAQ-100 (1990–2026): PASSED. Calmer than holding, but lower

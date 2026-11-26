@@ -27,6 +27,7 @@ function Research({ m }: { m: Any }) {
         { key: "name", label: "Instrument" },
         { key: "last", label: "Last", numeric: true, render: (x: Any) => num(x.last, x.last < 10 ? 4 : 2) },
         { key: "as_of", label: "As of" },
+        { key: "o", label: "Market now", render: (x: Any) => x.open_now === undefined ? DASH : x.open_now ? "open" : `closed${x.next_open ? `, opens ${time(x.next_open)}` : ""}` },
         { key: "r1", label: "1 month", numeric: true, render: (x: Any) => pct(x.return_1m, 1) },
         { key: "r12", label: "12 months", numeric: true, render: (x: Any) => pct(x.return_12m, 1) },
         { key: "t", label: "Trend (200 days)", render: (x: Any) => x.above_200d === null || x.above_200d === undefined ? DASH : x.above_200d ? "above average" : "below average" },

@@ -9,7 +9,7 @@ docs/MULTI_ASSET_AUDIT_2026-11-26.md.
 | Stage | Status |
 |---|---|
 | 1. Market registry and per-market autonomy switches | **done** (2026-11-26) |
-| 2. Instrument and session model, base-currency accounting | not started |
+| 2. Instrument and session model, base-currency accounting | **done** (2026-11-26): see "Stage 2" below |
 | 3. Research data and pre-registered backtests for stocks, commodities, forex | **done for what free data allows** (2026-11-26): see "Stage 3" below |
 | 4. Interactive Brokers connector (stocks, ETFs, commodity futures), paper account first | not started; needs an IBKR account and a host for IB Gateway |
 | 5. Forex connector (MT5 on a Windows host, or a Linux-native broker API) | not started; needs the owner's choice of broker and host |
@@ -75,6 +75,34 @@ curl -X POST https://<host>/api/v1/markets/crypto/autonomy \
   -H 'Content-Type: application/json' -H 'x-nexus-csrf: 1' -b cookies.txt \
   -d '{"autonomy": "RESEARCH", "reason": "observe before resuming paper"}'
 ```
+
+## Stage 2: instruments, sessions, base currency
+
+* **Sessions** (`nexus_common.sessions`):
+  * `24x7`: crypto and Binance perpetuals.
+  * `fx_24x5`: Sunday 17:00 to Friday 17:00 New York time, with daylight saving.
+  * `XNYS`: NYSE hours, holidays and early closes.
+  * `CMES`: CME Globex.
+
+  Exchange calendars come from `exchange_calendars==4.13.2`. With pandas 3.1 it emits
+  pandas deprecation warnings; recheck when pandas is upgraded.
+  `is_open(kind, ts)` and `next_open(kind, ts)` refuse times without a time zone.
+* **Instruments** (`nexus_common.instruments`):
+  * Each has its market, type (spot, perpetual, stock, ETF, future, FX spot, CFD,
+    index), venue, quote currency, session and contract multiplier.
+  * Broker contract details are read at connection time, never typed in.
+  * The research instruments are registered here; `SPXUSDT` (a memecoin) is excluded.
+* **Base currency.** `to_base(amount, currency, rates)` converts with an explicit rate. A
+  missing rate raises `MissingRate`, and USDT is never silently treated as USD.
+* **Migration 0021.** `trading_pairs` gains:
+  * `asset_class` (crypto, stocks, commodities, forex);
+  * `instrument_type`;
+  * `contract_multiplier` (> 0).
+
+  These are CHECK-constrained, and existing rows default to crypto, spot, ×1. `alembic
+  check` is clean, and the migration was downgraded and re-applied in testing.
+* **Research view.** Each instrument now shows whether its market is open, or when it
+  reopens.
 
 ## Stage 3: research data, tests and the research worker
 

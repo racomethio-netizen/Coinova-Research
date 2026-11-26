@@ -28,6 +28,7 @@ dependencies = [
   "pandas==3.1.0",
   "scikit-learn==1.9.1",
   "xgboost-cpu==3.4.1",
+  "exchange_calendars==4.13.2",  # trading sessions and holidays (multi-asset Stage 2)
 ]
 
 [project.optional-dependencies]
@@ -110,5 +111,5 @@ exclude = ["tests/", "migrations/"]
 
 [[tool.mypy.overrides]]
 module = ["ccxt.*", "sklearn.*", "xgboost.*", "pandas.*", "defusedxml.*", "lightgbm.*",
-          "catboost.*", "hmmlearn.*", "scipy.*"]
+          "catboost.*", "hmmlearn.*", "scipy.*", "exchange_calendars.*"]
 ignore_missing_imports = true
