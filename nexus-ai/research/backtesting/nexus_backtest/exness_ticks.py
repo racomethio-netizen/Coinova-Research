@@ -114,15 +114,23 @@ def quality(pair: str, m5: pd.DataFrame, h1: pd.DataFrame, pip: float) -> dict[s
     """Checks fixed in the pre-registration (reported, never used to tune)."""
     gaps = m5.index.to_series().diff()
     long_gaps = gaps[gaps > pd.Timedelta(days=3)]
-    week_open = h1.groupby([h1.index.isocalendar().year, h1.index.isocalendar().week]).head(1)
-    hours = week_open.index.to_series().groupby(week_open.index.month).agg(
-        lambda s: sorted(set(s.dt.hour)))
+    # The trading week opens after the weekend gap (Sunday evening UTC); count the
+    # (weekday, UTC hour) of each week's first H1 bar, and of each week's last one.
+    hgap = h1.index.to_series().diff() > pd.Timedelta(hours=24)
+    opens = h1.index[hgap.to_numpy()]
+    closes = h1.index[(h1.index.to_series().shift(-1) - h1.index.to_series()
+                       > pd.Timedelta(hours=24)).to_numpy()]
+
+    def tally(ts: pd.DatetimeIndex) -> dict[str, int]:
+        c = pd.Series([f"{t.day_name()[:3]} {t.hour:02d}:00" for t in ts]).value_counts()
+        return {str(k): int(v) for k, v in c.items()}
     sp = m5["spread_median"] / pip
     by_hour = sp.groupby(m5.index.hour).median()
     return {"pair": pair, "m5_bars": len(m5), "h1_bars": len(h1),
             "first": str(m5.index[0]), "last": str(m5.index[-1]),
             "gaps_over_3_days": [str(t) for t in long_gaps.index][:20],
-            "week_open_utc_hours_by_month": {int(k): v for k, v in hours.items()},
+            "week_first_h1_bar_utc": tally(opens),
+            "week_last_h1_bar_utc": tally(closes),
             "spread_pips_median": float(np.nanmedian(sp)),
             "spread_pips_median_by_utc_hour": {int(k): round(float(v), 2)
                                                for k, v in by_hour.items()},
