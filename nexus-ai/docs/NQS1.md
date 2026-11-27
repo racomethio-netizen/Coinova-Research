@@ -4,8 +4,15 @@ NQS-1 trades the five forex majors (EURUSD, GBPUSD, USDJPY, AUDUSD, USDCHF). A r
 classifier decides which setup is allowed, and it refuses to trade when the market is
 unclear.
 
-**Status: research only.** Its pre-registered test is waiting for price history from
-the owner's Exness MT5 terminal. It places no orders, live or demo.
+**Status: tested 2026-11-27, FAILED in all three profiles** (pre-registered, on 11
+years of Exness's own tick data). It stays in research and places no orders, live or
+demo.
+* Scalping: −0.04R a trade.
+* Intraday: −0.01R a trade.
+* Swing: −0.15R a trade.
+
+Details: `docs/research/2026-11-27-nqs1-report.md` and the results section of the
+pre-registration.
 
 ## Where the code is
 

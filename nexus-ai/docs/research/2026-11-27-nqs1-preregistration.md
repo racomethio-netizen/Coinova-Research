@@ -219,3 +219,43 @@ instead of the bridge export. The broker is the same, and the history is longer.
   needed about 11 GB of the container's 15 GB.
 * **Check.** The swing and intraday profiles had already run. Both were re-run after the
   change, and both result files are identical (every field except the generation time).
+
+## Results (single run, 2026-11-27; harness commits cbbaf2d / 6fac6ff)
+
+* **Data.** Exness's tick archive: 675 month files (5.2 GB, 827 million ticks), August
+  2015 to October 2026, with no month missing.
+  * The data checks passed. The week opens on Sunday at 21:00 UTC in US summer time and
+    22:00 in winter, so the timestamps are true UTC.
+  * The gaps longer than 3 days are the year-end holidays plus two archive holes
+    (September 2015 and late January 2016), left empty.
+  * Median Standard-account spreads, in pips: EURUSD 1.0, GBPUSD 1.2, USDJPY 1.1,
+    AUDUSD 1.5, USDCHF 1.5.
+  * Files: `results/nqs1_2026-11_data_quality.json` and
+    `nqs1_2026-11_data_provenance.json` (SHA-256 of every file).
+* **Verdict: NQS-1 FAILED in all three profiles.** No re-tuning will follow.
+
+  | Profile (out of sample) | Trades | Win rate | Per trade | Profit factor | Net | Worst drop | p |
+  |---|---|---|---|---|---|---|---|
+  | Scalping (M5) | 113 | 38.1% | −0.04R | 0.96 | −0.24% | −1.5% | 0.62 |
+  | Intraday (H1) | 519 | 35.8% | −0.01R | 0.95 | −1.7% | −4.8% | 0.56 |
+  | Swing (D1) | 48 | 27.1% | −0.15R | 0.71 | −1.5% | −2.4% | 0.84 |
+
+  Every profile failed: net above zero, profit factor 1.2, Sharpe 0.5, 60% positive
+  windows, 2× costs and significance. Swing also had fewer than 100 trades.
+* **Each setup alone did worse than the combination.** At default parameters, out of
+  sample:
+  * every single setup lost money;
+  * most hit the 5% drawdown halt;
+  * the one exception, M5 mean reversion, made 14 trades: too few to mean anything.
+* **The ML filter did not help.**
+  * Intraday: −0.03R against −0.01R without it.
+  * Scalping and swing never had 150 training trades, so the filter was not used.
+* **Sensitivity.** No ±20% variant had a positive expectancy in any profile.
+* **Risk control worked.** The adaptive combination never hit the 5% drawdown halt, and
+  its worst drop was −4.8%. The single setups without regime selection did hit it.
+* **Observed after the fact, NOT a result.** Intraday breakouts in VOL_CONTRACTION
+  averaged +0.12R (255 trades), and those in VOL_EXPANSION −0.16R (247 trades).
+  * Selecting that subset now would be data snooping.
+  * It could only become a new hypothesis, tested on data not used here (a forward
+    paper test).
+* **Decision.** NQS-1 stays in RESEARCH. It gets no demo or live order path.

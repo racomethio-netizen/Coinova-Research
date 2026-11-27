@@ -434,6 +434,10 @@ def _pct(x: Any) -> str:
     return "—" if x is None else f"{100 * float(x):+.2f}%"
 
 
+def _rate(x: Any) -> str:
+    return "—" if x is None else f"{100 * float(x):.1f}%"
+
+
 def _num(x: Any, nd: int = 2) -> str:
     return "—" if x is None else f"{float(x):.{nd}f}"
 
@@ -458,15 +462,15 @@ def render_report(rep: dict[str, Any]) -> str:
         out += [f"| {g.replace('_', ' ')} | {'pass' if ok else 'FAIL'} |"
                 for g, ok in wf["gates"].items()]
         out += ["", "Out-of-sample walk-forward (one continuous book):", "",
-                f"* Trades {m['trades']}, win rate {_pct(m.get('win_rate'))}, expectancy "
+                f"* Trades {m['trades']}, win rate {_rate(m.get('win_rate'))}, expectancy "
                 f"{_num(m.get('expectancy_r'))} R, profit factor {_num(m.get('profit_factor'))}",
                 f"* Net return {_pct(m.get('net_return'))} ({_pct(m.get('annual_return'))} a "
                 f"year), Sharpe {_num(m.get('sharpe'))}, max drawdown "
                 f"{_pct(m.get('max_drawdown'))}, p-value {_num(wf.get('p_value'), 3)}",
                 f"* Costs {_num(m.get('costs_usd'))} USD, carry {_num(m.get('carry_usd'))} USD; "
                 f"at 2x costs: net {_pct(wf['stress_2x_costs'].get('net_return'))}",
-                f"* Monte Carlo: P(loss) {_pct(wf['monte_carlo'].get('prob_loss'))}, "
-                f"P(drawdown over 5%) {_pct(wf['monte_carlo'].get('prob_drawdown_over_5pct'))}"]
+                f"* Monte Carlo: P(loss) {_rate(wf['monte_carlo'].get('prob_loss'))}, "
+                f"P(drawdown over 5%) {_rate(wf['monte_carlo'].get('prob_drawdown_over_5pct'))}"]
         comp = prof.get("comparison_default_params")
         if comp:
             out += ["", "Each strategy alone vs the adaptive combination (default parameters, "
@@ -474,7 +478,7 @@ def render_report(rep: dict[str, Any]) -> str:
                     "| Mode | Trades | Win rate | Expectancy R | Profit factor | Net | Sharpe | "
                     "Max DD |", "|---|---|---|---|---|---|---|---|"]
             for mode, r in comp.items():
-                out.append(f"| {mode} | {r['trades']} | {_pct(r.get('win_rate'))} | "
+                out.append(f"| {mode} | {r['trades']} | {_rate(r.get('win_rate'))} | "
                            f"{_num(r.get('expectancy_r'))} | {_num(r.get('profit_factor'))} | "
                            f"{_pct(r.get('net_return'))} | {_num(r.get('sharpe'))} | "
                            f"{_pct(r.get('max_drawdown'))} |")
@@ -496,7 +500,7 @@ def render_report(rep: dict[str, Any]) -> str:
             out += ["", "By regime at entry:", "", "| Regime | Trades | Expectancy R | "
                     "Win rate |", "|---|---|---|---|"]
             out += [f"| {k} | {v['trades']} | {_num(v['expectancy_r'])} | "
-                    f"{_pct(v['win_rate'])} |" for k, v in m["by_regime"].items()]
+                    f"{_rate(v['win_rate'])} |" for k, v in m["by_regime"].items()]
     out += ["", "Historical simulation only: no orders were placed, and past results do not "
                 "guarantee future results.", ""]
     return "\n".join(out)

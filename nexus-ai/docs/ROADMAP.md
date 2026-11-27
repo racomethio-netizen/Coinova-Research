@@ -54,7 +54,22 @@ something passes, which would be data snooping.
     * Health checks are ready.
     * A burst of Redis timeouts in the first 3 seconds after start recovered on its own;
       the workers restarted.
-  * Waiting on the owner: run the bridge once with `--export-history`.
+  * **Tested the same night on Exness's public tick archive: FAILED in all three
+    profiles** (owner: "Do it by yourself"; pre-registration amendment 1, before any
+    run). Out of sample:
+
+    | Profile | Trades | Per trade | Net |
+    |---|---|---|---|
+    | Scalping | 113 | −0.04R | −0.24% |
+    | Intraday | 519 | −0.01R | −1.7% |
+    | Swing | 48 | −0.15R | −1.5% |
+
+    * Every single setup was worse, and the ML filter did not help.
+    * Report: `docs/research/2026-11-27-nqs1-report.md`.
+    * The bridge export is no longer needed for NQS-1.
+  * Possible next forex hypothesis, observed after the fact: intraday squeeze breakouts
+    averaged +0.12R. It can only be tested on new data, as a pre-registered forward
+    paper test, never by re-tuning on these 11 years.
   * Then, exact steps:
     1. Fetch the CSVs (`GET /api/v1/research/history/{PAIR}/{M5|H1|D1}.csv`, or
        `history_chunks` via SQL).

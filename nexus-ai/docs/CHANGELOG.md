@@ -4,6 +4,16 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-27
 
+- **NQS-1 tested: FAILED in all three profiles.**
+  * Data: Exness's public tick archive, 11 years, Standard-account bid and ask, built
+    by the new `nexus_backtest.exness_ticks`.
+  * Out of sample:
+    * scalping −0.04R a trade (113 trades);
+    * intraday −0.01R (519);
+    * swing −0.15R (48).
+  * Each setup alone was worse; the ML filter did not help.
+  * Results: `results/nqs1_2026-11.json` and `docs/research/2026-11-27-nqs1-report.md`.
+
 - **NQS-1 adaptive forex strategy (owner brief).** Research only.
   * Strategy package `nexus_strategies/nqs1`:
     * seven regimes select among time-series momentum, multi-timeframe trend, breakout

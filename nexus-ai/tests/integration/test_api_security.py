@@ -848,6 +848,10 @@ def test_markets_overview_and_per_market_switch(client: TestClient) -> None:
     assert m2["fx_styles"]["summary"]["passed"] == []
     assert set(m2["fx_styles"]["strategies"]) == {"carry", "dollar_carry", "momentum", "value",
                                                   "combined"}
+    nq = m2["nqs1"]
+    assert nq["status"] == "result" and set(nq["result"]["profiles"]) == {
+        "scalping", "intraday", "swing"}                     # not the data-quality file
+    assert not any(p["walk_forward"]["passed"] for p in nq["result"]["profiles"].values())
     assert client.post("/api/v1/markets/gold/autonomy",
                        json={"autonomy": "OFF", "reason": "unknown"},
                        headers=CSRF).status_code == 404

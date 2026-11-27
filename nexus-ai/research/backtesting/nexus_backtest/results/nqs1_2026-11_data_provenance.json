@@ -1,0 +1,4742 @@
+{
+"source": "https://ticks.ex2archive.com/ticks",
+"account": "Exness Standard (symbols ending in m)",
+"price": "bid",
+"timezone": "UTC",
+"months": [
+"2015-08",
+"2026-10"
+],
+"built_at": "2026-11-27T02:28:03.036484+00:00",
+"missing": [],
+"files_count": 675,
+"bytes_total": 5184899827,
+"ticks_total": 826662890,
+"files": [
+{
+"pair": "EURUSD",
+"month": "2015-08",
+"sha256": "656e04b4a7c2c09ac4c1c71dfbeaab42442560a0ec50e18bab5791188dbda671",
+"bytes": 9720956,
+"ticks": 2220178
+},
+{
+"pair": "EURUSD",
+"month": "2015-09",
+"sha256": "9c23b882d3491e498c8656bb7b341c21a3afe2809205df22d04d3e61058f02db",
+"bytes": 10435596,
+"ticks": 2403105
+},
+{
+"pair": "EURUSD",
+"month": "2015-10",
+"sha256": "3e981bd09882c4216064d1fa97a40d19a67b39f40d974f38e4bd4beefcc2c82d",
+"bytes": 10409976,
+"ticks": 2398297
+},
+{
+"pair": "EURUSD",
+"month": "2015-11",
+"sha256": "84ff7aa366847afb01c21e26d4524284644c755c0ac3184672f4eaad65f1a8b8",
+"bytes": 9399334,
+"ticks": 2157335
+},
+{
+"pair": "EURUSD",
+"month": "2015-12",
+"sha256": "3f63ddf31ed8df895b064d35a51f9569199b09fbe5fa30c4a145b90291d6e658",
+"bytes": 11168586,
+"ticks": 2633929
+},
+{
+"pair": "EURUSD",
+"month": "2016-01",
+"sha256": "a3efad28e3d1947cd7c773bb13e76e679ce391902d66f0faccaba5be1b71a27d",
+"bytes": 10990752,
+"ticks": 2606235
+},
+{
+"pair": "EURUSD",
+"month": "2016-02",
+"sha256": "ea367c421cf9de497e38126d5cabf10b78f0f91b41cb17470656cd6f4780eecb",
+"bytes": 12536943,
+"ticks": 2922855
+},
+{
+"pair": "EURUSD",
+"month": "2016-03",
+"sha256": "922b1d42f834d4bbec6f619733af2832cee7729752612a6235d6bbc262ec496a",
+"bytes": 12553592,
+"ticks": 2940786
+},
+{
+"pair": "EURUSD",
+"month": "2016-04",
+"sha256": "ec5e77dce425c3b5fcb613974ecbb608c8b79ccf25288517432a7d64af79d806",
+"bytes": 15475746,
+"ticks": 3710588
+},
+{
+"pair": "EURUSD",
+"month": "2016-05",
+"sha256": "5812430bd36fa44fa3fe51777c22f6de54ea42c140135500146823408206bd9c",
+"bytes": 10355936,
+"ticks": 2443166
+},
+{
+"pair": "EURUSD",
+"month": "2016-06",
+"sha256": "01cafe992e3902f1ae00ab3abb441efb3fb18ee1ea56926b95f4522c5d14b5a8",
+"bytes": 11654584,
+"ticks": 2616488
+},
+{
+"pair": "EURUSD",
+"month": "2016-07",
+"sha256": "686ac8647ed455414c200e86386482bdd4f8145fdce6a69db0ed4e364ef30377",
+"bytes": 9916018,
+"ticks": 2361566
+},
+{
+"pair": "EURUSD",
+"month": "2016-08",
+"sha256": "32ee58f46b63d0749f947caf0e12a082cb931b2c3b8e7b57f24b0928c39e694e",
+"bytes": 6370745,
+"ticks": 1387558
+},
+{
+"pair": "EURUSD",
+"month": "2016-09",
+"sha256": "d960902974484156063cfda22c94d162257f76b2a29213c4c3650b1484b597b4",
+"bytes": 6832379,
+"ticks": 1504884
+},
+{
+"pair": "EURUSD",
+"month": "2016-10",
+"sha256": "b1a6c1ef13de3de569f81f6ae97fa3a1ca25745dccfc66aa889c0cab7c48caa9",
+"bytes": 6304122,
+"ticks": 1369895
+},
+{
+"pair": "EURUSD",
+"month": "2016-11",
+"sha256": "57cdc5850d8af5c85e6834279b322b374f00af93e223ec8699fca29aeee40d97",
+"bytes": 9092749,
+"ticks": 1972397
+},
+{
+"pair": "EURUSD",
+"month": "2016-12",
+"sha256": "11d3a9825c250e58066721d8df1aad654516af77eaac89a36cca8a209015229f",
+"bytes": 7540858,
+"ticks": 1612580
+},
+{
+"pair": "EURUSD",
+"month": "2017-01",
+"sha256": "7e3823b66e55551722e1c8a537868a3022add08f4e638c9a4358eb6b2fbc4424",
+"bytes": 6831482,
+"ticks": 1362355
+},
+{
+"pair": "EURUSD",
+"month": "2017-02",
+"sha256": "9077e816020e001587a8fe28953e3b93c909d70364782956100fb259794907c6",
+"bytes": 5511630,
+"ticks": 1132643
+},
+{
+"pair": "EURUSD",
+"month": "2017-03",
+"sha256": "cec0f67838989188e5ee999afe1a94cf29534c3795d3201f3396907238135b78",
+"bytes": 6330195,
+"ticks": 1312264
+},
+{
+"pair": "EURUSD",
+"month": "2017-04",
+"sha256": "e8350aeef31a225d135a425d5255549cf1277b5c4cb90c4031829634f64b58be",
+"bytes": 6522632,
+"ticks": 912051
+},
+{
+"pair": "EURUSD",
+"month": "2017-05",
+"sha256": "dca755baa68a765a66630ee36eae76304ab0f0ee170fe968273bfc448f14f522",
+"bytes": 8591561,
+"ticks": 1193585
+},
+{
+"pair": "EURUSD",
+"month": "2017-06",
+"sha256": "1f909b5ac1fbcbd234faa13341a96b60d5691f380a733b7d118160be4d5c7c74",
+"bytes": 8088582,
+"ticks": 1128107
+},
+{
+"pair": "EURUSD",
+"month": "2017-07",
+"sha256": "9938d539b51bc9488564f4fcbc9221558bbc6687f7ae81eb8b132951348e13f3",
+"bytes": 8348241,
+"ticks": 1186771
+},
+{
+"pair": "EURUSD",
+"month": "2017-08",
+"sha256": "f88672f30b6dfcedf1b5ae634d9bf862948229b02147129fc7dc2664af4ca507",
+"bytes": 9890322,
+"ticks": 1354820
+},
+{
+"pair": "EURUSD",
+"month": "2017-09",
+"sha256": "07f972f8cd2501109db9119ef6fb08519dae8f7da1e1a4aaa4478eb2a73847bb",
+"bytes": 9530994,
+"ticks": 1295271
+},
+{
+"pair": "EURUSD",
+"month": "2017-10",
+"sha256": "ce3212e6424219ce27dbe27a1366ceabdc7e1a1f051256b7e71081f046b25555",
+"bytes": 8532597,
+"ticks": 1169982
+},
+{
+"pair": "EURUSD",
+"month": "2017-11",
+"sha256": "d5e5da1013d7a3d327ff79c6faa3d335c4de1752e3b0ca6f2bb0986bf9cfb103",
+"bytes": 8389735,
+"ticks": 1150289
+},
+{
+"pair": "EURUSD",
+"month": "2017-12",
+"sha256": "72a3e19909afd2ff925662ec049ff342b6cf1f75df9c9bd39e985097678065ca",
+"bytes": 7813271,
+"ticks": 1084480
+},
+{
+"pair": "EURUSD",
+"month": "2018-01",
+"sha256": "19667114528ca3fa57281f84d82faa6bd6e99002f55d46feed3b39972a05a8b6",
+"bytes": 10641406,
+"ticks": 1438451
+},
+{
+"pair": "EURUSD",
+"month": "2018-02",
+"sha256": "c08e6a027fc42c6250be430560cf73345350eb98a5ae082ba9f8b3dcac9fcc0d",
+"bytes": 10597796,
+"ticks": 1429928
+},
+{
+"pair": "EURUSD",
+"month": "2018-03",
+"sha256": "90237909bac85d9a47cc305c7be7c47c469d589b95702b6c9e12e3cc5cb25b66",
+"bytes": 11675476,
+"ticks": 1605877
+},
+{
+"pair": "EURUSD",
+"month": "2018-04",
+"sha256": "319cc75cd8c017048e024e1eaaf75778e156d307bb3ace6f46dc8c676d1920e5",
+"bytes": 10651943,
+"ticks": 1469437
+},
+{
+"pair": "EURUSD",
+"month": "2018-05",
+"sha256": "7a7a9c443eba49b42c45f7edd20ae6f3d1d8d726342485624fb7183c3bfbde06",
+"bytes": 13333039,
+"ticks": 1812758
+},
+{
+"pair": "EURUSD",
+"month": "2018-06",
+"sha256": "c189708aa4f9384da2d659fc63f9bc2d8be0fd86c486a29c16398fb96ba90c35",
+"bytes": 9342449,
+"ticks": 1255785
+},
+{
+"pair": "EURUSD",
+"month": "2018-07",
+"sha256": "157b469a67b7cb2e5a77ff0a67da090bec63a81d04d5799824d3d6a1776820d6",
+"bytes": 8770454,
+"ticks": 1185301
+},
+{
+"pair": "EURUSD",
+"month": "2018-08",
+"sha256": "aeb54271c727c71d90da43cbd303933b322fd9565febe4a901dd149cb17f6c35",
+"bytes": 9335489,
+"ticks": 1265163
+},
+{
+"pair": "EURUSD",
+"month": "2018-09",
+"sha256": "34c1f5fbd616a74c89b73285d88abbdff4f047896b684843139aebbdcb62de20",
+"bytes": 8456100,
+"ticks": 1152984
+},
+{
+"pair": "EURUSD",
+"month": "2018-10",
+"sha256": "0d5c88d41ca90e3f4857412e4fcccd65adca006cee829983731e5d31c20e620d",
+"bytes": 10606269,
+"ticks": 1468096
+},
+{
+"pair": "EURUSD",
+"month": "2018-11",
+"sha256": "16730dd00c3c89acd8f0d7d3ddf6514cfd692cebedfcf23f0a05618bc942836a",
+"bytes": 10389001,
+"ticks": 1439373
+},
+{
+"pair": "EURUSD",
+"month": "2018-12",
+"sha256": "887cd87817e7176c205df72bda0166a34af02d117d970f05d7ec389b75e354eb",
+"bytes": 9102002,
+"ticks": 1266607
+},
+{
+"pair": "EURUSD",
+"month": "2019-01",
+"sha256": "0fd27deb74b37cf171c0646eb528ac914761ac61d3cb3600e5318d5ead9e34d7",
+"bytes": 9576253,
+"ticks": 1332895
+},
+{
+"pair": "EURUSD",
+"month": "2019-02",
+"sha256": "e537386e7a7fe8533fef4a404efbdfa3a99215cc51ecfeab9efec5a68ee97c4f",
+"bytes": 7478869,
+"ticks": 1047786
+},
+{
+"pair": "EURUSD",
+"month": "2019-03",
+"sha256": "dc64a6aa8432f4ba03df6da7af0b533969d526f759c450c285ecd141e9ce294c",
+"bytes": 7649309,
+"ticks": 1054966
+},
+{
+"pair": "EURUSD",
+"month": "2019-04",
+"sha256": "808ee0363b6ff42c82f1e42d068d5bae5800adb78dd0ba1705999c1ba24f6524",
+"bytes": 6309327,
+"ticks": 874345
+},
+{
+"pair": "EURUSD",
+"month": "2019-05",
+"sha256": "e18e21792635811e1a60f84ffd29ac366b4b60c14e5ee3f7518b6563844b8423",
+"bytes": 4551607,
+"ticks": 627059
+},
+{
+"pair": "EURUSD",
+"month": "2019-06",
+"sha256": "80f9800d5e16dd51d94f1148933383502d9a3bd8e6911bd99f32cd227ca6f1d5",
+"bytes": 4604376,
+"ticks": 632229
+},
+{
+"pair": "EURUSD",
+"month": "2019-07",
+"sha256": "30c033304d898e1d0159a310e584d47302db189c131c3c468a8ec06705bfba6d",
+"bytes": 3420968,
+"ticks": 487567
+},
+{
+"pair": "EURUSD",
+"month": "2019-08",
+"sha256": "8fcd9cbb76aa22b9bcf84ecd1d075b7c3f44776e91875dcfd8cb4530bb8f105e",
+"bytes": 4254205,
+"ticks": 609052
+},
+{
+"pair": "EURUSD",
+"month": "2019-09",
+"sha256": "96221cfd548252f41020e304b62e3d0193fd1b4d38f984f45dbc984493b6e8ce",
+"bytes": 3595942,
+"ticks": 514349
+},
+{
+"pair": "EURUSD",
+"month": "2019-10",
+"sha256": "dac3dec2d4f15d52f7676cc20baef4bffe23bdc69be3d785086d0a2daf0a8e59",
+"bytes": 3707472,
+"ticks": 530187
+},
+{
+"pair": "EURUSD",
+"month": "2019-11",
+"sha256": "200b9bad68521542b9e2ac1a11657a72a5a8aa0a29e3341b151a727b59a4b1dd",
+"bytes": 2502767,
+"ticks": 357100
+},
+{
+"pair": "EURUSD",
+"month": "2019-12",
+"sha256": "92fcd9147c3122b9c6bb6465e062525b7d77c84d01dbf9d061c3fbedc5bbbba8",
+"bytes": 2521827,
+"ticks": 355886
+},
+{
+"pair": "EURUSD",
+"month": "2020-01",
+"sha256": "834e100a4d86f2fe9bbd79c743f2d4ad292f85e1d499d9be91cea90cb9cac8c3",
+"bytes": 2669045,
+"ticks": 376610
+},
+{
+"pair": "EURUSD",
+"month": "2020-02",
+"sha256": "66c3d725c40c7f615f38f44f9b400b1baa2d12acb4dc1d0c6d51da7e305402af",
+"bytes": 2859350,
+"ticks": 399591
+},
+{
+"pair": "EURUSD",
+"month": "2020-03",
+"sha256": "6b22501f2335f9bf907785ae792a6fa6ea161eae1656c42682c3013ecc160816",
+"bytes": 13641580,
+"ticks": 1986779
+},
+{
+"pair": "EURUSD",
+"month": "2020-04",
+"sha256": "41eceade85519a07787ba4d55f17a99612d94aa95b72056437498aaf873fb7d6",
+"bytes": 7566168,
+"ticks": 1114758
+},
+{
+"pair": "EURUSD",
+"month": "2020-05",
+"sha256": "6009e005aaa183cda291993d7dd3888970d7abd52ef07e1532e3dce3ab456dfc",
+"bytes": 7036944,
+"ticks": 1088742
+},
+{
+"pair": "EURUSD",
+"month": "2020-06",
+"sha256": "14211833a7dbcb705c725b5e4050dbaf24d0685ba486536dce5d890efe0fc247",
+"bytes": 10344058,
+"ticks": 1628400
+},
+{
+"pair": "EURUSD",
+"month": "2020-07",
+"sha256": "99f70ec5163229fd2222d3be9248082141599a12999af37e052faf4d03621cf1",
+"bytes": 8865884,
+"ticks": 1380640
+},
+{
+"pair": "EURUSD",
+"month": "2020-08",
+"sha256": "ce204774d35560ffe1274f82057b91f24ae1e787935350c519a8a934fd1756d9",
+"bytes": 8975309,
+"ticks": 1392558
+},
+{
+"pair": "EURUSD",
+"month": "2020-09",
+"sha256": "c12190fd0777064625161ab3d39fec895d54abf758f4f3c182d4b22163e20ff7",
+"bytes": 7853634,
+"ticks": 1176049
+},
+{
+"pair": "EURUSD",
+"month": "2020-10",
+"sha256": "e3ed7f26f518a74c855c76413f59a06a13bde790d50dc58103a20d9ff5ddc56d",
+"bytes": 5613298,
+"ticks": 825649
+},
+{
+"pair": "EURUSD",
+"month": "2020-11",
+"sha256": "f942b4ba7218342f8f5b2ef2d12809ab5ef497ce067f9725dbdf721eb7563510",
+"bytes": 6253056,
+"ticks": 920153
+},
+{
+"pair": "EURUSD",
+"month": "2020-12",
+"sha256": "528d5abf941cff02466bc9c0bf61ba9dcf523c96ca52d79862b01d4c7c91ec5b",
+"bytes": 6010258,
+"ticks": 878254
+},
+{
+"pair": "EURUSD",
+"month": "2021-01",
+"sha256": "6b2cf4d1910651c5dc459352ef6bca63aebc07817c88f857df7dfc64b2f03a76",
+"bytes": 6109466,
+"ticks": 900432
+},
+{
+"pair": "EURUSD",
+"month": "2021-02",
+"sha256": "ad24d6c65017da5c87d94a37b40ea3345871ba404ab7b63bb27a62131e6c70cc",
+"bytes": 4867662,
+"ticks": 712252
+},
+{
+"pair": "EURUSD",
+"month": "2021-03",
+"sha256": "0bb2892799489566892b94abc3d20ad51eafb39533252177f9ff358ca8af40b3",
+"bytes": 5643650,
+"ticks": 827977
+},
+{
+"pair": "EURUSD",
+"month": "2021-04",
+"sha256": "39e12e96a5875d9576d045cbfbf2d92bb61f27fca383e64b7e0748719b29116b",
+"bytes": 5992555,
+"ticks": 853823
+},
+{
+"pair": "EURUSD",
+"month": "2021-05",
+"sha256": "617918b1d5569c0950830e0e6a319406b50576596ccdb3b3ec1a29f95e1fcc77",
+"bytes": 5741069,
+"ticks": 801506
+},
+{
+"pair": "EURUSD",
+"month": "2021-06",
+"sha256": "bdfbfd6a2876f90f145926be9cd86a33cfa29a6e3a783eb2f3f89c5511f3ef09",
+"bytes": 4865327,
+"ticks": 655368
+},
+{
+"pair": "EURUSD",
+"month": "2021-07",
+"sha256": "856dfd89ca0edccc1a264d1e74749adaa2e46677034a566b127adcb81c67cc74",
+"bytes": 4946110,
+"ticks": 677428
+},
+{
+"pair": "EURUSD",
+"month": "2021-08",
+"sha256": "7ade1c22cf3cf76673f2ec5b1a9997355678dc47bd0183baf9d0d4675a0c4f06",
+"bytes": 3308776,
+"ticks": 465774
+},
+{
+"pair": "EURUSD",
+"month": "2021-09",
+"sha256": "7fb6575a51ef64487aaa37204f0536915c37181db147ae13d55086feb3797b77",
+"bytes": 4094110,
+"ticks": 577413
+},
+{
+"pair": "EURUSD",
+"month": "2021-10",
+"sha256": "0e2814db6c8d51b41dedbc96492a5f5406fc8f8cdc0bb28c7bf43ea1dd0db1bc",
+"bytes": 3883362,
+"ticks": 545090
+},
+{
+"pair": "EURUSD",
+"month": "2021-11",
+"sha256": "f6da1279c679db15fd16cc6cd49366d7a182ee090b038dbe944228910a6de5b4",
+"bytes": 5502117,
+"ticks": 786174
+},
+{
+"pair": "EURUSD",
+"month": "2021-12",
+"sha256": "383eeab44923038ba295444844c323ea1440f4c062ca7e6288d4e02536469470",
+"bytes": 4918346,
+"ticks": 700663
+},
+{
+"pair": "EURUSD",
+"month": "2022-01",
+"sha256": "8e3055881b2c9e64a223dd2745a1a469530bb2835503618659bcf30495d72025",
+"bytes": 5221115,
+"ticks": 748551
+},
+{
+"pair": "EURUSD",
+"month": "2022-02",
+"sha256": "327a896f16f8f1b06939fde04091402d95819c5a7b3b5f7d05b7d048921b325d",
+"bytes": 7243979,
+"ticks": 1053916
+},
+{
+"pair": "EURUSD",
+"month": "2022-03",
+"sha256": "283e2c6cd0a1699c736e0d517a85329d456a2172f62452f0adbb87215aa43bc5",
+"bytes": 11319411,
+"ticks": 1678695
+},
+{
+"pair": "EURUSD",
+"month": "2022-04",
+"sha256": "b5a38d63d7512f856f015301ba5385886be4005af5459330c8bd2fc18320198e",
+"bytes": 7314677,
+"ticks": 1063428
+},
+{
+"pair": "EURUSD",
+"month": "2022-05",
+"sha256": "afa7bc08a95148ad273b3a90e4ea48f9dcab7b0c09a6f1c2014d166a696f7625",
+"bytes": 9358461,
+"ticks": 1382381
+},
+{
+"pair": "EURUSD",
+"month": "2022-06",
+"sha256": "6ccc3334fcf823cc07ac4b6aa263e12a36f263a9aa0f62c089b2a572403b9661",
+"bytes": 9283220,
+"ticks": 1367646
+},
+{
+"pair": "EURUSD",
+"month": "2022-07",
+"sha256": "e7ac49600f81ee647e1145a1f99e448fc5949e9d1c9c4138f4f153d5acae5298",
+"bytes": 10865173,
+"ticks": 1625993
+},
+{
+"pair": "EURUSD",
+"month": "2022-08",
+"sha256": "f60f53a0284ce79022430817dbe6b36aa87b9d9ed0d0eaefee12725e6ef8b7aa",
+"bytes": 9182817,
+"ticks": 1354519
+},
+{
+"pair": "EURUSD",
+"month": "2022-09",
+"sha256": "68a80637ddb58590e56d9aa02630b13068bcd4c826b3b526b99986f88e664067",
+"bytes": 12895213,
+"ticks": 1941017
+},
+{
+"pair": "EURUSD",
+"month": "2022-10",
+"sha256": "65b7d659a700a26a2808faa5b7f44cba90e3fd9f90978d015ca090e8a5fa78ea",
+"bytes": 13223113,
+"ticks": 2000904
+},
+{
+"pair": "EURUSD",
+"month": "2022-11",
+"sha256": "0ed5e1a47e43c92e2ae5a45592057f7224e0d054db0f7beef13349372183f78c",
+"bytes": 12540839,
+"ticks": 1873405
+},
+{
+"pair": "EURUSD",
+"month": "2022-12",
+"sha256": "3ea001c4950dd522153f9e3052faef093e92dff4a0a80719e8f7bf6cb4470a40",
+"bytes": 10050503,
+"ticks": 1489182
+},
+{
+"pair": "EURUSD",
+"month": "2023-01",
+"sha256": "ad1f5c7663095b971414458a38ba8f1a24fff9aceb7c6f8ed6521c3c013d0988",
+"bytes": 8958729,
+"ticks": 1310743
+},
+{
+"pair": "EURUSD",
+"month": "2023-02",
+"sha256": "d242a4e3829c965a5f3fb4d3b70de40a2b95887a03207eb1cd4878b8efa2323a",
+"bytes": 7380325,
+"ticks": 1082313
+},
+{
+"pair": "EURUSD",
+"month": "2023-03",
+"sha256": "84ef8bfd404a708ed667b57ffc69164bf1689eb5a08823f634254f529ea85e32",
+"bytes": 9407317,
+"ticks": 1385090
+},
+{
+"pair": "EURUSD",
+"month": "2023-04",
+"sha256": "0b84ea18a46fb136d0f37cdebe28a36cb36976df1c1e50c7c39c5398b291d129",
+"bytes": 5064943,
+"ticks": 724711
+},
+{
+"pair": "EURUSD",
+"month": "2023-05",
+"sha256": "ff0c96d3f4521b172d77e8653483006f53067a6a34cd1f73ab224b72b4f4c856",
+"bytes": 5766528,
+"ticks": 828469
+},
+{
+"pair": "EURUSD",
+"month": "2023-06",
+"sha256": "64edd06a68b6dc012636607fa5cd61ef6dbd21d19f010845e254b4f655b4bb97",
+"bytes": 6119933,
+"ticks": 880037
+},
+{
+"pair": "EURUSD",
+"month": "2023-07",
+"sha256": "ffc4dcea1201100854d8d7695e9b80b6b0f03afd260f690c8aab922b066c4cbe",
+"bytes": 7366787,
+"ticks": 1065027
+},
+{
+"pair": "EURUSD",
+"month": "2023-08",
+"sha256": "388c3a5cf78f823fa7fbd0c3abcce665145658ac27ff8c6e49d874272e667e32",
+"bytes": 8054340,
+"ticks": 1164834
+},
+{
+"pair": "EURUSD",
+"month": "2023-09",
+"sha256": "71859f8024b62b5599f0adaeed5a770ffe98913a228bd253b0df22fe0ce8caee",
+"bytes": 6649201,
+"ticks": 960066
+},
+{
+"pair": "EURUSD",
+"month": "2023-10",
+"sha256": "2fc92507d42d3d39ca6830acc7a3cb2a0163175de164f63f5fc1583117cc17ef",
+"bytes": 8266305,
+"ticks": 1205780
+},
+{
+"pair": "EURUSD",
+"month": "2023-11",
+"sha256": "3ff21f15e06bf3b1add7948a197947b74278cf52cc4f045288cb1c304cc3fafb",
+"bytes": 8214122,
+"ticks": 1187573
+},
+{
+"pair": "EURUSD",
+"month": "2023-12",
+"sha256": "e20dca489acb84c348f09f9138b72fa1e93c81f1040d041df38dbf12621b528e",
+"bytes": 8489467,
+"ticks": 1239425
+},
+{
+"pair": "EURUSD",
+"month": "2024-01",
+"sha256": "bbbe48f8db373be50f71bea615cb2ff773de09f23a95309152be940f0f224f15",
+"bytes": 7889067,
+"ticks": 1196712
+},
+{
+"pair": "EURUSD",
+"month": "2024-02",
+"sha256": "15994e8b8abde8639910ee6f595b01483938559628630812dec5bd35fd702f48",
+"bytes": 5954472,
+"ticks": 896510
+},
+{
+"pair": "EURUSD",
+"month": "2024-03",
+"sha256": "0de108e3e472863e8422043478a7e4a29168ce0c3c534198d1efb11917a0d122",
+"bytes": 4972488,
+"ticks": 742265
+},
+{
+"pair": "EURUSD",
+"month": "2024-04",
+"sha256": "e37ae952ec4b356a58e69895823ebf39c2bcef24894ececa918135fa71a39af2",
+"bytes": 5640595,
+"ticks": 843200
+},
+{
+"pair": "EURUSD",
+"month": "2024-05",
+"sha256": "bc787f623bf105d5631260b29ed1dfbcbea3cf299a875f5df66e82fb41331be6",
+"bytes": 5035816,
+"ticks": 758343
+},
+{
+"pair": "EURUSD",
+"month": "2024-06",
+"sha256": "b0a68ab33e8789fbb1370db0822493735850581044e404faa30b92169ba8e3ce",
+"bytes": 4911293,
+"ticks": 738120
+},
+{
+"pair": "EURUSD",
+"month": "2024-07",
+"sha256": "1011bfc19f516453df4bc84fd179c0c210143048df097a88a5817605b4a42d9f",
+"bytes": 5254283,
+"ticks": 791459
+},
+{
+"pair": "EURUSD",
+"month": "2024-08",
+"sha256": "14ff4edaa717ac6f70e2dacde84d5211a89f0dc759665ecc794bdb34b37cd199",
+"bytes": 5492096,
+"ticks": 816522
+},
+{
+"pair": "EURUSD",
+"month": "2024-09",
+"sha256": "0d56f8df6e1a4ce669c0a14ad3343d422ddfc222538fd2f568cbfe6660ea1c8e",
+"bytes": 6460260,
+"ticks": 961877
+},
+{
+"pair": "EURUSD",
+"month": "2024-10",
+"sha256": "7cbb03fc3030f99374703907b287977002bb2e242c037b3dff69bb60e0acd859",
+"bytes": 6223454,
+"ticks": 945331
+},
+{
+"pair": "EURUSD",
+"month": "2024-11",
+"sha256": "12e9a6dab05fea6ad8f276c7ca38045918b3704487484ede68abab6bbb4eacfe",
+"bytes": 8856554,
+"ticks": 1351816
+},
+{
+"pair": "EURUSD",
+"month": "2024-12",
+"sha256": "173ed972618cc65a4f63671c6125cc8ac50a1f1b8d651ef865c40586a9df3a82",
+"bytes": 7798093,
+"ticks": 1197612
+},
+{
+"pair": "EURUSD",
+"month": "2025-01",
+"sha256": "97717592be4a4a85e64f7957b0713329ed0539193786ff56868a02661b4119bb",
+"bytes": 9559276,
+"ticks": 1479315
+},
+{
+"pair": "EURUSD",
+"month": "2025-02",
+"sha256": "ea1ea1ba24c2e7023b59f054ffdcae1e3934fcfbb1e12a60c498f57fc780b927",
+"bytes": 7954943,
+"ticks": 1227157
+},
+{
+"pair": "EURUSD",
+"month": "2025-03",
+"sha256": "acdde76612448965f84385c6f292fe17e8df3c3f62d5fb4f1f1c9d17dbe6e40e",
+"bytes": 9530791,
+"ticks": 1468916
+},
+{
+"pair": "EURUSD",
+"month": "2025-04",
+"sha256": "1b16c921ecb1fadb86c422a4978f12dfaf937fc7a8c9c2c3ac0ec4977aee02f2",
+"bytes": 18245315,
+"ticks": 2882522
+},
+{
+"pair": "EURUSD",
+"month": "2025-05",
+"sha256": "71d7591170f46f756df1f56cc845a295d0964811af31593cd8cefe37bd4b9fe7",
+"bytes": 11005482,
+"ticks": 1709733
+},
+{
+"pair": "EURUSD",
+"month": "2025-06",
+"sha256": "53e14010a44e42c9f3d49610c3bed63c3b65ced9d09630d7adea4f637247080b",
+"bytes": 9197715,
+"ticks": 1416972
+},
+{
+"pair": "EURUSD",
+"month": "2025-07",
+"sha256": "f9983712f677e88c7d305173baca84d0fadcb188ad34c98fe4284f849757c9bb",
+"bytes": 8440015,
+"ticks": 1303226
+},
+{
+"pair": "EURUSD",
+"month": "2025-08",
+"sha256": "1cb3ee49be2de6b0108ae2c92d73dd79b11afe7f8cdad1aa6f32fed976488648",
+"bytes": 7306253,
+"ticks": 1118449
+},
+{
+"pair": "EURUSD",
+"month": "2025-09",
+"sha256": "8fd354e89d19495176be2f5be84163523c83059f7ab7eaefee250dfd28c202ec",
+"bytes": 7587559,
+"ticks": 1172716
+},
+{
+"pair": "EURUSD",
+"month": "2025-10",
+"sha256": "72cb76589d2a278080b8dbbb0e18a4723cd2f4e59890716bbbd5c51a55f28875",
+"bytes": 7788254,
+"ticks": 1211484
+},
+{
+"pair": "EURUSD",
+"month": "2025-11",
+"sha256": "bc3a1ecc2f87b95f65ed47446723c3275123672197f62a2e3656dfa783832144",
+"bytes": 5379021,
+"ticks": 824159
+},
+{
+"pair": "EURUSD",
+"month": "2025-12",
+"sha256": "e571842cac9051377a9bb16f6ea2b682baf6e8c0fd0bd64029cac9230fbe7ef0",
+"bytes": 5655458,
+"ticks": 862646
+},
+{
+"pair": "EURUSD",
+"month": "2026-01",
+"sha256": "c7ff40b245161d9b6ed5c9020e47b369e274a479133c7b205e736a2897cd77d6",
+"bytes": 7519541,
+"ticks": 1163845
+},
+{
+"pair": "EURUSD",
+"month": "2026-02",
+"sha256": "1291bcc66ca7d13d8e73f8cd2528a7bb43fc018eb82b0e03dadca639b13aaeee",
+"bytes": 6293709,
+"ticks": 965664
+},
+{
+"pair": "EURUSD",
+"month": "2026-03",
+"sha256": "bb4d08259f47a22a315926a857a6637cd2c337b410fbd1a60a879d755f8c34b8",
+"bytes": 10856769,
+"ticks": 1699951
+},
+{
+"pair": "EURUSD",
+"month": "2026-04",
+"sha256": "74012bf481f91877d761ade6d82cc88141f1003563bb3b4c8d2d371968c14616",
+"bytes": 7233427,
+"ticks": 1119458
+},
+{
+"pair": "EURUSD",
+"month": "2026-05",
+"sha256": "6239f4039a919b004bf5bf091d85edd45fca91702979de72fe4b991030a9cf98",
+"bytes": 5748976,
+"ticks": 879124
+},
+{
+"pair": "EURUSD",
+"month": "2026-06",
+"sha256": "002ecba571f983b6c5de1bf1b19f19f65771d820d4b7b0f7c4b9a73a2f2c9474",
+"bytes": 6112111,
+"ticks": 938979
+},
+{
+"pair": "EURUSD",
+"month": "2026-07",
+"sha256": "8e393e5b180388bee4b7e7f426ab060cb2223644e3768e02ff8622318f8ddff6",
+"bytes": 5972568,
+"ticks": 913516
+},
+{
+"pair": "EURUSD",
+"month": "2026-08",
+"sha256": "1493ceaad26b7b2ec68bac9a3b86919832f824004d607f15f0788b62a93aa7f3",
+"bytes": 4671194,
+"ticks": 710978
+},
+{
+"pair": "EURUSD",
+"month": "2026-09",
+"sha256": "9ca940e572c87328ce626e1a42c6f1fe69fbf6e0ab83e83c9a53488fe52ca394",
+"bytes": 5472374,
+"ticks": 820806
+},
+{
+"pair": "EURUSD",
+"month": "2026-10",
+"sha256": "6b6b48b92cff520b9f3d53753299ddcd9f0274214d235048e3952ab9f12e9ad8",
+"bytes": 6870452,
+"ticks": 1038972
+},
+{
+"pair": "GBPUSD",
+"month": "2015-08",
+"sha256": "e576e1b530b43b3e1d8bc4d16ff279f7d6b6aeb75cf198cc0a494d18b5cb35e5",
+"bytes": 7745288,
+"ticks": 1662656
+},
+{
+"pair": "GBPUSD",
+"month": "2015-09",
+"sha256": "14e38a84f89d2ca05f8a9f958ca4b06ba198a7c94fd4c3e27fe912e11bbaf6b4",
+"bytes": 7058155,
+"ticks": 1460741
+},
+{
+"pair": "GBPUSD",
+"month": "2015-10",
+"sha256": "e035b457e4d53da8c25f6207679f38c7c80c9dd50922f3319fbf36b46dff80b6",
+"bytes": 8224432,
+"ticks": 1733575
+},
+{
+"pair": "GBPUSD",
+"month": "2015-11",
+"sha256": "0bd190bb354cc364c7f5c32a59a7e6a9a7364d889d1c2c5b8c4403ec2c09fffc",
+"bytes": 7340748,
+"ticks": 1557039
+},
+{
+"pair": "GBPUSD",
+"month": "2015-12",
+"sha256": "46eba8fcdef135637ec3114f42719a950acc1b9da0a87952d789337f95d9180f",
+"bytes": 8950846,
+"ticks": 1932950
+},
+{
+"pair": "GBPUSD",
+"month": "2016-01",
+"sha256": "2f1f600fc29d0f267e9422660d60e1677d88594b02f08b489c1b05a9d771f468",
+"bytes": 9050337,
+"ticks": 1975030
+},
+{
+"pair": "GBPUSD",
+"month": "2016-02",
+"sha256": "c64e9cb291de3d98fccb134ac8834a29d254c9fce1d9fe09af7f57099eea6aae",
+"bytes": 10956284,
+"ticks": 2273808
+},
+{
+"pair": "GBPUSD",
+"month": "2016-03",
+"sha256": "4024813bc719c57f20109ef4149763a24c889c29ce5f78aa49da8516e443ba0f",
+"bytes": 8940681,
+"ticks": 1879342
+},
+{
+"pair": "GBPUSD",
+"month": "2016-04",
+"sha256": "dba32ad06feba377de8cd08d582fd733412e4e3015b3ee39c7b32b863e548967",
+"bytes": 11796252,
+"ticks": 2520194
+},
+{
+"pair": "GBPUSD",
+"month": "2016-05",
+"sha256": "3d7ed15cae2bce9cad70093067197551f57b944fe4d463bd7cf06a390d657bf0",
+"bytes": 9901091,
+"ticks": 2027530
+},
+{
+"pair": "GBPUSD",
+"month": "2016-06",
+"sha256": "8dace4e436a92a898e50799c57903ae321a54ead6a4d955f19d45c26b58d9362",
+"bytes": 13146670,
+"ticks": 2529687
+},
+{
+"pair": "GBPUSD",
+"month": "2016-07",
+"sha256": "f15aff4ab7766a3b98c6199e03885d3d7046de1e35481bbc38d1c214282dcdac",
+"bytes": 12636609,
+"ticks": 2667417
+},
+{
+"pair": "GBPUSD",
+"month": "2016-08",
+"sha256": "e5c7049d968c3d706ed03d411e6cf3f618afcca0772d15651f574a8250b42a89",
+"bytes": 9370250,
+"ticks": 2033317
+},
+{
+"pair": "GBPUSD",
+"month": "2016-09",
+"sha256": "cc5b4af18877ca8d57a8c695797f326b7bc348221742c5670e2258715afafa36",
+"bytes": 9470330,
+"ticks": 2109300
+},
+{
+"pair": "GBPUSD",
+"month": "2016-10",
+"sha256": "305bb722543d0b56557995bfa8776d25dd73be738115c420c090685013b1617c",
+"bytes": 10604027,
+"ticks": 2329489
+},
+{
+"pair": "GBPUSD",
+"month": "2016-11",
+"sha256": "7eaca57ebeb07735ba779a70ca1d43ad6ba64eadc5ecc6f31246e3be0b3c88aa",
+"bytes": 11846666,
+"ticks": 2616287
+},
+{
+"pair": "GBPUSD",
+"month": "2016-12",
+"sha256": "a397c202c493a885f23d15fb3de9d664a54ebb18dc525bb62a1377f378117bc3",
+"bytes": 9042909,
+"ticks": 1957768
+},
+{
+"pair": "GBPUSD",
+"month": "2017-01",
+"sha256": "9e8f879274eb887947e834c02d565321d99b8c09b24e7d2c273a286a37b4930b",
+"bytes": 8464984,
+"ticks": 1668128
+},
+{
+"pair": "GBPUSD",
+"month": "2017-02",
+"sha256": "aed3546112d5436543e2b1f5a52d770079c5b4a6606a7e63512792e04f67a000",
+"bytes": 6953251,
+"ticks": 1397854
+},
+{
+"pair": "GBPUSD",
+"month": "2017-03",
+"sha256": "6bc4557f51e2704877f00205af3585ba42aea8a18c5ec9f7f14738e69cf0e7af",
+"bytes": 6996767,
+"ticks": 1405976
+},
+{
+"pair": "GBPUSD",
+"month": "2017-04",
+"sha256": "9475f9942f04544fe9bb589db520c507d012cb8e398d4dd3fa5b452db1a680b5",
+"bytes": 8455105,
+"ticks": 1167134
+},
+{
+"pair": "GBPUSD",
+"month": "2017-05",
+"sha256": "87ae0b1c264af90d709068a299a7774f098daf5f38038eb85d4e9c6751e08f28",
+"bytes": 10677091,
+"ticks": 1483636
+},
+{
+"pair": "GBPUSD",
+"month": "2017-06",
+"sha256": "210b01d99766aa7f1f606a62a482c57f0157fd8e58421371b09d290e584832e0",
+"bytes": 9943719,
+"ticks": 1361790
+},
+{
+"pair": "GBPUSD",
+"month": "2017-07",
+"sha256": "b43cc33c6aca0757a3c2ef57a65694bf21426d26ffdef542821634fcfcafb166",
+"bytes": 8874208,
+"ticks": 1251081
+},
+{
+"pair": "GBPUSD",
+"month": "2017-08",
+"sha256": "7c284b5199354e8587afee89928643b83e04488eb723bc6cbd4af067a54a05c8",
+"bytes": 9417949,
+"ticks": 1298474
+},
+{
+"pair": "GBPUSD",
+"month": "2017-09",
+"sha256": "564588a1f0320fab2440f5ea64d49ea2b4ab1b6ad36c75289b32aceacf4c7e98",
+"bytes": 10042295,
+"ticks": 1363553
+},
+{
+"pair": "GBPUSD",
+"month": "2017-10",
+"sha256": "18bb2c77a93840ddd6ef27c21026b45f947f3305f23ef43650ff8871d2afe7c8",
+"bytes": 10126111,
+"ticks": 1372704
+},
+{
+"pair": "GBPUSD",
+"month": "2017-11",
+"sha256": "9d8e35032a4130d14e4f59ae63eccf994449b21140ac280e3211f25f9ea66741",
+"bytes": 10358506,
+"ticks": 1404467
+},
+{
+"pair": "GBPUSD",
+"month": "2017-12",
+"sha256": "d6240375cb42a370e071585b7f2ea06b08d49e15fb45b018bd37b7b4acbf9417",
+"bytes": 9372042,
+"ticks": 1283439
+},
+{
+"pair": "GBPUSD",
+"month": "2018-01",
+"sha256": "725aa8f1f1e50b53a01d3402150e7e22fda78dbc31d1eeacc5e29c45de178bdb",
+"bytes": 11178754,
+"ticks": 1505590
+},
+{
+"pair": "GBPUSD",
+"month": "2018-02",
+"sha256": "32a1b0e0eff998b6339d287805a75e33e0c8d9c3ebdf6d90902fade76a90ffea",
+"bytes": 11415664,
+"ticks": 1513035
+},
+{
+"pair": "GBPUSD",
+"month": "2018-03",
+"sha256": "c50c99d3fa28ebd1e08a6733376bbd7fbcb7bdea378b1319e61b3dc79949f843",
+"bytes": 13066228,
+"ticks": 1772482
+},
+{
+"pair": "GBPUSD",
+"month": "2018-04",
+"sha256": "d6a7533df5d25f30abe4fbc8a4cc9323d474dd13eff6d816337d074500ccb33e",
+"bytes": 11618096,
+"ticks": 1591340
+},
+{
+"pair": "GBPUSD",
+"month": "2018-05",
+"sha256": "887a8f5bf04ede3af500e4bc03066ee658de01a6a21eb613c389f7d2d5df8932",
+"bytes": 13898060,
+"ticks": 1891020
+},
+{
+"pair": "GBPUSD",
+"month": "2018-06",
+"sha256": "c8afb86b9a2c15aa6df82a8496487bb8b92c6cb2aaf8c11a59416b59aee78656",
+"bytes": 9874490,
+"ticks": 1329167
+},
+{
+"pair": "GBPUSD",
+"month": "2018-07",
+"sha256": "e406e1490ddd90f749a3183140e104a15d9365abac6bc64adabbb677e2e9f487",
+"bytes": 9277743,
+"ticks": 1237420
+},
+{
+"pair": "GBPUSD",
+"month": "2018-08",
+"sha256": "87a944254ddcc11bae5bb855e211ef97842601c38a799f3b7585e1bcc6ea98d0",
+"bytes": 9572183,
+"ticks": 1292305
+},
+{
+"pair": "GBPUSD",
+"month": "2018-09",
+"sha256": "12ab60433136bdfbc7c4159244cb269549c36166f0c11a9daf9be7ebf5291bd8",
+"bytes": 9247234,
+"ticks": 1245743
+},
+{
+"pair": "GBPUSD",
+"month": "2018-10",
+"sha256": "fdaf0f75e23890f705ad48c43e99da71d6821134fa1b7dfe537e98937e9b119c",
+"bytes": 11412772,
+"ticks": 1567245
+},
+{
+"pair": "GBPUSD",
+"month": "2018-11",
+"sha256": "c1cd70ad0eaac97a50f7fe6c462d35fc93410838d76d2b26dd05c69f8574116b",
+"bytes": 11783997,
+"ticks": 1585829
+},
+{
+"pair": "GBPUSD",
+"month": "2018-12",
+"sha256": "5b4ea7b37497f9e7b09870cb3026637f4c04817bbb9fd8e841522599073a692f",
+"bytes": 10476508,
+"ticks": 1425533
+},
+{
+"pair": "GBPUSD",
+"month": "2019-01",
+"sha256": "6ecbcaa19e505c19cb71cd09c14dc463d11a9e4a46b38229f774654a468fd7d4",
+"bytes": 11364516,
+"ticks": 1540777
+},
+{
+"pair": "GBPUSD",
+"month": "2019-02",
+"sha256": "1e83244616966e9c1e6ca5702c8d1a02a8addbc4cad7cbdfa9cd126f3daa99e1",
+"bytes": 9521953,
+"ticks": 1300172
+},
+{
+"pair": "GBPUSD",
+"month": "2019-03",
+"sha256": "533f9ada132704e8faa0ff72c4af03ec75737035ebf86abdbfa711632150e038",
+"bytes": 10845066,
+"ticks": 1429599
+},
+{
+"pair": "GBPUSD",
+"month": "2019-04",
+"sha256": "ff93d0741c286a27145ebeed0917c42e1ff7e0fad4a346f16f8106e5d69e5d6b",
+"bytes": 8337093,
+"ticks": 1122041
+},
+{
+"pair": "GBPUSD",
+"month": "2019-05",
+"sha256": "7ea9177209e9b343a34cb7fc6c30c574d4c08a635b3bf5a24b3e05f7e6a5e3ec",
+"bytes": 6063505,
+"ticks": 825612
+},
+{
+"pair": "GBPUSD",
+"month": "2019-06",
+"sha256": "bca9f851afdd56892e9a0aa641d1a951584d9f20b8f2537a7f44f2f74d4c3993",
+"bytes": 5546907,
+"ticks": 753328
+},
+{
+"pair": "GBPUSD",
+"month": "2019-07",
+"sha256": "a242ac48745198166b43638c5e02405331e45994a14559ea66c68aed48d369be",
+"bytes": 4464682,
+"ticks": 619998
+},
+{
+"pair": "GBPUSD",
+"month": "2019-08",
+"sha256": "e756b938efab277ba37211c7f47a35e9d8806bdd5423852ff5362c937140db9b",
+"bytes": 5480460,
+"ticks": 768283
+},
+{
+"pair": "GBPUSD",
+"month": "2019-09",
+"sha256": "329f57d39383d0b5104d72430ef1a08eb1d5b81498a2aaf3d8218fff24cd760e",
+"bytes": 4905005,
+"ticks": 677760
+},
+{
+"pair": "GBPUSD",
+"month": "2019-10",
+"sha256": "5a622166cb5388bb203fe919b39a0b1cc4df0fb74eaca801112a96f8554811e8",
+"bytes": 6676448,
+"ticks": 907963
+},
+{
+"pair": "GBPUSD",
+"month": "2019-11",
+"sha256": "c6e89cd05a3a092269def9a89ec95b471a27974c3405014a69f4325c9c0ebe9d",
+"bytes": 3761672,
+"ticks": 522250
+},
+{
+"pair": "GBPUSD",
+"month": "2019-12",
+"sha256": "c02ffbc3f47cc4381ab68d2f70db07da68df9a5fea1f3b01a61690805f7045d9",
+"bytes": 4636905,
+"ticks": 629959
+},
+{
+"pair": "GBPUSD",
+"month": "2020-01",
+"sha256": "2416ff993e1b1d8bb3bf0e9dd6fb76db313fd8682407662d32f179964f74957a",
+"bytes": 4379209,
+"ticks": 599051
+},
+{
+"pair": "GBPUSD",
+"month": "2020-02",
+"sha256": "b746bd705601f3d9c5a6b7beaecdf98dd6a9f5a44569388c5f6c8e784ebe216b",
+"bytes": 3842551,
+"ticks": 522951
+},
+{
+"pair": "GBPUSD",
+"month": "2020-03",
+"sha256": "d2aaa77a8c887271b7c7cbf359909e059f1f40f3f37481eee69c198b02cc417d",
+"bytes": 12472631,
+"ticks": 1692836
+},
+{
+"pair": "GBPUSD",
+"month": "2020-04",
+"sha256": "efee208e1ea32c9966e425bd812e3492bf5afbd301298f940ff5400e8c60ecf8",
+"bytes": 8085831,
+"ticks": 1127906
+},
+{
+"pair": "GBPUSD",
+"month": "2020-05",
+"sha256": "fd77ed448acc78c2d56285e44436949e605259a75baa5e1bf9d49ae9f26188d8",
+"bytes": 8008044,
+"ticks": 1176297
+},
+{
+"pair": "GBPUSD",
+"month": "2020-06",
+"sha256": "8db646f6b7089f0d7054b0b2b69bf034f23b1cc83459a5120ff661cc01744ea6",
+"bytes": 11023419,
+"ticks": 1642770
+},
+{
+"pair": "GBPUSD",
+"month": "2020-07",
+"sha256": "6d1fdaf7c0fa72e58f90eed17985793f22074bfa910faed75bb5e41f56898a8d",
+"bytes": 8885699,
+"ticks": 1327700
+},
+{
+"pair": "GBPUSD",
+"month": "2020-08",
+"sha256": "4c7748fb2497b65069e8b0512a77b3a5f7adc6dbfe9187a05df373bc4e33c898",
+"bytes": 8534484,
+"ticks": 1263770
+},
+{
+"pair": "GBPUSD",
+"month": "2020-09",
+"sha256": "ccfce07378709b39f58b486b7c297b5d0dcef146b9255f5541d7e9ec9d9169ba",
+"bytes": 9391610,
+"ticks": 1339614
+},
+{
+"pair": "GBPUSD",
+"month": "2020-10",
+"sha256": "9f19b67600612d76c08aeefb243d1ae1a9c142c1de2ff13f7509e98eaa43c298",
+"bytes": 7580865,
+"ticks": 1065897
+},
+{
+"pair": "GBPUSD",
+"month": "2020-11",
+"sha256": "0753865f569d4c581ce86e7c5fcbc848cd1c33418e7851b10b6c01a56d5398f2",
+"bytes": 7392183,
+"ticks": 1032213
+},
+{
+"pair": "GBPUSD",
+"month": "2020-12",
+"sha256": "ca55515929a9c1cd14390290bc5f84507c9c10e074e12a2ba32a3baac2ec1f24",
+"bytes": 8312782,
+"ticks": 1157175
+},
+{
+"pair": "GBPUSD",
+"month": "2021-01",
+"sha256": "60724eed810f4b1927112246d1857e81fcc309bc5b5f3676b25a1e3370ec7ccc",
+"bytes": 6558891,
+"ticks": 919072
+},
+{
+"pair": "GBPUSD",
+"month": "2021-02",
+"sha256": "1cfc95d986e92d0e1708ce0fc60215512d3ccc021040aa23db2bc92f56ac3569",
+"bytes": 5246141,
+"ticks": 723155
+},
+{
+"pair": "GBPUSD",
+"month": "2021-03",
+"sha256": "e8c9e06a3b0f8e649f5b143f9c8ae9c5e5fcbd3d623840e003af89259c63f122",
+"bytes": 6095612,
+"ticks": 838727
+},
+{
+"pair": "GBPUSD",
+"month": "2021-04",
+"sha256": "fc9304e8609b8fc34a6d83770514bd151be567b42f0e457698c3595ececfa1f4",
+"bytes": 6537171,
+"ticks": 885108
+},
+{
+"pair": "GBPUSD",
+"month": "2021-05",
+"sha256": "6326bf5c4b4a58dd7effe016ce8d03ebfcb6605eaa65f3d9fe6cff4506da92aa",
+"bytes": 5919204,
+"ticks": 780832
+},
+{
+"pair": "GBPUSD",
+"month": "2021-06",
+"sha256": "06ac68a201a2fbffda03c6fa4fa0186ac020d054df5d2f6d865b17161f79a965",
+"bytes": 5108019,
+"ticks": 650130
+},
+{
+"pair": "GBPUSD",
+"month": "2021-07",
+"sha256": "510dfa4b3c152f54fd0e9f4b9cddf4f11898e27a7435883d247d8e9938e58617",
+"bytes": 5678311,
+"ticks": 738367
+},
+{
+"pair": "GBPUSD",
+"month": "2021-08",
+"sha256": "4e144372cd52cdf6f5a07457f0fe8ac0514435cd41978d742e5abe456250f21e",
+"bytes": 3980653,
+"ticks": 537827
+},
+{
+"pair": "GBPUSD",
+"month": "2021-09",
+"sha256": "27fcdc12efdfb65a2b846dc3181d562f87f478ad66b940adfe5524dde6157464",
+"bytes": 5446630,
+"ticks": 739985
+},
+{
+"pair": "GBPUSD",
+"month": "2021-10",
+"sha256": "48c52a82b601ce9cbd3ee8045ea568d8abec4f3bd2e955a2beb4a5e32152d13c",
+"bytes": 6000478,
+"ticks": 823116
+},
+{
+"pair": "GBPUSD",
+"month": "2021-11",
+"sha256": "56e168f519720a385aea91f647707c0f6daf4baa96ba6ee26141bb476754a437",
+"bytes": 7257694,
+"ticks": 1002248
+},
+{
+"pair": "GBPUSD",
+"month": "2021-12",
+"sha256": "c773bbd6cc65aba08291d59f1baae5077da471d09d1d9877c39e19d1e8247ef9",
+"bytes": 6547895,
+"ticks": 906461
+},
+{
+"pair": "GBPUSD",
+"month": "2022-01",
+"sha256": "a50d1da71870bf6b803323691f0cf6c41a7088fbba6b12e36cd3a32b309b50bf",
+"bytes": 6513929,
+"ticks": 905084
+},
+{
+"pair": "GBPUSD",
+"month": "2022-02",
+"sha256": "19c921381815994c4d6c935d07e654c28527c7ee326ff2eaf63bca5b94979d57",
+"bytes": 7882915,
+"ticks": 1097474
+},
+{
+"pair": "GBPUSD",
+"month": "2022-03",
+"sha256": "0674df25fab464308c80049afe3cf330d779e3864f6b47d4636b60b78c213572",
+"bytes": 10827847,
+"ticks": 1496730
+},
+{
+"pair": "GBPUSD",
+"month": "2022-04",
+"sha256": "0fa07c675a12df8477bd184cc6584691af053c52b4a656aa1b20fbf800c85869",
+"bytes": 7959378,
+"ticks": 1093472
+},
+{
+"pair": "GBPUSD",
+"month": "2022-05",
+"sha256": "394637bf09ee750f9d6ae5a66e3dbf41fcdecb0596e1f84256805395eb008f36",
+"bytes": 11841591,
+"ticks": 1655829
+},
+{
+"pair": "GBPUSD",
+"month": "2022-06",
+"sha256": "c88ce480d310d8a091df92304827caa1dd27bd085ec335ad7e4b5152c5ce4c18",
+"bytes": 13091600,
+"ticks": 1854245
+},
+{
+"pair": "GBPUSD",
+"month": "2022-07",
+"sha256": "4879988fa90fe86838a6c53c2159c043f4eda03f8e06d74bf5a43259df19bc46",
+"bytes": 13643646,
+"ticks": 1946683
+},
+{
+"pair": "GBPUSD",
+"month": "2022-08",
+"sha256": "16a50e968aca6c9f40f620087e67d4d1e1f58a9d55cfa2165c909b45ded77be5",
+"bytes": 12534240,
+"ticks": 1773865
+},
+{
+"pair": "GBPUSD",
+"month": "2022-09",
+"sha256": "0e7a43696a479e4e16112677355251ad05e2b9d9b29d7e937fc820685dcf2d9a",
+"bytes": 19388257,
+"ticks": 2792737
+},
+{
+"pair": "GBPUSD",
+"month": "2022-10",
+"sha256": "9cced793d62006e7fdc91cbfc603b3028232b23cc58e3d74fc63213c5491a6ea",
+"bytes": 24360568,
+"ticks": 3570085
+},
+{
+"pair": "GBPUSD",
+"month": "2022-11",
+"sha256": "c5fce418aceba271ee592b4d4c08b8f0e7229589e1719f7521fd085c9fdc1069",
+"bytes": 19738276,
+"ticks": 2856027
+},
+{
+"pair": "GBPUSD",
+"month": "2022-12",
+"sha256": "9d85eb1cbf9f8d7f35435bf833e1814ee9b09a509b9db7e2d1e501aba66167a4",
+"bytes": 15613348,
+"ticks": 2243326
+},
+{
+"pair": "GBPUSD",
+"month": "2023-01",
+"sha256": "2c13e63390347eb55b8cdf153f958fb312595c8fbb8c4fdd9d992b8964cd43ad",
+"bytes": 14162413,
+"ticks": 2022474
+},
+{
+"pair": "GBPUSD",
+"month": "2023-02",
+"sha256": "66328ea70d59705c400ef86ae3f74e55582c0c3fe8ed84cbad51e042d4635a37",
+"bytes": 11733265,
+"ticks": 1676938
+},
+{
+"pair": "GBPUSD",
+"month": "2023-03",
+"sha256": "7ce8157c5e9e469b00cab2d6c3c4a3c69cc0193016cb671aeea4f7b7c488644d",
+"bytes": 14032333,
+"ticks": 2015681
+},
+{
+"pair": "GBPUSD",
+"month": "2023-04",
+"sha256": "2a742c7728bab18cff78cec91e703d40a74c0704316ef745f46ba5001615bc35",
+"bytes": 7356059,
+"ticks": 1023787
+},
+{
+"pair": "GBPUSD",
+"month": "2023-05",
+"sha256": "15778c7bc6b7f482ec2ef99dab2ba907e6591595ac0d93beeb23bbd9c1ce3345",
+"bytes": 8328110,
+"ticks": 1158701
+},
+{
+"pair": "GBPUSD",
+"month": "2023-06",
+"sha256": "055ce774a84c4b5cf84ceac3886afd426135e90ab58b5cc5fce8aecca2e24d07",
+"bytes": 8901525,
+"ticks": 1238964
+},
+{
+"pair": "GBPUSD",
+"month": "2023-07",
+"sha256": "63f06f0fd71ab76408301a93acaaf33696a381d0060c12754d87c02ff474c6ae",
+"bytes": 9090203,
+"ticks": 1255251
+},
+{
+"pair": "GBPUSD",
+"month": "2023-08",
+"sha256": "5c2b79fe48f14559d80cacd889942d2f995d526da2fa785305602c77454da572",
+"bytes": 9906115,
+"ticks": 1372358
+},
+{
+"pair": "GBPUSD",
+"month": "2023-09",
+"sha256": "217138e80425373f15195b1d8445e17509e79b3e7cbc6a51c73d1129fd877b6c",
+"bytes": 7837739,
+"ticks": 1084739
+},
+{
+"pair": "GBPUSD",
+"month": "2023-10",
+"sha256": "7346b6214027816b724d5863efe0f65a969835d01300b1842b85f3d6917b7ea5",
+"bytes": 9269948,
+"ticks": 1296511
+},
+{
+"pair": "GBPUSD",
+"month": "2023-11",
+"sha256": "527aba4fc0c8c84e7f21367887d93ddccc5b8eb6ca0b30c900a83b738f2765cc",
+"bytes": 9074982,
+"ticks": 1228050
+},
+{
+"pair": "GBPUSD",
+"month": "2023-12",
+"sha256": "8df9bf5167ed529c6e20ad08817cea8efa7817e6e7ee295f62587f08bf2a9dac",
+"bytes": 9942901,
+"ticks": 1386316
+},
+{
+"pair": "GBPUSD",
+"month": "2024-01",
+"sha256": "c4da13211502fbe88c6b9cfc37ab1d3e61c7dd8027882d20942d8ad766dba6c9",
+"bytes": 9661298,
+"ticks": 1415481
+},
+{
+"pair": "GBPUSD",
+"month": "2024-02",
+"sha256": "08ab206a413f02b958b1911e99972ed72fbceb585c98732a56c7e5520d6bd670",
+"bytes": 7620574,
+"ticks": 1110309
+},
+{
+"pair": "GBPUSD",
+"month": "2024-03",
+"sha256": "09372fcdd75430d25091fe0c4b8dfaeeaf8c1724b489fc599a977eea8e4db459",
+"bytes": 6339915,
+"ticks": 917614
+},
+{
+"pair": "GBPUSD",
+"month": "2024-04",
+"sha256": "8de34236b59f378909f10f91a21581b92b33b0ef2e2390a8357e64dcfab76fea",
+"bytes": 7573421,
+"ticks": 1110285
+},
+{
+"pair": "GBPUSD",
+"month": "2024-05",
+"sha256": "8bdad8e7f6a372a23dcf490bcc6b784944fadf99334f83a203ee2e3aadd92f67",
+"bytes": 7119450,
+"ticks": 1063605
+},
+{
+"pair": "GBPUSD",
+"month": "2024-06",
+"sha256": "2241b09975935468e78734b0c85803e6940d77014cf1e9c1e8029cb9ea1de7bc",
+"bytes": 5959943,
+"ticks": 884226
+},
+{
+"pair": "GBPUSD",
+"month": "2024-07",
+"sha256": "dd40c663bae23f61692638f9d4727fc3ed9413e12b0100598a7c456d5ac2d3f2",
+"bytes": 6429738,
+"ticks": 954456
+},
+{
+"pair": "GBPUSD",
+"month": "2024-08",
+"sha256": "655681698f4a9f9b58cef8c78ff5ede5ea402f0a530a2c13b7a60ce24b9bea21",
+"bytes": 7323795,
+"ticks": 1064841
+},
+{
+"pair": "GBPUSD",
+"month": "2024-09",
+"sha256": "f7d2c1aeb08e4a71774f589d33d118a9eca6653db16c95a09b4601b701fb3e38",
+"bytes": 9995356,
+"ticks": 1422223
+},
+{
+"pair": "GBPUSD",
+"month": "2024-10",
+"sha256": "f4d3fe0c7eaff7e8f52f037031cb6ac36d7a332325ab2fae87d6c44c7dffc56c",
+"bytes": 11251368,
+"ticks": 1601748
+},
+{
+"pair": "GBPUSD",
+"month": "2024-11",
+"sha256": "47da238284a38ebbda8d079874f42f5d9acb3998eb451bb2a95f1b30f13118af",
+"bytes": 12051883,
+"ticks": 1709834
+},
+{
+"pair": "GBPUSD",
+"month": "2024-12",
+"sha256": "97a8ea071edefe643fb4cab907b398e5be5c02710e6c916b3f1df7acaf1c2959",
+"bytes": 10473615,
+"ticks": 1482310
+},
+{
+"pair": "GBPUSD",
+"month": "2025-01",
+"sha256": "0be5d98de2f4ff6cbd1c9c177ebced1b3f87b9e1941c2155fedab8ca158bc339",
+"bytes": 13586018,
+"ticks": 1934101
+},
+{
+"pair": "GBPUSD",
+"month": "2025-02",
+"sha256": "a82a949c85a3528ba1ecc8db8c82d0ffc0b26e623663f79d319edbdcf125eada",
+"bytes": 11107831,
+"ticks": 1581120
+},
+{
+"pair": "GBPUSD",
+"month": "2025-03",
+"sha256": "ac21e401c1cb29873200160e4c295d2cf733a15aa4473bcfef44387a6e5e2d5a",
+"bytes": 11407098,
+"ticks": 1621977
+},
+{
+"pair": "GBPUSD",
+"month": "2025-04",
+"sha256": "ba105b148e3aa79e55ea99a462eb398e411e72f61acf3cbfe88e50c918d03b8a",
+"bytes": 17764771,
+"ticks": 2555189
+},
+{
+"pair": "GBPUSD",
+"month": "2025-05",
+"sha256": "9a0ab397426f2d6fabddcf26a7a4285b89325dcf3654ca1d7f8db4f29cca8499",
+"bytes": 12195141,
+"ticks": 1731674
+},
+{
+"pair": "GBPUSD",
+"month": "2025-06",
+"sha256": "6708525bfd806bb93b4e694922eef4c4ffb044332af4b8b152c89b9b806417aa",
+"bytes": 11294420,
+"ticks": 1607032
+},
+{
+"pair": "GBPUSD",
+"month": "2025-07",
+"sha256": "15b1d380b54c189c08ae5ce6c9a4eaaec5c25367e27dc8365a967f56d53494b5",
+"bytes": 11444182,
+"ticks": 1638376
+},
+{
+"pair": "GBPUSD",
+"month": "2025-08",
+"sha256": "7f45beeb8ecc712810e0f227c96ada3af15bec3cbffffd4199b1339a3122e1c2",
+"bytes": 9299040,
+"ticks": 1340612
+},
+{
+"pair": "GBPUSD",
+"month": "2025-09",
+"sha256": "dbda2c37fed2c7a7ca69ead2d230dbc630022547a2b1f28ce208de090bf726b1",
+"bytes": 8517353,
+"ticks": 1297017
+},
+{
+"pair": "GBPUSD",
+"month": "2025-10",
+"sha256": "a795e7c05f42ed8e6264dccadfd22dc4dd5f1fb46c2b23ba8500a6339ab5dea3",
+"bytes": 9338938,
+"ticks": 1431810
+},
+{
+"pair": "GBPUSD",
+"month": "2025-11",
+"sha256": "683b1cb8520e5d574f53a11f36754752fd0bbcc71caba70eaffd6e4fb6522a68",
+"bytes": 8151027,
+"ticks": 1258847
+},
+{
+"pair": "GBPUSD",
+"month": "2025-12",
+"sha256": "ae79dffb16e167de22db4f0b9675a2a36ee123b0a02e02278f81fb4f5cecb1c2",
+"bytes": 7810313,
+"ticks": 1186101
+},
+{
+"pair": "GBPUSD",
+"month": "2026-01",
+"sha256": "ce780a8a3a494e3973e7e4497d4c429808b4c91ef7176f9acc38e7b24c43f744",
+"bytes": 9637450,
+"ticks": 1486050
+},
+{
+"pair": "GBPUSD",
+"month": "2026-02",
+"sha256": "dd2bc9fef14afeb6e61b97c0d9c06939ecfadb2219691614c8b6a5a393bfb4d4",
+"bytes": 8760856,
+"ticks": 1337506
+},
+{
+"pair": "GBPUSD",
+"month": "2026-03",
+"sha256": "1385d613528b543d62dd798d24588b465df0219e1b552260911187b80f8cf688",
+"bytes": 14742428,
+"ticks": 2282190
+},
+{
+"pair": "GBPUSD",
+"month": "2026-04",
+"sha256": "a0794ec9306502a3b155a4d093aa549cf0c62cacb46c6ca1812c709e758ac3d9",
+"bytes": 9807806,
+"ticks": 1510803
+},
+{
+"pair": "GBPUSD",
+"month": "2026-05",
+"sha256": "dd84141a3a049af5d3b2ff3e95d6678a715f059e8abec5d64ab3dd0768004bed",
+"bytes": 8584718,
+"ticks": 1312150
+},
+{
+"pair": "GBPUSD",
+"month": "2026-06",
+"sha256": "6a3dc8dd1bd76044688fde29c2e0320e706464110392d48fca9db5abda73f777",
+"bytes": 8700915,
+"ticks": 1333323
+},
+{
+"pair": "GBPUSD",
+"month": "2026-07",
+"sha256": "fa391a47320dba024cbdb1dc8dad43e672ee013afbed3746aa140aa50c30d99f",
+"bytes": 8790527,
+"ticks": 1339098
+},
+{
+"pair": "GBPUSD",
+"month": "2026-08",
+"sha256": "8e4c309852d5bfc0c91b56a496fb791adbf96f4bf88ec4479dd42494252504fc",
+"bytes": 6874359,
+"ticks": 1046885
+},
+{
+"pair": "GBPUSD",
+"month": "2026-09",
+"sha256": "9c8a74918caa06c09c60d6ea64ae8640fc784077dd30d2bb7eaa8f9a2384fb90",
+"bytes": 8051632,
+"ticks": 1199878
+},
+{
+"pair": "GBPUSD",
+"month": "2026-10",
+"sha256": "ea88dad1141f9ac1d4c02c3299c950ee79715091849b4c3847ae397ee33ea963",
+"bytes": 8592932,
+"ticks": 1279479
+},
+{
+"pair": "USDJPY",
+"month": "2015-08",
+"sha256": "e2d64aa90dff66b2bdb5121e92a8355627b4df799d610b34b2e3d588c05422c6",
+"bytes": 8184908,
+"ticks": 1796282
+},
+{
+"pair": "USDJPY",
+"month": "2015-09",
+"sha256": "461b0568569f18863d2ab95ff8b59ed0e2d2928451c9d50426661df20cbee933",
+"bytes": 10784127,
+"ticks": 2406494
+},
+{
+"pair": "USDJPY",
+"month": "2015-10",
+"sha256": "a71e731a499b6034512b2f331c2e6332dbae9a1515ceca29fe50ef6b9bab6c65",
+"bytes": 9633808,
+"ticks": 2214898
+},
+{
+"pair": "USDJPY",
+"month": "2015-11",
+"sha256": "d6f9de9de8bb6e9a7c613afc69bea0fd37a82b574652e0e9fd6521128acee36d",
+"bytes": 6975932,
+"ticks": 1557903
+},
+{
+"pair": "USDJPY",
+"month": "2015-12",
+"sha256": "5b28af24f2dd7c43848d4694a2beea6c8353c538a45d43046b091d8dabb8a5e9",
+"bytes": 8724606,
+"ticks": 1986679
+},
+{
+"pair": "USDJPY",
+"month": "2016-01",
+"sha256": "8f9f42c57f90fc322de4c7987ecb127254421e873d28261fe9cec4d5e60d128b",
+"bytes": 12802489,
+"ticks": 2953517
+},
+{
+"pair": "USDJPY",
+"month": "2016-02",
+"sha256": "47d31327b26d71170f532492762f61d9ff7e917d41a29b820afc3299d862c584",
+"bytes": 14391866,
+"ticks": 3156203
+},
+{
+"pair": "USDJPY",
+"month": "2016-03",
+"sha256": "ecca5ca91a8e843f786d542fc153540dd2b385beeb697de49da6c5e2927d3fef",
+"bytes": 9112432,
+"ticks": 2009354
+},
+{
+"pair": "USDJPY",
+"month": "2016-04",
+"sha256": "fad67faf8d5a5dc8268a1b974649a98c1a1bd84f2a620abbd2a1922e212d6938",
+"bytes": 13499986,
+"ticks": 3185012
+},
+{
+"pair": "USDJPY",
+"month": "2016-05",
+"sha256": "122e6d27d2e6e2526603fd82306645bb25cd9a22e8c554984ee7f203427d4b59",
+"bytes": 10904223,
+"ticks": 2500934
+},
+{
+"pair": "USDJPY",
+"month": "2016-06",
+"sha256": "c268f6c551e70fc27c710eb819d342c1e38b0fec39f794ddb22af7a610ca4a1c",
+"bytes": 11142327,
+"ticks": 2391337
+},
+{
+"pair": "USDJPY",
+"month": "2016-07",
+"sha256": "0d6cb14d2b4e9a2c2c408a7705024f53c65d2ff4b488ff8a4faff0510a390feb",
+"bytes": 9663018,
+"ticks": 2054074
+},
+{
+"pair": "USDJPY",
+"month": "2016-08",
+"sha256": "fc65215073335be69cfb368da464a4b86487a5e0ede91468fe8daea9307ccdb0",
+"bytes": 6895907,
+"ticks": 1454233
+},
+{
+"pair": "USDJPY",
+"month": "2016-09",
+"sha256": "e54dea7b4b4ea81f88ee6622ec777aeabc560e25d7d29a5e6404a31fa33f968d",
+"bytes": 7919243,
+"ticks": 1687789
+},
+{
+"pair": "USDJPY",
+"month": "2016-10",
+"sha256": "df918369f81b86b3b81ebebd3388a5e16182f6a9959751b0b8a2fa7cc7872435",
+"bytes": 6638561,
+"ticks": 1419939
+},
+{
+"pair": "USDJPY",
+"month": "2016-11",
+"sha256": "d37dbef245d725bd7fc845ec2c9aa7d1819f95a622bd765a38694d17ea643290",
+"bytes": 11721355,
+"ticks": 2531942
+},
+{
+"pair": "USDJPY",
+"month": "2016-12",
+"sha256": "baa32d62d895633bb40f026ad5110515ad1d8945c4db4900a8eec37ac77572cf",
+"bytes": 8318986,
+"ticks": 1747247
+},
+{
+"pair": "USDJPY",
+"month": "2017-01",
+"sha256": "d016a0a5330d396e00a2af2492e7b26f778e8771a0c2774d3fda794e3ea2365b",
+"bytes": 8215323,
+"ticks": 1548613
+},
+{
+"pair": "USDJPY",
+"month": "2017-02",
+"sha256": "330faefdc53ab04f7d7fd29ce50c87e2cf2370b4bdc7320638e03ed77cc90de2",
+"bytes": 5994879,
+"ticks": 1153986
+},
+{
+"pair": "USDJPY",
+"month": "2017-03",
+"sha256": "21e65ca9f398464444d20e4b7c39d72be6373f9c341c03d5b9d718109f2e479c",
+"bytes": 6341898,
+"ticks": 1243582
+},
+{
+"pair": "USDJPY",
+"month": "2017-04",
+"sha256": "f803a4d9617cb5d2be0f38718c4b27e6e19e32b2aac0c12c17a51025b7cbb66f",
+"bytes": 7300238,
+"ticks": 983355
+},
+{
+"pair": "USDJPY",
+"month": "2017-05",
+"sha256": "9731cd29ff447fc1f2fd8fd3066f102a42885e6c5477137e39c7592e5de177bc",
+"bytes": 10252680,
+"ticks": 1403190
+},
+{
+"pair": "USDJPY",
+"month": "2017-06",
+"sha256": "479327900dd8c36b3a1a5f39579c7961216a7eba84137d29f726e141012879a0",
+"bytes": 9851201,
+"ticks": 1367078
+},
+{
+"pair": "USDJPY",
+"month": "2017-07",
+"sha256": "14ad9336b513165d6f1652cc427c1d1d5dc34d936186b6225a6c1c4e082c76c3",
+"bytes": 9945570,
+"ticks": 1419161
+},
+{
+"pair": "USDJPY",
+"month": "2017-08",
+"sha256": "dabbbdc51d64cf885748b891097ecf02d369e4f690bb668f39c6d44ade3c3b05",
+"bytes": 11092954,
+"ticks": 1537317
+},
+{
+"pair": "USDJPY",
+"month": "2017-09",
+"sha256": "ebd3793640032431df0bb578bef62178e272d334e7673410a2c143c6357e52de",
+"bytes": 9729666,
+"ticks": 1319949
+},
+{
+"pair": "USDJPY",
+"month": "2017-10",
+"sha256": "26b8a714306887f7e59603a4eccc81ec13e645390b8a9f81e4da75c6210e7602",
+"bytes": 8799977,
+"ticks": 1207551
+},
+{
+"pair": "USDJPY",
+"month": "2017-11",
+"sha256": "d5cb1b6ce36f01541c9747488a043a54dc4eaecf5da273b8789f420550bfa909",
+"bytes": 8892134,
+"ticks": 1213808
+},
+{
+"pair": "USDJPY",
+"month": "2017-12",
+"sha256": "bd92a53cca2f237f58f478a2af381d3cd5acc0e2156d46a89859c0f689c2bd77",
+"bytes": 7051999,
+"ticks": 970146
+},
+{
+"pair": "USDJPY",
+"month": "2018-01",
+"sha256": "0114eca7cf26a9c43b8c52fdcd3a6aa3b7d9f75f6b39b4f55bd0458b83cd2dfd",
+"bytes": 8996211,
+"ticks": 1215913
+},
+{
+"pair": "USDJPY",
+"month": "2018-02",
+"sha256": "60a6408ebb4064a1dbadf6dff8258cf5528e27977d0036a3731ad4f13ab3c129",
+"bytes": 10450455,
+"ticks": 1412552
+},
+{
+"pair": "USDJPY",
+"month": "2018-03",
+"sha256": "43bf1ce57734191e07d9dbb7a647eee8ed4b54bd2bd0f1d884c02b9d3b9e5542",
+"bytes": 13864706,
+"ticks": 1925860
+},
+{
+"pair": "USDJPY",
+"month": "2018-04",
+"sha256": "122be0f3381f0d9118d71b81a3812de6bd62313a3f098aef780be41e97d8cc2a",
+"bytes": 12440483,
+"ticks": 1747711
+},
+{
+"pair": "USDJPY",
+"month": "2018-05",
+"sha256": "3f6bbb0f14ac67faad28861eb45ee155f73e471161fa1f4a001152c6c923f258",
+"bytes": 14113896,
+"ticks": 1958538
+},
+{
+"pair": "USDJPY",
+"month": "2018-06",
+"sha256": "cc19a976cdcea90a78efced00b4493630bd58da0929b0288319e5f77b2d35cdb",
+"bytes": 8664651,
+"ticks": 1181626
+},
+{
+"pair": "USDJPY",
+"month": "2018-07",
+"sha256": "d403bccc15d6f211ba24f315e874989c8482e05a111a31c7e48264df2404a8ee",
+"bytes": 7864624,
+"ticks": 1065994
+},
+{
+"pair": "USDJPY",
+"month": "2018-08",
+"sha256": "61599e6dfc1ddfa6f40f33cd96abc8ea643dd2fdbaf6db781c7d2d7067e4b3dd",
+"bytes": 7442293,
+"ticks": 1008198
+},
+{
+"pair": "USDJPY",
+"month": "2018-09",
+"sha256": "10c4a8cfc62eda7cab7e79dae9a28c2fdf17ef640219b33bd5016d3ae80b6839",
+"bytes": 6566566,
+"ticks": 901768
+},
+{
+"pair": "USDJPY",
+"month": "2018-10",
+"sha256": "56e10bde24d819ae3cf51b0df3e55eef88bac6cf5359b1416370026c55315bb7",
+"bytes": 10261036,
+"ticks": 1421052
+},
+{
+"pair": "USDJPY",
+"month": "2018-11",
+"sha256": "e9903c8f8c3b8318dda7f3e0f00b1d51c01332d5e4f0891a55637cabb12a1bbe",
+"bytes": 8614789,
+"ticks": 1204137
+},
+{
+"pair": "USDJPY",
+"month": "2018-12",
+"sha256": "6a0ba7486e0061c41834861e5af1855ff216a4f75beea25652c7bf7498a8d57c",
+"bytes": 8336477,
+"ticks": 1166237
+},
+{
+"pair": "USDJPY",
+"month": "2019-01",
+"sha256": "98a76d32987f61bb84f5657818fa7517f6d58c53eafaad818c18ebd5b165efd3",
+"bytes": 9008096,
+"ticks": 1242946
+},
+{
+"pair": "USDJPY",
+"month": "2019-02",
+"sha256": "3a4116cff07379fc1027b49ff6aacd7bd78b14a52161c4ed4842381b7b8841cc",
+"bytes": 6388067,
+"ticks": 888535
+},
+{
+"pair": "USDJPY",
+"month": "2019-03",
+"sha256": "2ecfb83d1e28e1056f4118c2802b8e9798b5ac176a17c861fe4feaab5da27913",
+"bytes": 6914839,
+"ticks": 946461
+},
+{
+"pair": "USDJPY",
+"month": "2019-04",
+"sha256": "af7b2a4b72261f779e3520a2a5405d09b0fd72079b3a1a769014d2ff6055a027",
+"bytes": 5339008,
+"ticks": 737334
+},
+{
+"pair": "USDJPY",
+"month": "2019-05",
+"sha256": "56914e59d4bb90d7cbbc2774c884fb44684452089b084dd4b755801195f95672",
+"bytes": 5923183,
+"ticks": 821693
+},
+{
+"pair": "USDJPY",
+"month": "2019-06",
+"sha256": "94dba56eeef6a8d706a2074cbf39286a20526fcfc2b74ac29cd4e1c771c75427",
+"bytes": 5373395,
+"ticks": 745744
+},
+{
+"pair": "USDJPY",
+"month": "2019-07",
+"sha256": "a903a94d6e2f7adc104c3a5be54bffe320681ca748408adafec9344d22a7ec00",
+"bytes": 3609224,
+"ticks": 511742
+},
+{
+"pair": "USDJPY",
+"month": "2019-08",
+"sha256": "9342e10ce948a9c272e7b6e765ed7003047195faa8916a25293eb7019783571d",
+"bytes": 6100107,
+"ticks": 864481
+},
+{
+"pair": "USDJPY",
+"month": "2019-09",
+"sha256": "9a161fc79ba1b51e89ab0f04e03f0ed23dacf6d42c243c0484a3f00f4b736313",
+"bytes": 4197963,
+"ticks": 598744
+},
+{
+"pair": "USDJPY",
+"month": "2019-10",
+"sha256": "297c56f10878f3f87a66b8d6e46cf0e5bbcdeb471d941c624ba2f86f564610e6",
+"bytes": 4225223,
+"ticks": 602954
+},
+{
+"pair": "USDJPY",
+"month": "2019-11",
+"sha256": "aebb99e5222e663de88d0d3a5a4bdf37ee71cefa726056cc5e94a928e847b18f",
+"bytes": 3069088,
+"ticks": 434366
+},
+{
+"pair": "USDJPY",
+"month": "2019-12",
+"sha256": "3dcbb26ff6ed522c09836df063e128e32154ec9f93074873a4907b9e47377beb",
+"bytes": 2619123,
+"ticks": 369608
+},
+{
+"pair": "USDJPY",
+"month": "2020-01",
+"sha256": "768e5267c2835309fb1057bb2d0b5dfbbc1a55feb8e4296144a7099d35033835",
+"bytes": 3363729,
+"ticks": 471551
+},
+{
+"pair": "USDJPY",
+"month": "2020-02",
+"sha256": "38c79be847a6d44c268b21ea1dcef8b6a764fae73d5fd93c1daadcc27dbd53ee",
+"bytes": 4057623,
+"ticks": 564623
+},
+{
+"pair": "USDJPY",
+"month": "2020-03",
+"sha256": "8f3f42fc67391c504b163ef77b2f21beab8df9b339ca2c486ea05a4679c87909",
+"bytes": 13974073,
+"ticks": 1968246
+},
+{
+"pair": "USDJPY",
+"month": "2020-04",
+"sha256": "6f0632a4e81e8bcd49a29f50b582400ea60ef5ad4bf181598b78f547054e7e9b",
+"bytes": 6451814,
+"ticks": 925493
+},
+{
+"pair": "USDJPY",
+"month": "2020-05",
+"sha256": "360b61d76bb404ef1437ea406cbd6c9382413caff00a321329f94293a56b600a",
+"bytes": 4565213,
+"ticks": 680699
+},
+{
+"pair": "USDJPY",
+"month": "2020-06",
+"sha256": "f31c30912cb0a7215f94285b0e6663834a716ce48516efd68304f9f100265a57",
+"bytes": 6240559,
+"ticks": 944274
+},
+{
+"pair": "USDJPY",
+"month": "2020-07",
+"sha256": "a3228b79c4d761707b22e6f89b243f45bcb74e1a4aeecb9b13e45a7c7170f034",
+"bytes": 4877704,
+"ticks": 736322
+},
+{
+"pair": "USDJPY",
+"month": "2020-08",
+"sha256": "12a3c8d4c88a50214230e66c3859f59f1a6921c96a935de8617829fcffccddf8",
+"bytes": 6039481,
+"ticks": 922167
+},
+{
+"pair": "USDJPY",
+"month": "2020-09",
+"sha256": "5cc3cf65a19e6ad2431f62d05e8a25ee8fffe7bbdc4e38790833cf215d3ffca6",
+"bytes": 4451077,
+"ticks": 662959
+},
+{
+"pair": "USDJPY",
+"month": "2020-10",
+"sha256": "d39a90d034a5e4c197fd4b10ede42a97ca0bb1e9d71cd5369ffb4fe6c9c5677e",
+"bytes": 3096358,
+"ticks": 449686
+},
+{
+"pair": "USDJPY",
+"month": "2020-11",
+"sha256": "41e7f700ddb67459da15dd3756f88efcbe63e3df12f3661b3a3b2f33961f6d89",
+"bytes": 4623324,
+"ticks": 677594
+},
+{
+"pair": "USDJPY",
+"month": "2020-12",
+"sha256": "4f4361975a0842486ded09ae581e8b6e423a54baad00fff210244a498bd08a4b",
+"bytes": 3754544,
+"ticks": 549214
+},
+{
+"pair": "USDJPY",
+"month": "2021-01",
+"sha256": "51ee84b5cc1436a953185d167e007fe62f65aa196de633ec45b47864b2cfe7ca",
+"bytes": 3494219,
+"ticks": 508239
+},
+{
+"pair": "USDJPY",
+"month": "2021-02",
+"sha256": "be3fa1db50f8a264fdaab34ed76e2f89d0520d123140ab7e40de0e069943eaaf",
+"bytes": 3270566,
+"ticks": 471135
+},
+{
+"pair": "USDJPY",
+"month": "2021-03",
+"sha256": "56f7bd1b6c50984a101685becee5180f0d932ae3331c6b2aa2110e1763149540",
+"bytes": 4136793,
+"ticks": 599080
+},
+{
+"pair": "USDJPY",
+"month": "2021-04",
+"sha256": "141910ecae465456515119315d7175b8c62c3bebac24bdc3b42ce7711e7a21f5",
+"bytes": 5246973,
+"ticks": 741086
+},
+{
+"pair": "USDJPY",
+"month": "2021-05",
+"sha256": "76acd5edf16db1f805f118e232b4c41c1cdbef867b201e5b2f91aa70338f10ca",
+"bytes": 4637879,
+"ticks": 642696
+},
+{
+"pair": "USDJPY",
+"month": "2021-06",
+"sha256": "748a45bfaaef46f8ae27adca0f72e3e42cac6878b18b393f731bfe11f87a1a4e",
+"bytes": 3635487,
+"ticks": 485113
+},
+{
+"pair": "USDJPY",
+"month": "2021-07",
+"sha256": "bafdc2f2d052e24912be370f12af98ff004f5663c1ce93a369591942255100a3",
+"bytes": 3970488,
+"ticks": 537499
+},
+{
+"pair": "USDJPY",
+"month": "2021-08",
+"sha256": "12b79f588682653bc943584d926eab3fecfd1af2303719c31117162e8f363463",
+"bytes": 3112616,
+"ticks": 431672
+},
+{
+"pair": "USDJPY",
+"month": "2021-09",
+"sha256": "43c3f937e1e7cf2c84c165589f471379793d6865ac77d1ca08ef546e2f3691a7",
+"bytes": 3334035,
+"ticks": 460332
+},
+{
+"pair": "USDJPY",
+"month": "2021-10",
+"sha256": "28983ce135321982b87ef05b16b11dbaed9c39b208d3803d436eba5511e376a7",
+"bytes": 4784308,
+"ticks": 671504
+},
+{
+"pair": "USDJPY",
+"month": "2021-11",
+"sha256": "acef0adbc58561ae508978c18abfa8f9a0817567db37eb581d3c63a5c5046a34",
+"bytes": 6119831,
+"ticks": 872495
+},
+{
+"pair": "USDJPY",
+"month": "2021-12",
+"sha256": "c4c9b65f16920e8cdf7340a2ff0c2f712883a278d37f411ac2792a075bea8b0c",
+"bytes": 4837854,
+"ticks": 685755
+},
+{
+"pair": "USDJPY",
+"month": "2022-01",
+"sha256": "5be7d55f9b6b16513ce2ec77d0b34948475f8001ba04b46e7be004d48b8fa711",
+"bytes": 5079346,
+"ticks": 715081
+},
+{
+"pair": "USDJPY",
+"month": "2022-02",
+"sha256": "09a40e21a43798580ca221bbac393fc215d469695073deac7211b0741869658a",
+"bytes": 5491522,
+"ticks": 784052
+},
+{
+"pair": "USDJPY",
+"month": "2022-03",
+"sha256": "d1ba926c9d95c9f7cb91484aa99774461f3c95d776d5caee7beaf9503e2da86f",
+"bytes": 8737920,
+"ticks": 1258917
+},
+{
+"pair": "USDJPY",
+"month": "2022-04",
+"sha256": "069c3d49960cbc5fc6511045f04c91a226ac0d9a77bc9c7a73d344df31749a36",
+"bytes": 10862479,
+"ticks": 1579214
+},
+{
+"pair": "USDJPY",
+"month": "2022-05",
+"sha256": "6589849e6e3a7be1cd32148f32e26a622ac0544fea2cc89b8ce6958171bfb266",
+"bytes": 11295313,
+"ticks": 1647081
+},
+{
+"pair": "USDJPY",
+"month": "2022-06",
+"sha256": "c74d07605a015f44a05a3e302ca6b571698edda05c786c703aadbeefc5fad4fb",
+"bytes": 11775599,
+"ticks": 1753763
+},
+{
+"pair": "USDJPY",
+"month": "2022-07",
+"sha256": "e721814ddd846251fbe19b026e435f26c8a24fd07ec2e6f30138096bce773438",
+"bytes": 8758838,
+"ticks": 1304237
+},
+{
+"pair": "USDJPY",
+"month": "2022-08",
+"sha256": "c86d2d2e9526dd9e38de20b49ad233e6289710f7452dcb4aace9450620614470",
+"bytes": 11188963,
+"ticks": 1647923
+},
+{
+"pair": "USDJPY",
+"month": "2022-09",
+"sha256": "c3968c823a9fac86d1fe7b063e8ac3b0b47c1802768c6457e98a2e01d58eb2c7",
+"bytes": 12803178,
+"ticks": 1952759
+},
+{
+"pair": "USDJPY",
+"month": "2022-10",
+"sha256": "5a467089c7575b0b70b20f7da57a8e75d0700f0bb7d64f4f9205b7b4218e7d3b",
+"bytes": 10647451,
+"ticks": 1635194
+},
+{
+"pair": "USDJPY",
+"month": "2022-11",
+"sha256": "08eb9c492e1c0cdef7c0039a7d59c96e4e03961d43e921916ac4cb6a6cf7f88c",
+"bytes": 13638232,
+"ticks": 2056181
+},
+{
+"pair": "USDJPY",
+"month": "2022-12",
+"sha256": "2b95fae96231be3ffd74c1042b6c09901c24f0b0e41bd752c5245166c533fbde",
+"bytes": 13872883,
+"ticks": 2090697
+},
+{
+"pair": "USDJPY",
+"month": "2023-01",
+"sha256": "d0f02f7a6713dc418147da1d36b763c531260ff27f494bad1a34bea678585d52",
+"bytes": 16821301,
+"ticks": 2496408
+},
+{
+"pair": "USDJPY",
+"month": "2023-02",
+"sha256": "438c6a533b8579d495e25bdf5eb9e34275c9dfe7c27403240ffba391988cc308",
+"bytes": 11600842,
+"ticks": 1736887
+},
+{
+"pair": "USDJPY",
+"month": "2023-03",
+"sha256": "ff17848017994a13f33d59c2dc279a70c64c0ae6fb7309959ebcd4a15cb51877",
+"bytes": 16845451,
+"ticks": 2537278
+},
+{
+"pair": "USDJPY",
+"month": "2023-04",
+"sha256": "d4543a806bb0a031dfe1f0819ae09e43c0eac49c3f760106e82facd255df117c",
+"bytes": 8381110,
+"ticks": 1226944
+},
+{
+"pair": "USDJPY",
+"month": "2023-05",
+"sha256": "73096aee1b43b4439ec01782756fdf8db868a5e907ace66d136e8112cf36d4b5",
+"bytes": 8313439,
+"ticks": 1233006
+},
+{
+"pair": "USDJPY",
+"month": "2023-06",
+"sha256": "d3689220bb36c75316992dffb9fa93f3fee43011354c482501ff0547f9177505",
+"bytes": 8020378,
+"ticks": 1190361
+},
+{
+"pair": "USDJPY",
+"month": "2023-07",
+"sha256": "a96d42a92c9fab0104af1ff90b2ed4fde2d2e79b39f9ce0c8f5204e7f4cf19b1",
+"bytes": 10512447,
+"ticks": 1566178
+},
+{
+"pair": "USDJPY",
+"month": "2023-08",
+"sha256": "e1cc996e9af4e84cd32ebba2fb69f4e4b25824144b8b36ca19f0e8405f31b854",
+"bytes": 8547674,
+"ticks": 1270173
+},
+{
+"pair": "USDJPY",
+"month": "2023-09",
+"sha256": "a6461a123be813649dcb6a3035c9c0ed329ee9594fcf1a8897bac6713624c508",
+"bytes": 6307530,
+"ticks": 932457
+},
+{
+"pair": "USDJPY",
+"month": "2023-10",
+"sha256": "71607175505ec09526b656068e20c90d1fe556d472f07c06cf27e366987a75bb",
+"bytes": 6038771,
+"ticks": 899839
+},
+{
+"pair": "USDJPY",
+"month": "2023-11",
+"sha256": "7d4f6b63f31b1df143e79dd710386fd1078d0e5c1d0020d33ef26f858e766a80",
+"bytes": 7587066,
+"ticks": 1111052
+},
+{
+"pair": "USDJPY",
+"month": "2023-12",
+"sha256": "6a23a4ee83efddd329a1814b3872a9bd414a3a8ae16845a72a48918056eba7d8",
+"bytes": 12576015,
+"ticks": 1877815
+},
+{
+"pair": "USDJPY",
+"month": "2024-01",
+"sha256": "d79d85b6690822868216fb9492a1ea313f4046aa7b5592a75fd1f1422e2e7e93",
+"bytes": 11898859,
+"ticks": 1772343
+},
+{
+"pair": "USDJPY",
+"month": "2024-02",
+"sha256": "1f4e41d91540b3651ae170152a1607afb8d5666b68bc2b787fd444f9adf047cd",
+"bytes": 8224997,
+"ticks": 1221841
+},
+{
+"pair": "USDJPY",
+"month": "2024-03",
+"sha256": "fe831a2b755650e9bc5bfed034aceb89ec1bdfd78b84da8e333e3c4d108fcf43",
+"bytes": 8112637,
+"ticks": 1192329
+},
+{
+"pair": "USDJPY",
+"month": "2024-04",
+"sha256": "cb7dcebcf315e52e1f601e1a7d94f272efa44190b086d4bc04ce4c44ae901e44",
+"bytes": 7796067,
+"ticks": 1160347
+},
+{
+"pair": "USDJPY",
+"month": "2024-05",
+"sha256": "6657accd3e66d2343237309415b17a26db2a6b28676909cf4e2ae21bd6e7f8d7",
+"bytes": 7337701,
+"ticks": 1054647
+},
+{
+"pair": "USDJPY",
+"month": "2024-06",
+"sha256": "e2d4dc983713be8b08507e9739284c5ec2d6d78a6d1a84b9405eb3c417f852d5",
+"bytes": 7324010,
+"ticks": 1076092
+},
+{
+"pair": "USDJPY",
+"month": "2024-07",
+"sha256": "4b70e1854e486ef1863150c22c0afcdb556b437d86f57e5edc3623a1ffd388ab",
+"bytes": 13383679,
+"ticks": 1998048
+},
+{
+"pair": "USDJPY",
+"month": "2024-08",
+"sha256": "08ae46e6a4f15451caeb65b49c2e8ebcc4c648f1d76777d010320a535b86202f",
+"bytes": 19808576,
+"ticks": 2979292
+},
+{
+"pair": "USDJPY",
+"month": "2024-09",
+"sha256": "c2af3340492947f2cf2ba1d557513d2611fb830dd7de55db9f3b5c6ef6cbbea4",
+"bytes": 19437108,
+"ticks": 2832235
+},
+{
+"pair": "USDJPY",
+"month": "2024-10",
+"sha256": "95b62f81aa527ad970a991877c3e1db9a67d6b28f78b384f3c0aa08228927fa4",
+"bytes": 15560078,
+"ticks": 2276202
+},
+{
+"pair": "USDJPY",
+"month": "2024-11",
+"sha256": "8dfb40f1a801de6982074a120207800e580600c33c6558c080d68198b41b0057",
+"bytes": 16313471,
+"ticks": 2366475
+},
+{
+"pair": "USDJPY",
+"month": "2024-12",
+"sha256": "4ada22ced03217633d1baf127debbde1579a634ebfcd848b4f175dca01a2d6c5",
+"bytes": 12903798,
+"ticks": 1865857
+},
+{
+"pair": "USDJPY",
+"month": "2025-01",
+"sha256": "5ba094f4234801b33dc21b2a2fa7fa87b69d650ac1eea5e9e3494ca0ed37192c",
+"bytes": 14653644,
+"ticks": 2120835
+},
+{
+"pair": "USDJPY",
+"month": "2025-02",
+"sha256": "77963675afba6919ece33e78ee4c27326dea9a7ad294fbae324f954c623ed080",
+"bytes": 14103795,
+"ticks": 2043908
+},
+{
+"pair": "USDJPY",
+"month": "2025-03",
+"sha256": "e98a2c54da3592724bc13dbf1500279b71856f3e1a87dc886c1756eceb74b465",
+"bytes": 17486842,
+"ticks": 2568583
+},
+{
+"pair": "USDJPY",
+"month": "2025-04",
+"sha256": "8d2388740cd47689c5854a1b0faf3f92090eb33e405e4fb4bc4d6f272b8478ec",
+"bytes": 28009593,
+"ticks": 4205157
+},
+{
+"pair": "USDJPY",
+"month": "2025-05",
+"sha256": "b40f8f2f133c8d9a6caf36f824002186ba2c4d86a3ad987a8a075da87b6c9ddf",
+"bytes": 17063909,
+"ticks": 2504980
+},
+{
+"pair": "USDJPY",
+"month": "2025-06",
+"sha256": "575520ca625cbdd28de4713376fa59f96b15248c6f8fe947973ee07f35a9cbd7",
+"bytes": 13771315,
+"ticks": 2009660
+},
+{
+"pair": "USDJPY",
+"month": "2025-07",
+"sha256": "150d6c14473b3c0dc4d38c5c071c7d4e364c3d39cc419c2a8c5d8311de7c9972",
+"bytes": 13281890,
+"ticks": 1938248
+},
+{
+"pair": "USDJPY",
+"month": "2025-08",
+"sha256": "2c79d679794c9652cd322a4d66ad73ea7675bdf7da6932bcb57461d8b7e0f3c3",
+"bytes": 11030882,
+"ticks": 1614617
+},
+{
+"pair": "USDJPY",
+"month": "2025-09",
+"sha256": "e56056dd9fe7149d371dfaf18557984dac62e1416991f1a7b83e8d8030847a5d",
+"bytes": 9716465,
+"ticks": 1489760
+},
+{
+"pair": "USDJPY",
+"month": "2025-10",
+"sha256": "b65ed7d546e9d48f4d689473fdc2139ae426406f5f5393d359360f27a72b599f",
+"bytes": 12194845,
+"ticks": 1864870
+},
+{
+"pair": "USDJPY",
+"month": "2025-11",
+"sha256": "94510a9036d8d58c81f95fef6ce0fb17622899aa0c8165150335f4b1c62502f9",
+"bytes": 9008651,
+"ticks": 1375910
+},
+{
+"pair": "USDJPY",
+"month": "2025-12",
+"sha256": "8ffbb614a9a493ffbc2e48503fa853ca105aa52db4ce0539a085a26311be8c79",
+"bytes": 8653002,
+"ticks": 1303557
+},
+{
+"pair": "USDJPY",
+"month": "2026-01",
+"sha256": "ffc56d991060cf1d4fe188008952e37e7037ecc3ba572e008ad7677961b6a894",
+"bytes": 11320122,
+"ticks": 1738621
+},
+{
+"pair": "USDJPY",
+"month": "2026-02",
+"sha256": "77036b420f2e732c6aa20274ac48486b8f432d5f47296a8d9ccf08571aa7c7bf",
+"bytes": 10641370,
+"ticks": 1619257
+},
+{
+"pair": "USDJPY",
+"month": "2026-03",
+"sha256": "de4787c6183f7db669834deb501bcbaef78108e605a1c7248470dadfc52580f2",
+"bytes": 11459238,
+"ticks": 1750463
+},
+{
+"pair": "USDJPY",
+"month": "2026-04",
+"sha256": "cfc8e8824331c9a58409601fefaaf5ba5cb09bde0e2e74493eb09beb4c2b645b",
+"bytes": 8625104,
+"ticks": 1316979
+},
+{
+"pair": "USDJPY",
+"month": "2026-05",
+"sha256": "4902770c0908dce792b2b29010249e0b59c96125a8ce87a03deac427a525ba3d",
+"bytes": 7120995,
+"ticks": 1087526
+},
+{
+"pair": "USDJPY",
+"month": "2026-06",
+"sha256": "8d9e6b1c64c7e62f04ccaf0e2d16b145f2ed542933ad25409c25e69b3e88204d",
+"bytes": 5204657,
+"ticks": 790984
+},
+{
+"pair": "USDJPY",
+"month": "2026-07",
+"sha256": "519b1e2a1cc62c03f6d44e89347bd5ca0797329e5f2d9fbaf8bebb4df432fff7",
+"bytes": 8449294,
+"ticks": 1280768
+},
+{
+"pair": "USDJPY",
+"month": "2026-08",
+"sha256": "3890a04fc9ad36531c5f7d3e9f77c17200103d8f948d43e256ae92e2f91eeffa",
+"bytes": 7884932,
+"ticks": 1191284
+},
+{
+"pair": "USDJPY",
+"month": "2026-09",
+"sha256": "cffb54b2cd9b861a15d8f5d6e446419d6d669c039ee04fa742edfdff9748e5ab",
+"bytes": 13738741,
+"ticks": 2108049
+},
+{
+"pair": "USDJPY",
+"month": "2026-10",
+"sha256": "f495b4f60d16cef105bbb9412be4c9e722167bceb8f27f16565fc422de0e3632",
+"bytes": 10385893,
+"ticks": 1588575
+},
+{
+"pair": "AUDUSD",
+"month": "2015-08",
+"sha256": "5f41a74bf734d4e367954773d608cdd5ba165dba24180b25016be7bb90a8b04f",
+"bytes": 7011685,
+"ticks": 2491288
+},
+{
+"pair": "AUDUSD",
+"month": "2015-09",
+"sha256": "1ac7bfaade896061d4cb7452ca25723b427994cf03b43ccf076a8d6e3bf2644b",
+"bytes": 7703965,
+"ticks": 2677204
+},
+{
+"pair": "AUDUSD",
+"month": "2015-10",
+"sha256": "6b88c7cf33ddc446dda9e14bc659090c1cdaa55001483b4cb6d55c2965d54cc8",
+"bytes": 8884049,
+"ticks": 3117917
+},
+{
+"pair": "AUDUSD",
+"month": "2015-11",
+"sha256": "8478cdd482b56de10b9420cd897e61941995462cfa93dc238217e581a56b732f",
+"bytes": 8011191,
+"ticks": 2804108
+},
+{
+"pair": "AUDUSD",
+"month": "2015-12",
+"sha256": "2db93fc1b5b8981c94faacf5cc5e370d9bf95adfe23ea4d6f5f9bdf2a4ad022b",
+"bytes": 8752615,
+"ticks": 3103569
+},
+{
+"pair": "AUDUSD",
+"month": "2016-01",
+"sha256": "a511c8fde52e2b7393c5e9715572e840dd1b06df6ba0c3b729cbca1a8b9e18ce",
+"bytes": 10233407,
+"ticks": 3769968
+},
+{
+"pair": "AUDUSD",
+"month": "2016-02",
+"sha256": "763fc8c25f072f2a9f300fdcd6de35ef906fcc757cf747a47f7ee3241ffb3c6b",
+"bytes": 11069932,
+"ticks": 3999943
+},
+{
+"pair": "AUDUSD",
+"month": "2016-03",
+"sha256": "5d105a607218aa1bb16f07e6a6cabe52122f2c16ea1312f51f15d989fdf6a229",
+"bytes": 9734228,
+"ticks": 3532194
+},
+{
+"pair": "AUDUSD",
+"month": "2016-04",
+"sha256": "458e3f2fd0d8fe7487d2bd4c871f5058a7234dfca52ecff6839477b7a0b57dae",
+"bytes": 14490228,
+"ticks": 6015052
+},
+{
+"pair": "AUDUSD",
+"month": "2016-05",
+"sha256": "d727a7ab54d249212cf2c008e75536dc3d45a5ac017e1c91fb2bedbab334c1a7",
+"bytes": 11021113,
+"ticks": 4287843
+},
+{
+"pair": "AUDUSD",
+"month": "2016-06",
+"sha256": "a74e736456fa523ed2ce4a071e43efd5b894bb9a513d4b8e0d33019869eb03e0",
+"bytes": 10338922,
+"ticks": 3798677
+},
+{
+"pair": "AUDUSD",
+"month": "2016-07",
+"sha256": "e94d71c8bb0b8ceddabe07f68c0e1379473e4fc55c0ae9f6dec71ba30f5a21e1",
+"bytes": 8400156,
+"ticks": 3191292
+},
+{
+"pair": "AUDUSD",
+"month": "2016-08",
+"sha256": "dde497aa52cdb5e4e4b28f490945eb71bbd6b6de7ba0ae1eb03befb076a49278",
+"bytes": 6093525,
+"ticks": 2096614
+},
+{
+"pair": "AUDUSD",
+"month": "2016-09",
+"sha256": "50ba748f922ed25e71b9909346d71602c735842ebacdc7bf785dd2a02ce0fd34",
+"bytes": 6884942,
+"ticks": 2491537
+},
+{
+"pair": "AUDUSD",
+"month": "2016-10",
+"sha256": "020af60617a9cc4b06f292187d526e51344527ad924330080b7ace5e5d33296f",
+"bytes": 5812794,
+"ticks": 2028397
+},
+{
+"pair": "AUDUSD",
+"month": "2016-11",
+"sha256": "047ec0888e76d74b02a2123b466605a53bf44c0ed2c1aca44d8b0245724bc829",
+"bytes": 8228116,
+"ticks": 3067234
+},
+{
+"pair": "AUDUSD",
+"month": "2016-12",
+"sha256": "8544c02051b0ae5b6c503952e1837b42e55e808b8e40ca1f0a3db07f380834cc",
+"bytes": 5864211,
+"ticks": 2090123
+},
+{
+"pair": "AUDUSD",
+"month": "2017-01",
+"sha256": "9056d437274b19c2da03249c2cce1e239aa98df7299c2453bb899d51ae58db96",
+"bytes": 5918817,
+"ticks": 1988135
+},
+{
+"pair": "AUDUSD",
+"month": "2017-02",
+"sha256": "ef9782159d3e68192ceb4b2213f55e819e16301e01f8a9a65f02ed0b152c3e4d",
+"bytes": 4376869,
+"ticks": 1397196
+},
+{
+"pair": "AUDUSD",
+"month": "2017-03",
+"sha256": "3459ac85c3f1304026eac420653c71b63771270db47b788e9090d82acab15ded",
+"bytes": 4990449,
+"ticks": 1590501
+},
+{
+"pair": "AUDUSD",
+"month": "2017-04",
+"sha256": "15b453dc145a35b8987cb59aacc2c9be0bf15f546624c8c1cab98d0feaa9117c",
+"bytes": 4816872,
+"ticks": 688786
+},
+{
+"pair": "AUDUSD",
+"month": "2017-05",
+"sha256": "8f6de08d27b5f474ce3185739e6d36ce80b902e72e812f3272efbccfbd8ad996",
+"bytes": 7011141,
+"ticks": 965235
+},
+{
+"pair": "AUDUSD",
+"month": "2017-06",
+"sha256": "fbc1ebba7d6bbfd4f2d771cadd08cfdb279784a57faa687e5d72fc45d56f488d",
+"bytes": 6457657,
+"ticks": 903764
+},
+{
+"pair": "AUDUSD",
+"month": "2017-07",
+"sha256": "e6be5012a5644620f229de519409b4f5bd1961d6fce3f15c9cb9d9571070f583",
+"bytes": 6873004,
+"ticks": 978625
+},
+{
+"pair": "AUDUSD",
+"month": "2017-08",
+"sha256": "75bd5176d7c4598d10727d7071b318e54de7990e68280570fc1a06baae108546",
+"bytes": 7483265,
+"ticks": 1035531
+},
+{
+"pair": "AUDUSD",
+"month": "2017-09",
+"sha256": "b2107351062dd25da57540d66859f68c01bc85d0ed9bee7c896978fda7cfdf0f",
+"bytes": 7403445,
+"ticks": 1015713
+},
+{
+"pair": "AUDUSD",
+"month": "2017-10",
+"sha256": "ae790394899299e4ac0d3259ec580696a093e977d61db51c8cc599a086e9228e",
+"bytes": 6799559,
+"ticks": 935028
+},
+{
+"pair": "AUDUSD",
+"month": "2017-11",
+"sha256": "3611fc9c616ec9880f6e11d61e34a5f59a120fd0bfa1d69139b107ba804e909f",
+"bytes": 5892150,
+"ticks": 806156
+},
+{
+"pair": "AUDUSD",
+"month": "2017-12",
+"sha256": "0c8215bd9ebfdf1151bda114cf5dd56959c8b742b52c24de4aae6808b89044ba",
+"bytes": 4702687,
+"ticks": 638782
+},
+{
+"pair": "AUDUSD",
+"month": "2018-01",
+"sha256": "8a864771db1c912aca983efc4d22787886cb38eb676b76679c4a05bca05eb791",
+"bytes": 6214379,
+"ticks": 825110
+},
+{
+"pair": "AUDUSD",
+"month": "2018-02",
+"sha256": "65997b21d25589555154ccc0af0c65ef494b029df16624391496d3cce9a93018",
+"bytes": 6987770,
+"ticks": 927979
+},
+{
+"pair": "AUDUSD",
+"month": "2018-03",
+"sha256": "4fe888478ee63f5b5fc3cc72102965e64e9c73f93e24eef94f65bb8127f53d9f",
+"bytes": 8850477,
+"ticks": 1204703
+},
+{
+"pair": "AUDUSD",
+"month": "2018-04",
+"sha256": "ba444ce0819259662a3d7be72c769f1ec33d6ab85f8121a494f7cd5a983319a9",
+"bytes": 7481361,
+"ticks": 1018559
+},
+{
+"pair": "AUDUSD",
+"month": "2018-05",
+"sha256": "ff262795c4648fceea96f3c106b3aa6496cffcf3b0c2cecb3c689fb0e4d7d1da",
+"bytes": 10045611,
+"ticks": 1369121
+},
+{
+"pair": "AUDUSD",
+"month": "2018-06",
+"sha256": "9c6cba9ebf0504eedd63ab550b6538dc6b4123be6e63d63cd68fd0766b5ed6a6",
+"bytes": 6939014,
+"ticks": 933272
+},
+{
+"pair": "AUDUSD",
+"month": "2018-07",
+"sha256": "783e501e3459f7cf21b4af56bbee4f7436b97389ecaca19218033e3ffa3ad322",
+"bytes": 6583575,
+"ticks": 874004
+},
+{
+"pair": "AUDUSD",
+"month": "2018-08",
+"sha256": "522f187733cf6c95921a7980d93681ca71de63aa4e24317c9b7f322a7b32ebf6",
+"bytes": 7380385,
+"ticks": 990062
+},
+{
+"pair": "AUDUSD",
+"month": "2018-09",
+"sha256": "98c37fc53be95444f0e79c67f33edd678f0f6401dc58d0e48f1a8f8d03536211",
+"bytes": 6799673,
+"ticks": 920925
+},
+{
+"pair": "AUDUSD",
+"month": "2018-10",
+"sha256": "88b7f39b93d9d3e02f3a7ebc999c96f66e77254e1616cda315b7f3c8926c41f7",
+"bytes": 8866074,
+"ticks": 1225686
+},
+{
+"pair": "AUDUSD",
+"month": "2018-11",
+"sha256": "cd10bd08a4dd918bc1258fd5e25c21525e056b385cb3f4126cc99a216dc56878",
+"bytes": 8562916,
+"ticks": 1173248
+},
+{
+"pair": "AUDUSD",
+"month": "2018-12",
+"sha256": "4e846761c33aa39361776bd83fe05dd07ebcecfca7ed382aad7221f6e31aefb9",
+"bytes": 7659171,
+"ticks": 1053217
+},
+{
+"pair": "AUDUSD",
+"month": "2019-01",
+"sha256": "c77a38f69f63614ffd990cb6f4c9d2a9e79a6fae06ed4d7cf900839f4884ed02",
+"bytes": 7746039,
+"ticks": 1058287
+},
+{
+"pair": "AUDUSD",
+"month": "2019-02",
+"sha256": "628f5e086d1d8b7d692dd60a93b85b63d42ad434188fd4ee1dfc071ae20b3d7b",
+"bytes": 6823049,
+"ticks": 929280
+},
+{
+"pair": "AUDUSD",
+"month": "2019-03",
+"sha256": "54e212f89c67e64fccbebb9299f308de98f5d764bb43609d0d80e251084c3045",
+"bytes": 6579797,
+"ticks": 893630
+},
+{
+"pair": "AUDUSD",
+"month": "2019-04",
+"sha256": "dd8ee72552e638d6cbdde937b2cf44551b3c9cae73c2cdf3dcc38b7bf1944755",
+"bytes": 5269565,
+"ticks": 715506
+},
+{
+"pair": "AUDUSD",
+"month": "2019-05",
+"sha256": "e0bde6f29a6402b1bb69879d4e4d761571881ed8a7a3dc95be38364b0e033c6f",
+"bytes": 4327006,
+"ticks": 596151
+},
+{
+"pair": "AUDUSD",
+"month": "2019-06",
+"sha256": "ad61b4dd6b620954d0b745e8e64ce723b717216e92d9d40871ae7a7a9639da53",
+"bytes": 3791136,
+"ticks": 526062
+},
+{
+"pair": "AUDUSD",
+"month": "2019-07",
+"sha256": "ede0fad0dc5e20ff83510d643917b3f220a85451291424a78c44361759691a40",
+"bytes": 2392320,
+"ticks": 334189
+},
+{
+"pair": "AUDUSD",
+"month": "2019-08",
+"sha256": "497fc4cceace30c40844c7750f0ddb1d301c2318c7d4058ef5e605a5be07fe24",
+"bytes": 3047402,
+"ticks": 426107
+},
+{
+"pair": "AUDUSD",
+"month": "2019-09",
+"sha256": "5e88c98423b0cf524ef95c4bcee959bcbfd3cfbb96069dcc380a543f089ea51e",
+"bytes": 2233362,
+"ticks": 310695
+},
+{
+"pair": "AUDUSD",
+"month": "2019-10",
+"sha256": "0e75c1fa04eaccdc92f4c6d6f00e8efe23b0771682926adefbd61a3d2d84027a",
+"bytes": 2634163,
+"ticks": 366544
+},
+{
+"pair": "AUDUSD",
+"month": "2019-11",
+"sha256": "6d1ad34209e7207f2b4245d59d342d66c2a3090d68c41607a3bf9293b8d82f61",
+"bytes": 2097992,
+"ticks": 289577
+},
+{
+"pair": "AUDUSD",
+"month": "2019-12",
+"sha256": "4c22d856840c1010de36dc7798bc8a3d9b57b5e567ea9a8d13e0c4189e4f2eac",
+"bytes": 1868987,
+"ticks": 257216
+},
+{
+"pair": "AUDUSD",
+"month": "2020-01",
+"sha256": "3d1fce2394f34b717b3c01125c06fb095c6fd33f7a94bec9bd2d42b57273768e",
+"bytes": 2423538,
+"ticks": 332182
+},
+{
+"pair": "AUDUSD",
+"month": "2020-02",
+"sha256": "2153548ebd8f514d4503ff83163d85ffff9f4dc62775eeef253dc69506fc12e6",
+"bytes": 2541039,
+"ticks": 349384
+},
+{
+"pair": "AUDUSD",
+"month": "2020-03",
+"sha256": "624772300857b546e7ea772926daccfc2eeb32581dbed6313f874fd563f92ef6",
+"bytes": 8780699,
+"ticks": 1203130
+},
+{
+"pair": "AUDUSD",
+"month": "2020-04",
+"sha256": "9dfcfce6bfd6e8d83b90be70a5099a7c8470378dc3082967a5f6f3389b26a893",
+"bytes": 6426111,
+"ticks": 915827
+},
+{
+"pair": "AUDUSD",
+"month": "2020-05",
+"sha256": "cc927ad02bc5d02969a5472309744e8c2d3234fd933a73e98df93b3c6204fbcf",
+"bytes": 6167181,
+"ticks": 915653
+},
+{
+"pair": "AUDUSD",
+"month": "2020-06",
+"sha256": "950197d7352baf097ff3d963c2d4affa388a45db00cea7b21b149ea6be683481",
+"bytes": 9191429,
+"ticks": 1390205
+},
+{
+"pair": "AUDUSD",
+"month": "2020-07",
+"sha256": "d63fad3e3ac9917b3128013616bd8e5d82522798b0ac7bcec4442b358f513f3f",
+"bytes": 6314571,
+"ticks": 944644
+},
+{
+"pair": "AUDUSD",
+"month": "2020-08",
+"sha256": "148d60c1b4afb938397c6d4ce769c8ca5a2f0bf10c75cb0754212f37a35655f0",
+"bytes": 5285755,
+"ticks": 783214
+},
+{
+"pair": "AUDUSD",
+"month": "2020-09",
+"sha256": "b20fcd9d53b5774ea3775e6ec5da97ff2f08d2ea0c43f1331d726a40144ca6bb",
+"bytes": 5535201,
+"ticks": 808523
+},
+{
+"pair": "AUDUSD",
+"month": "2020-10",
+"sha256": "fae55fa806d2de6cf741a530eca19f8cfbafcae2bd2b6373893a3e04889ad357",
+"bytes": 4432913,
+"ticks": 636648
+},
+{
+"pair": "AUDUSD",
+"month": "2020-11",
+"sha256": "106d17f3ec9a368ad6b86c3532a85c59818421d62e20c191ad00bc92f72bc236",
+"bytes": 4943542,
+"ticks": 703942
+},
+{
+"pair": "AUDUSD",
+"month": "2020-12",
+"sha256": "c91b1f2af8d92e06d22a69521395b11df90d973cbd521ffd32f12b68e8def671",
+"bytes": 4074327,
+"ticks": 575513
+},
+{
+"pair": "AUDUSD",
+"month": "2021-01",
+"sha256": "618a602d2a02acff2189b3f062453dd6a197b7909c5525214e8cbe1efac3df59",
+"bytes": 5316064,
+"ticks": 762800
+},
+{
+"pair": "AUDUSD",
+"month": "2021-02",
+"sha256": "125d6074dd1ac2a72f3921db7f4a6a4b4022e42638d8e3ea9754dace844661ea",
+"bytes": 4542350,
+"ticks": 648417
+},
+{
+"pair": "AUDUSD",
+"month": "2021-03",
+"sha256": "3c655ad60413c54538e1df3ce1f740976125b10ea25b8c058ddf0d0e13e28cc2",
+"bytes": 5629849,
+"ticks": 803911
+},
+{
+"pair": "AUDUSD",
+"month": "2021-04",
+"sha256": "94da1f2c0558130defcea3a8644d1eb38409522931789ef9db51f86a2290ed65",
+"bytes": 5313752,
+"ticks": 737958
+},
+{
+"pair": "AUDUSD",
+"month": "2021-05",
+"sha256": "e91c2f7aadc8ddb3df2c846cb0dba05f4b7fc3011124e47b7b0ab8f930cfe0fe",
+"bytes": 5221180,
+"ticks": 718072
+},
+{
+"pair": "AUDUSD",
+"month": "2021-06",
+"sha256": "bb9d3d339ebe7204691e149144085edf7dce49ec9d7cb0b3c7387c5d6cb9dba9",
+"bytes": 4449870,
+"ticks": 598382
+},
+{
+"pair": "AUDUSD",
+"month": "2021-07",
+"sha256": "5faddebf9eeee13cb97bdc1162a98abbdba0a2d2f0d62d48cd49874613917a36",
+"bytes": 4937037,
+"ticks": 666423
+},
+{
+"pair": "AUDUSD",
+"month": "2021-08",
+"sha256": "fbe378d3f477d4cfabe9ff59609059817b5dfd1b3b3b72d0ad3cd03f46454ae3",
+"bytes": 3376310,
+"ticks": 456890
+},
+{
+"pair": "AUDUSD",
+"month": "2021-09",
+"sha256": "3c7ad24720cc8bb22fe25d90ced6cf4229d7a9010667fe9cc5ac07a985b70c97",
+"bytes": 4613713,
+"ticks": 629535
+},
+{
+"pair": "AUDUSD",
+"month": "2021-10",
+"sha256": "d2509d834d35fa394d1e0c83e58d1e480d5ba022b9d50fbdd061900645ea9ad4",
+"bytes": 4444451,
+"ticks": 605498
+},
+{
+"pair": "AUDUSD",
+"month": "2021-11",
+"sha256": "704b831b8512d6f38de0f9fbf1ac52ef845dae458515dc87390c4bd71ef5ec29",
+"bytes": 4419409,
+"ticks": 598438
+},
+{
+"pair": "AUDUSD",
+"month": "2021-12",
+"sha256": "3a3d5bccf09c09c2a8d76153837ce274e641cda24190c56cfc863168fec6c868",
+"bytes": 4048500,
+"ticks": 548961
+},
+{
+"pair": "AUDUSD",
+"month": "2022-01",
+"sha256": "955a35057c8541d5e90465882400f42819228e10d0f4e584d223db72aba05a80",
+"bytes": 4899431,
+"ticks": 671139
+},
+{
+"pair": "AUDUSD",
+"month": "2022-02",
+"sha256": "2495857fb1ce5cd38971c2a702872dcfeffc26e40a4ce0d3e0ac280b074dde5c",
+"bytes": 6336561,
+"ticks": 848542
+},
+{
+"pair": "AUDUSD",
+"month": "2022-03",
+"sha256": "bebf295c78aaeee9d0f7a98a5efe6ecb4d34bbd232c0dc8f3fe934f02ce6af2c",
+"bytes": 7158210,
+"ticks": 949073
+},
+{
+"pair": "AUDUSD",
+"month": "2022-04",
+"sha256": "922b8da85437ffbc51bd50aa82e29dc92fac7bf9589a12fc328feb2ad4198a34",
+"bytes": 5479966,
+"ticks": 719102
+},
+{
+"pair": "AUDUSD",
+"month": "2022-05",
+"sha256": "9c5d650d1920b137d2764985ebf30ac84a1d444ae4c7cbd28137b6fb23fe69fe",
+"bytes": 9100614,
+"ticks": 1221003
+},
+{
+"pair": "AUDUSD",
+"month": "2022-06",
+"sha256": "ffe94f7f9068f2b43530b667ed4c295474e63bc051d5c162296f2e7c70db004a",
+"bytes": 8161559,
+"ticks": 1087978
+},
+{
+"pair": "AUDUSD",
+"month": "2022-07",
+"sha256": "fc8dd322201e29e1c35795ae2b7ba0a6bd6e228423162a419284d41b7f586861",
+"bytes": 7862653,
+"ticks": 1050578
+},
+{
+"pair": "AUDUSD",
+"month": "2022-08",
+"sha256": "8bdcd09d29cc3cd005503c0329c8411b47765db17ead382746c496285e1b476e",
+"bytes": 7103552,
+"ticks": 937897
+},
+{
+"pair": "AUDUSD",
+"month": "2022-09",
+"sha256": "96cfb4e908899697e959e5603b247f46b5de5cce9080b7f935b28cfb9cac1306",
+"bytes": 9046188,
+"ticks": 1214534
+},
+{
+"pair": "AUDUSD",
+"month": "2022-10",
+"sha256": "300b731990e30b504e3ebe58afdedfdfac14a72a5be8e04e938cbbc4d1708d46",
+"bytes": 10466576,
+"ticks": 1417215
+},
+{
+"pair": "AUDUSD",
+"month": "2022-11",
+"sha256": "7786dc6291a555060489b0624a6ea96b12faa1da43edb797ba01e6745ca384ae",
+"bytes": 10079339,
+"ticks": 1358037
+},
+{
+"pair": "AUDUSD",
+"month": "2022-12",
+"sha256": "9a9cfdb841cbf9f1dd39687925e1ee44eb085e31a83e84780a094f0fc69e5d22",
+"bytes": 7985054,
+"ticks": 1070057
+},
+{
+"pair": "AUDUSD",
+"month": "2023-01",
+"sha256": "0cadd202ecfda2d684aa74b7b3a8a4f6cd2e0fa7823ed0b67e872d2d44eca7b6",
+"bytes": 8062602,
+"ticks": 1073982
+},
+{
+"pair": "AUDUSD",
+"month": "2023-02",
+"sha256": "1224cf3bb429f07940d180653e92802886e1b21e767656be473e62191dd86e93",
+"bytes": 7087371,
+"ticks": 950288
+},
+{
+"pair": "AUDUSD",
+"month": "2023-03",
+"sha256": "9ba6acb1babc716a15a2e538d47d277b05cfc78a6d8c6dfb7247bb6d2ca3c4b1",
+"bytes": 8010558,
+"ticks": 1069814
+},
+{
+"pair": "AUDUSD",
+"month": "2023-04",
+"sha256": "d0cd8a1f2c6fe58757178595b19c3d5be7e4bdf0ba10f8fca27862cc21d3fdea",
+"bytes": 4496096,
+"ticks": 587221
+},
+{
+"pair": "AUDUSD",
+"month": "2023-05",
+"sha256": "cc5bf0da6b79090b1657a7ba1a0793abaef32fba7e708ee62bad8afdc54a5586",
+"bytes": 5389320,
+"ticks": 709403
+},
+{
+"pair": "AUDUSD",
+"month": "2023-06",
+"sha256": "043c219284fe56b1255a9766c7252e973c2eac5a92b5a2f03396f1a6f3d7443a",
+"bytes": 6561201,
+"ticks": 878018
+},
+{
+"pair": "AUDUSD",
+"month": "2023-07",
+"sha256": "5dc5e224eb9ec1ab660a95d1cdcbad3d8e2c0b231700d54311848d7f1ecf8e3e",
+"bytes": 8184504,
+"ticks": 1111700
+},
+{
+"pair": "AUDUSD",
+"month": "2023-08",
+"sha256": "f1ec443d8eeb2858264f2ecbcbbbbe47f3b3a899f1b1f82a09cd16d223f64572",
+"bytes": 9002120,
+"ticks": 1223779
+},
+{
+"pair": "AUDUSD",
+"month": "2023-09",
+"sha256": "bd238a766e74953f319d3c75eeae85b145ea7cce5cea456ada3b2d43cb0d93ad",
+"bytes": 7246537,
+"ticks": 985315
+},
+{
+"pair": "AUDUSD",
+"month": "2023-10",
+"sha256": "629046ba3e63d33bbf9dbdb014c6187a7e9981b467bc8719fa07f0661cb91ce4",
+"bytes": 8300697,
+"ticks": 1129711
+},
+{
+"pair": "AUDUSD",
+"month": "2023-11",
+"sha256": "95a334121664e70fa4a6d67773555251bfdece3c2651046928ecfa38e191637d",
+"bytes": 7693957,
+"ticks": 1042830
+},
+{
+"pair": "AUDUSD",
+"month": "2023-12",
+"sha256": "26932da2908c28260506a98bf1cc0e353e516bd6d89aa16023a9ede33b287567",
+"bytes": 7115346,
+"ticks": 971324
+},
+{
+"pair": "AUDUSD",
+"month": "2024-01",
+"sha256": "9ef8d352d439bb4273f09a30dcaf2a23d426901f1922263d3bea6431d27490f8",
+"bytes": 6690242,
+"ticks": 928072
+},
+{
+"pair": "AUDUSD",
+"month": "2024-02",
+"sha256": "2907f2e598e28bf61e17f98df6c38681025e13fa42e1aaacf9b897eaee8d98cf",
+"bytes": 5370720,
+"ticks": 750069
+},
+{
+"pair": "AUDUSD",
+"month": "2024-03",
+"sha256": "cfd5057e87255b131463932bd5395144cad465743a2b685909a73702abee550e",
+"bytes": 4876045,
+"ticks": 678645
+},
+{
+"pair": "AUDUSD",
+"month": "2024-04",
+"sha256": "2cd9a6601cfc697475f887dcd53a92a48ef853fd7a0b4af198796fe50ae682d6",
+"bytes": 5658670,
+"ticks": 785728
+},
+{
+"pair": "AUDUSD",
+"month": "2024-05",
+"sha256": "e0dcf7a8fca5aeeca0ce36dc2e5da03f2ebfb4fbf30167e7742a48e06af3f21a",
+"bytes": 5377496,
+"ticks": 748674
+},
+{
+"pair": "AUDUSD",
+"month": "2024-06",
+"sha256": "abd6e7a836d37588de910d38baa233dce4c794eb207cabff4810c171e3240af5",
+"bytes": 5017233,
+"ticks": 701289
+},
+{
+"pair": "AUDUSD",
+"month": "2024-07",
+"sha256": "044626285ae5e42026941bbcd5764f1ee266f7d6cbf6f0689184477a42fbaad6",
+"bytes": 5085852,
+"ticks": 735677
+},
+{
+"pair": "AUDUSD",
+"month": "2024-08",
+"sha256": "c01f9271e277d95990f89fb04240179900f7918fb5a580044da1946702bebd59",
+"bytes": 5091469,
+"ticks": 752940
+},
+{
+"pair": "AUDUSD",
+"month": "2024-09",
+"sha256": "d1ed5bb4251d8bb43b3d4b78ba90072d99e043e79b40a0234874e139d4e0b871",
+"bytes": 5443810,
+"ticks": 803121
+},
+{
+"pair": "AUDUSD",
+"month": "2024-10",
+"sha256": "55b0788f31254ee3d28a344505187e2f247949af3079158ac5c90ba773008141",
+"bytes": 5832290,
+"ticks": 881292
+},
+{
+"pair": "AUDUSD",
+"month": "2024-11",
+"sha256": "218fb2f5c3d1e3ba048e804597a99bb5f114c2af5b2b2bc6ba5d70d311bd62b9",
+"bytes": 6335825,
+"ticks": 962265
+},
+{
+"pair": "AUDUSD",
+"month": "2024-12",
+"sha256": "99996cc4dc2c72e40b58f6a28b6fc8f7301e4616554c92856e747aa3724c9e27",
+"bytes": 5192667,
+"ticks": 781409
+},
+{
+"pair": "AUDUSD",
+"month": "2025-01",
+"sha256": "ad134c0210ea5aeeb702645af8c2e8a1c37cebbfec2a55f21eeb94ad090f5ded",
+"bytes": 6086714,
+"ticks": 924221
+},
+{
+"pair": "AUDUSD",
+"month": "2025-02",
+"sha256": "d4f0e7c5e70ed661f5d2ecd2d8cc27017aa7b53f6f1a1ae281c76b0edaa1a7cd",
+"bytes": 5140576,
+"ticks": 780301
+},
+{
+"pair": "AUDUSD",
+"month": "2025-03",
+"sha256": "de0b43a12a9bb5a848a507f20fc926c1c2374a38c7916db33d25902337c2976a",
+"bytes": 5352984,
+"ticks": 806847
+},
+{
+"pair": "AUDUSD",
+"month": "2025-04",
+"sha256": "dbe08c8e250219ccd49936e0afca5a786a8f1903b93110d4fc68603c1b239b6b",
+"bytes": 11458626,
+"ticks": 1784702
+},
+{
+"pair": "AUDUSD",
+"month": "2025-05",
+"sha256": "7c141e1ba7d1a4735a2cfd8eb6a84bfe9eb92cfa9992ea99406cb7cf1b8305cf",
+"bytes": 5914404,
+"ticks": 892293
+},
+{
+"pair": "AUDUSD",
+"month": "2025-06",
+"sha256": "e01124e41692ee985c33acc6f488606c3c0d77387ddcd9f9342c2452867d039a",
+"bytes": 5272935,
+"ticks": 793474
+},
+{
+"pair": "AUDUSD",
+"month": "2025-07",
+"sha256": "a8f67219f530e61f4fdd087188712619405fe60275298aa181baa84b2d19adbd",
+"bytes": 5147914,
+"ticks": 778452
+},
+{
+"pair": "AUDUSD",
+"month": "2025-08",
+"sha256": "04622da25be89794fb6a076cce5915238c765b6c0c3be3b0c70af0bf92719ab3",
+"bytes": 3999690,
+"ticks": 597898
+},
+{
+"pair": "AUDUSD",
+"month": "2025-09",
+"sha256": "1b976de4f9e6c97b813fe67b7158accf93ecf7b8145560cf9e623448b50913c5",
+"bytes": 4222541,
+"ticks": 635145
+},
+{
+"pair": "AUDUSD",
+"month": "2025-10",
+"sha256": "165760d9129744066a5db3b01fad60bf8be51bc2658be79351338041fbb39cbd",
+"bytes": 4880959,
+"ticks": 736385
+},
+{
+"pair": "AUDUSD",
+"month": "2025-11",
+"sha256": "6243213068ba8fc61414b3fb19650df00766f2b5aa17faaa156b53388e69dab3",
+"bytes": 4514126,
+"ticks": 692194
+},
+{
+"pair": "AUDUSD",
+"month": "2025-12",
+"sha256": "e63a1dcfee0a6556fd60393dddb31b730113e997a68d9058f73073009f28cf25",
+"bytes": 4011420,
+"ticks": 598455
+},
+{
+"pair": "AUDUSD",
+"month": "2026-01",
+"sha256": "67242cffc0d075255707302a0469e450e9ce63defd0ae77b7ae61d1c7743b9e6",
+"bytes": 5032425,
+"ticks": 755273
+},
+{
+"pair": "AUDUSD",
+"month": "2026-02",
+"sha256": "8d0568bdb136b18964bae0615f6ea09942b1fc98e8cfc4e2bb56dbec0ffc1532",
+"bytes": 6647157,
+"ticks": 1011021
+},
+{
+"pair": "AUDUSD",
+"month": "2026-03",
+"sha256": "e4b814fe238ff35b58bf5254dc27de0d89a6d2ebf8e40ad390248c1c31eaf9e3",
+"bytes": 12070774,
+"ticks": 1889811
+},
+{
+"pair": "AUDUSD",
+"month": "2026-04",
+"sha256": "06e79b4345b02956df2cbdcdc950145a9d5404b02065e417e5a6fb35c6c440a9",
+"bytes": 6562064,
+"ticks": 1008130
+},
+{
+"pair": "AUDUSD",
+"month": "2026-05",
+"sha256": "a43d84875acb703530d90c39122448c4ee1fe267f4e94719aac93c2b1809819b",
+"bytes": 5357407,
+"ticks": 813401
+},
+{
+"pair": "AUDUSD",
+"month": "2026-06",
+"sha256": "886c8de4ab7a2719511a769011179f742d656ea3ded4c63352c73365fa617a4e",
+"bytes": 5435420,
+"ticks": 830034
+},
+{
+"pair": "AUDUSD",
+"month": "2026-07",
+"sha256": "6163363580e26432176b90a7acdb11596bc5880ea24b35e50e795e1f6cfd61c2",
+"bytes": 4695997,
+"ticks": 706147
+},
+{
+"pair": "AUDUSD",
+"month": "2026-08",
+"sha256": "42e513060156021bf1eafc2d2269f7ce407569d9f828d70d28be617263c4b7f1",
+"bytes": 3520985,
+"ticks": 526616
+},
+{
+"pair": "AUDUSD",
+"month": "2026-09",
+"sha256": "c409635dde79a1669bbd57b9352b1e6fc75810b1f4adf12a5bea375aedde703a",
+"bytes": 4187579,
+"ticks": 627898
+},
+{
+"pair": "AUDUSD",
+"month": "2026-10",
+"sha256": "a2a8fa4be5004aa8cf4545ee74975ac46a2540efd9d3d06809b6006561f58cd7",
+"bytes": 4165129,
+"ticks": 623635
+},
+{
+"pair": "USDCHF",
+"month": "2015-08",
+"sha256": "2e59d50486a2ba1fcb218b7fdf6bc15995bc480efd3e80eb76eaab1cdf330d90",
+"bytes": 5175635,
+"ticks": 1021803
+},
+{
+"pair": "USDCHF",
+"month": "2015-09",
+"sha256": "b767677ae5de502902c9a299d5c6e6c86815ef45b22a05242165e3daa199f70b",
+"bytes": 5335212,
+"ticks": 1054909
+},
+{
+"pair": "USDCHF",
+"month": "2015-10",
+"sha256": "b1110964bd97c98cf0dba084c94c393331c9741e85ba24d7ad9a44bb172a6d63",
+"bytes": 5584865,
+"ticks": 1108003
+},
+{
+"pair": "USDCHF",
+"month": "2015-11",
+"sha256": "00999155188a0b1e7b2894daf1929e24184d388ff7bbdb7ffad868e4a088fcd3",
+"bytes": 5480236,
+"ticks": 1093661
+},
+{
+"pair": "USDCHF",
+"month": "2015-12",
+"sha256": "7e4025ab8e7ee77ee5afc6cfe9cd72c469323c705117ea71ca75383a705311eb",
+"bytes": 5868961,
+"ticks": 1170888
+},
+{
+"pair": "USDCHF",
+"month": "2016-01",
+"sha256": "3525027b32d0f76707e44cc3cbb283e71d3285ba237f55246c3743a586d353cc",
+"bytes": 6317449,
+"ticks": 1279228
+},
+{
+"pair": "USDCHF",
+"month": "2016-02",
+"sha256": "5b8932d36a965ffcec4cbbf097d3b632a89d0009e8a62d6f888e80a34a477c53",
+"bytes": 7728212,
+"ticks": 1572050
+},
+{
+"pair": "USDCHF",
+"month": "2016-03",
+"sha256": "d6d5454b9b8472d76ddcae537a2953b178e4d4da976d7bce3808e39cee501521",
+"bytes": 6220529,
+"ticks": 1298483
+},
+{
+"pair": "USDCHF",
+"month": "2016-04",
+"sha256": "b4bda014336f99716bf3e5aad063e3d36079c4f4564a3c3cdd0ca900b9d55efa",
+"bytes": 8963757,
+"ticks": 2027235
+},
+{
+"pair": "USDCHF",
+"month": "2016-05",
+"sha256": "f34d76fce3969f616e6b4e28f5415b8b21edfb41619ac43d63eba9c817c1085b",
+"bytes": 6901452,
+"ticks": 1458155
+},
+{
+"pair": "USDCHF",
+"month": "2016-06",
+"sha256": "809168e5bd05cb972f556a1b30e036947fb51ea2d422208d5abad0437550712c",
+"bytes": 6295979,
+"ticks": 1256042
+},
+{
+"pair": "USDCHF",
+"month": "2016-07",
+"sha256": "403dfc16925cd7a02fbc60ad247ebaadcc5c77422be27d4edd012f01d2889a2b",
+"bytes": 4788600,
+"ticks": 977753
+},
+{
+"pair": "USDCHF",
+"month": "2016-08",
+"sha256": "073800c330d1a8958b00876dcabfa27b5a4c2c44c66ce4a764cf545823ccf99f",
+"bytes": 4735813,
+"ticks": 973673
+},
+{
+"pair": "USDCHF",
+"month": "2016-09",
+"sha256": "2d35df8c919011d213de6c61fca3f27837ac25416e9c8c15e0b8152b12001ccd",
+"bytes": 5325673,
+"ticks": 1113791
+},
+{
+"pair": "USDCHF",
+"month": "2016-10",
+"sha256": "8a7575095c113509c3fe651b471aa090cb1fc382209c081768f4b24338794845",
+"bytes": 4733753,
+"ticks": 982865
+},
+{
+"pair": "USDCHF",
+"month": "2016-11",
+"sha256": "b822c7688444f9bcf6e70a6e9c3971ce971de365031db481d7d65928ca76a164",
+"bytes": 7013445,
+"ticks": 1471450
+},
+{
+"pair": "USDCHF",
+"month": "2016-12",
+"sha256": "149aa936a3919a2c0b5a228ee80af43a191abeacf44a53f51547d74933f2e6fa",
+"bytes": 6587205,
+"ticks": 1422319
+},
+{
+"pair": "USDCHF",
+"month": "2017-01",
+"sha256": "804a7ba0338b6ff7aed28bfee6686de676769d08d11271785bdd79244a390fa6",
+"bytes": 5946436,
+"ticks": 1181050
+},
+{
+"pair": "USDCHF",
+"month": "2017-02",
+"sha256": "2cbf0192958f1226d890c26221b479ffdd71c588247287f51bbbb7f9e07358ab",
+"bytes": 4690926,
+"ticks": 943742
+},
+{
+"pair": "USDCHF",
+"month": "2017-03",
+"sha256": "d802fe2148f6064a604c7eb12ce81f4c9c57448fd0906f743cabe54a88fb2a6a",
+"bytes": 4639673,
+"ticks": 922738
+},
+{
+"pair": "USDCHF",
+"month": "2017-04",
+"sha256": "3f6c352df743f0779c356f0863655f90de6ef27cfdf31a9ddf685267fe08f0e0",
+"bytes": 5178022,
+"ticks": 708927
+},
+{
+"pair": "USDCHF",
+"month": "2017-05",
+"sha256": "fcab3b027372f993bb22d9dd3ae8728d32158782b72d196b65e4afa61ed4259b",
+"bytes": 6750058,
+"ticks": 912201
+},
+{
+"pair": "USDCHF",
+"month": "2017-06",
+"sha256": "21c6dbd38835748f724b66daa4a78236aae8018fb72c9e203b69626fb7692a08",
+"bytes": 5811169,
+"ticks": 781160
+},
+{
+"pair": "USDCHF",
+"month": "2017-07",
+"sha256": "354f771562a8ed8e7542cac6ee75424fd69998f7f72d4fd4c8563b16b307b972",
+"bytes": 6951948,
+"ticks": 961539
+},
+{
+"pair": "USDCHF",
+"month": "2017-08",
+"sha256": "050af5cca2e85ec62cebea55a1dd4811217d874d322dc8a68fcc12fde28ebc5c",
+"bytes": 7884126,
+"ticks": 1061532
+},
+{
+"pair": "USDCHF",
+"month": "2017-09",
+"sha256": "da860478616b0133517a60f8f967c27ffb5445f4bac9e03e2a8392f0235091c4",
+"bytes": 7984721,
+"ticks": 1065806
+},
+{
+"pair": "USDCHF",
+"month": "2017-10",
+"sha256": "634d96404e98bca2f34712ef2b6e0ea40e70e74996b0505d6d8e925f9f3b86e4",
+"bytes": 7098764,
+"ticks": 951986
+},
+{
+"pair": "USDCHF",
+"month": "2017-11",
+"sha256": "40a054503a55a77141108d7ca03b972cfdc899d6ca04628069150761348c77f9",
+"bytes": 7307101,
+"ticks": 985589
+},
+{
+"pair": "USDCHF",
+"month": "2017-12",
+"sha256": "723d2420a9a2d72325b1d5b9239503fba10df9d084b0d6ba1eb5d88da02ac76b",
+"bytes": 5929724,
+"ticks": 807419
+},
+{
+"pair": "USDCHF",
+"month": "2018-01",
+"sha256": "67191855d0fc468c29db5829e5d9e3441f7210fe9443b7a879bc10672fa9f1ea",
+"bytes": 6940000,
+"ticks": 912668
+},
+{
+"pair": "USDCHF",
+"month": "2018-02",
+"sha256": "d2b6262a80df85425f6eb304fd228cf9345c2a4e1b841d73c05e12c737eb1f4d",
+"bytes": 6911135,
+"ticks": 913915
+},
+{
+"pair": "USDCHF",
+"month": "2018-03",
+"sha256": "f3425d1061c22bde65060b547024fcfa819291679b9582f585f64a58e72e0c7e",
+"bytes": 10078892,
+"ticks": 1361445
+},
+{
+"pair": "USDCHF",
+"month": "2018-04",
+"sha256": "0743b53a33eb876632ab20b86c71375175079e37444342d7eb79a94fb7eb5810",
+"bytes": 9175813,
+"ticks": 1247096
+},
+{
+"pair": "USDCHF",
+"month": "2018-05",
+"sha256": "b042e75cd6f8bbad21d6be565f97a335effd1450905188a3761cae2bfbbbf3de",
+"bytes": 10503734,
+"ticks": 1419115
+},
+{
+"pair": "USDCHF",
+"month": "2018-06",
+"sha256": "8941ef5ba8a8d682960b6fa024c0f7ec34333ad3faf3af7d135aa2e680125229",
+"bytes": 6943843,
+"ticks": 919759
+},
+{
+"pair": "USDCHF",
+"month": "2018-07",
+"sha256": "a1cc8ade81304c2e6139a5746dd692cfc2625a6d5b7517c70ad2cb9f7a8fa820",
+"bytes": 7383833,
+"ticks": 979058
+},
+{
+"pair": "USDCHF",
+"month": "2018-08",
+"sha256": "4f9153a70e20c1da033eeeaeb1356eb6c0b48cb868fe33f73d635201a0757e3b",
+"bytes": 7503564,
+"ticks": 1001613
+},
+{
+"pair": "USDCHF",
+"month": "2018-09",
+"sha256": "7987340b0847142e66e204476e5767b2eb5e585bb83f4d639ccab947d4c1bd52",
+"bytes": 6659212,
+"ticks": 890023
+},
+{
+"pair": "USDCHF",
+"month": "2018-10",
+"sha256": "c4095977db1dd7dd19508ecc6ee1038f1d646e3d35712637ee394bd65ecbaaa9",
+"bytes": 9012237,
+"ticks": 1218884
+},
+{
+"pair": "USDCHF",
+"month": "2018-11",
+"sha256": "4b4526ba95623860d22aeeb41a24940a87296be5cab3e6ad25cd750e1310e5c9",
+"bytes": 7943961,
+"ticks": 1072131
+},
+{
+"pair": "USDCHF",
+"month": "2018-12",
+"sha256": "b2046485f4cc053f1c02087004ed953aac28691d6f95a86e8a1977d01b0415a0",
+"bytes": 7000466,
+"ticks": 948802
+},
+{
+"pair": "USDCHF",
+"month": "2019-01",
+"sha256": "b287756cc558601b18deddf49a2f9c0f7f63e6ffa79d70c3d222f182ee7107b9",
+"bytes": 7728349,
+"ticks": 1049089
+},
+{
+"pair": "USDCHF",
+"month": "2019-02",
+"sha256": "0126cd23305e2ac9866c1d4d588f08dcfe1a7a235d8996bdbc442783f11239ac",
+"bytes": 6836706,
+"ticks": 937777
+},
+{
+"pair": "USDCHF",
+"month": "2019-03",
+"sha256": "9d527281b0afe33653310779c0f53854051e6300c148942e02ab6648c95cfcf9",
+"bytes": 7478408,
+"ticks": 1014623
+},
+{
+"pair": "USDCHF",
+"month": "2019-04",
+"sha256": "5d39ce715e707538d14a0041a3dab11738a13b1f18519aa9b5d3b64715bcc358",
+"bytes": 5732366,
+"ticks": 780337
+},
+{
+"pair": "USDCHF",
+"month": "2019-05",
+"sha256": "7f7d71c068a1e1d6a17f74b1ec20323b2317a7a8c659ecc1fb83a9a9ece45bba",
+"bytes": 4580656,
+"ticks": 629266
+},
+{
+"pair": "USDCHF",
+"month": "2019-06",
+"sha256": "d9561da20a3f590b8946208145fcda9b03b40886b4857c10fdad6a7fe5874d08",
+"bytes": 4605873,
+"ticks": 627938
+},
+{
+"pair": "USDCHF",
+"month": "2019-07",
+"sha256": "6113ba7a96fefcccdfd8b4e3a6a87ab257e4500a0f11dbdacb24e9b2d257b4be",
+"bytes": 2834248,
+"ticks": 392867
+},
+{
+"pair": "USDCHF",
+"month": "2019-08",
+"sha256": "831b0bd8a0e436e4c44582df01d96c4cef83090dc109187e0d65e7f9148d7306",
+"bytes": 3764046,
+"ticks": 526675
+},
+{
+"pair": "USDCHF",
+"month": "2019-09",
+"sha256": "1cccdc2918aa07ab2dfc50704360f3926868294c75e3ea6a3acaa8ad320554bb",
+"bytes": 2850234,
+"ticks": 396537
+},
+{
+"pair": "USDCHF",
+"month": "2019-10",
+"sha256": "8b7659b689d668b731356f681defd1cae874fd69375af1929beb3fe835534579",
+"bytes": 3099589,
+"ticks": 435256
+},
+{
+"pair": "USDCHF",
+"month": "2019-11",
+"sha256": "5d6e5911a8cba9848617f60a7022709ea4876e23f7377d85a9208e5b3f957397",
+"bytes": 2218146,
+"ticks": 313071
+},
+{
+"pair": "USDCHF",
+"month": "2019-12",
+"sha256": "3bb67d785fc05c129a551cc24961507a8b61c34902a37190d9638d161f1599b2",
+"bytes": 2057500,
+"ticks": 285042
+},
+{
+"pair": "USDCHF",
+"month": "2020-01",
+"sha256": "f0a62186fe0780b7c9ce2d6c91239b0e971e4836def90b133dc829200a9dfcc2",
+"bytes": 2299290,
+"ticks": 317439
+},
+{
+"pair": "USDCHF",
+"month": "2020-02",
+"sha256": "b9548b3b6f0b0a44809acb02cdccf4f8a9dacc41056b5b2897459218aa9eb19f",
+"bytes": 2535222,
+"ticks": 349291
+},
+{
+"pair": "USDCHF",
+"month": "2020-03",
+"sha256": "974caedca4ebd86a3072294f361cb9c27b3d18de7063935cb9f515ab0a82b293",
+"bytes": 8510193,
+"ticks": 1188776
+},
+{
+"pair": "USDCHF",
+"month": "2020-04",
+"sha256": "74072b009eab8e799d1bfe313c37b2e87009212c624d6186312cceb1b984a2aa",
+"bytes": 4946252,
+"ticks": 699324
+},
+{
+"pair": "USDCHF",
+"month": "2020-05",
+"sha256": "271c6428bb2f3ee5793c18e8a5828f0dd0b014a27ef65491ef1267fb42c38d3a",
+"bytes": 4149595,
+"ticks": 601961
+},
+{
+"pair": "USDCHF",
+"month": "2020-06",
+"sha256": "562aa4cca7b971fe07023cda0ed04991cb1a3d9de473ad28d79b015770b713ce",
+"bytes": 4682756,
+"ticks": 686420
+},
+{
+"pair": "USDCHF",
+"month": "2020-07",
+"sha256": "e009f1f4b6c297920634933c884ada76004d1b2c31a3eb8f2a9a4b1d0f53f21a",
+"bytes": 4070052,
+"ticks": 591361
+},
+{
+"pair": "USDCHF",
+"month": "2020-08",
+"sha256": "506d07f1e4ee716a415a11f2d598088485662530e76338f82f9379c3ca64f3c3",
+"bytes": 4499185,
+"ticks": 657236
+},
+{
+"pair": "USDCHF",
+"month": "2020-09",
+"sha256": "9ca1a80532d48fc48450f539b02c4c0be94b6d7698b2e77a6ecbb22f920a0376",
+"bytes": 3889057,
+"ticks": 557120
+},
+{
+"pair": "USDCHF",
+"month": "2020-10",
+"sha256": "123e0173a1efa2bbc0fe0ec1b95bb503e679d9b1ba6afb74fa922afb974a37f8",
+"bytes": 2860339,
+"ticks": 402590
+},
+{
+"pair": "USDCHF",
+"month": "2020-11",
+"sha256": "7d1e4ac094c8819352d1bebe0049586fb865d5e38b768c41b2ad42ad5503bfe3",
+"bytes": 3289875,
+"ticks": 463276
+},
+{
+"pair": "USDCHF",
+"month": "2020-12",
+"sha256": "2b8323b958625559ded26fadb635dd7f3752da3b999d507b6bb70399e63f6cc9",
+"bytes": 3087058,
+"ticks": 433518
+},
+{
+"pair": "USDCHF",
+"month": "2021-01",
+"sha256": "b3ed330b3f59a982f4c40b12a01955a3dda0edf4120ddfa14812f4837785c2b2",
+"bytes": 3204631,
+"ticks": 454584
+},
+{
+"pair": "USDCHF",
+"month": "2021-02",
+"sha256": "74d1c4fce8e32e2058f6d5f556f772c2ddcb8d2997628ebd2ee5bae5c13bc023",
+"bytes": 2800168,
+"ticks": 395607
+},
+{
+"pair": "USDCHF",
+"month": "2021-03",
+"sha256": "230991499935713d93dcb01529eddfa85444173124f6c599250aecad814d90f2",
+"bytes": 3245718,
+"ticks": 455038
+},
+{
+"pair": "USDCHF",
+"month": "2021-04",
+"sha256": "376fbe76426ed129a6f5a7e96414e2f7285da00c631147baf9d153078302dfb6",
+"bytes": 3853386,
+"ticks": 528085
+},
+{
+"pair": "USDCHF",
+"month": "2021-05",
+"sha256": "22e1c7e7ed891e8e45aeb6a1adfc308084d23bc24c2784440bde1a192cd735da",
+"bytes": 3686026,
+"ticks": 499728
+},
+{
+"pair": "USDCHF",
+"month": "2021-06",
+"sha256": "9f40a184412f9cc99de050630be80bd817c863fd0dcf2a3bf43627b338035116",
+"bytes": 3111723,
+"ticks": 409492
+},
+{
+"pair": "USDCHF",
+"month": "2021-07",
+"sha256": "fd41ab4239dfa747d966ed568b3ade8971df51f5296b216ec401db162619ff35",
+"bytes": 3598490,
+"ticks": 483708
+},
+{
+"pair": "USDCHF",
+"month": "2021-08",
+"sha256": "048b96eaad35565911d73e304731277bd97d5b57de03becabe33c95ce84b6c8c",
+"bytes": 2463038,
+"ticks": 327860
+},
+{
+"pair": "USDCHF",
+"month": "2021-09",
+"sha256": "797224afa0e8ef637fa3de695a962767e4aacafca8e5dbe043d815b364ad5a20",
+"bytes": 3162581,
+"ticks": 425471
+},
+{
+"pair": "USDCHF",
+"month": "2021-10",
+"sha256": "362cb2e8575b41975265764a596f243b6752a90b87fd03002aa58980d6161526",
+"bytes": 3273861,
+"ticks": 443945
+},
+{
+"pair": "USDCHF",
+"month": "2021-11",
+"sha256": "438d2ab017d2c282ecc1909a707b41e21afba28ac1bbb2f380af678f6ed2396a",
+"bytes": 4376196,
+"ticks": 601209
+},
+{
+"pair": "USDCHF",
+"month": "2021-12",
+"sha256": "437b793fe9b2de3bb53816398cb8722fbe709ef9e063a14ce8f246278a8f185c",
+"bytes": 3634802,
+"ticks": 495383
+},
+{
+"pair": "USDCHF",
+"month": "2022-01",
+"sha256": "0f0e8009ce83a0bdb5ae16dec6a13c8a793532aac223d18baf22b6b2438de82c",
+"bytes": 3791242,
+"ticks": 516525
+},
+{
+"pair": "USDCHF",
+"month": "2022-02",
+"sha256": "628e4ce20e1d78d251bfb46ad3b3cba6d06fffdf2c7e44d4df674d5ce33856e7",
+"bytes": 4956764,
+"ticks": 665649
+},
+{
+"pair": "USDCHF",
+"month": "2022-03",
+"sha256": "e38678034974a90b228633d46a4becbbe01f0ffcf289f18d7f5573ad7be8722d",
+"bytes": 6092264,
+"ticks": 816572
+},
+{
+"pair": "USDCHF",
+"month": "2022-04",
+"sha256": "be84615af26bb3bc3e68e173c2752ed826b0b604a8553c86a3fe96065ffa87c2",
+"bytes": 4781944,
+"ticks": 634475
+},
+{
+"pair": "USDCHF",
+"month": "2022-05",
+"sha256": "190f2fa711ef4e487cdbf8217aa287d934d1ce22b608f4c20dc68c05ab0bff76",
+"bytes": 5623694,
+"ticks": 743765
+},
+{
+"pair": "USDCHF",
+"month": "2022-06",
+"sha256": "f4597cdb8ccfd657e0984ae6545497d3f68cc9d24259c8e63870424ba5664d69",
+"bytes": 7692218,
+"ticks": 1038767
+},
+{
+"pair": "USDCHF",
+"month": "2022-07",
+"sha256": "737494fa2e18793ac40e8559db04b6bf1a7c90cd7a9cde0a36042e655242cd0f",
+"bytes": 7441850,
+"ticks": 1010949
+},
+{
+"pair": "USDCHF",
+"month": "2022-08",
+"sha256": "0d788dd53e9d05eb37df6e46988f4b38d97c68f702a566fd39c703a3ecb89c61",
+"bytes": 6662336,
+"ticks": 892928
+},
+{
+"pair": "USDCHF",
+"month": "2022-09",
+"sha256": "8ad1a2b1f222ef8dec6ac304a967f2a189a072a736479ae2acee4940c0867d67",
+"bytes": 9922477,
+"ticks": 1356976
+},
+{
+"pair": "USDCHF",
+"month": "2022-10",
+"sha256": "082bc46d7f90ce7f18ac83eaf51576f31a349c3e42c8deaf12b76adfb8c483d7",
+"bytes": 9788689,
+"ticks": 1339573
+},
+{
+"pair": "USDCHF",
+"month": "2022-11",
+"sha256": "3bb9af4a4ee9460f23d0280a25f1ce1da546eb5497cd8fa7e6c83906d1b1e604",
+"bytes": 9110068,
+"ticks": 1231637
+},
+{
+"pair": "USDCHF",
+"month": "2022-12",
+"sha256": "3716029254198a537fbf43696412fddc6e227478b43d0722f78c415bb0561887",
+"bytes": 7625228,
+"ticks": 1031918
+},
+{
+"pair": "USDCHF",
+"month": "2023-01",
+"sha256": "7b4e624d17beb733f07d1d9a977b9296085d5a8f037178509c7c55cf38195dd2",
+"bytes": 7924471,
+"ticks": 1063556
+},
+{
+"pair": "USDCHF",
+"month": "2023-02",
+"sha256": "ec9a30d09c6f949f3709ccfd42a1db02da444afb4d6e80e414695d886829aff6",
+"bytes": 7185249,
+"ticks": 986274
+},
+{
+"pair": "USDCHF",
+"month": "2023-03",
+"sha256": "d7fe58ea8fc8708be07ddf65355ab667f29bc3357967c60d518f01f177279b96",
+"bytes": 9781840,
+"ticks": 1356782
+},
+{
+"pair": "USDCHF",
+"month": "2023-04",
+"sha256": "9b026f4d9366bff6c96198760dc0dad99803a7eaefba9571d8858528faecaf3d",
+"bytes": 5656723,
+"ticks": 776399
+},
+{
+"pair": "USDCHF",
+"month": "2023-05",
+"sha256": "2ddbd774fbec3face6952d1b2e021fa65b34d6301621807298e1b2cfbdf165e5",
+"bytes": 6655963,
+"ticks": 913238
+},
+{
+"pair": "USDCHF",
+"month": "2023-06",
+"sha256": "e64018220ffbb846199929c0821e282a1f53dda68db23a421bacbffb6c45f82a",
+"bytes": 7025271,
+"ticks": 969319
+},
+{
+"pair": "USDCHF",
+"month": "2023-07",
+"sha256": "035a31a24de0a09b943adde520db1357bde717eeda0953ac89e397444784bcbc",
+"bytes": 7795533,
+"ticks": 1084174
+},
+{
+"pair": "USDCHF",
+"month": "2023-08",
+"sha256": "423618ddacb9437ada9519d05431d77e37320e6742953801b2a601f3be8cb1aa",
+"bytes": 8571531,
+"ticks": 1191058
+},
+{
+"pair": "USDCHF",
+"month": "2023-09",
+"sha256": "41aa444ba2f00ba6ca3d8e77b63aa1cc6f74780563aaa7ab57281529d42e7838",
+"bytes": 6548554,
+"ticks": 904635
+},
+{
+"pair": "USDCHF",
+"month": "2023-10",
+"sha256": "9fd48a01498ab7b9816cb4c18810175008807726d914fd35169b612e87ba460f",
+"bytes": 8798423,
+"ticks": 1225038
+},
+{
+"pair": "USDCHF",
+"month": "2023-11",
+"sha256": "07bed34e49f0f5736ba533649ba96c4658e29cc4747566918334e1bd16c20be5",
+"bytes": 7128133,
+"ticks": 985676
+},
+{
+"pair": "USDCHF",
+"month": "2023-12",
+"sha256": "0896f7fd15b28486b3455c230ecdb14fbbc11fd7852780acb97882a6b7aca406",
+"bytes": 7849416,
+"ticks": 1110833
+},
+{
+"pair": "USDCHF",
+"month": "2024-01",
+"sha256": "43306c9e5c3d403c9df02fc662f8df0393e5eca0bfea16e32658bfa40fdf1027",
+"bytes": 6788806,
+"ticks": 959660
+},
+{
+"pair": "USDCHF",
+"month": "2024-02",
+"sha256": "d1a6ecb442cd2bd5e7fd09723083de36b1d28b3a2ca8a71f3794ae0f6ba194fd",
+"bytes": 5384821,
+"ticks": 762140
+},
+{
+"pair": "USDCHF",
+"month": "2024-03",
+"sha256": "6531e44ece5183b6f21885676b77418e1f8a5b7540721cb155f5ff491c6dbdee",
+"bytes": 5110523,
+"ticks": 721126
+},
+{
+"pair": "USDCHF",
+"month": "2024-04",
+"sha256": "283a5cad205897ca351ce60edd283cf000bb6f8e18d5b852d422c9ec7fd0ed2e",
+"bytes": 5482397,
+"ticks": 772653
+},
+{
+"pair": "USDCHF",
+"month": "2024-05",
+"sha256": "3952b8aed556bbf20f5be3b2d5a132b47285719b2692b1792baa8fdf10c965e9",
+"bytes": 4852818,
+"ticks": 685080
+},
+{
+"pair": "USDCHF",
+"month": "2024-06",
+"sha256": "4ffe2836c654331c8e93f8fcf0fa23f4750ac0e090a59c21d15512d7ef006bb7",
+"bytes": 4294834,
+"ticks": 604327
+},
+{
+"pair": "USDCHF",
+"month": "2024-07",
+"sha256": "469aecc8b5e900049b54dede5b49536b98af1c4f71768ae1eb6e5026e6a801f7",
+"bytes": 4827043,
+"ticks": 679323
+},
+{
+"pair": "USDCHF",
+"month": "2024-08",
+"sha256": "0a06bb41bb06744a21d847c664709017f9e1ba9d566910d632f7ec2eee769bd0",
+"bytes": 6380144,
+"ticks": 889437
+},
+{
+"pair": "USDCHF",
+"month": "2024-09",
+"sha256": "d59108f61c2ab56b760da084c3ef6310992418234de19e057be7fd0d0b6e0afe",
+"bytes": 7448764,
+"ticks": 1056992
+},
+{
+"pair": "USDCHF",
+"month": "2024-10",
+"sha256": "567b7bd88a244c5a135d7190ed3d1105d4bd289f76f898a19e5e4fe21f2c8a0f",
+"bytes": 6883600,
+"ticks": 986790
+},
+{
+"pair": "USDCHF",
+"month": "2024-11",
+"sha256": "d264f56df4ac9f9b5880949872d8e8347260ca0a9232b0cf3f85c07a932f3ee4",
+"bytes": 7496093,
+"ticks": 1070782
+},
+{
+"pair": "USDCHF",
+"month": "2024-12",
+"sha256": "932a1519e804a57ba0250e219349c8be50d6668a50249e849ef85682f6fbdcc9",
+"bytes": 6157136,
+"ticks": 872894
+},
+{
+"pair": "USDCHF",
+"month": "2025-01",
+"sha256": "99d7003c23960b57fee17d0f66db0730cb7aa18f2090442fcb8efdbd6629168d",
+"bytes": 7156505,
+"ticks": 1014103
+},
+{
+"pair": "USDCHF",
+"month": "2025-02",
+"sha256": "1e4cb981c3c0f8fe1e8b52e5a9d0a148b65b37d38cbdd6c400d53f737db89d34",
+"bytes": 6035355,
+"ticks": 856813
+},
+{
+"pair": "USDCHF",
+"month": "2025-03",
+"sha256": "793a5e18a849c9d4908bddd3fac0075c117517db644213de26f59c2ce8491bce",
+"bytes": 6517397,
+"ticks": 921288
+},
+{
+"pair": "USDCHF",
+"month": "2025-04",
+"sha256": "0f2e6dcd74e07ecc036412a39802bfc17b0528de47f75ef4480b55c531675320",
+"bytes": 12781764,
+"ticks": 1812457
+},
+{
+"pair": "USDCHF",
+"month": "2025-05",
+"sha256": "a11fec8ef0fe3ecee3cf10c08aaa739cc77450a52faf66ac9456894cd097b425",
+"bytes": 8830956,
+"ticks": 1243149
+},
+{
+"pair": "USDCHF",
+"month": "2025-06",
+"sha256": "4d1a25d7cddb00285f4589ebfd181d68601f4d530b98ca365b73f058421d8a58",
+"bytes": 7257660,
+"ticks": 1028090
+},
+{
+"pair": "USDCHF",
+"month": "2025-07",
+"sha256": "e4dfa7dd77417f44e84f4fd6f185b95afa5e9bb8f01e3530c2cae3a303eb3361",
+"bytes": 6663952,
+"ticks": 947961
+},
+{
+"pair": "USDCHF",
+"month": "2025-08",
+"sha256": "04debc45ea5637791cbab20efafc2793b6d11ea1fe14908555b964860db2588e",
+"bytes": 5463622,
+"ticks": 775535
+},
+{
+"pair": "USDCHF",
+"month": "2025-09",
+"sha256": "c300b56e8cff71bcf7d8a39ff5923c1a91530829ccc1746de4345c176678f8af",
+"bytes": 4103996,
+"ticks": 602403
+},
+{
+"pair": "USDCHF",
+"month": "2025-10",
+"sha256": "6ee1d57981dbaafb78d121564795ba355387a5c4e844b15c96104e8b29d3b6b1",
+"bytes": 4414060,
+"ticks": 649931
+},
+{
+"pair": "USDCHF",
+"month": "2025-11",
+"sha256": "741b6e11bfd5dfee61b23ebbe54d08da3a4b157f559aa16b0d4b11bdcbe1b43a",
+"bytes": 3370402,
+"ticks": 491190
+},
+{
+"pair": "USDCHF",
+"month": "2025-12",
+"sha256": "b02639bda91dbf03e2e2c1f8d8f69f0c223684ddc3f3722b0d5e7bf966c370cd",
+"bytes": 3361731,
+"ticks": 487560
+},
+{
+"pair": "USDCHF",
+"month": "2026-01",
+"sha256": "9297ab807285e24705f9449ded649793dec429362af99b31f9b255f932b58b76",
+"bytes": 4477789,
+"ticks": 653227
+},
+{
+"pair": "USDCHF",
+"month": "2026-02",
+"sha256": "d5998b7388ff940afd8fe196ddf52b15da5b404c8fe8a2b8fef11c4c34c54276",
+"bytes": 4025616,
+"ticks": 588800
+},
+{
+"pair": "USDCHF",
+"month": "2026-03",
+"sha256": "e88f97faead021977abe0183b1c27936320e7f88d781ed53eed69cbb963cd603",
+"bytes": 6085360,
+"ticks": 900747
+},
+{
+"pair": "USDCHF",
+"month": "2026-04",
+"sha256": "bc97df17b413a9740dca595f83748265c944040b24a4db7b3c6a237835208878",
+"bytes": 4384740,
+"ticks": 645896
+},
+{
+"pair": "USDCHF",
+"month": "2026-05",
+"sha256": "8b4a88b6026f6f3aec490d765a63f3726b1c75303a94c29b64fc524c222a363a",
+"bytes": 3688545,
+"ticks": 542289
+},
+{
+"pair": "USDCHF",
+"month": "2026-06",
+"sha256": "d9a69c529e8c37b79f96eed40565b3b3d25103195dc68ac2105f04563f27154b",
+"bytes": 4220384,
+"ticks": 623220
+},
+{
+"pair": "USDCHF",
+"month": "2026-07",
+"sha256": "9f4bc545f8edbfa86bb6a898cef4a172869254372310e78540d5724de77e7068",
+"bytes": 4335457,
+"ticks": 636935
+},
+{
+"pair": "USDCHF",
+"month": "2026-08",
+"sha256": "db5ac6d369a8fcda8d43fe807e62eb91f4f9d88ea7cc9977d4483296667a9f35",
+"bytes": 3726093,
+"ticks": 546741
+},
+{
+"pair": "USDCHF",
+"month": "2026-09",
+"sha256": "031e232b87c3e8f0cb1c6637cb21635a9f58f08a600c80d949ed19036a348526",
+"bytes": 4443249,
+"ticks": 656570
+},
+{
+"pair": "USDCHF",
+"month": "2026-10",
+"sha256": "587bfff1fedd48ecf715b13aff2fb49af5e7105521e9913758dfdd3e0ef4af98",
+"bytes": 4864531,
+"ticks": 718630
+}
+]
+}

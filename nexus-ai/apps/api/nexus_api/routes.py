@@ -1176,7 +1176,9 @@ async def multi_asset_research() -> dict[str, Any]:
         return json.loads(f.read_text()) if f.exists() else None
 
     def latest(prefix: str) -> Any:
-        files = sorted(Path(nexus_backtest.__file__).with_name("results").glob(f"{prefix}_*.json"))
+        """The newest ``<prefix>_YYYY-MM.json`` result (not its data-quality files)."""
+        files = sorted(Path(nexus_backtest.__file__).with_name("results").glob(
+            f"{prefix}_[0-9][0-9][0-9][0-9]-[0-9][0-9].json"))
         return json.loads(files[-1].read_text()) if files else None
 
     nqs1 = await asyncio.to_thread(latest, "nqs1")
