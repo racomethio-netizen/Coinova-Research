@@ -41,7 +41,11 @@ something passes, which would be data snooping.
     * stops made every setting worse.
   * Both runs are reported. The fair-game check and the fill fix are documented in the
     pre-registration.
-  * Not deployed yet: the dashboard card waits for the owner's "Deploy".
+  * **Deployed 2026-11-27 12:48 UTC** (owner: "Deploy"; Render 5c4f86d = source d7ee5fe).
+    * Health checks are ready.
+    * The usual startup Redis timeout hit 2 workers; they restarted on their own in 6
+      seconds.
+    * The bot and trader were back in paper mode at 12:49.
 
 * **2026-11-27: night scalper test (owner: "Yes do it").** This was the public idea behind
   popular MT5 "night scalper" robots; their code is closed and was not opened.
