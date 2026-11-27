@@ -1246,6 +1246,111 @@ async def revoke_bridge_token(bridge_id: int, s: Session = Depends(db),
     return {"id": bridge.id, "revoked": True}
 
 
+# ------------------------------------------------------------- strategy modules (Phase 3)
+
+
+class ModuleActivationBody(BaseModel):
+    activation: Literal["OFF", "OBSERVE", "PAPER"]
+    reason: str = Field(min_length=5, max_length=500)
+
+
+def _module_forward(s: Session, code: str) -> dict[str, Any]:
+    sig = models.StrategyModuleSignal
+    rows = list(s.scalars(select(sig).where(sig.module_code == code)
+                          .order_by(desc(sig.signal_time)).limit(500)))
+    closed = [r for r in rows if r.status == "closed" and r.net_r is not None]
+    rs = [float(r.net_r) for r in closed if r.net_r is not None]
+    return {
+        "signals": len(rows), "open": sum(r.status == "open" for r in rows),
+        "closed": len(closed), "dropped": sum(r.status == "dropped" for r in rows),
+        "win_rate": (sum(x > 0 for x in rs) / len(rs)) if rs else None,
+        "mean_r": (sum(rs) / len(rs)) if rs else None, "total_r": sum(rs) if rs else None,
+        "recent": [{"symbol": r.symbol, "signal_time": r.signal_time.isoformat(),
+                    "side": "buy" if r.side > 0 else "sell", "status": r.status,
+                    "entry": str(r.entry) if r.entry is not None else None,
+                    "stop": str(r.stop), "target": str(r.target) if r.target is not None
+                    else None, "reason": r.reason,
+                    "net_r": float(r.net_r) if r.net_r is not None else None,
+                    "note": r.note} for r in rows[:15]],
+    }
+
+
+@router.get("/strategy-modules")
+async def strategy_modules(s: Session = Depends(db),
+                           redis: Any = Depends(redis_dep)) -> dict[str, Any]:
+    """The six strategy modules of the unified brief: settings, historical test result,
+    the owner's switch and the forward observation record. No module places orders."""
+    from nexus_backtest import module_observer as mo
+    from nexus_strategies import modules as mods
+
+    def build() -> list[dict[str, Any]]:
+        mo.sync_registry(s)
+        out = []
+        for code, spec in mods.MODULES.items():
+            row = s.get(models.StrategyModule, code)
+            assert row is not None
+            out.append({
+                "code": code, "name": spec.name, "market": spec.market, "style": spec.style,
+                "symbols": list(spec.symbols), "signal_timeframe": spec.signal_tf,
+                "execution_timeframe": spec.exec_tf, "long_only": spec.long_only,
+                "config": row.config, "evidence": spec.evidence, "note": spec.note,
+                "activation": row.activation,
+                "activated_at": row.activated_at.isoformat() if row.activated_at else None,
+                "updated_by": row.updated_by, "validation": row.validation,
+                "observable": code in mo.OBSERVABLE,
+                "forward_worker": spec.extra.get("forward_worker"),
+                "forward": _module_forward(s, code)})
+        return out
+
+    rows = await asyncio.to_thread(build)
+    raw = await redis.get(mo.STATUS_KEY)
+    return {"modules": rows, "observer": json.loads(raw) if raw else None,
+            "rules": {"min_reward_risk": mods.MIN_RR, "risk_per_trade": 0.0025,
+                      "max_open_per_module": 3},
+            "preregistration": mo.PREREG}
+
+
+@router.post("/strategy-modules/{code}/activation", dependencies=[Depends(owner)])
+async def set_module_activation(code: str, body: ModuleActivationBody,
+                                s: Session = Depends(db),
+                                viewer: Viewer = Depends(current_viewer)) -> dict[str, Any]:
+    """Owner switch, audited. OBSERVE records signals on new data with what they would
+    have done; it places no order. PAPER is refused in this phase: module paper trading
+    needs the orchestrator, the cross-market risk book and the execution adapters
+    (unified brief Phases 5-7), and a passed test."""
+    from nexus_backtest import module_observer as mo
+    from nexus_common.timeutil import utcnow as _now
+    from nexus_strategies import modules as mods
+
+    if code not in mods.MODULES:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "unknown strategy module")
+    mo.sync_registry(s)
+    row = s.get(models.StrategyModule, code)
+    assert row is not None
+    if body.activation == "PAPER":
+        passed = bool((row.validation or {}).get("passed"))
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            "paper trading of strategy modules is not available yet: it needs "
+                            "the orchestrator, the cross-market risk book and the execution "
+                            "adapters (unified brief Phases 5-7)"
+                            + ("" if passed else ", and this module did not pass its test"))
+    if body.activation == "OBSERVE" and code not in mo.OBSERVABLE:
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            "this module already runs as a forward paper test "
+                            f"({mods.get(code).extra.get('forward_worker')})")
+    before = row.activation
+    if before != body.activation:
+        row.activation = body.activation
+        row.activated_at = _now() if body.activation == "OBSERVE" else row.activated_at
+        row.updated_by = viewer.actor
+        repo.record_audit(s, actor=viewer.actor, action="strategy_module_activation",
+                          user_id=viewer.user.id, target_type="strategy_module",
+                          target_id=code, details={"from": before, "to": body.activation,
+                                                   "reason": body.reason})
+    return {"code": code, "activation": row.activation,
+            "activated_at": row.activated_at.isoformat() if row.activated_at else None}
+
+
 @router.get("/research/multi-asset")
 async def multi_asset_research() -> dict[str, Any]:
     """Multi-asset Stage 3: the committed pre-registered results (forex and NASDAQ-100

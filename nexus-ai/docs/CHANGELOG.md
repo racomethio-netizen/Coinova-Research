@@ -4,6 +4,43 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-27
 
+- **Unified brief Phase 3: the six strategy modules** (owner: "Phase 3").
+  * **One framework** (`nexus_strategies.modules`):
+    * each module has its own settings, signal rule, historical test, forward record
+      and on/off switch;
+    * every plan is at least 2:1 reward/risk, risks 0.25% and holds at most 3
+      positions;
+    * the historical test and the forward record use one simulator
+      (`modules.sim`), so they cannot disagree;
+    * forex fills use the bid/ask with each bar's real Exness spread; crypto fills pay
+      Binance fees and slippage.
+  * **Tested once, rules written first.** Pre-registration (`docs/research/
+    2026-11-27-strategy-modules-preregistration.md`), committed before the run as
+    f7d0c6f; results in e9d7831.
+    * All four new modules **FAILED** after costs:
+      * forex scalping: −0.103R a trade over 6,825 trades;
+      * forex intraday breakout: −0.093R over 4,222;
+      * forex swing: −0.130R over 281;
+      * crypto scalping: −0.117R over 240.
+    * The breakout-retest re-run agrees with its 23 Nov failure.
+    * "Catching Crypto Trends" passes all six gates again (Sharpe 1.11); it remains the
+      one module with evidence.
+    * A diagnostic added after the run (not a gate): before costs the forex rules have
+      no edge, and the crypto rules have a small one that fees remove.
+  * **Registry and switch.** Migration 0024 adds `strategy_modules` and
+    `strategy_module_signals`.
+    * `GET /api/v1/strategy-modules`.
+    * Owner-only `POST /api/v1/strategy-modules/{code}/activation`, audited:
+      * OFF and OBSERVE are allowed;
+      * PAPER is refused in this phase, and also refused by a database constraint
+        unless the module passed its test.
+  * **Forward observation** (`nexus_backtest.module_observer`, a new paper-mode worker):
+    * runs only for modules switched to OBSERVE;
+    * records each new signal once, from NEXUS's stored candles, and resolves it with the
+      same simulator;
+    * places no orders.
+  * **Dashboard:** a new *Strategy modules* page.
+
 - **Unified brief Phase 2: market-data repair** (owner: "Phase 2").
   * **Forex and gold bars stored by NEXUS.** The Exness read-only bridge (version 1.1)
     now also sends closed M5 and H1 bars of EURUSD, GBPUSD, USDJPY, AUDUSD, USDCHF,

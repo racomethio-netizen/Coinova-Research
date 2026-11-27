@@ -64,7 +64,7 @@ GET_ROUTES = ["/api/v1/overview", "/api/v1/portfolio", "/api/v1/exchanges", "/ap
               "/api/v1/analysis/technical", "/api/v1/analysis/mtf",
               "/api/v1/decision/fusion", "/api/v1/decision/log", "/api/v1/spot-engine",
               "/api/v1/research/trend-forward", "/api/v1/research/library",
-              "/api/v1/trading-bot"]
+              "/api/v1/trading-bot", "/api/v1/strategy-modules"]
 
 
 @pytest.mark.parametrize("path", GET_ROUTES)
@@ -1214,3 +1214,83 @@ def test_exness_demo_trading_is_demo_only_switch_gated_and_limited(
     r.delete(mt5_demo.STATUS_KEY)
     with migrated_engine.begin() as c:
         c.execute(text("SELECT 1"))
+
+
+def test_strategy_modules_registry_switch_and_observation(
+        client: TestClient, migrated_engine: Engine, monkeypatch: pytest.MonkeyPatch) -> None:
+    import dataclasses
+    from datetime import timedelta
+    from decimal import Decimal as D
+
+    import pandas as pd
+    from nexus_backtest import module_observer as mo
+    from nexus_common.timeutil import utcnow
+    from nexus_db import make_session_factory, repo
+    from nexus_strategies import modules as mods
+    from sqlalchemy import text
+    from sqlalchemy.exc import IntegrityError
+
+    login(client, "viewer@example.test")
+    r = client.get("/api/v1/strategy-modules")
+    assert r.status_code == 200, r.text
+    got = {m["code"]: m for m in r.json()["modules"]}
+    assert set(got) == set(mods.MODULES) and all(m["activation"] == "OFF" for m in got.values())
+    assert got["crypto_swing_trend"]["validation"]["passed"] is True
+    assert got["fx_scalp_pullback"]["validation"]["passed"] is False
+    assert r.json()["rules"]["min_reward_risk"] == 2.0
+    url = "/api/v1/strategy-modules/{}/activation"
+    observe = {"activation": "OBSERVE", "reason": "watch it on new data"}
+    assert client.post(url.format("crypto_scalp_volume"), json=observe,
+                       headers=CSRF).status_code == 403                       # viewer
+    login(client)
+    assert client.post(url.format("nope"), json=observe, headers=CSRF).status_code == 404
+    paper = client.post(url.format("crypto_swing_trend"),
+                        json={"activation": "PAPER", "reason": "paper trade it"}, headers=CSRF)
+    assert paper.status_code == 409 and "Phases 5-7" in paper.text
+    assert client.post(url.format("crypto_swing_trend"), json=observe,
+                       headers=CSRF).status_code == 409           # it has its own forward test
+    ok = client.post(url.format("crypto_scalp_volume"), json=observe, headers=CSRF)
+    assert ok.status_code == 200 and ok.json()["activation"] == "OBSERVE"
+    audit = client.get("/api/v1/security").json()["audit"]
+    assert any(a["action"] == "strategy_module_activation" for a in audit)
+    with pytest.raises(IntegrityError), migrated_engine.begin() as c:
+        c.execute(text("UPDATE strategy_modules SET activation = 'PAPER' "
+                       "WHERE code = 'fx_scalp_pullback'"))           # failed test: refused
+
+    factory = make_session_factory(migrated_engine)
+    with transaction(factory) as s:
+        act = s.get(models.StrategyModule, "crypto_scalp_volume").activated_at
+        pid = repo.upsert_trading_pair(
+            s, exchange_id=repo.exchange_id(s, "binance"), symbol="BTC/USDT",
+            exchange_symbol="BTCUSDT", base="BTC", quote="USDT", price_tick=D("0.01"),
+            amount_step=D("0.00001"), min_amount=None, min_notional=None, maker_fee=None,
+            taker_fee=None, synced_at=utcnow())
+        t0 = act.replace(second=0, microsecond=0) + timedelta(minutes=5 - act.minute % 5)
+        five = [repo.CandleRow(t0 + timedelta(minutes=5 * i), D("100"),
+                               D("130") if i == 4 else D("101"), D("99"), D("100"), D("5"))
+                for i in range(-36, 12)]
+        hours = [repo.CandleRow(t0.replace(minute=0) - timedelta(hours=h), D("100"), D("101"),
+                                D("99"), D("100"), D("50")) for h in range(1, 10)]
+        repo.upsert_candles(s, pid, "5m", five)
+        repo.upsert_candles(s, pid, "1h", hours)
+    spec = mods.get("crypto_scalp_volume")
+    sig = mods.base.make_signals(pd.DatetimeIndex([t0]).as_unit("ns"), [1], [95.0], 2.0, 48)
+    monkeypatch.setitem(mods.MODULES, spec.code,
+                        dataclasses.replace(spec, signals=lambda f, c: sig))
+    now = t0 + timedelta(hours=1)
+    first = mo.step_sync(factory, {}, now)
+    assert first["recorded"] == 1 and first["closed"] == 1
+    again = mo.step_sync(factory, {}, now + timedelta(minutes=5))
+    assert again["recorded"] == 0 and again["closed"] == 0              # never duplicated
+    with migrated_engine.begin() as c:
+        row = c.execute(text("SELECT status, reason, net_r, entry, side FROM "
+                             "strategy_module_signals")).one()
+    assert row.status == "closed" and row.reason == "target" and row.side == 1
+    assert 1.9 < float(row.net_r) < 2.0                       # 2R less Binance fees
+    fwd = {m["code"]: m for m in client.get("/api/v1/strategy-modules").json()["modules"]}
+    f = fwd["crypto_scalp_volume"]["forward"]
+    assert f["closed"] == 1 and f["win_rate"] == 1.0 and f["recent"][0]["reason"] == "target"
+    with migrated_engine.begin() as c:
+        c.execute(text("DELETE FROM strategy_module_signals"))
+        c.execute(text("UPDATE strategy_modules SET activation = 'OFF', activated_at = NULL"))
+        c.execute(text("DELETE FROM market_candles WHERE pair_id = :p"), {"p": pid})

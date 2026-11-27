@@ -885,3 +885,73 @@ class DecisionLog(Base):
     reasons: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
     rejection_reason: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[created_at]
+
+
+MODULE_ACTIVATIONS = ("OFF", "OBSERVE", "PAPER")
+
+
+class StrategyModule(Base):
+    """One of the six strategy modules (unified brief, Phase 3): its settings, its test
+    result and the owner's switch. OFF: nothing. OBSERVE: signals on new data are recorded
+    with what they would have done; no order. PAPER needs a passed test (constraint)."""
+
+    __tablename__ = "strategy_modules"
+    __table_args__ = (
+        CheckConstraint(in_list("market", ("forex", "crypto")), name="market_valid"),
+        CheckConstraint(in_list("style", ("scalping", "intraday", "swing")), name="style_valid"),
+        CheckConstraint(in_list("evidence", ("new", "earlier_fail", "earlier_pass")),
+                        name="evidence_valid"),
+        CheckConstraint(in_list("activation", MODULE_ACTIVATIONS), name="activation_valid"),
+        CheckConstraint("activation <> 'PAPER' OR "
+                        "coalesce((validation ->> 'passed')::boolean, false)",
+                        name="paper_needs_pass"),
+    )
+
+    code: Mapped[str] = mapped_column(String(40), primary_key=True)
+    name: Mapped[str] = mapped_column(String(80))
+    market: Mapped[str] = mapped_column(String(16))
+    style: Mapped[str] = mapped_column(String(16))
+    evidence: Mapped[str] = mapped_column(String(16))
+    activation: Mapped[str] = mapped_column(String(16), server_default="OFF")
+    config: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
+    validation: Mapped[dict[str, Any] | None]
+    activated_at: Mapped[datetime | None]
+    updated_by: Mapped[str | None] = mapped_column(String(64))
+    updated_at: Mapped[updated_at]
+
+
+class StrategyModuleSignal(Base):
+    """The forward record of a module on OBSERVE: one row per signal bar, never
+    duplicated, resolved with the same simulator as the historical test."""
+
+    __tablename__ = "strategy_module_signals"
+    __table_args__ = (
+        CheckConstraint("side IN (-1, 1)", name="side_valid"),
+        CheckConstraint(in_list("status", ("open", "closed", "dropped")), name="status_valid"),
+        UniqueConstraint("module_code", "symbol", "signal_time"),
+        Index("ix_strategy_module_signals_status", "status", "module_code"),
+    )
+
+    id: Mapped[bigint_pk]
+    module_code: Mapped[str] = mapped_column(
+        String(40), ForeignKey("strategy_modules.code", ondelete="CASCADE"))
+    symbol: Mapped[str] = mapped_column(String(32))
+    signal_time: Mapped[datetime]
+    side: Mapped[int] = mapped_column(SmallInteger)
+    stop: Mapped[Decimal]
+    rr: Mapped[Decimal] = mapped_column(Ratio)
+    max_bars: Mapped[int] = mapped_column(Integer)          # time stop, execution bars
+    exit_at: Mapped[datetime | None]                         # clock exit (intraday)
+    spread: Mapped[Decimal | None]                           # forex: spread at the signal
+    status: Mapped[str] = mapped_column(String(12), server_default="open")
+    entry_time: Mapped[datetime | None]
+    entry: Mapped[Decimal | None]
+    target: Mapped[Decimal | None]
+    risk: Mapped[Decimal | None]
+    exit_time: Mapped[datetime | None]
+    exit_price: Mapped[Decimal | None]
+    reason: Mapped[str | None] = mapped_column(String(16))
+    net_r: Mapped[Decimal | None] = mapped_column(Ratio)
+    note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[created_at]
+    resolved_at: Mapped[datetime | None]
