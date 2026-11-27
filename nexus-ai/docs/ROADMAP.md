@@ -32,6 +32,42 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-27: unified brief Phase 3, the six strategy modules** (owner: "Phase 3").
+  Commits f7d0c6f (rules and pre-registration, before any run), e9d7831 (results),
+  9f57628 and 2f9a25e (registry, switch, observer, dashboard). **Not deployed yet: needs
+  the owner's "Deploy".** Migration 0024 is applied by the pre-deploy step.
+  * **Test results** (single run, after costs):
+    * forex scalping: −0.103R a trade over 6,825 trades;
+    * forex intraday breakout: −0.093R over 4,222;
+    * forex swing: −0.130R over 281;
+    * crypto scalping: −0.117R over 240.
+    * All four **FAIL**. The breakout-retest re-run agrees with its earlier fail.
+    * Crypto swing ("Catching Crypto Trends") passes again: Sharpe 1.11, worst drop
+      15.6%.
+    * Before costs, the forex rules have no edge, and the crypto rules have a small one
+      that fees remove.
+  * **Built:**
+    * the framework (`nexus_strategies.modules`), with one simulator shared by the
+      historical test and the forward record;
+    * the harness (`nexus_backtest.modules_bt`);
+    * the registry tables;
+    * `GET /api/v1/strategy-modules` and an owner-only, audited switch. OFF and OBSERVE
+      are allowed; PAPER is refused by the API and by a database constraint unless the
+      module passed;
+    * the `module-observer` worker (paper mode, records only);
+    * the *Strategy modules* page.
+  * **Tests:**
+    * `scripts/test.sh`: ruff and mypy clean, **1166 passed**, integration included;
+    * `scripts/e2e.sh`: **15 passed, 1 skipped**.
+  * **After the deploy:**
+    1. Check that the *Strategy modules* page lists six modules, all OFF.
+    2. Check the logs for `worker_started` with `module-observer`.
+  * **Next (owner go-ahead needed):** Phase 4, intelligence.
+    * Shared features for both markets.
+    * ML used only as filters that can block trades.
+    * An economic-event calendar. FRED's release calendar needs a free API key, added
+      through the secure form.
+
 * **2026-11-27: unified brief Phase 2, market-data repair** (owner: "Phase 2"). Commits
   30e6948 and 4a3875c. **Not deployed yet: needs the owner's "Deploy".**
   * Forex and gold bars stored by NEXUS (`nexus_market.fx_bars`).
