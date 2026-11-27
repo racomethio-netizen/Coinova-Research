@@ -34,7 +34,8 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
     60 MB cap.
   * Owner endpoints serve a manifest and CSV downloads.
   * All markets shows the received history.
-  * Not deployed: waiting for the owner's "Deploy".
+  * Deployed 2026-11-27 02:11 UTC together with the Exness bridge (0022) and the FX
+    research.
 
 ## 2026-11-26
 

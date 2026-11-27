@@ -48,10 +48,13 @@ something passes, which would be data snooping.
     * TrueFX needs a login.
 
     The test uses the owner's Exness bars.
-  * Waiting on the owner:
-    1. "Deploy". The undeployed commits are 1102142 (bridge, migration 0022), 9827584
-       (FX research), 2adfa47 and this one (NQS-1, migration 0023).
-    2. Run the bridge once with `--export-history`.
+  * **Deployed 2026-11-27 02:11 UTC** (owner: "Deploy"; Render b70eaa4 = source 45b1fa1).
+    * Migrations 0022 and 0023 were applied by the pre-deploy step. Row-level security
+      is on, with no anon or authenticated access.
+    * Health checks are ready.
+    * A burst of Redis timeouts in the first 3 seconds after start recovered on its own;
+      the workers restarted.
+  * Waiting on the owner: run the bridge once with `--export-history`.
   * Then, exact steps:
     1. Fetch the CSVs (`GET /api/v1/research/history/{PAIR}/{M5|H1|D1}.csv`, or
        `history_chunks` via SQL).
