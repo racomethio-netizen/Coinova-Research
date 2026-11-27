@@ -35,6 +35,10 @@ def test_m5_bars_from_bid_ticks_with_spread_and_no_empty_bars():
         (1.1000, 1.1010, 1.0990, 1.0990)
     assert first["ticks"] == 3
     assert first["spread_median"] == pytest.approx(0.0001)
+    assert (first["ask_open"], first["ask_high"], first["ask_low"], first["ask_close"]) == \
+        (1.1001, 1.1012, 1.0991, 1.0991)
+    assert ex.symbols_for(["EURAUD"], "raw") == {"EURAUD": "EURAUD_Raw_Spread"}
+    assert ex.symbols_for(["EURAUD"], "standard") == {"EURAUD": "EURAUDm"}
 
 
 def test_h1_and_d1_resampled_from_m5_and_months_listing():

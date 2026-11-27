@@ -1,15 +1,20 @@
 """Bars for NQS-1 from Exness's public tick archive (https://ticks.ex2archive.com).
 
 Exness publishes its own bid/ask ticks per symbol and account type, one zip per month,
-with UTC timestamps. This module downloads the Standard-account symbols (``EURUSDm``
-and so on), turns each month into M5 bars of the BID price (the MetaTrader convention),
-keeps the tick count and the mean and median spread per bar, then resamples H1 and D1
-bars (UTC days, like Exness's MT5 server time, which is GMT+0) from the M5 bars.
+with UTC timestamps. This module downloads one account type's symbols:
+* Standard: ``EURUSDm``;
+* Raw Spread: ``EURUSD_Raw_Spread``.
+
+It turns each month into M5 bars of the BID price (the MetaTrader convention) plus the
+ASK OHLC, so a backtest can fill on the right side. It keeps the tick count and the mean
+and median spread per bar. It then resamples H1 and D1 bid bars (UTC days, like Exness's
+MT5 server time, which is GMT+0) from the M5 bars.
 
 Nothing is filled in: a 5-minute slot without ticks has no bar. Every file's size and
 SHA-256 go in ``provenance.json``; data checks go in ``quality.json``.
 
-Usage: ``python -m nexus_backtest.exness_ticks --out DIR [--workers 4]``
+Usage: ``python -m nexus_backtest.exness_ticks --out DIR [--account standard|raw]
+[--pairs EURUSD,GBPUSD] [--first 2015-08] [--last 2026-10] [--workers 4]``
 """
 
 from __future__ import annotations
@@ -34,6 +39,11 @@ ARCHIVE = "https://ticks.ex2archive.com/ticks"
 SYMBOLS = {"EURUSD": "EURUSDm", "GBPUSD": "GBPUSDm", "USDJPY": "USDJPYm",
            "AUDUSD": "AUDUSDm", "USDCHF": "USDCHFm"}
 FIRST, LAST = (2015, 8), (2026, 10)          # complete months in the archive
+ACCOUNTS = {"standard": "{pair}m", "raw": "{pair}_Raw_Spread"}
+
+
+def symbols_for(pairs: list[str], account: str) -> dict[str, str]:
+    return {p: ACCOUNTS[account].format(pair=p) for p in pairs}
 MAX_ZIP = 400_000_000
 
 
@@ -85,6 +95,9 @@ def m5_from_zip(data: bytes) -> tuple[pd.DataFrame, int]:
     g = ticks["Bid"].resample("5min", label="left", closed="left")
     bars = g.ohlc()
     bars["ticks"] = g.count()
+    ask = ticks["Ask"].resample("5min", label="left", closed="left").ohlc()
+    for c in ("open", "high", "low", "close"):
+        bars[f"ask_{c}"] = ask[c]
     s = spread.resample("5min", label="left", closed="left")
     bars["spread_mean"], bars["spread_median"] = s.mean(), s.median()
     bars = bars[bars["ticks"] > 0]
@@ -139,10 +152,12 @@ def quality(pair: str, m5: pd.DataFrame, h1: pd.DataFrame, pip: float) -> dict[s
 
 
 def build(out: Path, workers: int = 4, first: tuple[int, int] = FIRST,
-          last: tuple[int, int] = LAST) -> dict[str, Any]:
+          last: tuple[int, int] = LAST, symbols: dict[str, str] | None = None,
+          account: str = "standard") -> dict[str, Any]:
     out.mkdir(parents=True, exist_ok=True)
-    jobs = [(p, s, y, m) for p, s in SYMBOLS.items() for y, m in months(first, last)]
-    parts: dict[str, list[pd.DataFrame]] = {p: [] for p in SYMBOLS}
+    symbols = symbols or SYMBOLS
+    jobs = [(p, s, y, m) for p, s in symbols.items() for y, m in months(first, last)]
+    parts: dict[str, list[pd.DataFrame]] = {p: [] for p in symbols}
     prov: list[dict[str, Any]] = []
     with ProcessPoolExecutor(workers) as ex:
         for i, res in enumerate(ex.map(_job, jobs), 1):
@@ -163,7 +178,7 @@ def build(out: Path, workers: int = 4, first: tuple[int, int] = FIRST,
             df.index.name = "time"
             df.to_csv(out / f"{pair}_{tf}.csv", float_format="%.6f")
         qual[pair] = quality(pair, m5, h1, 0.01 if pair.endswith("JPY") else 0.0001)
-    meta = {"source": ARCHIVE, "account": "Exness Standard (symbols ending in m)",
+    meta = {"source": ARCHIVE, "account": account, "symbols": symbols,
             "price": "bid", "timezone": "UTC", "months": [f"{first[0]}-{first[1]:02d}",
                                                           f"{last[0]}-{last[1]:02d}"],
             "built_at": datetime.now(UTC).isoformat(), "files": prov,
@@ -177,8 +192,19 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--account", choices=tuple(ACCOUNTS), default="standard")
+    ap.add_argument("--pairs", default=",".join(SYMBOLS))
+    ap.add_argument("--first", default=f"{FIRST[0]}-{FIRST[1]:02d}")
+    ap.add_argument("--last", default=f"{LAST[0]}-{LAST[1]:02d}")
     a = ap.parse_args()
-    res = build(a.out, a.workers)
+
+    def ym(x: str) -> tuple[int, int]:
+        y, m = x.split("-")
+        return int(y), int(m)
+
+    syms = symbols_for([p.strip().upper() for p in a.pairs.split(",") if p.strip()],
+                       a.account)
+    res = build(a.out, a.workers, ym(a.first), ym(a.last), syms, a.account)
     print(json.dumps({"missing": res["missing"],
                       "spread_pips_median": {p: q["spread_pips_median"]
                                              for p, q in res["quality"].items()}}))
