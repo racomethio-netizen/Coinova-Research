@@ -45,6 +45,36 @@ password. NEXUS never connects to your computer; the bridge connects out.
 **Stopping and revoking.** Close the window to stop. In NEXUS, *Revoke* the token if the
 machine is lost or the token was exposed.
 
+## Price history for forex research (run once)
+
+The NQS-1 forex strategy is tested on your broker's own prices. To send them:
+
+1. In MT5, open Tools → Options → Charts. Set **Max. bars in chart** to *Unlimited*,
+   then close and reopen MT5. Otherwise MT5 only returns recent bars.
+2. While the forex market is open (Monday to Friday), with the same two settings as
+   above, run:
+
+   ```
+   py -3 nexus_mt5_bridge.py --export-history
+   ```
+
+**What it sends.** For EURUSD, GBPUSD, USDJPY, AUDUSD and USDCHF:
+* M5 bars for the last 3 years, month by month;
+* H1 bars for the last 12 years, year by year;
+* all daily bars.
+
+**How long it takes.** It takes 10 to 30 minutes. Progress appears in the window, and in
+NEXUS under *All markets → Exness bridge → Price history*.
+
+**Running it again is safe.** Months and years NEXUS already holds are skipped.
+
+**Options:**
+* `NEXUS_HISTORY_SYMBOLS` changes the pairs (forex only).
+* `--export-history-dir C:\nexus_history` writes CSV files to a folder instead of
+  sending them.
+
+It only reads prices. Like the normal mode, it has no order function.
+
 ## Notes
 
 * **Leverage.** Exness accounts can have very high leverage. NEXUS keeps positions at or

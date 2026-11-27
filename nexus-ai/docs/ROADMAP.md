@@ -32,6 +32,34 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-27: NQS-1 adaptive forex strategy (owner brief), research stage.**
+  * Built and tested on synthetic data:
+    * the strategy package `nexus_strategies/nqs1`;
+    * the walk-forward harness `nexus_backtest.nqs1_bt`;
+    * the bridge `--export-history` mode;
+    * `history_chunks` (migration 0023);
+    * the owner history endpoints;
+    * the dashboard cards.
+  * Pre-registered: `docs/research/2026-11-27-nqs1-preregistration.md`. Strategy doc:
+    `docs/NQS1.md`.
+  * **No result yet.** Free intraday FX history is not reachable from this container:
+    * HistData needs a JavaScript token (not bypassed);
+    * Dukascopy returns 503 or 429;
+    * TrueFX needs a login.
+
+    The test uses the owner's Exness bars.
+  * Waiting on the owner:
+    1. "Deploy". The undeployed commits are 1102142 (bridge, migration 0022), 9827584
+       (FX research), 2adfa47 and this one (NQS-1, migration 0023).
+    2. Run the bridge once with `--export-history`.
+  * Then, exact steps:
+    1. Fetch the CSVs (`GET /api/v1/research/history/{PAIR}/{M5|H1|D1}.csv`, or
+       `history_chunks` via SQL).
+    2. Download FRED `DTB3` and `IR3TIB01{EZ,GB,JP,AU,CH}M156N`.
+    3. Run `python -m nexus_backtest.nqs1_bt --data D --fred F --out research/backtesting/nexus_backtest/results/nqs1_<date>.json --commit <sha>`
+       ONCE.
+    4. Record the result in the pre-registration doc.
+
 * **2026-11-26 night: forex deep dive.**
   * Institutional FX styles test on the G10 currencies: none passed. Carry came closest
     (+1.1% a year at 1×).

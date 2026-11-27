@@ -21,8 +21,10 @@ endpoint is rate-limited per IP and has a body size limit.
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
+import math
 import re
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -51,6 +53,15 @@ FX = {"USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "SEK", "NOK", "DKK
       "HKD", "ZAR", "MXN", "TRY", "PLN", "CZK", "HUF", "CNH", "THB", "ILS"}
 METALS_ENERGY = ("XAU", "XAG", "XPT", "XPD", "USOIL", "UKOIL", "XNG", "XBR", "XTI")
 SYMBOL_RE = r"^[A-Za-z0-9._#-]{1,32}$"
+
+# Research history (see HistoryChunk): M5 by month, H1 by year, D1 in one piece.
+HISTORY_RATE_LIMIT = 900                     # requests per IP per 10 minutes
+HISTORY_MAX_BODY = 3_000_000
+HISTORY_MAX_ROWS = 15_000
+HISTORY_MAX_BYTES = 60_000_000               # total stored, to protect the database plan
+HISTORY_TF = {"M5": (300, r"^\d{4}-(0[1-9]|1[0-2])$"), "H1": (3600, r"^\d{4}$"),
+              "D1": (86400, r"^all$")}
+HISTORY_VENUE = "exness_mt5"
 
 
 def token_hash(token: str) -> str:
@@ -120,14 +131,14 @@ class SnapshotIn(BaseModel):
     unresolved: list[str] = Field(default_factory=list, max_length=200)
 
 
-async def bridge_auth(request: Request, s: Session = Depends(db),
-                      redis: Any = Depends(redis_dep)) -> models.BrokerBridge:
+async def _authenticate(request: Request, s: Session, redis: Any, bucket: str,
+                        limit: int) -> models.BrokerBridge:
     ip = client_ip(request)
-    key = f"nexus:rl:bridge:{ip}"
+    key = f"nexus:rl:{bucket}:{ip}"
     n = await redis.incr(key)
     if n == 1:
         await redis.expire(key, RATE_WINDOW)
-    if n > RATE_LIMIT:
+    if n > limit:
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "too many requests")
     header = request.headers.get("authorization", "")
     if not header.lower().startswith("bearer ") or len(header) > 200:
@@ -138,6 +149,17 @@ async def bridge_auth(request: Request, s: Session = Depends(db),
     if bridge is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "invalid or revoked bridge token")
     return bridge
+
+
+async def bridge_auth(request: Request, s: Session = Depends(db),
+                      redis: Any = Depends(redis_dep)) -> models.BrokerBridge:
+    return await _authenticate(request, s, redis, "bridge", RATE_LIMIT)
+
+
+async def history_auth(request: Request, s: Session = Depends(db),
+                       redis: Any = Depends(redis_dep)) -> models.BrokerBridge:
+    """A separate, larger budget: a full history export is a few hundred requests."""
+    return await _authenticate(request, s, redis, "bridge_history", HISTORY_RATE_LIMIT)
 
 
 def _exchange_id(s: Session) -> int:
@@ -238,3 +260,136 @@ async def mt5_snapshot(request: Request, s: Session = Depends(db),
     log.info("mt5_snapshot", bridge=bridge.name, symbols=len(names), bars_written=written,
              trade_mode=acct.trade_mode)
     return {"ok": True, "bars_written": written, "need_history": need}
+
+
+# ----------------------------------------------------------------------- history
+class HistoryIn(BaseModel):
+    bridge_version: str = Field(max_length=16)
+    read_only: bool
+    server_utc_offset_hours: int = Field(ge=-14, le=14)
+    symbol: str = Field(pattern=SYMBOL_RE)               # broker symbol, e.g. EURUSDm
+    base_name: str = Field(pattern=r"^[A-Z]{6}$")        # FX pairs only, e.g. EURUSD
+    timeframe: str = Field(pattern=r"^(M5|H1|D1)$")
+    period: str = Field(pattern=r"^(\d{4}(-\d{2})?|all)$")
+    rows: list[list[float]] = Field(max_length=HISTORY_MAX_ROWS)   # [t, o, h, l, c, v]
+
+
+def _in_period(server_ts: int, period: str) -> bool:
+    if period == "all":
+        return True
+    t = datetime.fromtimestamp(server_ts, tz=UTC)      # server time read as wall clock
+    return f"{t.year:04d}" == period if len(period) == 4 else \
+        f"{t.year:04d}-{t.month:02d}" == period
+
+
+def history_csv(rows: list[list[float]], timeframe: str, period: str, offset_h: int,
+                now: datetime) -> tuple[str, int, datetime, datetime]:
+    """Closed, valid bars of the period as UTC CSV. Raises ValueError if none remain.
+
+    Server time -> UTC by the measured offset; the forming bar (open + length > now),
+    bars outside the period (by server time), non-finite or inconsistent rows and
+    duplicates are dropped."""
+    length = timedelta(seconds=HISTORY_TF[timeframe][0])
+    kept: dict[datetime, str] = {}
+    for r in rows:
+        if len(r) < 5 or not all(math.isfinite(x) for x in r[:5]) or min(r[1:5]) <= 0:
+            continue
+        o, h, lo, c = r[1:5]
+        if h < max(o, c) or lo > min(o, c) or not _in_period(int(r[0]), period):
+            continue
+        t = datetime.fromtimestamp(int(r[0]), tz=UTC) - timedelta(hours=offset_h)
+        if t + length > now:
+            continue
+        v = r[5] if len(r) > 5 and math.isfinite(r[5]) and r[5] >= 0 else 0
+        kept[t] = f"{t:%Y-%m-%dT%H:%M:%SZ},{o!r},{h!r},{lo!r},{c!r},{int(v)}"
+    if not kept:
+        raise ValueError("no closed, valid bars in this chunk")
+    times = sorted(kept)
+    body = "\n".join(kept[t] for t in times)
+    return body, len(times), times[0], times[-1]
+
+
+@router.post("/mt5/history/manifest")
+async def mt5_history_manifest(s: Session = Depends(db),
+                               bridge: models.BrokerBridge = Depends(history_auth)
+                               ) -> dict[str, Any]:
+    """What NEXUS already holds, so the bridge sends only missing or unfinished chunks."""
+    rows = s.execute(select(models.HistoryChunk.symbol, models.HistoryChunk.timeframe,
+                            models.HistoryChunk.period, models.HistoryChunk.bar_count,
+                            models.HistoryChunk.last_open).where(
+        models.HistoryChunk.venue == HISTORY_VENUE)).all()
+    used = s.scalar(select(func.coalesce(func.sum(func.octet_length(models.HistoryChunk.data)),
+                                         0))) or 0
+    return {"chunks": [{"symbol": r[0], "timeframe": r[1], "period": r[2], "bars": r[3],
+                        "last_open": r[4].isoformat()} for r in rows],
+            "used_bytes": int(used), "limit_bytes": HISTORY_MAX_BYTES}
+
+
+@router.post("/mt5/history")
+async def mt5_history(request: Request, s: Session = Depends(db),
+                      bridge: models.BrokerBridge = Depends(history_auth)) -> dict[str, Any]:
+    raw = await request.body()
+    if len(raw) > HISTORY_MAX_BODY:
+        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "chunk too large")
+    try:
+        chunk = HistoryIn.model_validate_json(raw)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            f"invalid history chunk: {str(exc)[:300]}") from None
+    if not chunk.read_only:
+        raise HTTPException(status.HTTP_409_CONFLICT, "only read-only bridges are accepted")
+    if not re.match(HISTORY_TF[chunk.timeframe][1], chunk.period):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            "period must be YYYY-MM for M5, YYYY for H1, all for D1")
+    if classify(chunk.base_name)[0] != "forex":
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "forex pairs only")
+    now = utcnow()
+    try:
+        body, n, first, last = history_csv(chunk.rows, chunk.timeframe, chunk.period,
+                                           chunk.server_utc_offset_hours, now)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from None
+    data = gzip.compress(("time,open,high,low,close,volume\n" + body + "\n").encode(),
+                         mtime=0)
+    key = (models.HistoryChunk.venue == HISTORY_VENUE,
+           models.HistoryChunk.symbol == chunk.base_name,
+           models.HistoryChunk.timeframe == chunk.timeframe,
+           models.HistoryChunk.period == chunk.period)
+    row = s.scalar(select(models.HistoryChunk).where(*key).with_for_update())
+    others = s.scalar(select(func.coalesce(func.sum(func.octet_length(
+        models.HistoryChunk.data)), 0)).where(models.HistoryChunk.id != (row.id if row else -1)))
+    if int(others or 0) + len(data) > HISTORY_MAX_BYTES:
+        raise HTTPException(status.HTTP_507_INSUFFICIENT_STORAGE,
+                            "research history storage is full")
+    if row is None:
+        row = models.HistoryChunk(venue=HISTORY_VENUE, symbol=chunk.base_name,
+                                  timeframe=chunk.timeframe, period=chunk.period)
+        s.add(row)
+    row.broker_symbol = chunk.symbol
+    row.bar_count, row.first_open, row.last_open = n, first, last
+    row.server_utc_offset_hours = chunk.server_utc_offset_hours
+    row.sha256 = hashlib.sha256(data).hexdigest()
+    row.data, row.bridge_id, row.received_at = data, bridge.id, now
+    bridge.last_seen_at = now
+    s.flush()
+    log.info("mt5_history", bridge=bridge.name, symbol=chunk.base_name,
+             timeframe=chunk.timeframe, period=chunk.period, bars=n)
+    return {"ok": True, "bars_stored": n, "first_open": first.isoformat(),
+            "last_open": last.isoformat()}
+
+
+def history_text(s: Session, symbol: str, timeframe: str) -> str | None:
+    """All stored chunks of one series as a single UTC CSV (header once), in time order."""
+    chunks = s.scalars(select(models.HistoryChunk).where(
+        models.HistoryChunk.venue == HISTORY_VENUE, models.HistoryChunk.symbol == symbol,
+        models.HistoryChunk.timeframe == timeframe).order_by(
+        models.HistoryChunk.first_open)).all()
+    if not chunks:
+        return None
+    lines: dict[str, str] = {}
+    for c in chunks:
+        for line in gzip.decompress(c.data).decode().splitlines()[1:]:
+            if line:
+                lines[line.split(",", 1)[0]] = line
+    return "time,open,high,low,close,volume\n" + "\n".join(lines[k] for k in sorted(lines)) \
+        + "\n"

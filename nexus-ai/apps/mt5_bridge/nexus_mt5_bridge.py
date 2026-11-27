@@ -24,6 +24,14 @@ Settings (environment variables):
   used when no fresh tick allows measuring it.
 
 Run: ``py -3 nexus_mt5_bridge.py`` (see README.md in this folder).
+
+History export, once, for research: ``py -3 nexus_mt5_bridge.py --export-history``
+sends closed bars of the forex pairs in NEXUS_HISTORY_SYMBOLS (default: EURUSD, GBPUSD,
+USDJPY, AUDUSD, USDCHF): M5 for the last 3 years (by month), H1 for the last 12 years
+(by year) and all D1 history. Chunks NEXUS already holds are skipped, so it can be run
+again safely. ``--export-history-dir FOLDER`` writes the same bars as CSV files into a
+folder instead of sending them. Set MetaTrader 5's Tools > Options > Charts > "Max. bars
+in chart" to Unlimited first, or the terminal returns only recent bars.
 """
 
 from __future__ import annotations
@@ -33,6 +41,9 @@ import os
 import sys
 import time
 import urllib.request
+from collections.abc import Callable
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 VERSION = "1.0"
@@ -41,6 +52,9 @@ DEFAULT_SYMBOLS = ("EURUSD,GBPUSD,USDJPY,AUDUSD,USDCAD,USDCHF,NZDUSD,"
 OFFSET_PROBES = ("BTCUSD", "ETHUSD")      # trade at weekends: keep the time offset measurable
 FULL_HISTORY, RECENT = 1500, 10
 TRADE_MODES = {0: "demo", 1: "contest", 2: "real"}
+HISTORY_SYMBOLS = "EURUSD,GBPUSD,USDJPY,AUDUSD,USDCHF"
+HISTORY_PLAN = (("D1", 0), ("H1", 12), ("M5", 3))    # timeframe, years (0 = all)
+TF_SECONDS = {"M5": 300, "H1": 3600, "D1": 86400}
 
 
 def log(msg: str) -> None:
@@ -146,11 +160,113 @@ def collect(mt5: Any, wanted: list[str], need_history: set[str], state: dict[str
             "symbols": symbols, "bars": bars, "positions": positions, "unresolved": missing}
 
 
-def post(url: str, token: str, payload: dict[str, Any], timeout: int = 60) -> dict[str, Any]:
+def periods(tf: str, years: int, now: datetime) -> list[tuple[str, datetime, datetime]]:
+    """(period, start, end) in broker server time: "all" for D1, a year for H1, a month
+    for M5, oldest first. The current period is included (it is still growing)."""
+    if tf == "D1":
+        return [("all", datetime(1971, 1, 1, tzinfo=UTC), now)]
+    out = []
+    if tf == "H1":
+        for y in range(now.year - years + 1, now.year + 1):
+            out.append((f"{y:04d}", datetime(y, 1, 1, tzinfo=UTC),
+                        min(datetime(y + 1, 1, 1, tzinfo=UTC), now)))
+        return out
+    y, m = now.year - years, now.month
+    while (y, m) <= (now.year, now.month):
+        nxt = (y + 1, 1) if m == 12 else (y, m + 1)
+        out.append((f"{y:04d}-{m:02d}", datetime(y, m, 1, tzinfo=UTC),
+                    min(datetime(nxt[0], nxt[1], 1, tzinfo=UTC), now)))
+        y, m = nxt
+    return out
+
+
+def _period_end(period: str) -> datetime:
+    if len(period) == 4:
+        return datetime(int(period) + 1, 1, 1, tzinfo=UTC)
+    y, m = int(period[:4]), int(period[5:])
+    return datetime(y + 1, 1, 1, tzinfo=UTC) if m == 12 else datetime(y, m + 1, 1, tzinfo=UTC)
+
+
+def _complete(period: str, tf: str, now: datetime) -> bool:
+    """A period that ended more than a day ago will not change any more (D1 "all" always
+    grows, so it is always re-sent)."""
+    return tf != "D1" and _period_end(period).timestamp() < now.timestamp() - 86400
+
+
+def _rows(rates: Any) -> list[list[float]]:
+    return [[int(r["time"]), float(r["open"]), float(r["high"]), float(r["low"]),
+             float(r["close"]), float(r["tick_volume"])] for r in rates]
+
+
+def export_history(mt5: Any, send: Callable[[str, dict[str, Any]], dict[str, Any]],
+                   symbols: list[str], offset: int, *, now: float | None = None,
+                   sleep: Callable[[float], None] = time.sleep, retries: int = 3,
+                   out_dir: Path | None = None) -> dict[str, int]:
+    """Export closed bars chunk by chunk. ``send(path, payload)`` posts to NEXUS; with
+    ``out_dir`` the bars are written to ``<PAIR>_<TF>.csv`` files (UTC) instead.
+    READ-ONLY: only symbol and rate reads."""
+    now_server = datetime.fromtimestamp((time.time() if now is None else now) + offset * 3600,
+                                        tz=UTC)
+    available = [s.name for s in (mt5.symbols_get() or [])]
+    resolved, missing = resolve(available, symbols)
+    for base in missing:
+        log(f"history: {base} is not offered by this account; skipped")
+    have: set[tuple[str, str, str]] = set()
+    if out_dir is None:
+        man = send("/api/v1/bridge/mt5/history/manifest", {})
+        have = {(c["symbol"], c["timeframe"], c["period"]) for c in man.get("chunks", [])}
+    stats = {"sent": 0, "skipped": 0, "empty": 0, "bars": 0}
+    files: dict[tuple[str, str], dict[int, str]] = {}
+    for base, name in resolved.items():
+        mt5.symbol_select(name, True)
+        for tf, years in HISTORY_PLAN:
+            code = getattr(mt5, f"TIMEFRAME_{tf}")
+            for period, start, end in periods(tf, years, now_server):
+                if (base, tf, period) in have and _complete(period, tf, now_server):
+                    stats["skipped"] += 1
+                    continue
+                rates = None
+                for attempt in range(retries):
+                    rates = mt5.copy_rates_range(name, code, start, end)
+                    if rates is not None and len(rates):
+                        break
+                    sleep(5 * (attempt + 1))          # the terminal may still be downloading
+                if rates is None or not len(rates):
+                    stats["empty"] += 1
+                    continue
+                rows = _rows(rates)
+                if out_dir is not None:
+                    series = files.setdefault((base, tf), {})
+                    for r in rows:
+                        t = int(r[0]) - offset * 3600
+                        if t + TF_SECONDS[tf] <= now_server.timestamp() - offset * 3600:
+                            series[t] = (f"{datetime.fromtimestamp(t, tz=UTC):%Y-%m-%dT%H:%M:%SZ}"
+                                         f",{r[1]!r},{r[2]!r},{r[3]!r},{r[4]!r},{int(r[5])}")
+                    stats["bars"] += len(rows)
+                    continue
+                resp = send("/api/v1/bridge/mt5/history", {
+                    "bridge_version": VERSION, "read_only": True,
+                    "server_utc_offset_hours": offset, "symbol": name, "base_name": base,
+                    "timeframe": tf, "period": period, "rows": rows})
+                stats["sent"] += 1
+                stats["bars"] += int(resp.get("bars_stored", 0))
+                log(f"history: {base} {tf} {period}: {resp.get('bars_stored')} bars stored")
+                sleep(0.5)
+    if out_dir is not None:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for (base, tf), series in files.items():
+            (out_dir / f"{base}_{tf}.csv").write_text(
+                "time,open,high,low,close,volume\n" + "\n".join(series[k] for k in sorted(series))
+                + "\n")
+    return stats
+
+
+def post(url: str, token: str, payload: dict[str, Any], timeout: int = 60,
+         path: str = "/api/v1/bridge/mt5/snapshot") -> dict[str, Any]:
     if not url.startswith("https://") and not url.startswith("http://127.0.0.1"):
         raise ValueError("NEXUS_URL must use https:// so the token is never sent in clear")
     req = urllib.request.Request(  # noqa: S310 - scheme checked above
-        url.rstrip("/") + "/api/v1/bridge/mt5/snapshot", data=json.dumps(payload).encode(),
+        url.rstrip("/") + path, data=json.dumps(payload).encode(),
         headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}",
                  "User-Agent": f"nexus-mt5-bridge/{VERSION}"}, method="POST")
     with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310
@@ -162,6 +278,30 @@ def main() -> None:  # pragma: no cover - needs Windows and a running MT5 termin
     import MetaTrader5 as mt5  # Windows only
 
     url, token = os.environ.get("NEXUS_URL", ""), os.environ.get("NEXUS_BRIDGE_TOKEN", "")
+    args = sys.argv[1:]
+    if "--export-history" in args or "--export-history-dir" in args:
+        out_dir = Path(args[args.index("--export-history-dir") + 1]) \
+            if "--export-history-dir" in args else None
+        if out_dir is None and (not url or not token):
+            sys.exit("set NEXUS_URL and NEXUS_BRIDGE_TOKEN first (see README.md)")
+        if not mt5.initialize():
+            sys.exit(f"cannot attach to the MT5 terminal: {mt5.last_error()}")
+        probe: dict[str, Any] = {}
+        wanted_fx = [s.strip().upper() for s in os.environ.get(
+            "NEXUS_HISTORY_SYMBOLS", HISTORY_SYMBOLS).split(",") if s.strip()]
+        collect(mt5, wanted_fx, set(), probe)          # measures the server time offset
+        offset = probe.get("offset")
+        if offset is None and os.environ.get("NEXUS_SERVER_UTC_OFFSET"):
+            offset = int(os.environ["NEXUS_SERVER_UTC_OFFSET"])
+        if offset is None:
+            sys.exit("cannot measure the broker's server time offset now (market closed?); "
+                     "set NEXUS_SERVER_UTC_OFFSET or run it while the market is open")
+        log(f"history export for {', '.join(wanted_fx)} (server time UTC{offset:+d})")
+        stats = export_history(mt5, lambda p, body: post(url, token, body, timeout=120,
+                                                         path=p),
+                               wanted_fx, offset, out_dir=out_dir)
+        log(f"history export finished: {stats}")
+        return
     if not url or not token:
         sys.exit("set NEXUS_URL and NEXUS_BRIDGE_TOKEN first (see README.md)")
     wanted = [s.strip().upper() for s in os.environ.get("NEXUS_SYMBOLS", DEFAULT_SYMBOLS)

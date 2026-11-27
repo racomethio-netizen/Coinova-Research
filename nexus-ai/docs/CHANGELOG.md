@@ -2,6 +2,40 @@
 
 Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
+## 2026-11-27
+
+- **NQS-1 adaptive forex strategy (owner brief).** Research only.
+  * Strategy package `nexus_strategies/nqs1`:
+    * seven regimes select among time-series momentum, multi-timeframe trend, breakout
+      and mean reversion;
+    * entries need two or more confirmations, plus spread, cost and expected-value
+      checks;
+    * NEXUS risk on one shared book, with pending orders counting toward exposure and
+      open risk;
+    * ATR stop, take profit, break-even, trailing stop, opposite-signal, time and
+      emergency exits;
+    * carry at 21:00 UTC rollovers (Wednesday counts triple);
+    * an optional ML veto that can only refuse a trade.
+  * Research harness `nexus_backtest.nqs1_bt`:
+    * walk-forward (24 months of training, 6 of testing) traded as one continuous book;
+    * Monte Carlo, ±20% sensitivity, each setup compared with the adaptive combination;
+    * the ML filter and a 2× cost stress;
+    * a generated comparison report.
+  * Pre-registered before any data: `docs/research/2026-11-27-nqs1-preregistration.md`.
+    No result yet.
+  * Bugs found by the new tests and fixed before any real run:
+    * costs were never deducted from equity;
+    * the spread was partly counted twice;
+    * exposure limits ignored orders waiting to fill;
+    * the mean-reversion target used its own bar's close.
+- **Exness bridge history export** (`--export-history`): M5 for 3 years, H1 for 12
+  years and all D1 history for the 5 pairs.
+  * NEXUS stores them gzip-compressed in `history_chunks` (migration 0023), with a
+    60 MB cap.
+  * Owner endpoints serve a manifest and CSV downloads.
+  * All markets shows the received history.
+  * Not deployed: waiting for the owner's "Deploy".
+
 ## 2026-11-26
 
 - **Forex research (owner: "institutions and banks").**

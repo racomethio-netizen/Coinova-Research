@@ -232,10 +232,42 @@ def test_rollover_count_and_carry_charge():
     # Tue 21:00 (1) + Wed 21:00 (3, the weekend) + Thu 21:00 (1)
     assert rollovers(t("2024-01-09 20:00", tz="UTC"), t("2024-01-11 22:00", tz="UTC")) == 5
     assert rollovers(t("2024-01-12 22:00", tz="UTC"), t("2024-01-15 20:00", tz="UTC")) == 0
-    carry = {"EURUSD": pd.Series([0.03], index=[t("2023-12-01", tz="UTC")])}
+    days = pd.date_range("2023-12-01", "2024-02-01", freq="1D", tz="UTC")
+    carry = {"EURUSD": pd.Series(0.03, index=days)}
     (tr,) = one(flat(40), picks={0: 1}, carry=carry).run().trades
     assert tr["carry_usd"] == pytest.approx(2 * (0.03 - 0.005) / 365 * 5000 * 1.1)
     assert tr["pnl_usd"] == pytest.approx(-COST * 5000 + tr["carry_usd"])
+    stale = {"EURUSD": pd.Series([0.03], index=[t("2023-12-01", tz="UTC")])}
+    (tr,) = one(flat(40), picks={0: 1}, carry=stale).run().trades
+    assert tr["carry_usd"] == 0                     # a stale rate is never charged
+
+
+def test_carry_from_fred_rate_differentials_with_staleness(tmp_path: Any):
+    def fred(sid: str, dates: list[str], vals: list[float]) -> None:
+        pd.DataFrame({"observation_date": dates, sid: vals}).to_csv(
+            tmp_path / f"{sid}.csv", index=False)
+
+    fred("DTB3", ["2024-01-01", "2024-01-02"], [5.0, 5.0])
+    for ccy, rate in (("EUR", 4.0), ("GBP", 5.25), ("JPY", 0.1), ("AUD", 4.35),
+                      ("CHF", 1.5)):
+        fred(bt.FX[ccy][2], ["2023-12-01", "2024-01-01"], [rate, rate])
+    c = bt.build_carry(tmp_path)
+    assert c["EURUSD"].iloc[-1] == pytest.approx(0.04 - 0.05)
+    assert c["USDJPY"].iloc[-1] == pytest.approx(0.05 - 0.001)
+    assert c["EURUSD"].index[-1] == pd.Timestamp("2024-01-01", tz="UTC") + pd.Timedelta(
+        days=bt.CARRY_STALE_DAYS)
+
+
+def test_mean_reversion_target_is_the_middle_known_before_the_bar():
+    path = [*flat(2), (1.1, 1.103, 1.0995, 1.102), *flat(3, 1.102)]
+    f, pk = frame(path, picks={0: 1}, stop_atr=1.0)
+    pk.loc[pk.index[0], "kind"] = "mid"
+    f["bb_mid"] = [1.106, 1.106, 1.102, 1.102, 1.102, 1.102]
+    (tr,) = Portfolio({"EURUSD": f}, {"EURUSD": pk}, H1).run().trades
+    # Bar 2 reaches its OWN middle (1.102) but not the one known when it opened (1.106);
+    # the exit comes on bar 3, at the middle known by then.
+    assert tr["reason"] == "target" and tr["closed"] == f.index[3]
+    assert tr["exit"] == pytest.approx(1.102)
 
 
 # ---------------------------------------------------------------------------- ML
@@ -322,3 +354,35 @@ def test_monte_carlo_gates_and_holm():
     assert not g["max_drawdown_within_5pct"]
     assert bt.holm_flags({"a": 0.01, "b": 0.03, "c": None}) == {"a": True, "b": False,
                                                                 "c": False}
+
+
+def test_command_line_writes_results_and_report(tmp_path: Any,
+                                                monkeypatch: pytest.MonkeyPatch):
+    import json
+    import sys
+
+    for name, val in (("TRAIN_MONTHS", 2), ("TEST_MONTHS", 1), ("WARMUP_MONTHS", 1),
+                      ("MIN_TRAIN_TRADES", 1), ("MIN_MONTHS", 4)):
+        monkeypatch.setattr(bt, name, val)
+    monkeypatch.setattr(bt, "GRID", {"stop_scale": (1.0,), "take_profit_r": (2.0,),
+                                     "adx_strong": (25.0,)})
+    for i, pair in enumerate(("EURUSD", "GBPUSD")):
+        s = synth(24 * 130, vol=0.0009, seed=20 + i, price=1.1 + 0.2 * i)
+        s.index.name = "time"
+        s.reset_index().assign(time=lambda d: d["time"].dt.strftime("%Y-%m-%dT%H:%M:%SZ")) \
+            .to_csv(tmp_path / f"{pair}_H1.csv", index=False)
+    out = tmp_path / "nqs1.json"
+    monkeypatch.setattr(sys, "argv", ["nqs1_bt", "--data", str(tmp_path), "--profiles",
+                                      "intraday,swing", "--out", str(out), "--workers", "1"])
+    bt.main()
+    rep = json.loads(out.read_text())
+    assert rep["skipped"] == {"swing": "no D1 data"}
+    prof = rep["profiles"]["intraday"]
+    assert prof["pairs"] == ["EURUSD", "GBPUSD"]
+    assert set(prof["walk_forward"]["gates"]) >= {"at_least_100_trades",
+                                                   "significant_after_holm"}
+    assert set(prof["comparison_default_params"]) == set(bt.MODES)
+    assert rep["paper"] is False and rep["kind"].startswith("historical backtest")
+    md = out.with_suffix(".md").read_text()
+    assert "## Profile: intraday" in md and "Profile **swing** not run" in md
+    assert ("PASSED" in md) != ("FAILED" in md)

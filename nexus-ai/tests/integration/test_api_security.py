@@ -953,3 +953,72 @@ def test_exness_bridge_tokens_and_read_only_snapshots(client: TestClient,
         c.execute(text("DELETE FROM trading_pairs WHERE exchange_id = "
                        "(SELECT id FROM exchanges WHERE code = 'exness')"))
         c.execute(text("DELETE FROM exchanges WHERE code = 'exness'"))
+
+
+def test_exness_history_chunks_for_research(client: TestClient, migrated_engine: Engine,
+                                            monkeypatch: pytest.MonkeyPatch) -> None:
+    from datetime import UTC, datetime
+
+    from nexus_api import bridge as br
+    from sqlalchemy import text
+
+    url = "/api/v1/bridge/mt5/history"
+    login(client)
+    token = client.post("/api/v1/bridge-tokens", json={"name": "history pc",
+                                                       "reason": "history export"},
+                        headers=CSRF).json()["token"]
+    auth = {"Authorization": f"Bearer {token}"}
+    off = 2                                              # broker server time UTC+2
+    start = int(datetime(2024, 3, 4, tzinfo=UTC).timestamp())   # server wall clock
+
+    def chunk(**over: Any) -> dict[str, Any]:
+        body = {"bridge_version": "1.1", "read_only": True, "server_utc_offset_hours": off,
+                "symbol": "EURUSDm", "base_name": "EURUSD", "timeframe": "H1",
+                "period": "2024",
+                "rows": [[start + i * 3600, 1.1, 1.2, 1.0, 1.15, 5] for i in range(3)]}
+        body.update(over)
+        return body
+
+    assert client.post(url, json=chunk()).status_code == 401                   # no token
+    assert client.post(url + "/manifest", json={}, headers=auth).json()["chunks"] == []
+    assert client.post(url, json=chunk(read_only=False), headers=auth).status_code == 409
+    assert client.post(url, json=chunk(period="2024-03"), headers=auth).status_code == 422
+    assert client.post(url, json=chunk(base_name="XAUUSD"), headers=auth).status_code == 422
+    assert client.post(url, json=chunk(rows=[[start, 1.1, 1.0, 1.2, 1.15, 5]]),
+                       headers=auth).status_code == 422                     # high < low
+    stray = [int(datetime(2023, 6, 1, tzinfo=UTC).timestamp()), 1.1, 1.2, 1.0, 1.1, 1]
+    r = client.post(url, json=chunk(rows=[*chunk()["rows"], stray]), headers=auth)
+    assert r.status_code == 200, r.text
+    assert r.json()["bars_stored"] == 3                                     # 2023 bar dropped
+    assert r.json()["first_open"] == "2024-03-03T22:00:00+00:00"            # UTC+2 -> UTC
+    now = int(time.time())
+    hour = now - now % 3600 + off * 3600                                    # forming, server
+    cur = datetime.fromtimestamp(hour, tz=UTC).year
+    r = client.post(url, json=chunk(period=str(cur), rows=[
+        [hour - 3600, 1.1, 1.2, 1.0, 1.1, 1], [hour, 1.1, 1.2, 1.0, 1.1, 1]]), headers=auth)
+    assert r.status_code == 200 and r.json()["bars_stored"] == 1           # forming dropped
+    r = client.post(url, json=chunk(), headers=auth)                         # resend replaces
+    assert r.status_code == 200
+    man = client.post(url + "/manifest", json={}, headers=auth).json()
+    assert sorted(c["period"] for c in man["chunks"]) == sorted(["2024", str(cur)])
+    assert 0 < man["used_bytes"] < man["limit_bytes"]
+    series = client.get("/api/v1/research/history").json()["series"]
+    assert series == [{"symbol": "EURUSD", "timeframe": "H1", "chunks": 2, "bars": 4,
+                       "first_open": "2024-03-03T22:00:00+00:00",
+                       "last_open": series[0]["last_open"], "bytes": series[0]["bytes"],
+                       "server_utc_offsets": [2]}]
+    csv = client.get("/api/v1/research/history/EURUSD/H1.csv")
+    assert csv.status_code == 200 and csv.headers["content-type"].startswith("text/csv")
+    lines = csv.text.splitlines()
+    assert lines[0] == "time,open,high,low,close,volume" and len(lines) == 5
+    assert lines[1].startswith("2024-03-03T22:00:00Z,1.1,1.2,1.0,1.15,5")
+    assert lines[1:] == sorted(lines[1:])
+    assert client.get("/api/v1/research/history/EURUSD/M5.csv").status_code == 404
+    assert client.get("/api/v1/research/history/eurusd/H1.csv").status_code == 422
+    monkeypatch.setattr(br, "HISTORY_MAX_BYTES", 100)
+    assert client.post(url, json=chunk(period="2023", rows=[stray]),
+                       headers=auth).status_code == 507                    # storage cap
+    client.post("/api/v1/auth/logout", headers=CSRF)
+    assert client.get("/api/v1/research/history").status_code == 401
+    with migrated_engine.begin() as c:
+        c.execute(text("DELETE FROM history_chunks"))

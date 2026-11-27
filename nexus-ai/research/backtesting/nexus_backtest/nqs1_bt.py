@@ -20,6 +20,7 @@ import argparse
 import itertools
 import json
 import math
+import multiprocessing
 from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import replace
@@ -34,6 +35,7 @@ from nexus_strategies.nqs1.config import PAIRS, PROFILES, NQS1Config, Profile
 from nexus_strategies.nqs1.engine import Portfolio, Position, choose, prepare
 from nexus_strategies.nqs1.features import resample
 
+from nexus_backtest.multi_asset_trend import FX, USD_RATE, read_fred
 from nexus_backtest.significance import stationary_bootstrap_pvalue
 
 Data = dict[str, tuple[pd.DataFrame, pd.DataFrame]]
@@ -82,6 +84,33 @@ def load_carry(d: Path) -> dict[str, pd.Series]:
     df = pd.read_csv(f)
     df.index = pd.to_datetime(df["date"], utc=True)
     return {c: df[c].astype(float).dropna() for c in df.columns if c != "date"}
+
+
+CARRY_STALE_DAYS = 92
+
+
+def build_carry(fred: Path, pairs: tuple[str, ...] = PAIRS) -> dict[str, pd.Series]:
+    """Daily annual rate differential (base minus quote, decimal) per pair, from the
+    FRED series of the FX-styles study: 3-month interbank rates (OECD, monthly) and the
+    US 3-month bill (DTB3). A value is used for at most 92 days after its date; after
+    that the pair's carry is unknown and not charged. Carry is only ever charged or
+    credited, never used to decide a trade, so a monthly average is an acceptable
+    estimate of the swap actually paid."""
+    rates = {"USD": read_fred(fred, USD_RATE) / 100}
+    for ccy in {c for p in pairs for c in (p[:3], p[3:])} - {"USD"}:
+        rates[ccy] = read_fred(fred, FX[ccy][2]) / 100
+    out = {}
+    for pair in pairs:
+        b, q = rates[pair[:3]], rates[pair[3:]]
+        start = max(b.index[0], q.index[0])
+        end = min(b.index[-1], q.index[-1]) + pd.Timedelta(days=CARRY_STALE_DAYS)
+        days = pd.date_range(start, end, freq="1D")
+        tol = pd.Timedelta(days=CARRY_STALE_DAYS)
+        diff = (b.reindex(days, method="ffill", tolerance=tol)
+                - q.reindex(days, method="ffill", tolerance=tol)).dropna()
+        diff.index = diff.index.tz_localize("UTC")
+        out[pair] = diff
+    return out
 
 
 def coverage_months(data: Data) -> float:
@@ -258,7 +287,8 @@ def walk_forward(data: Data, profile: Profile, mode: str, carry: dict[str, pd.Se
     frames: dict[str, list[pd.DataFrame]] = {}
     picks: dict[str, list[pd.DataFrame]] = {}
     veto = WindowVeto()
-    with ProcessPoolExecutor(workers, initializer=_init, initargs=(data, profile, carry)) as ex:
+    with ProcessPoolExecutor(workers, mp_context=multiprocessing.get_context("spawn"),
+                             initializer=_init, initargs=(data, profile, carry)) as ex:
         for a, b, c in windows(first, last):
             res = list(ex.map(_train_job, [(mode, g, a, b) for g in grid]))
             ok = [x for x in res if x[1] is not None and x[2] >= MIN_TRAIN_TRADES]
@@ -400,15 +430,88 @@ def holm_flags(pvalues: dict[str, float | None], alpha: float = 0.05) -> dict[st
     return out
 
 
+def _pct(x: Any) -> str:
+    return "—" if x is None else f"{100 * float(x):+.2f}%"
+
+
+def _num(x: Any, nd: int = 2) -> str:
+    return "—" if x is None else f"{float(x):.{nd}f}"
+
+
+def render_report(rep: dict[str, Any]) -> str:
+    """The comparison report (markdown), generated from the result file only."""
+    out = ["# NQS-1 comparison report", "",
+           f"Generated {rep.get('generated_at', '—')} from harness commit "
+           f"`{rep.get('harness_commit') or '—'}`. {rep.get('kind', '')}. Simulation equity "
+           f"{rep.get('equity')} USD; carry {'included' if rep.get('carry_supplied') else 'NOT included'}.",
+           f"Pre-registration: `{rep.get('preregistration')}`.", ""]
+    for name, why in rep.get("skipped", {}).items():
+        out.append(f"* Profile **{name}** not run: {why}.")
+    for name, prof in rep.get("profiles", {}).items():
+        wf = prof["walk_forward"]
+        m = wf["metrics"]
+        out += ["", f"## Profile: {name} ({', '.join(prof['pairs'])}; "
+                    f"{prof['coverage_months']} months of data)", "",
+                f"**Verdict: {'PASSED' if wf.get('passed') else 'FAILED'}** "
+                f"(all pre-registered gates must hold).", "",
+                "| Gate | Result |", "|---|---|"]
+        out += [f"| {g.replace('_', ' ')} | {'pass' if ok else 'FAIL'} |"
+                for g, ok in wf["gates"].items()]
+        out += ["", "Out-of-sample walk-forward (one continuous book):", "",
+                f"* Trades {m['trades']}, win rate {_pct(m.get('win_rate'))}, expectancy "
+                f"{_num(m.get('expectancy_r'))} R, profit factor {_num(m.get('profit_factor'))}",
+                f"* Net return {_pct(m.get('net_return'))} ({_pct(m.get('annual_return'))} a "
+                f"year), Sharpe {_num(m.get('sharpe'))}, max drawdown "
+                f"{_pct(m.get('max_drawdown'))}, p-value {_num(wf.get('p_value'), 3)}",
+                f"* Costs {_num(m.get('costs_usd'))} USD, carry {_num(m.get('carry_usd'))} USD; "
+                f"at 2x costs: net {_pct(wf['stress_2x_costs'].get('net_return'))}",
+                f"* Monte Carlo: P(loss) {_pct(wf['monte_carlo'].get('prob_loss'))}, "
+                f"P(drawdown over 5%) {_pct(wf['monte_carlo'].get('prob_drawdown_over_5pct'))}"]
+        comp = prof.get("comparison_default_params")
+        if comp:
+            out += ["", "Each strategy alone vs the adaptive combination (default parameters, "
+                        "same out-of-sample span):", "",
+                    "| Mode | Trades | Win rate | Expectancy R | Profit factor | Net | Sharpe | "
+                    "Max DD |", "|---|---|---|---|---|---|---|---|"]
+            for mode, r in comp.items():
+                out.append(f"| {mode} | {r['trades']} | {_pct(r.get('win_rate'))} | "
+                           f"{_num(r.get('expectancy_r'))} | {_num(r.get('profit_factor'))} | "
+                           f"{_pct(r.get('net_return'))} | {_num(r.get('sharpe'))} | "
+                           f"{_pct(r.get('max_drawdown'))} |")
+        mlr = prof.get("adaptive_with_ml_filter")
+        if mlr:
+            out += ["", f"ML filter (walk-forward, {mlr.get('windows_with_model')} windows had "
+                        f"enough training trades): trades {mlr.get('trades')}, expectancy "
+                        f"{_num(mlr.get('expectancy_r'))} R, net {_pct(mlr.get('net_return'))}, "
+                        f"Sharpe {_num(mlr.get('sharpe'))}."]
+        sens = prof.get("sensitivity")
+        if sens:
+            out += ["", "Sensitivity (one parameter at a time, -20% / +20%):", "",
+                    "| Setting | Trades | Expectancy R | Net |", "|---|---|---|---|"]
+            for k, v in sens.items():
+                if isinstance(v, dict):
+                    out.append(f"| {k} | {v.get('trades')} | {_num(v.get('expectancy_r'))} | "
+                               f"{_pct(v.get('net_return'))} |")
+        if m.get("by_regime"):
+            out += ["", "By regime at entry:", "", "| Regime | Trades | Expectancy R | "
+                    "Win rate |", "|---|---|---|---|"]
+            out += [f"| {k} | {v['trades']} | {_num(v['expectancy_r'])} | "
+                    f"{_pct(v['win_rate'])} |" for k, v in m["by_regime"].items()]
+    out += ["", "Historical simulation only: no orders were placed, and past results do not "
+                "guarantee future results.", ""]
+    return "\n".join(out)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", type=Path, required=True)
     ap.add_argument("--profiles", default="scalping,intraday,swing")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--fred", type=Path, help="FRED CSV folder for carry (else carry.csv)")
     ap.add_argument("--commit", default="")
     a = ap.parse_args()
-    carry = load_carry(a.data)
+    carry = build_carry(a.fred) if a.fred else load_carry(a.data)
     report: dict[str, Any] = {"profiles": {}, "skipped": {}}
     runnable = {}
     for name in a.profiles.split(","):
@@ -434,6 +537,8 @@ def main() -> None:
                   kind="historical backtest (no orders placed)", paper=False,
                   preregistration="docs/research/2026-11-27-nqs1-preregistration.md")
     a.out.write_text(json.dumps(report, indent=1, default=str))
+    a.out.with_suffix(".md").write_text(render_report(json.loads(json.dumps(report,
+                                                                          default=str))))
     print(json.dumps({k: {"passed": v["walk_forward"]["passed"],
                           "gates": v["walk_forward"]["gates"]}
                       for k, v in report["profiles"].items()} | {"skipped": report["skipped"]}))

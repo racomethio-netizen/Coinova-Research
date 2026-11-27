@@ -117,6 +117,25 @@ function MarketCard({ m, reload }: { m: Any; reload: () => Promise<void> }) {
   );
 }
 
+function ResearchHistory() {
+  const { data } = useApi<Any>("/research/history", 60000);
+  const series: Any[] = data?.series ?? [];
+  return (
+    <div className="mt-4 border-t border-line pt-3 text-sm">
+      <p className="mb-1 font-medium">Price history for forex research (NQS-1)</p>
+      <p className="mb-2 text-muted">The NQS-1 forex strategy is tested on your broker&apos;s own price history. To send it, run the bridge once with <code>--export-history</code> while the forex market is open (about 10 to 30 minutes). It sends M5 bars for 3 years, H1 for 12 years and all daily bars for EURUSD, GBPUSD, USDJPY, AUDUSD and USDCHF.</p>
+      <Table rows={series} empty="No history received yet." columns={[
+        { key: "symbol", label: "Pair" },
+        { key: "timeframe", label: "Timeframe" },
+        { key: "bars", label: "Bars", numeric: true, render: (x: Any) => num(x.bars, 0) },
+        { key: "from", label: "From", render: (x: Any) => time(x.first_open) },
+        { key: "to", label: "To", render: (x: Any) => time(x.last_open) },
+        { key: "size", label: "Stored", numeric: true, render: (x: Any) => `${num(x.bytes / 1e6, 1)} MB` },
+      ]} />
+    </div>
+  );
+}
+
 function ExnessBridge({ ex, reload }: { ex: Any; reload: () => Promise<void> }) {
   const { data: tokens, reload: reloadTokens } = useApi<Any>("/bridge-tokens", 30000);
   const [name, setName] = useState("");
@@ -156,6 +175,7 @@ function ExnessBridge({ ex, reload }: { ex: Any; reload: () => Promise<void> }) 
           {ex.unresolved?.length > 0 && <p className="text-xs text-muted">Not offered on this account: {ex.unresolved.join(", ")}</p>}
         </div>
       )}
+      <ResearchHistory />
       <div className="mt-4 border-t border-line pt-3">
         <p className="mb-2 text-sm font-medium">Bridge tokens</p>
         {(tokens?.bridges ?? []).length > 0 && (

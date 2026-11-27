@@ -682,6 +682,38 @@ class BrokerBridge(Base):
     revoked_at: Mapped[datetime | None]
 
 
+class HistoryChunk(Base):
+    """Broker price history kept for research: one gzip-compressed CSV of closed bars
+    (UTC, ``time,open,high,low,close,volume``) per symbol, timeframe and period
+    ("all" for D1, a year for H1, a month for M5). Sent by a read-only bridge; replaced
+    when the same chunk is sent again."""
+
+    __tablename__ = "history_chunks"
+    __table_args__ = (
+        CheckConstraint(in_list("venue", ("exness_mt5",)), name="venue_valid"),
+        CheckConstraint(in_list("timeframe", ("M5", "H1", "D1")), name="timeframe_valid"),
+        CheckConstraint("bar_count > 0", name="bar_count_positive"),
+        CheckConstraint("length(sha256) = 64", name="sha256_len"),
+        UniqueConstraint("venue", "symbol", "timeframe", "period"),
+    )
+
+    id: Mapped[bigint_pk]
+    venue: Mapped[str] = mapped_column(String(32))
+    symbol: Mapped[str] = mapped_column(String(32))          # base name, e.g. EURUSD
+    broker_symbol: Mapped[str] = mapped_column(String(32))   # e.g. EURUSDm
+    timeframe: Mapped[str] = mapped_column(String(4))
+    period: Mapped[str] = mapped_column(String(16))
+    bar_count: Mapped[int] = mapped_column(Integer)
+    first_open: Mapped[datetime]
+    last_open: Mapped[datetime]
+    server_utc_offset_hours: Mapped[int] = mapped_column(SmallInteger)
+    sha256: Mapped[str] = mapped_column(String(64))
+    data: Mapped[bytes] = mapped_column(LargeBinary)
+    bridge_id: Mapped[int | None] = mapped_column(
+        ForeignKey("broker_bridges.id", ondelete="SET NULL"))
+    received_at: Mapped[datetime]
+
+
 class AuditLog(Base):
     """Append-only (UPDATE/DELETE blocked by a trigger in the initial migration)."""
 

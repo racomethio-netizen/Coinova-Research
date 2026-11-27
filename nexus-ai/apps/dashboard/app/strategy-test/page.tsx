@@ -171,6 +171,32 @@ function StatArb() {
 
 const TREND_NAMES: Record<string, string> = { tsmom_12m: "12-month momentum", sma_200: "200-day trend filter" };
 
+function Nqs1({ n }: { n: Any }) {
+  if (!n) return null;
+  const res = n.result;
+  const rows = Object.entries(res?.profiles ?? {}).map(([k, x]: [string, Any]) => ({ key: k, ...x.walk_forward.metrics, passed: x.walk_forward.passed, gates: x.walk_forward.gates }));
+  const anyPassed = rows.some((x: Any) => x.passed);
+  const badge = !res ? <Badge tone="muted">waiting for price history</Badge> : <Badge tone={anyPassed ? "good" : "bad"}>{anyPassed ? "passed" : "none passed"}</Badge>;
+  return (
+    <Card title="Forex NQS-1: adaptive strategy (EURUSD, GBPUSD, USDJPY, AUDUSD, USDCHF)" actions={badge}>
+      {!res ? (
+        <p className="text-sm">A market-regime model chooses between four setups (momentum, trend pullback, breakout, mean reversion) and stays out when the market is unclear. Every trade needs two confirmations, must cover its costs and stays within NEXUS risk limits. Its test rules were written down before any data was seen. The test waits for your broker&apos;s own price history: run the Exness bridge once with <code>--export-history</code> (see All markets → Exness bridge). No result exists yet.</p>
+      ) : (
+        <Table rows={rows} empty="No profile had enough data." columns={[
+          { key: "key", label: "Profile" },
+          { key: "t", label: "Trades", numeric: true, render: (x: Any) => num(x.trades, 0) },
+          { key: "w", label: "Win rate", numeric: true, render: (x: Any) => pct(x.win_rate, 1) },
+          { key: "e", label: "Per trade (R)", numeric: true, render: (x: Any) => num(x.expectancy_r, 2) },
+          { key: "n", label: "Net", numeric: true, render: (x: Any) => <span className={x.net_return > 0 ? "text-up" : "text-down"}>{pct(x.net_return, 2)}</span> },
+          { key: "d", label: "Worst drop", numeric: true, render: (x: Any) => pct(x.max_drawdown, 1) },
+          { key: "why", label: "Failed checks", render: (x: Any) => <span className="text-xs text-muted">{failed(x.gates)}</span> },
+        ]} />
+      )}
+      <p className="mt-2 text-xs text-muted">Research only: it places no orders. Rules written before the run: {n.preregistration}</p>
+    </Card>
+  );
+}
+
 function MultiAsset() {
   const { data: r } = useApi<Any>("/research/multi-asset", 60_000);
   if (!r?.trend && !r?.ndx_voltarget) return null;
@@ -210,6 +236,7 @@ function MultiAsset() {
           <p className="mt-2 text-xs text-muted">The systematic styles banks and funds publish (carry, momentum, value; Deutsche Bank's Currency Returns index combines them), tested with interest-rate carry, real costs and no more exposure than the money in the account. Carry came closest: about 1.1% a year, positive in 16 of 23 years, with a 2008-style crash. At a retail broker such as Exness, carry depends on the broker's swap rates, which the Exness bridge reports. Banks' own forex profits come mostly from market making and internal matching of client orders, which a retail account cannot copy.</p>
         </Card>
       )}
+      <Nqs1 n={r.nqs1} />
       {v && (
         <Card title="NASDAQ-100: hold less when prices swing wildly (1990 – Oct 2026)" actions={<Badge tone={v.passed ? "good" : "bad"}>{v.passed ? "passed" : "failed"}</Badge>}>
           <Table rows={vrows} empty="No result." columns={[

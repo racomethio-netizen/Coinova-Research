@@ -31,6 +31,7 @@ from nexus_strategies.nqs1.config import NQS1Config, Profile
 from nexus_strategies.nqs1.regime import SELECTION, classify
 
 Row = dict[str, Any]
+STALE_RATE = pd.Timedelta(days=4)   # a carry series must have a value within 4 days
 
 HTF_COLS = ("close", "ema50", "ema200", "adx")
 
@@ -114,6 +115,7 @@ class Position:
     breakeven: bool = False
     costs_usd: float = 0.0
     carry_usd: float = 0.0
+    mid: float | None = None  # Bollinger middle known at the start of the bar ("mid" exits)
 
 
 @dataclass
@@ -296,7 +298,10 @@ class Portfolio:
             days = rollovers(start, now)
             if not days:
                 continue
-            r = float(rate.asof(now)) if now >= rate.index[0] else float("nan")
+            i = int(rate.index.searchsorted(now, side="right")) - 1
+            if i < 0 or now - rate.index[i] > STALE_RATE:
+                continue                                # unknown rate: no carry charged
+            r = float(rate.iloc[i])
             if math.isnan(r):
                 continue
             daily = st.carry_per_day(r, 0.0, pos.dir)
@@ -313,7 +318,7 @@ class Portfolio:
             pend["risk"]
         pos = Position(pair, pend["dir"], pend["strategy"], pend["regime"], t, fill,
                        pend["units"], stop, pend["risk"], target, pend["kind"],
-                       pend["features"], best=fill)
+                       pend["features"], best=fill, mid=pend["mid"])
         pos.costs_usd = usd_value(pair, self._cost_price(pair, charged=True), fill) * \
             pend["units"]
         self.book.open[pair] = pos
@@ -329,7 +334,7 @@ class Portfolio:
             self._close(pos, t, o, "stop_gap")
             return
         hit_stop = lo <= pos.stop if d > 0 else h >= pos.stop
-        target = pos.target if pos.kind == "r" else float(row["bb_mid"])
+        target = pos.target if pos.kind == "r" else pos.mid       # no look-ahead
         hit_target = target is not None and not math.isnan(target) and \
             ((h >= target) if d > 0 else (lo <= target)) and \
             ((target - pos.entry) * d > 0)
@@ -347,6 +352,7 @@ class Portfolio:
         if gain_r >= ex.trail_start_r:
             trail = pos.best - d * ex.trail_atr * atr
             pos.stop = max(pos.stop, trail) if d > 0 else min(pos.stop, trail)
+        pos.mid = float(row["bb_mid"])                  # the next bar's mean-reversion target
         if row["regime"] == "UNSTABLE":                 # reduce risk: tighten to 1 ATR
             tight = c - d * atr
             pos.stop = max(pos.stop, tight) if d > 0 else min(pos.stop, tight)
@@ -453,6 +459,7 @@ class Portfolio:
             self._reject("ML veto")
             return
         self.pending[pair] = {"dir": d, "risk": risk, "units": units, "price": close,
+                              "mid": float(row["bb_mid"]),
                               "kind": pick["kind"],
                               "target_r": target_r, "strategy": str(pick["strategy"]),
                               "regime": str(row["regime"]), "features": feats}

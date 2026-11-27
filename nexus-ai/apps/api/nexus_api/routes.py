@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from datetime import timedelta
 from decimal import Decimal
 from typing import Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from nexus_common import events
 from nexus_common.timeutil import utcnow
 from nexus_config import Settings
@@ -1112,6 +1113,40 @@ async def create_bridge_token(body: BridgeTokenBody, s: Session = Depends(db),
                     "your Windows machine, never in chat or email."}
 
 
+@router.get("/research/history", dependencies=[Depends(owner)])
+async def research_history_manifest(s: Session = Depends(db)) -> dict[str, Any]:
+    """Broker price history received from the Exness bridge for research, per series."""
+    rows = s.execute(select(
+        models.HistoryChunk.symbol, models.HistoryChunk.timeframe, func.count(),
+        func.sum(models.HistoryChunk.bar_count), func.min(models.HistoryChunk.first_open),
+        func.max(models.HistoryChunk.last_open),
+        func.sum(func.octet_length(models.HistoryChunk.data)),
+        func.min(models.HistoryChunk.server_utc_offset_hours),
+        func.max(models.HistoryChunk.server_utc_offset_hours)).group_by(
+        models.HistoryChunk.symbol, models.HistoryChunk.timeframe).order_by(
+        models.HistoryChunk.symbol, models.HistoryChunk.timeframe)).all()
+    return {"series": [{"symbol": r[0], "timeframe": r[1], "chunks": r[2], "bars": int(r[3]),
+                        "first_open": r[4].isoformat(), "last_open": r[5].isoformat(),
+                        "bytes": int(r[6]), "server_utc_offsets": sorted({r[7], r[8]})}
+                       for r in rows],
+            "note": "Bars are the broker's own prices, converted to UTC. Nothing here was "
+                    "generated or filled in by NEXUS."}
+
+
+@router.get("/research/history/{symbol}/{timeframe}.csv", dependencies=[Depends(owner)])
+async def research_history_csv(symbol: str, timeframe: str,
+                               s: Session = Depends(db)) -> Response:
+    from nexus_api.bridge import history_text
+
+    if not re.fullmatch(r"[A-Z]{6}", symbol) or timeframe not in ("M5", "H1", "D1"):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "unknown series")
+    text_ = history_text(s, symbol, timeframe)
+    if text_ is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no history for this series")
+    return Response(text_, media_type="text/csv", headers={
+        "Content-Disposition": f'attachment; filename="{symbol}_{timeframe}.csv"'})
+
+
 @router.post("/bridge-tokens/{bridge_id}/revoke", dependencies=[Depends(owner)])
 async def revoke_bridge_token(bridge_id: int, s: Session = Depends(db),
                               viewer: Viewer = Depends(current_viewer)) -> dict[str, Any]:
@@ -1140,13 +1175,21 @@ async def multi_asset_research() -> dict[str, Any]:
         f = Path(nexus_backtest.__file__).with_name("results") / name
         return json.loads(f.read_text()) if f.exists() else None
 
+    def latest(prefix: str) -> Any:
+        files = sorted(Path(nexus_backtest.__file__).with_name("results").glob(f"{prefix}_*.json"))
+        return json.loads(files[-1].read_text()) if files else None
+
+    nqs1 = await asyncio.to_thread(latest, "nqs1")
     return {"trend": await asyncio.to_thread(load, "multi_asset_trend_2026-11.json"),
             "ndx_voltarget": await asyncio.to_thread(load, "ndx_voltarget_2026-11.json"),
             "fx_styles": await asyncio.to_thread(load, "fx_styles_2026-11.json"),
+            "nqs1": {"status": "result" if nqs1 else "waiting_for_data", "result": nqs1,
+                     "preregistration": "docs/research/2026-11-27-nqs1-preregistration.md"},
             "preregistrations": [
                 "docs/research/2026-11-26-multi-asset-trend-preregistration.md",
                 "docs/research/2026-11-26-ndx-voltarget-preregistration.md",
-                "docs/research/2026-11-26-fx-styles-preregistration.md"]}
+                "docs/research/2026-11-26-fx-styles-preregistration.md",
+                "docs/research/2026-11-27-nqs1-preregistration.md"]}
 
 
 @router.post("/markets/{market}/autonomy", dependencies=[Depends(owner)])
