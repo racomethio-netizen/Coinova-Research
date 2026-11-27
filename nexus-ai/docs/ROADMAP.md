@@ -32,6 +32,33 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-27: unified brief Phase 2, market-data repair** (owner: "Phase 2"). Commits
+  30e6948 and 4a3875c. **Not deployed yet: needs the owner's "Deploy".**
+  * Forex and gold bars stored by NEXUS (`nexus_market.fx_bars`).
+    * The read-only bridge 1.1 sends closed M5 and H1 bars of EURUSD, GBPUSD, USDJPY,
+      AUDUSD, USDCHF, USDCAD, NZDUSD and XAUUSD.
+    * NEXUS checks every bar, stores it in `market_candles` (`5m`/`1h`, source
+      `mt5`) and asks for whole series when they are new, short or have a gap.
+    * Retention: M5 45 days, H1 400 days, about 20 MB in all. The database was 66 MB
+      on 2026-11-27.
+    * `GET /api/v1/markets/forex-data` and a table on All markets show the data health.
+  * Redis errors at every restart. The old and new instances together exceeded the
+    50-connection limit. Fix:
+    * opening a connection is retried (never a command);
+    * a 30 s wait for a pool slot;
+    * the inline workers start 1 s apart.
+  * Tests:
+    * `scripts/test.sh`: ruff and mypy clean, **1140 passed** (integration included;
+      1125 before);
+    * `scripts/e2e.sh`: **15 passed, 1 skipped**.
+  * After the deploy:
+    1. Check the logs for `worker_crashed` around the restart. There should be none.
+    2. The owner copies the new `apps/mt5_bridge/nexus_mt5_bridge.py` (1.1) to the PC
+       and restarts it.
+    3. The All markets table fills within a few minutes.
+  * Next (owner go-ahead needed): Phase 3, the strategy modules, each pre-registered and
+    tested once.
+
 * **2026-11-27: Exness DEMO trading for XAUUSD and EURUSD** (owner: "Make the forex bot
   available for trading like gold usd and EUR usd").
   * Built:
