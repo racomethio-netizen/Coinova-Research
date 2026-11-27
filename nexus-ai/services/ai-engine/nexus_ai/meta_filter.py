@@ -104,7 +104,8 @@ class MetaFilter:
                               subsample=0.8, colsample_bytree=0.8, random_state=SEED,
                               eval_metric="logloss", n_jobs=2),
             CatBoostClassifier(iterations=300, learning_rate=0.03, depth=4,
-                               random_seed=SEED, verbose=0, thread_count=2),
+                               random_seed=SEED, verbose=0, thread_count=2,
+                               allow_writing_files=False),   # no training logs on disk
         ]
 
     def raw(self, x: pd.DataFrame) -> np.ndarray:
