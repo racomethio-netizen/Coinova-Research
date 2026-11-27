@@ -106,7 +106,9 @@ def load(cache: str, coin: str, first: str = FIRST, last: str = LAST
     parts = [parse_kline_zip((Path(cache) / f"{coin}USDT-5m-{mo}.zip").read_bytes())
              for mo in months(first, last)]
     df = pd.concat(parts).drop_duplicates("date").sort_values("date")
-    t = (df["date"].astype("int64") // 10**9).to_numpy()
+    # Unit-agnostic: pandas may store these as ns, us or ms.
+    t = ((df["date"] - pd.Timestamp(0, tz="UTC")) // pd.Timedelta(seconds=1)).to_numpy(
+        dtype=np.int64)
     return t, df[["open", "high", "low", "close"]].to_numpy(dtype=float)
 
 
@@ -243,7 +245,6 @@ def _job(args: tuple[str, str, GridCfg, float]) -> tuple[str, str, float, dict[s
     cache, coin, cfg, fee_mult = args
     t, ohlc = load(cache, coin)
     res = simulate(t, ohlc, cfg, fee=FEE * fee_mult, slip=SLIP * fee_mult)
-    res["daily"] = res["daily"].to_json(date_format="iso")
     return coin, cfg.name, fee_mult, res
 
 
@@ -267,7 +268,6 @@ def run(cache: Path, workers: int = 4) -> dict[str, Any]:
     res: dict[tuple[str, str, float], dict[str, Any]] = {}
     with ProcessPoolExecutor(workers, mp_context=multiprocessing.get_context("spawn")) as ex:
         for coin, name, fm, r in ex.map(_job, jobs):
-            r["daily"] = pd.read_json(r["daily"], typ="series")
             res[(coin, name, fm)] = r
     holds = {}
     for coin in COINS:

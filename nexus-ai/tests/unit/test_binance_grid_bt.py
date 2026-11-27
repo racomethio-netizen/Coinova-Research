@@ -115,3 +115,26 @@ def test_gates():
     assert all(g.values())
     g = bg.gates(m | {"sharpe": 0.55}, hold_m | {"sharpe": 0.7}, {"net_return": 0.05}, 0.1, True)
     assert not g["sharpe_above_holding"]
+
+
+def test_load_reads_binance_archives_in_seconds_for_ms_and_us_timestamps(tmp_path):
+    import io
+    import zipfile
+
+    def month(name: str, start_ms: int, scale: int) -> None:
+        rows = "".join(f"{(start_ms + 300_000 * i) * scale},100,101,99,100.5,1,0,0,0,0,0,0\n"
+                       for i in range(3))
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as z:
+            z.writestr(name.replace(".zip", ".csv"), rows)
+        (tmp_path / name).write_bytes(buf.getvalue())
+
+    jan = int(pd.Timestamp("2024-12-01", tz="UTC").timestamp() * 1000)
+    feb = int(pd.Timestamp("2025-01-01", tz="UTC").timestamp() * 1000)
+    month("BTCUSDT-5m-2024-12.zip", jan, 1)            # milliseconds (before 2025)
+    month("BTCUSDT-5m-2025-01.zip", feb, 1000)         # microseconds (from 2025)
+    bg.load.cache_clear()
+    t, ohlc = bg.load(str(tmp_path), "BTC", "2024-12", "2025-01")
+    assert t[0] == jan // 1000 and t[3] == feb // 1000
+    assert list(np.diff(t[:3])) == [300, 300]
+    assert ohlc.shape == (6, 4) and ohlc[0, 3] == 100.5
