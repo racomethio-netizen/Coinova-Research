@@ -4,6 +4,8 @@ Runs on the owner's Windows PC or VPS, next to the MT5 terminal, which the owner
 into (a demo account first). Every few minutes it reads, from the running terminal:
 * contract details;
 * closed daily bars;
+* closed M5 and H1 bars of the forex majors and gold (a few recent bars each time; the
+  whole series when NEXUS asks for it, at most a few series per cycle);
 * current quotes;
 * the account summary;
 * open positions.
@@ -20,6 +22,9 @@ Settings (environment variables):
   it private.
 * NEXUS_SYMBOLS: optional, comma-separated base names, for example EURUSD,XAUUSD,US500.
 * NEXUS_INTERVAL_SECONDS: optional, default 300.
+* NEXUS_INTRADAY_SYMBOLS: optional, base names that get M5/H1 bars, default
+  EURUSD,GBPUSD,USDJPY,AUDUSD,USDCHF,USDCAD,NZDUSD,XAUUSD (they must also be in
+  NEXUS_SYMBOLS). Set it to an empty value to send no intraday bars.
 * NEXUS_SERVER_UTC_OFFSET: optional fallback for the broker's server time offset in hours,
   used when no fresh tick allows measuring it.
 
@@ -46,7 +51,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-VERSION = "1.0"
+VERSION = "1.1"
 DEFAULT_SYMBOLS = ("EURUSD,GBPUSD,USDJPY,AUDUSD,USDCAD,USDCHF,NZDUSD,"
                    "XAUUSD,XAGUSD,USOIL,UKOIL,US500,USTEC,US30")
 OFFSET_PROBES = ("BTCUSD", "ETHUSD")      # trade at weekends: keep the time offset measurable
@@ -55,6 +60,13 @@ TRADE_MODES = {0: "demo", 1: "contest", 2: "real"}
 HISTORY_SYMBOLS = "EURUSD,GBPUSD,USDJPY,AUDUSD,USDCHF"
 HISTORY_PLAN = (("D1", 0), ("H1", 12), ("M5", 3))    # timeframe, years (0 = all)
 TF_SECONDS = {"M5": 300, "H1": 3600, "D1": 86400}
+INTRADAY_SYMBOLS = "EURUSD,GBPUSD,USDJPY,AUDUSD,USDCHF,USDCAD,NZDUSD,XAUUSD"
+# Bars per request: the whole stored series (M5 about 45 days, H1 about 400 days of
+# trading) when NEXUS asks for it, otherwise the recent ones (3 h of M5, 6 h of H1).
+INTRADAY_FULL = {"M5": 9500, "H1": 6900}
+INTRADAY_RECENT = {"M5": 36, "H1": 6}
+MAX_FULL_PER_CYCLE = 2                     # keeps each request well below NEXUS's size limit
+FOLLOW_UP_SECONDS = 30                     # next cycle sooner while backfills are pending
 
 
 def log(msg: str) -> None:
@@ -97,8 +109,13 @@ def _num(x: Any, digits: int | None = None) -> str:
 
 
 def collect(mt5: Any, wanted: list[str], need_history: set[str], state: dict[str, Any],
-            now: float | None = None) -> dict[str, Any]:
+            now: float | None = None, intraday: list[str] | None = None) -> dict[str, Any]:
+    """``intraday``: base names that get M5/H1 bars. The series NEXUS asked for in its
+    last reply (``state["need_intraday"]``, "<name>/<TF>") are sent whole, at most
+    MAX_FULL_PER_CYCLE of them."""
     now = time.time() if now is None else now
+    full = set(list(state.get("need_intraday", []))[:MAX_FULL_PER_CYCLE])
+    intraday_rows: list[dict[str, Any]] = []
     acct = mt5.account_info()
     if acct is None:
         raise RuntimeError(f"MT5 terminal not logged in: {mt5.last_error()}")
@@ -145,6 +162,15 @@ def collect(mt5: Any, wanted: list[str], need_history: set[str], state: dict[str
             bars[name] = [[int(r["time"]), float(r["open"]), float(r["high"]), float(r["low"]),
                            float(r["close"]), float(r["tick_volume"])] for r in rates]
             state.setdefault("sent", set()).add(name)
+        if base not in (intraday or []):
+            continue
+        for tf in ("H1", "M5"):
+            whole = f"{name}/{tf}" in full
+            count = INTRADAY_FULL[tf] if whole else INTRADAY_RECENT[tf]
+            rates = mt5.copy_rates_from_pos(name, getattr(mt5, f"TIMEFRAME_{tf}"), 1, count)
+            if rates is not None and len(rates):
+                intraday_rows.append({"name": name, "timeframe": tf, "full": whole,
+                                      "rows": _rows(rates)})
     positions = [{"symbol": p.symbol, "side": "buy" if int(p.type) == 0 else "sell",
                   "volume": _num(p.volume), "price_open": _num(p.price_open),
                   "profit": _num(p.profit), "swap": _num(p.swap)}
@@ -157,7 +183,8 @@ def collect(mt5: Any, wanted: list[str], need_history: set[str], state: dict[str
                         "equity": _num(acct.equity), "margin": _num(acct.margin),
                         "margin_free": _num(acct.margin_free), "leverage": int(acct.leverage),
                         "server": str(acct.server), "company": str(acct.company)},
-            "symbols": symbols, "bars": bars, "positions": positions, "unresolved": missing}
+            "symbols": symbols, "bars": bars, "positions": positions, "unresolved": missing,
+            "intraday": intraday_rows}
 
 
 def periods(tf: str, years: int, now: datetime) -> list[tuple[str, datetime, datetime]]:
@@ -307,6 +334,8 @@ def main() -> None:  # pragma: no cover - needs Windows and a running MT5 termin
     wanted = [s.strip().upper() for s in os.environ.get("NEXUS_SYMBOLS", DEFAULT_SYMBOLS)
               .split(",") if s.strip()]
     interval = max(60, int(os.environ.get("NEXUS_INTERVAL_SECONDS", "300")))
+    intraday = [s.strip().upper() for s in os.environ.get(
+        "NEXUS_INTRADAY_SYMBOLS", INTRADAY_SYMBOLS).split(",") if s.strip()]
     state: dict[str, Any] = {}
     need: set[str] = set()
     log(f"NEXUS MT5 bridge {VERSION} (read-only) for {len(wanted)} symbols")
@@ -314,15 +343,17 @@ def main() -> None:  # pragma: no cover - needs Windows and a running MT5 termin
         try:
             if not mt5.initialize():
                 raise RuntimeError(f"cannot attach to the MT5 terminal: {mt5.last_error()}")
-            payload = collect(mt5, wanted, need, state)
-            resp = post(url, token, payload)
+            payload = collect(mt5, wanted, need, state, intraday=intraday)
+            resp = post(url, token, payload, timeout=120)
             need = set(resp.get("need_history", []))
+            state["need_intraday"] = list(resp.get("need_intraday", []))
             log(f"sent {len(payload['symbols'])} symbols, {len(payload['bars'])} with bars "
                 f"({payload['account']['trade_mode']} account); NEXUS wrote "
-                f"{resp.get('bars_written')} bars")
+                f"{resp.get('bars_written')} daily and {resp.get('intraday_written', 0)} "
+                f"intraday bars; {len(state['need_intraday'])} series still to send")
         except Exception as exc:  # keep running; NEXUS shows "not connected" if it stops
             log(f"error: {type(exc).__name__}: {str(exc)[:200]}")
-        time.sleep(interval)
+        time.sleep(FOLLOW_UP_SECONDS if state.get("need_intraday") else interval)
 
 
 if __name__ == "__main__":  # pragma: no cover

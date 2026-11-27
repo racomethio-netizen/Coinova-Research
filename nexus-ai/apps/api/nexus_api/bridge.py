@@ -4,12 +4,13 @@ The bridge (``apps/mt5_bridge``) runs on the owner's Windows machine next to a l
 MT5 terminal. It connects OUT to NEXUS; NEXUS never connects to the owner's computer, and
 the MT5 password never leaves the terminal.
 
-Each snapshot carries contract details, closed daily bars, quotes and an account summary.
+Each snapshot carries contract details, closed daily bars, quotes and an account summary,
+and (bridge 1.1+) closed M5 and H1 bars of the forex majors and gold.
 NEXUS stores:
 * contract details in ``trading_pairs`` (exchange ``exness``, with asset class, type and
   contract size);
-* closed daily bars in ``market_candles`` (source ``mt5``), converted from the broker's
-  server time to UTC;
+* closed daily, M5 and H1 bars in ``market_candles`` (source ``mt5``), converted from the
+  broker's server time to UTC and checked first (``nexus_market.fx_bars``);
 * a summary in Redis, with the account number masked.
 
 There is no order endpoint: nothing here can trade.
@@ -21,6 +22,7 @@ endpoint is rate-limited per IP and has a body size limit.
 
 from __future__ import annotations
 
+import asyncio
 import gzip
 import hashlib
 import json
@@ -34,6 +36,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from nexus_common.logging import get_logger
 from nexus_common.timeutil import utcnow
 from nexus_db import models, repo
+from nexus_market import fx_bars
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -49,6 +52,11 @@ STATUS_KEY = "nexus:broker:exness:status"
 MAX_BODY = 4_000_000
 RATE_LIMIT, RATE_WINDOW = 120, 600          # requests per IP per 10 minutes
 HISTORY_WANTED = 300                         # daily bars before asking for no more history
+QUALITY_KEY = "nexus:broker:exness:bars_quality"
+FULL_KEY = "nexus:broker:exness:full:{name}:{tf}"
+FULL_MARKER_SECONDS = 6 * 3600               # a full series arrived: no backfill request
+PRUNE_KEY = "nexus:broker:exness:prune"
+PRUNE_EVERY = 3600
 FX = {"USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "SEK", "NOK", "DKK", "SGD",
       "HKD", "ZAR", "MXN", "TRY", "PLN", "CZK", "HUF", "CNH", "THB", "ILS"}
 METALS_ENERGY = ("XAU", "XAG", "XPT", "XPD", "USOIL", "UKOIL", "XNG", "XBR", "XTI")
@@ -120,6 +128,13 @@ class AccountIn(BaseModel):
     company: str = Field(max_length=128)
 
 
+class IntradayIn(BaseModel):
+    name: str = Field(pattern=SYMBOL_RE)
+    timeframe: str = Field(pattern=r"^(M5|H1)$")
+    full: bool = False                        # the whole series (a backfill), not recent bars
+    rows: list[list[float]] = Field(max_length=12_000)
+
+
 class SnapshotIn(BaseModel):
     bridge_version: str = Field(max_length=16)
     read_only: bool
@@ -129,6 +144,7 @@ class SnapshotIn(BaseModel):
     bars: dict[str, list[list[float]]] = Field(default_factory=dict)   # name -> [t,o,h,l,c,v]
     positions: list[PositionIn] = Field(default_factory=list, max_length=500)
     unresolved: list[str] = Field(default_factory=list, max_length=200)
+    intraday: list[IntradayIn] = Field(default_factory=list, max_length=40)
 
 
 async def _authenticate(request: Request, s: Session, redis: Any, bucket: str,
@@ -193,18 +209,35 @@ def _store_symbol(s: Session, ex_id: int, sym: SymbolIn, now: datetime) -> int:
 
 def _closed_bars(rows: list[list[float]], offset_h: int, now: datetime) -> list[repo.CandleRow]:
     """Daily bars in broker server time -> UTC; the forming bar and bad rows are dropped."""
-    out = []
-    for r in rows:
-        if len(r) < 6 or not all(x == x for x in r[:5]) or min(r[1:5]) <= 0:
+    return fx_bars.check_bars(rows, offset_h, now, 86400, align=False).bars
+
+
+def store_intraday(s: Session, items: list[IntradayIn], pids: dict[str, int],
+                   bases: dict[str, str], offset_h: int, now: datetime,
+                   recently_full: set[str]) -> tuple[int, dict[str, Any], list[str]]:
+    """Check and store M5/H1 bars (blocking database work: run in a thread). Returns
+    (bars written, validation counts by "<base>/<TF>", series to backfill "<name>/<TF>")."""
+    ids = sorted({pids[i.name] for i in items if i.name in pids})
+    before = fx_bars.stored_state(s, ids, now)
+    written, quality, need = 0, {}, []
+    for item in items:
+        if item.name not in pids:
             continue
-        open_utc = datetime.fromtimestamp(int(r[0]), tz=UTC) - timedelta(hours=offset_h)
-        if open_utc + timedelta(days=1) > now:
-            continue
-        o, h, lo, c = (Decimal(str(x)) for x in r[1:5])
-        if h < max(o, c) or lo > min(o, c):
-            continue
-        out.append(repo.CandleRow(open_utc, o, h, lo, c, Decimal(str(max(r[5], 0)))))
-    return out
+        tf, secs = fx_bars.MT5_TF[item.timeframe]
+        checked = fx_bars.check_bars(item.rows, offset_h, now, secs)
+        written += repo.upsert_candles(s, pids[item.name], tf, checked.bars, source="mt5")
+        quality[f"{bases[item.name]}/{item.timeframe}"] = {
+            "at": now.isoformat(), "received": len(item.rows), "stored": len(checked.bars),
+            "forming": checked.forming, "rejected": checked.rejected, "jumps": checked.jumps,
+            "full": item.full}
+        stored, newest = before.get((pids[item.name], tf), (0, None))
+        key = f"{item.name}/{item.timeframe}"
+        if fx_bars.need_backfill(stored, newest,
+                                 checked.bars[0].open_time if checked.bars else None, tf,
+                                 recently_full=item.full or key in recently_full):
+            need.append(key)
+    need.sort(key=lambda k: (not k.endswith("/H1"), k))      # H1 first: strategies use it
+    return written, quality, need
 
 
 @router.post("/mt5/snapshot")
@@ -231,6 +264,26 @@ async def mt5_snapshot(request: Request, s: Session = Depends(db),
             written += repo.upsert_candles(s, pids[name], "1d",
                                            _closed_bars(rows, snap.server_utc_offset_hours, now),
                                            source="mt5")
+    intraday_written, need_intraday = 0, list[str]()
+    if snap.intraday:
+        bases = {sym.name: sym.base_name.upper() for sym in snap.symbols}
+        recently_full = set()
+        for item in snap.intraday:
+            key = FULL_KEY.format(name=item.name, tf=item.timeframe)
+            if item.full:
+                await redis.set(key, "1", ex=FULL_MARKER_SECONDS)
+            elif await redis.exists(key):
+                recently_full.add(f"{item.name}/{item.timeframe}")
+        intraday_written, quality, need_intraday = await asyncio.to_thread(
+            store_intraday, s, snap.intraday, pids, bases, snap.server_utc_offset_hours, now,
+            recently_full)
+        old = await redis.get(QUALITY_KEY)
+        merged = {**(json.loads(old) if old else {}), **quality}
+        await redis.set(QUALITY_KEY, json.dumps(merged), ex=7 * 86400)
+        if await redis.set(PRUNE_KEY, "1", ex=PRUNE_EVERY, nx=True):
+            removed = await asyncio.to_thread(fx_bars.prune, s, list(pids.values()), now)
+            if removed:
+                log.info("mt5_intraday_pruned", rows=removed)
     have = dict(s.execute(select(models.MarketCandle.pair_id, func.count()).where(
         models.MarketCandle.pair_id.in_(list(pids.values())),
         models.MarketCandle.timeframe == "1d").group_by(models.MarketCandle.pair_id)).all())
@@ -258,8 +311,10 @@ async def mt5_snapshot(request: Request, s: Session = Depends(db),
     }
     await redis.set(STATUS_KEY, json.dumps(summary), ex=86400)
     log.info("mt5_snapshot", bridge=bridge.name, symbols=len(names), bars_written=written,
+             intraday_written=intraday_written, need_intraday=len(need_intraday),
              trade_mode=acct.trade_mode)
-    return {"ok": True, "bars_written": written, "need_history": need}
+    return {"ok": True, "bars_written": written, "need_history": need,
+            "intraday_written": intraday_written, "need_intraday": need_intraday}
 
 
 # ----------------------------------------------------------------------- history

@@ -4,6 +4,35 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-27
 
+- **Unified brief Phase 2: market-data repair** (owner: "Phase 2").
+  * **Forex and gold bars stored by NEXUS.** The Exness read-only bridge (version 1.1)
+    now also sends closed M5 and H1 bars of EURUSD, GBPUSD, USDJPY, AUDUSD, USDCHF,
+    USDCAD, NZDUSD and XAUUSD. Before this, intraday forex data existed only on the
+    owner's PC.
+    * NEXUS checks every bar before storing it (`nexus_market.fx_bars.check_bars`):
+      well-formed, finite, positive, consistent OHLC, on the timeframe grid, closed, no
+      duplicates. Rejected rows are counted by reason and never repaired. Unusually
+      large bars are kept and flagged.
+    * Stored in `market_candles` (`5m`/`1h`, source `mt5`). Retention is 45 days for M5
+      and 400 days for H1, pruned at most hourly.
+    * Backfill on request. NEXUS asks for a whole series when it is new or short, or
+      when the recent bars do not reach the stored ones (the bridge was offline). The
+      bridge sends two series per cycle, every 30 s, until done.
+    * Data health: `GET /api/v1/markets/forex-data` and a table on All markets. It shows
+      status, coverage and gaps over FX-session hours only (weekends are not gaps), the
+      last batch's validation counts, and the spread against the typical M5 range.
+  * **Redis errors at every restart fixed** (`nexus_common.redisutil`, `workers.py`).
+    * Cause: during a deploy the old and the new instance run side by side. With 17
+      inline workers each they exceeded Render Key Value's 50-connection limit, so
+      every deploy logged "Timeout connecting to server" / "No connection available"
+      and restarted workers.
+    * Fix, part 1: opening a Redis connection is retried with jittered back-off (6
+      attempts, about 20 s). Only the connection set-up is retried, never a command,
+      so nothing is ever sent twice. A wrong password fails at once.
+    * Fix, part 2: workers wait up to 30 s (was 5 s) for a free pool slot.
+    * Fix, part 3: the inline workers start one by one, 1 s apart, market data and the
+      trader first.
+
 - **Exness DEMO trading for gold (XAUUSD) and EURUSD** (owner: "make the forex bot
   available for trading").
   * Orders go only on an Exness demo account, through a new Windows program

@@ -24,7 +24,7 @@ OFFSET = 2                                  # a broker on UTC+2 server time
 
 
 class FakeMT5:
-    TIMEFRAME_D1 = 16408
+    TIMEFRAME_D1, TIMEFRAME_H1, TIMEFRAME_M5 = 16408, 16385, 5
 
     def __init__(self) -> None:
         self.calls: list[tuple[str, Any]] = []
@@ -56,7 +56,7 @@ class FakeMT5:
                                ask=1.09824567)
 
     def copy_rates_from_pos(self, name: str, tf: int, start: int, count: int) -> Any:
-        self.calls.append(("rates", (name, start, count)))
+        self.calls.append(("rates", (name, start, count, tf)))
         dt = np.dtype([("time", "i8"), ("open", "f8"), ("high", "f8"), ("low", "f8"),
                        ("close", "f8"), ("tick_volume", "i8")])
         return np.array([(int(NOW) - 86400 * (i + 1) + OFFSET * 3600, 1.1, 1.2, 1.0, 1.15, 100)
@@ -100,13 +100,37 @@ def test_collect_reads_without_trading_and_sends_full_history_once():
                                "price_open": "1.1", "profit": "-1.5", "swap": "-0.2"}]
 
 
+def test_intraday_bars_recent_by_default_whole_series_when_asked():
+    mt5, state = FakeMT5(), {"sent": {"EURUSDm", "XAUUSDm"}}
+    p = br.collect(mt5, ["EURUSD", "XAUUSD", "US500"], set(), state, now=NOW,
+                   intraday=["EURUSD", "XAUUSD"])
+    got = {(x["name"], x["timeframe"]): x for x in p["intraday"]}
+    assert set(got) == {("EURUSDm", "H1"), ("EURUSDm", "M5"), ("XAUUSDm", "H1"),
+                        ("XAUUSDm", "M5")}                       # US500: daily bars only
+    assert not any(x["full"] for x in p["intraday"])
+    counts = {(c[1][0], c[1][3]): c[1][2] for c in mt5.calls}
+    assert counts[("EURUSDm", mt5.TIMEFRAME_M5)] == br.INTRADAY_RECENT["M5"]
+    assert counts[("EURUSDm", mt5.TIMEFRAME_H1)] == br.INTRADAY_RECENT["H1"]
+    assert {c[1][1] for c in mt5.calls} == {1}                   # forming bars skipped
+    mt5.calls.clear()
+    state["need_intraday"] = ["EURUSDm/H1", "XAUUSDm/H1", "EURUSDm/M5"]
+    p = br.collect(mt5, ["EURUSD", "XAUUSD"], set(), state, now=NOW,
+                   intraday=["EURUSD", "XAUUSD"])
+    full = sorted((x["name"], x["timeframe"]) for x in p["intraday"] if x["full"])
+    assert full == [("EURUSDm", "H1"), ("XAUUSDm", "H1")]        # at most 2 per cycle
+    counts = {(c[1][0], c[1][3]): c[1][2] for c in mt5.calls}
+    assert counts[("EURUSDm", mt5.TIMEFRAME_H1)] == br.INTRADAY_FULL["H1"]
+    assert counts[("EURUSDm", mt5.TIMEFRAME_M5)] == br.INTRADAY_RECENT["M5"]
+    assert br.collect(mt5, ["EURUSD"], set(), {}, now=NOW)["intraday"] == []
+
+
 def test_no_bars_when_the_time_zone_is_unknown(monkeypatch: pytest.MonkeyPatch):
     mt5 = FakeMT5()
     mt5.symbol_info_tick = lambda name: SimpleNamespace(time=int(NOW) - 3 * 86400,  # type: ignore[method-assign]
                                                         bid=1.1, ask=1.2)
     monkeypatch.delenv("NEXUS_SERVER_UTC_OFFSET", raising=False)
-    p = br.collect(mt5, ["EURUSD"], set(), {}, now=NOW)
-    assert p["bars"] == {} and p["symbols"]
+    p = br.collect(mt5, ["EURUSD"], set(), {}, now=NOW, intraday=["EURUSD"])
+    assert p["bars"] == {} and p["intraday"] == [] and p["symbols"]
     monkeypatch.setenv("NEXUS_SERVER_UTC_OFFSET", "0")
     p = br.collect(mt5, ["EURUSD"], set(), {}, now=NOW)
     assert p["bars"] and p["server_utc_offset_hours"] == 0

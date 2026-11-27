@@ -977,6 +977,82 @@ def test_exness_bridge_tokens_and_read_only_snapshots(client: TestClient,
         c.execute(text("DELETE FROM exchanges WHERE code = 'exness'"))
 
 
+def test_exness_bridge_intraday_bars_backfill_and_data_health(
+        client: TestClient, migrated_engine: Engine) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from nexus_market import fx_bars
+    from sqlalchemy import text
+    from sqlalchemy.orm import Session as OrmSession
+
+    login(client)
+    token = client.post("/api/v1/bridge-tokens", json={"name": "fx pc", "reason": "fx bars"},
+                        headers=CSRF).json()["token"]
+    auth = {"Authorization": f"Bearer {token}"}
+    now, off = int(time.time()), 2
+    m5_last, h1_last = now - now % 300 - 300, now - now % 3600 - 3600
+
+    def rows(last: int, step: int, n: int) -> list[list[float]]:
+        return [[last - step * i + off * 3600, 1.1, 1.1002, 1.1, 1.1001, 5]
+                for i in range(n)][::-1]
+
+    gold = [*rows(m5_last, 300, 10), [m5_last + off * 3600 - 3000, 2000, 1990, 2010, 2000, 1]]
+    intraday = [{"name": "EURUSDm", "timeframe": "M5", "full": True,
+                 "rows": rows(m5_last, 300, 1200)},
+                {"name": "EURUSDm", "timeframe": "H1", "full": False,
+                 "rows": rows(h1_last, 3600, 6)},
+                {"name": "XAUUSDm", "timeframe": "M5", "full": False, "rows": gold}]
+    bad = client.post("/api/v1/bridge/mt5/snapshot", headers=auth, json=_snapshot(
+        intraday=[{"name": "EURUSDm", "timeframe": "M1", "rows": []}]))
+    assert bad.status_code == 422                                   # M5 and H1 only
+    r = client.post("/api/v1/bridge/mt5/snapshot", json=_snapshot(intraday=intraday),
+                    headers=auth)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["intraday_written"] == 1200 + 6 + 10                # the bad gold bar refused
+    assert body["need_intraday"] == ["EURUSDm/H1", "XAUUSDm/M5"]    # short series, H1 first
+    with migrated_engine.begin() as c:
+        got = dict(c.execute(text(
+            "SELECT c.timeframe, count(*) FROM market_candles c JOIN trading_pairs p "
+            "ON p.id = c.pair_id WHERE p.exchange_symbol = 'EURUSDm' AND c.source = 'mt5' "
+            "AND c.timeframe IN ('5m', '1h') GROUP BY 1")).all())
+        assert got == {"5m": 1200, "1h": 6}
+        newest = c.execute(text(
+            "SELECT max(c.open_time) FROM market_candles c JOIN trading_pairs p ON "
+            "p.id = c.pair_id WHERE p.exchange_symbol = 'EURUSDm' AND c.timeframe = '5m'"
+        )).scalar_one()
+        assert int(newest.timestamp()) == m5_last                   # server time -> UTC
+    again = client.post("/api/v1/bridge/mt5/snapshot", headers=auth, json=_snapshot(
+        intraday=[{"name": "EURUSDm", "timeframe": "M5", "rows": rows(m5_last, 300, 36)}]))
+    assert again.json()["need_intraday"] == []                      # 1200 stored, no gap
+    health = client.get("/api/v1/markets/forex-data")
+    assert health.status_code == 200, health.text
+    h = health.json()
+    assert h["bridge_connected"] is True and h["retention_days"] == {"5m": 45, "1h": 400}
+    s5 = {(x["symbol"], x["timeframe"]): x for x in h["series"]}
+    eur = s5[("EURUSD", "5m")]
+    assert eur["status"] in ("ok", "closed") and eur["stored"] > 0
+    assert eur["spread"] == "0.0001" and eur["spread_vs_m5_range"] == 0.5
+    xau = s5[("XAUUSD", "5m")]["last_batch"]
+    assert xau["rejected"] == {"ohlc_inconsistent": 1} and xau["stored"] == 10
+    with OrmSession(migrated_engine) as orm:
+        pid = orm.execute(text("SELECT id FROM trading_pairs WHERE exchange_symbol = "
+                               "'EURUSDm'")).scalar_one()
+        old = datetime.fromtimestamp(m5_last, tz=UTC) - timedelta(days=50)
+        orm.execute(text("INSERT INTO market_candles (pair_id, timeframe, open_time, open, "
+                         "high, low, close, volume, is_closed, source) VALUES "
+                         "(:p, '5m', :t, 1, 1, 1, 1, 0, true, 'mt5')"), {"p": pid, "t": old})
+        assert fx_bars.prune(orm, [pid], datetime.now(UTC)) == 1   # only the old bar
+        orm.commit()
+    with migrated_engine.begin() as c:
+        assert c.execute(text("SELECT count(*) FROM market_candles WHERE pair_id = :p AND "
+                              "timeframe = '5m'"), {"p": pid}).scalar_one() == 1200
+        c.execute(text("DELETE FROM market_candles WHERE source = 'mt5'"))
+        c.execute(text("DELETE FROM trading_pairs WHERE exchange_id = "
+                       "(SELECT id FROM exchanges WHERE code = 'exness')"))
+        c.execute(text("DELETE FROM exchanges WHERE code = 'exness'"))
+
+
 def test_exness_history_chunks_for_research(client: TestClient, migrated_engine: Engine,
                                             monkeypatch: pytest.MonkeyPatch) -> None:
     from datetime import UTC, datetime

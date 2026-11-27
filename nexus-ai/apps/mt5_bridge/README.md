@@ -41,6 +41,12 @@ password. NEXUS never connects to your computer; the bridge connects out.
 * `NEXUS_SYMBOLS=EURUSD,XAUUSD,US500` chooses the symbols. Exness suffixes such as
   `EURUSDm` are found automatically.
 * `NEXUS_INTERVAL_SECONDS=300` sets how often the bridge sends.
+* `NEXUS_INTRADAY_SYMBOLS=EURUSD,GBPUSD,USDJPY,AUDUSD,USDCHF,USDCAD,NZDUSD,XAUUSD` (the
+  default) chooses which symbols also send 5-minute and 1-hour bars (version 1.1 and
+  later). NEXUS stores them (5-minute bars for 45 days, 1-hour bars for 400 days) and shows
+  their health on the *All markets* page. On the first run NEXUS asks for each whole
+  series, two per cycle, every 30 seconds, until all have arrived (a few minutes). After
+  that only recent bars are sent. Set it to an empty value to send no intraday bars.
 
 **Stopping and revoking.** Close the window to stop. In NEXUS, *Revoke* the token if the
 machine is lost or the token was exposed.

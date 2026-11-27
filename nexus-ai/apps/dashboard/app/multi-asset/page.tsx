@@ -136,6 +136,35 @@ function ResearchHistory() {
   );
 }
 
+const FX_TONE: Record<string, "good" | "warn" | "bad" | "muted"> = { ok: "good", closed: "muted", stale: "bad", "no data": "warn" };
+
+function ForexData() {
+  const { data } = useApi<Any>("/markets/forex-data", 60000);
+  const series: Any[] = data?.series ?? [];
+  const rejected = (q: Any) => {
+    if (!q) return DASH;
+    const r = Object.entries(q.rejected ?? {}).map(([k, v]) => `${v} ${k.replace("_", " ")}`).join(", ");
+    return `${q.stored}/${q.received} stored${r ? `; refused: ${r}` : ""}${q.jumps ? `; ${q.jumps} unusually large` : ""}`;
+  };
+  return (
+    <div className="mt-4 border-t border-line pt-3 text-sm">
+      <p className="mb-1 font-medium">Forex and gold bars stored by NEXUS (M5 and H1)</p>
+      <p className="mb-2 text-muted">The bridge (version 1.1 or later) sends closed 5-minute and 1-hour bars of the forex majors and gold. NEXUS checks every bar before storing it and keeps M5 for {data?.retention_days?.["5m"] ?? 45} days and H1 for {data?.retention_days?.["1h"] ?? 400} days. Missing bars are reported, never filled in.</p>
+      <Table rows={series} empty="No intraday bars yet: update the bridge on your PC to version 1.1 and keep it running." columns={[
+        { key: "symbol", label: "Instrument" },
+        { key: "timeframe", label: "Timeframe" },
+        { key: "status", label: "Status", render: (x: Any) => <Badge tone={FX_TONE[x.status] ?? "muted"}>{x.status}</Badge> },
+        { key: "newest", label: "Newest bar", render: (x: Any) => x.newest ? time(x.newest) : DASH },
+        { key: "coverage", label: "Coverage (session hours)", numeric: true, render: (x: Any) => x.coverage == null ? DASH : pct(x.coverage, 1) },
+        { key: "gaps", label: "Gaps (largest, bars)", numeric: true, render: (x: Any) => `${x.gaps} (${x.largest_gap_bars})` },
+        { key: "spread", label: "Spread / typical M5 range", numeric: true, render: (x: Any) => x.spread_vs_m5_range == null ? DASH : `${x.spread} (${num(x.spread_vs_m5_range, 2)}x)` },
+        { key: "batch", label: "Last batch", render: (x: Any) => rejected(x.last_batch) },
+      ]} />
+      {(data?.notes ?? []).map((n: string) => <p key={n} className="mt-1 text-xs text-muted">{n}</p>)}
+    </div>
+  );
+}
+
 function ExnessBridge({ ex, reload }: { ex: Any; reload: () => Promise<void> }) {
   const { data: tokens, reload: reloadTokens } = useApi<Any>("/bridge-tokens", 30000);
   const [name, setName] = useState("");
@@ -175,6 +204,7 @@ function ExnessBridge({ ex, reload }: { ex: Any; reload: () => Promise<void> }) 
           {ex.unresolved?.length > 0 && <p className="text-xs text-muted">Not offered on this account: {ex.unresolved.join(", ")}</p>}
         </div>
       )}
+      <ForexData />
       <ResearchHistory />
       <div className="mt-4 border-t border-line pt-3">
         <p className="mb-2 text-sm font-medium">Bridge tokens</p>

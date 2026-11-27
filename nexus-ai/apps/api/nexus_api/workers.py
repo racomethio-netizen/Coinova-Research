@@ -25,6 +25,12 @@ from nexus_config import Settings, TradingMode
 
 log = get_logger("nexus.api.workers")
 
+# Inline workers start one by one, this many seconds apart (in WORKERS order, market data
+# and the trader first), so a deploy does not open every Redis and database connection
+# at the same moment while the old instance still holds its own (see
+# nexus_common.redisutil).
+STAGGER_SECONDS = 1.0
+
 WORKERS: dict[str, list[str]] = {
     "market-data": ["-m", "nexus_market.runner"],
     "trader": ["-m", "nexus_execution.trader"],
@@ -132,9 +138,11 @@ class InlineWorkers:
     they only delay each other, and the API stays responsive."""
 
     def __init__(self, workers: dict[str, Serve], *, base_delay: float = 5.0,
-                 max_delay: float = 300.0, grace: float = 20.0, threaded: bool = False) -> None:
+                 max_delay: float = 300.0, grace: float = 20.0, threaded: bool = False,
+                 stagger: float = 0.0) -> None:
         self.workers = workers
         self.base_delay, self.max_delay, self.grace = base_delay, max_delay, grace
+        self.stagger = stagger
         self.restarts: dict[str, int] = dict.fromkeys(workers, 0)
         self.threaded = threaded
         self._stop = asyncio.Event()
@@ -183,11 +191,12 @@ class InlineWorkers:
             workers["x-sentiment"] = lambda stop: social.serve(settings, stop)
         if only is not None:
             workers = {n: w for n, w in workers.items() if n in only}
-        return cls(workers, threaded=True)
+        return cls(workers, threaded=True, stagger=STAGGER_SECONDS)
 
     def start(self) -> None:
         if not self.threaded:
-            self._tasks = [asyncio.create_task(self._keep(n)) for n in self.workers]
+            self._tasks = [asyncio.create_task(self._keep(n, i * self.stagger))
+                           for i, n in enumerate(self.workers)]
             return
         ready = threading.Event()
         self._thread = threading.Thread(target=self._thread_main, args=(ready,),
@@ -198,7 +207,8 @@ class InlineWorkers:
     def _thread_main(self, ready: threading.Event) -> None:
         async def main() -> None:
             self._loop = asyncio.get_running_loop()
-            self._tasks = [asyncio.create_task(self._keep(n)) for n in self.workers]
+            self._tasks = [asyncio.create_task(self._keep(n, i * self.stagger))
+                           for i, n in enumerate(self.workers)]
             ready.set()
             await self._stop.wait()
             await self._drain()
@@ -210,7 +220,10 @@ class InlineWorkers:
         finally:
             ready.set()
 
-    async def _keep(self, name: str) -> None:
+    async def _keep(self, name: str, start_after: float = 0.0) -> None:
+        if start_after > 0:                 # staggered start: see STAGGER_SECONDS
+            with contextlib.suppress(TimeoutError):
+                await asyncio.wait_for(self._stop.wait(), timeout=start_after)
         delay = self.base_delay
         while not self._stop.is_set():
             log.info("worker_started", worker=name, mode="inline")

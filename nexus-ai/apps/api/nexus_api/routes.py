@@ -1088,6 +1088,51 @@ async def markets_overview(s: Session = Depends(db), redis: Any = Depends(redis_
             "exness_demo": exness_demo, "server_trading_mode": settings.trading_mode.value}
 
 
+
+@router.get("/markets/forex-data", dependencies=[Depends(owner)])
+async def forex_data_health(s: Session = Depends(db),
+                            redis: Any = Depends(redis_dep)) -> dict[str, Any]:
+    """Health of the stored forex and gold bars (M5, H1) sent by the Exness read-only
+    bridge: freshness, gaps over FX-session hours, the last batch's validation counts and
+    the current spread. Empty until the bridge (1.1 or later) has sent bars."""
+    from datetime import UTC as _UTC3
+    from datetime import datetime as _dt3
+
+    from nexus_market import fx_bars
+
+    from nexus_api.bridge import QUALITY_KEY, STATUS_KEY
+
+    now = _dt3.now(_UTC3)
+    raw_status, raw_quality = await redis.get(STATUS_KEY), await redis.get(QUALITY_KEY)
+    status = json.loads(raw_status) if raw_status else None
+    quality = json.loads(raw_quality) if raw_quality else None
+    quotes = {x["base_name"]: x for x in (status or {}).get("symbols", [])}
+
+    def build() -> list[dict[str, Any]]:
+        pairs = s.execute(select(models.TradingPair.id, models.TradingPair.symbol,
+                                 models.TradingPair.asset_class)
+                          .join(models.Exchange,
+                                models.Exchange.id == models.TradingPair.exchange_id)
+                          .where(models.Exchange.code == "exness",
+                                 models.TradingPair.symbol.in_(fx_bars.INTRADAY_SYMBOLS))
+                          .order_by(models.TradingPair.symbol)).all()
+        return fx_bars.health_report(s, [(int(p), str(sym), str(cls or "forex"))
+                                         for p, sym, cls in pairs], now, quotes, quality)
+
+    rows = await asyncio.to_thread(build)
+    bridge_at: str | None = (status or {}).get("at")
+    connected = bridge_at is not None and \
+        (now - _dt3.fromisoformat(bridge_at)).total_seconds() < 900
+    return {"at": now.isoformat(), "bridge_at": bridge_at, "bridge_connected": connected,
+            "retention_days": fx_bars.RETENTION_DAYS, "series": rows,
+            "notes": ["Gaps and staleness count FX-session hours only (Sunday 17:00 to "
+                      "Friday 17:00 New York); holidays and the broker's daily gold break "
+                      "are not modelled, so a few missing bars there are normal.",
+                      "MetaTrader creates no bar for a period without ticks.",
+                      "Bars are stored only after checks; rejected rows are counted, never "
+                      "repaired."]}
+
+
 class BridgeTokenBody(BaseModel):
     name: str = Field(min_length=2, max_length=64, pattern=r"^[A-Za-z0-9 ._-]+$")
     reason: str = Field(min_length=5, max_length=500)

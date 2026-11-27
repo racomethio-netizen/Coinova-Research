@@ -173,3 +173,38 @@ def test_guard_default_redis_is_per_event_loop():
     out["api"] = asyncio.run(register("api"))
     t.join()
     assert out == {"worker": "w", "api": "api"}
+
+
+def test_inline_workers_start_one_by_one_and_stop_during_the_wait():
+    import time
+
+    started: dict[str, float] = {}
+
+    def make(name):
+        async def serve(stop):
+            started[name] = time.monotonic()
+            await stop.wait()
+        return serve
+
+    async def go(wait: float):
+        w = InlineWorkers({n: make(n) for n in ("a", "b", "c")}, grace=2, stagger=0.2)
+        t0 = time.monotonic()
+        w.start()
+        await asyncio.sleep(wait)
+        await w.stop()
+        return t0, time.monotonic() - t0
+
+    t0, _ = asyncio.run(go(0.6))
+    assert started["a"] - t0 < 0.1
+    assert 0.15 < started["b"] - t0 < 0.35 and 0.35 < started["c"] - t0 < 0.55
+    started.clear()
+    _, took = asyncio.run(go(0.05))               # stop before b and c start
+    assert set(started) == {"a"} and took < 0.5
+
+
+def test_production_inline_workers_are_staggered():
+    from nexus_api.workers import STAGGER_SECONDS
+    sup = WorkerSupervisor.from_settings(
+        _settings(run_workers=True, trading_mode="paper", workers_mode="inline"))
+    assert isinstance(sup, InlineWorkers) and sup.stagger == STAGGER_SECONDS > 0
+    assert list(sup.workers)[:2] == ["market-data", "trader"]   # data and trader first
