@@ -210,3 +210,12 @@ instead of the bridge export. The broker is the same, and the history is longer.
 * **Data checks:** as pre-registered (`quality.json`).
 * **Unchanged:** the strategy, its parameters, the walk-forward, the gates and the
   decision rule.
+
+## Amendment 2 (2026-11-27, memory only; no change to any decision)
+
+* **Change.** Before the scalping (M5) profile ran, the simulator was changed to keep
+  per bar only the 15 columns it reads (`ROW_COLS` in `engine.py`), not all 45.
+* **Why.** One 2-year M5 job needed 3.3 GB, and the 9-year out-of-sample book would have
+  needed about 11 GB of the container's 15 GB.
+* **Check.** The swing and intraday profiles had already run. Both were re-run after the
+  change, and both result files are identical (every field except the generation time).
