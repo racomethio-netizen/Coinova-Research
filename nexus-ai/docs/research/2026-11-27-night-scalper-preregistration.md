@@ -106,3 +106,33 @@ The owner asked whether the strategies of commercial forex bots can be used.
   on this data.
 * **A harness bug found after the run:** it is fixed and the test re-run. Both results
   are reported.
+
+## Results (single run, 2026-11-27; harness commit c958dd9)
+
+* **Data.** No month missing.
+  * Standard: 13 symbols × 135 months.
+  * Raw Spread: 13 × 82 months.
+  * All-day median spreads, Standard: majors 1.0–2.2 pips, crosses 1.6–3.8. Raw Spread:
+    0–1.1 pips, plus commission.
+  * Files: `results/night_scalper_2026-11_*_quality.json`.
+* **Verdict: FAILED on both accounts.** No re-tuning will follow.
+
+  | Account | Trades | Win rate | Per trade | Profit factor | Net | Drawdown halt |
+  |---|---|---|---|---|---|---|
+  | Standard (2015–2026) | 403 | 29.3% | −0.34R | 0.59 | −5.0% | April 2016 |
+  | Raw Spread (2020–2026) | 1,014 | 34.2% | −0.29R | 0.80 | −3.7% | September 2021 |
+
+  Both failed every return, drawdown, consistency, cost-stress and significance gate.
+  The p-value was 1.00 on both.
+* **No ±20% sensitivity variant had a positive expectancy.**
+* **Diagnostic (not a gate):** the same rules with the halts switched off, to see every
+  year.
+  * Standard: 7,540 trades at −0.42R, with **every year from 2015 to 2026 negative**.
+  * Raw Spread: 4,557 trades at −0.30R, with every year from 2020 to 2026 negative.
+* **Checks.** Sample trades were traced against the raw bars: fills, stops (plus
+  slippage) and targets are correct.
+* **Why it loses.** After a sharp evening move, the middle band is often far away (up to
+  3–4× the stop distance in the traced trades), and the 2 ATR stop is hit first in most
+  trades. Night moves that reach a band extreme tend to keep going rather than snap back.
+* **Decision.** The night scalper is recorded as failed. It gets no demo or live order
+  path.

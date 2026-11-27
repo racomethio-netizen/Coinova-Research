@@ -1,0 +1,689 @@
+{
+ "accounts": {
+  "Standard": {
+   "rules": {
+    "bb_n": "20",
+    "bb_k": "2.0",
+    "rsi_n": "14",
+    "atr_n": "14",
+    "rsi_low": "30.0",
+    "rsi_high": "70.0",
+    "adx_max": "25.0",
+    "stop_atr": "2.0",
+    "min_reward_atr": "0.5",
+    "max_bars": "36",
+    "start": "17:30:00",
+    "end": "21:00:00",
+    "flat": "23:00:00",
+    "slip_pips": "0.2",
+    "commission_per_100k": "0.0",
+    "cost_mult": "1.0"
+   },
+   "metrics": {
+    "trades": 403,
+    "halted": "drawdown 5% at 2016-04-28 01:00:00+00:00",
+    "rejections": {
+     "already in this pair": 223,
+     "below the minimum lot": 448,
+     "max open positions": 16,
+     "halted (drawdown limit)": 16038,
+     "reward too small after the spread (at signal)": 1208
+    },
+    "start": "2015-08-10 21:25:00+00:00",
+    "end": "2026-10-30 02:55:00+00:00",
+    "net_return": -0.04999037709950538,
+    "annual_return": -0.004560378934712284,
+    "sharpe": -1.0968114403934428,
+    "max_drawdown": -0.050017129794292625,
+    "win_rate": 0.29280397022332505,
+    "expectancy_r": -0.34329691121648953,
+    "profit_factor": 0.586669570887548,
+    "avg_bars_held": 9.218362282878411,
+    "costs_usd": 0.0,
+    "carry_usd": 0.0,
+    "by_strategy": {
+     "night_scalper": {
+      "trades": 403,
+      "expectancy_r": -0.34329691121648953,
+      "win_rate": 0.29280397022332505
+     }
+    },
+    "by_regime": {
+     "night": {
+      "trades": 403,
+      "expectancy_r": -0.34329691121648953,
+      "win_rate": 0.29280397022332505
+     }
+    },
+    "by_pair": {
+     "USDCAD": {
+      "trades": 36,
+      "expectancy_r": -0.6092736867171111,
+      "win_rate": 0.19444444444444445
+     },
+     "EURGBP": {
+      "trades": 18,
+      "expectancy_r": 0.03787014678348827,
+      "win_rate": 0.4444444444444444
+     },
+     "AUDNZD": {
+      "trades": 49,
+      "expectancy_r": -0.10306848752445692,
+      "win_rate": 0.3877551020408163
+     },
+     "AUDUSD": {
+      "trades": 82,
+      "expectancy_r": -0.3894214107179245,
+      "win_rate": 0.2804878048780488
+     },
+     "AUDCAD": {
+      "trades": 21,
+      "expectancy_r": -0.42797930376319065,
+      "win_rate": 0.2857142857142857
+     },
+     "EURCHF": {
+      "trades": 10,
+      "expectancy_r": -0.019904888969662932,
+      "win_rate": 0.4
+     },
+     "EURUSD": {
+      "trades": 56,
+      "expectancy_r": -0.49111515095384334,
+      "win_rate": 0.21428571428571427
+     },
+     "EURCAD": {
+      "trades": 24,
+      "expectancy_r": -0.39582664145035595,
+      "win_rate": 0.25
+     },
+     "EURAUD": {
+      "trades": 39,
+      "expectancy_r": -0.10888127653178027,
+      "win_rate": 0.38461538461538464
+     },
+     "USDCHF": {
+      "trades": 32,
+      "expectancy_r": -0.3734803155836422,
+      "win_rate": 0.28125
+     },
+     "GBPCAD": {
+      "trades": 14,
+      "expectancy_r": -0.1553912360984941,
+      "win_rate": 0.42857142857142855
+     },
+     "GBPUSD": {
+      "trades": 22,
+      "expectancy_r": -0.7068833757827988,
+      "win_rate": 0.13636363636363635
+     }
+    },
+    "exits": {
+     "stop": 271,
+     "target": 96,
+     "time": 34,
+     "stop_gap": 2
+    },
+    "by_year": {
+     "2015": -0.022126203251847998,
+     "2016": -0.028494652316400804,
+     "2017": 0.0,
+     "2018": 0.0,
+     "2019": 0.0,
+     "2020": 0.0,
+     "2021": 0.0,
+     "2022": 0.0,
+     "2023": 0.0,
+     "2024": 0.0,
+     "2025": 0.0,
+     "2026": 0.0
+    },
+    "avg_win_usd": 6.0131299515320915,
+    "avg_loss_usd": -4.258637694633222,
+    "by_ny_hour": {
+     "17": {
+      "trades": 25,
+      "expectancy_r": -0.17252100346227653
+     },
+     "18": {
+      "trades": 66,
+      "expectancy_r": -0.35969379484645164
+     },
+     "19": {
+      "trades": 132,
+      "expectancy_r": -0.30533400493977014
+     },
+     "20": {
+      "trades": 180,
+      "expectancy_r": -0.3888430612320718
+     }
+    },
+    "halves": {
+     "split": "2021-04-01 00:45:00+00:00",
+     "first": {
+      "trades": 403,
+      "expectancy_r": -0.34329691121648953
+     },
+     "second": {
+      "trades": 0,
+      "expectancy_r": null
+     }
+    },
+    "half_years": {
+     "2015-H2": -0.022126203251847998,
+     "2016-H1": -0.028494652316400804,
+     "2016-H2": 0.0,
+     "2017-H1": 0.0,
+     "2017-H2": 0.0,
+     "2018-H1": 0.0,
+     "2018-H2": 0.0,
+     "2019-H1": 0.0,
+     "2019-H2": 0.0,
+     "2020-H1": 0.0,
+     "2020-H2": 0.0,
+     "2021-H1": 0.0,
+     "2021-H2": 0.0,
+     "2022-H1": 0.0,
+     "2022-H2": 0.0,
+     "2023-H1": 0.0,
+     "2023-H2": 0.0,
+     "2024-H1": 0.0,
+     "2024-H2": 0.0,
+     "2025-H1": 0.0,
+     "2025-H2": 0.0,
+     "2026-H1": 0.0,
+     "2026-H2": 0.0
+    }
+   },
+   "p_value": 1.0,
+   "monte_carlo": {
+    "return_p05": -0.3525949977950778,
+    "return_median": -0.2941903493647229,
+    "return_p95": -0.22912277065043174,
+    "drawdown_median": -0.2985850123639331,
+    "drawdown_p95": -0.3561506732628803,
+    "prob_loss": 1.0,
+    "prob_drawdown_over_5pct": 1.0
+   },
+   "stress_2x_costs": {
+    "trades": 128,
+    "net_return": -0.050130153881036366,
+    "sharpe": -1.4612445136852443,
+    "expectancy_r": -1.1201313491935097,
+    "profit_factor": 0.10366482485006806,
+    "max_drawdown": -0.050130153881036366
+   },
+   "sensitivity": {
+    "bb_k=1.6": {
+     "trades": 353,
+     "expectancy_r": -0.3546289232367853,
+     "profit_factor": 0.5219857282656538,
+     "net_return": -0.050200802505179
+    },
+    "bb_k=2.4": {
+     "trades": 317,
+     "expectancy_r": -0.3927990944784493,
+     "profit_factor": 0.5169680800294925,
+     "net_return": -0.04970718031133148
+    },
+    "stop_atr=1.6": {
+     "trades": 386,
+     "expectancy_r": -0.38374351157151454,
+     "profit_factor": 0.5215647901077161,
+     "net_return": -0.05022091282977603
+    },
+    "stop_atr=2.4": {
+     "trades": 356,
+     "expectancy_r": -0.32864295417567874,
+     "profit_factor": 0.5712142019659371,
+     "net_return": -0.050097592061700724
+    },
+    "rsi=34/66": {
+     "trades": 384,
+     "expectancy_r": -0.3910368207886319,
+     "profit_factor": 0.46211134767843487,
+     "net_return": -0.049627970351688755
+    },
+    "rsi=26/74": {
+     "trades": 327,
+     "expectancy_r": -0.3747387248471255,
+     "profit_factor": 0.5473274396088561,
+     "net_return": -0.048599747470568166
+    },
+    "adx_max=20": {
+     "trades": 244,
+     "expectancy_r": -0.46083051929084207,
+     "profit_factor": 0.4052105447496726,
+     "net_return": -0.048639255795412284
+    },
+    "adx_max=30": {
+     "trades": 435,
+     "expectancy_r": -0.31393316988795295,
+     "profit_factor": 0.5958727736535986,
+     "net_return": -0.05017987024264514
+    }
+   },
+   "sensitivity_share_positive": 0.0,
+   "gates": {
+    "at_least_100_trades": true,
+    "net_positive_after_all_costs": false,
+    "profit_factor_ge_1_2": false,
+    "sharpe_ge_0_5": false,
+    "max_drawdown_within_5pct": false,
+    "mc_prob_drawdown_over_5pct_le_25pct": false,
+    "positive_in_60pct_of_half_years": false,
+    "positive_at_2x_costs": false,
+    "significant_after_holm": false
+   },
+   "passed": false
+  },
+  "Raw Spread": {
+   "rules": {
+    "bb_n": "20",
+    "bb_k": "2.0",
+    "rsi_n": "14",
+    "atr_n": "14",
+    "rsi_low": "30.0",
+    "rsi_high": "70.0",
+    "adx_max": "25.0",
+    "stop_atr": "2.0",
+    "min_reward_atr": "0.5",
+    "max_bars": "36",
+    "start": "17:30:00",
+    "end": "21:00:00",
+    "flat": "23:00:00",
+    "slip_pips": "0.2",
+    "commission_per_100k": "7.0",
+    "cost_mult": "1.0"
+   },
+   "metrics": {
+    "trades": 1014,
+    "halted": "drawdown 5% at 2021-09-21 00:10:00+00:00",
+    "rejections": {
+     "below the minimum lot": 848,
+     "already in this pair": 686,
+     "max open positions": 93,
+     "target passed before the fill": 2,
+     "halted (drawdown limit)": 9662,
+     "reward too small after the spread (at signal)": 273
+    },
+    "start": "2020-01-29 00:00:00+00:00",
+    "end": "2026-10-30 02:55:00+00:00",
+    "net_return": -0.03731475687531949,
+    "annual_return": -0.00561677350086498,
+    "sharpe": -0.864763275935804,
+    "max_drawdown": -0.050095807224453726,
+    "win_rate": 0.3422090729783038,
+    "expectancy_r": -0.2937193521113711,
+    "profit_factor": 0.8002955292576817,
+    "avg_bars_held": 9.548323471400394,
+    "costs_usd": 349.16,
+    "carry_usd": 0.0,
+    "by_strategy": {
+     "night_scalper": {
+      "trades": 1014,
+      "expectancy_r": -0.2937193521113711,
+      "win_rate": 0.3422090729783038
+     }
+    },
+    "by_regime": {
+     "night": {
+      "trades": 1014,
+      "expectancy_r": -0.2937193521113711,
+      "win_rate": 0.3422090729783038
+     }
+    },
+    "by_pair": {
+     "EURGBP": {
+      "trades": 69,
+      "expectancy_r": -0.4572861809013415,
+      "win_rate": 0.30434782608695654
+     },
+     "AUDNZD": {
+      "trades": 133,
+      "expectancy_r": -0.42952573109208275,
+      "win_rate": 0.3082706766917293
+     },
+     "EURAUD": {
+      "trades": 78,
+      "expectancy_r": -0.2340157906502741,
+      "win_rate": 0.358974358974359
+     },
+     "AUDUSD": {
+      "trades": 180,
+      "expectancy_r": -0.1788903716472316,
+      "win_rate": 0.37222222222222223
+     },
+     "EURCHF": {
+      "trades": 37,
+      "expectancy_r": -0.5303433342100778,
+      "win_rate": 0.35135135135135137
+     },
+     "USDCAD": {
+      "trades": 59,
+      "expectancy_r": -0.2985116881845992,
+      "win_rate": 0.3389830508474576
+     },
+     "GBPUSD": {
+      "trades": 121,
+      "expectancy_r": -0.19659021273901736,
+      "win_rate": 0.34710743801652894
+     },
+     "USDCHF": {
+      "trades": 89,
+      "expectancy_r": -0.6784730499838088,
+      "win_rate": 0.21348314606741572
+     },
+     "EURUSD": {
+      "trades": 116,
+      "expectancy_r": -0.20690411279783,
+      "win_rate": 0.35344827586206895
+     },
+     "AUDCAD": {
+      "trades": 63,
+      "expectancy_r": -0.0013924703103324952,
+      "win_rate": 0.47619047619047616
+     },
+     "EURCAD": {
+      "trades": 42,
+      "expectancy_r": -0.027765468725788073,
+      "win_rate": 0.42857142857142855
+     },
+     "GBPCAD": {
+      "trades": 27,
+      "expectancy_r": -0.4458182665570747,
+      "win_rate": 0.25925925925925924
+     }
+    },
+    "exits": {
+     "stop": 633,
+     "target": 286,
+     "time": 87,
+     "stop_gap": 7,
+     "emergency": 1
+    },
+    "by_year": {
+     "2020": -0.01382770754947793,
+     "2021": -0.023816375196953676,
+     "2022": 0.0,
+     "2023": 0.0,
+     "2024": 0.0,
+     "2025": 0.0,
+     "2026": 0.0
+    },
+    "avg_win_usd": 4.3093696120032865,
+    "avg_loss_usd": -2.801347562396308,
+    "by_ny_hour": {
+     "17": {
+      "trades": 43,
+      "expectancy_r": -0.49998565109813914
+     },
+     "18": {
+      "trades": 178,
+      "expectancy_r": -0.3666872468884664
+     },
+     "19": {
+      "trades": 253,
+      "expectancy_r": -0.13736179125537126
+     },
+     "20": {
+      "trades": 540,
+      "expectancy_r": -0.3264984757591748
+     }
+    },
+    "halves": {
+     "split": "2023-06-14 22:00:00+00:00",
+     "first": {
+      "trades": 1014,
+      "expectancy_r": -0.2937193521113711
+     },
+     "second": {
+      "trades": 0,
+      "expectancy_r": null
+     }
+    },
+    "half_years": {
+     "2020-H1": -0.0016377124374136187,
+     "2020-H2": -0.012209991567114553,
+     "2021-H1": -0.005893012814798926,
+     "2021-H2": -0.018029611111480492,
+     "2022-H1": 0.0,
+     "2022-H2": 0.0,
+     "2023-H1": 0.0,
+     "2023-H2": 0.0,
+     "2024-H1": 0.0,
+     "2024-H2": 0.0,
+     "2025-H1": 0.0,
+     "2025-H2": 0.0,
+     "2026-H1": 0.0,
+     "2026-H2": 0.0
+    }
+   },
+   "p_value": 1.0,
+   "monte_carlo": {
+    "return_p05": -0.601149163687434,
+    "return_median": -0.5273000432305927,
+    "return_p95": -0.43834225424854895,
+    "drawdown_median": -0.5320590480424487,
+    "drawdown_p95": -0.6053041613421377,
+    "prob_loss": 1.0,
+    "prob_drawdown_over_5pct": 1.0
+   },
+   "stress_2x_costs": {
+    "trades": 330,
+    "net_return": -0.04996969352969316,
+    "sharpe": -1.3772592191309845,
+    "expectancy_r": -0.6712304085737003,
+    "profit_factor": 0.5134959705334031,
+    "max_drawdown": -0.0501217305698497
+   },
+   "sensitivity": {
+    "bb_k=1.6": {
+     "trades": 1178,
+     "expectancy_r": -0.2805832965446578,
+     "profit_factor": 0.7914263695326645,
+     "net_return": -0.04321651979286523
+    },
+    "bb_k=2.4": {
+     "trades": 1229,
+     "expectancy_r": -0.2638248306819559,
+     "profit_factor": 0.7919971630583511,
+     "net_return": -0.04690671383910738
+    },
+    "stop_atr=1.6": {
+     "trades": 1136,
+     "expectancy_r": -0.34786204556745315,
+     "profit_factor": 0.7976924638664771,
+     "net_return": -0.038307322024973445
+    },
+    "stop_atr=2.4": {
+     "trades": 1070,
+     "expectancy_r": -0.2230676105262152,
+     "profit_factor": 0.7954515837446814,
+     "net_return": -0.04182857179647326
+    },
+    "rsi=34/66": {
+     "trades": 1062,
+     "expectancy_r": -0.2707010829365052,
+     "profit_factor": 0.7514938750800368,
+     "net_return": -0.04777325418609213
+    },
+    "rsi=26/74": {
+     "trades": 1160,
+     "expectancy_r": -0.19970733601981555,
+     "profit_factor": 0.7967776524647557,
+     "net_return": -0.048820766148010786
+    },
+    "adx_max=20": {
+     "trades": 1549,
+     "expectancy_r": -0.1917349599793995,
+     "profit_factor": 0.8336512677390616,
+     "net_return": -0.04810945933474209
+    },
+    "adx_max=30": {
+     "trades": 1132,
+     "expectancy_r": -0.27644148107403294,
+     "profit_factor": 0.7935727063342576,
+     "net_return": -0.04330937292410875
+    }
+   },
+   "sensitivity_share_positive": 0.0,
+   "gates": {
+    "at_least_100_trades": true,
+    "net_positive_after_all_costs": false,
+    "profit_factor_ge_1_2": false,
+    "sharpe_ge_0_5": false,
+    "max_drawdown_within_5pct": false,
+    "mc_prob_drawdown_over_5pct_le_25pct": false,
+    "positive_in_60pct_of_half_years": false,
+    "positive_at_2x_costs": false,
+    "significant_after_holm": false
+   },
+   "passed": false
+  }
+ },
+ "generated_at": "2026-11-27T10:57:16.543942+00:00",
+ "harness_commit": "c958dd9",
+ "kind": "historical backtest (no orders placed)",
+ "paper": false,
+ "preregistration": "docs/research/2026-11-27-night-scalper-preregistration.md",
+ "pairs": [
+  "EURUSD",
+  "GBPUSD",
+  "AUDUSD",
+  "USDCHF",
+  "USDCAD",
+  "EURGBP",
+  "EURCHF",
+  "EURAUD",
+  "EURCAD",
+  "GBPCAD",
+  "AUDCAD",
+  "AUDNZD"
+ ],
+ "diagnostic_without_halts": {
+  "note": "DIAGNOSTIC, not a gate: the same rules with the daily, weekly and drawdown halts switched off, to show every year (the pre-registered run stops at the 5% halt).",
+  "Standard": {
+   "trades": 7540,
+   "win_rate": 0.2510610079575597,
+   "expectancy_r": -0.41935395872716863,
+   "net_return": -0.5004127325435603,
+   "by_year": {
+    "2015": {
+     "trades": 207,
+     "expectancy_r": -0.334,
+     "win_rate": 0.304
+    },
+    "2016": {
+     "trades": 710,
+     "expectancy_r": -0.308,
+     "win_rate": 0.29
+    },
+    "2017": {
+     "trades": 638,
+     "expectancy_r": -0.351,
+     "win_rate": 0.298
+    },
+    "2018": {
+     "trades": 580,
+     "expectancy_r": -0.445,
+     "win_rate": 0.241
+    },
+    "2019": {
+     "trades": 801,
+     "expectancy_r": -0.566,
+     "win_rate": 0.195
+    },
+    "2020": {
+     "trades": 742,
+     "expectancy_r": -0.339,
+     "win_rate": 0.271
+    },
+    "2021": {
+     "trades": 582,
+     "expectancy_r": -0.391,
+     "win_rate": 0.259
+    },
+    "2022": {
+     "trades": 632,
+     "expectancy_r": -0.249,
+     "win_rate": 0.305
+    },
+    "2023": {
+     "trades": 581,
+     "expectancy_r": -0.42,
+     "win_rate": 0.243
+    },
+    "2024": {
+     "trades": 721,
+     "expectancy_r": -0.573,
+     "win_rate": 0.198
+    },
+    "2025": {
+     "trades": 695,
+     "expectancy_r": -0.423,
+     "win_rate": 0.25
+    },
+    "2026": {
+     "trades": 651,
+     "expectancy_r": -0.538,
+     "win_rate": 0.207
+    }
+   },
+   "exits": {
+    "stop": 5461,
+    "target": 1553,
+    "time": 500,
+    "stop_gap": 26
+   }
+  },
+  "Raw Spread": {
+   "trades": 4557,
+   "win_rate": 0.3548387096774194,
+   "expectancy_r": -0.2993172202192942,
+   "net_return": -0.2145982782221476,
+   "by_year": {
+    "2020": {
+     "trades": 601,
+     "expectancy_r": -0.235,
+     "win_rate": 0.358
+    },
+    "2021": {
+     "trades": 593,
+     "expectancy_r": -0.344,
+     "win_rate": 0.331
+    },
+    "2022": {
+     "trades": 639,
+     "expectancy_r": -0.158,
+     "win_rate": 0.385
+    },
+    "2023": {
+     "trades": 605,
+     "expectancy_r": -0.267,
+     "win_rate": 0.364
+    },
+    "2024": {
+     "trades": 746,
+     "expectancy_r": -0.428,
+     "win_rate": 0.332
+    },
+    "2025": {
+     "trades": 731,
+     "expectancy_r": -0.26,
+     "win_rate": 0.365
+    },
+    "2026": {
+     "trades": 642,
+     "expectancy_r": -0.385,
+     "win_rate": 0.35
+    }
+   },
+   "exits": {
+    "stop": 2814,
+    "target": 1423,
+    "time": 301,
+    "stop_gap": 19
+   }
+  }
+ }
+}

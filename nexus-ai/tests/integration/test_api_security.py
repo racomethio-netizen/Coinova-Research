@@ -852,6 +852,9 @@ def test_markets_overview_and_per_market_switch(client: TestClient) -> None:
     assert nq["status"] == "result" and set(nq["result"]["profiles"]) == {
         "scalping", "intraday", "swing"}                     # not the data-quality file
     assert not any(p["walk_forward"]["passed"] for p in nq["result"]["profiles"].values())
+    night = m2["night_scalper"]
+    assert set(night["accounts"]) == {"Standard", "Raw Spread"}
+    assert not any(a["passed"] for a in night["accounts"].values())
     assert client.post("/api/v1/markets/gold/autonomy",
                        json={"autonomy": "OFF", "reason": "unknown"},
                        headers=CSRF).status_code == 404

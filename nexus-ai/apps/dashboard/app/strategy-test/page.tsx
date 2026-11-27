@@ -197,6 +197,27 @@ function Nqs1({ n }: { n: Any }) {
   );
 }
 
+function NightScalper({ n }: { n: Any }) {
+  if (!n?.accounts) return null;
+  const rows = Object.entries(n.accounts).map(([k, x]: [string, Any]) => ({ key: k, ...x.metrics, passed: x.passed, gates: x.gates }));
+  const anyPassed = rows.some((x: Any) => x.passed);
+  const d = n.diagnostic_without_halts;
+  return (
+    <Card title="Forex night scalper (the idea behind popular MT5 robots)" actions={<Badge tone={anyPassed ? "good" : "bad"}>{anyPassed ? "passed" : "none passed"}</Badge>}>
+      <Table rows={rows} empty="No result." columns={[
+        { key: "key", label: "Exness account" },
+        { key: "t", label: "Trades", numeric: true, render: (x: Any) => num(x.trades, 0) },
+        { key: "w", label: "Win rate", numeric: true, render: (x: Any) => pct(x.win_rate, 1) },
+        { key: "e", label: "Per trade (R)", numeric: true, render: (x: Any) => num(x.expectancy_r, 2) },
+        { key: "n", label: "Net", numeric: true, render: (x: Any) => <span className={x.net_return > 0 ? "text-up" : "text-down"}>{pct(x.net_return, 2)}</span> },
+        { key: "d", label: "Worst drop", numeric: true, render: (x: Any) => pct(x.max_drawdown, 1) },
+        { key: "why", label: "Failed checks", render: (x: Any) => <span className="text-xs text-muted">{failed(x.gates)}</span> },
+      ]} />
+      <p className="mt-2 text-xs text-muted">Commercial &quot;night scalper&quot; robots fade small moves in the quiet hours after the New York close. Their code is closed, so NEXUS tested the public idea: 12 pairs, one trade at a time with a stop, real Exness bid and ask prices tick by tick (Standard account 2015–2026, Raw Spread 2020–2026 with its commission), NEXUS risk limits. Both accounts hit the 5% drawdown stop.{d ? ` With the stop switched off, every single year lost money (Standard ${num(d.Standard?.expectancy_r, 2)} R a trade, Raw Spread ${num(d["Raw Spread"]?.expectancy_r, 2)} R).` : ""} Historical backtest, no orders placed. Rules written before the run: {n.preregistration}</p>
+    </Card>
+  );
+}
+
 function MultiAsset() {
   const { data: r } = useApi<Any>("/research/multi-asset", 60_000);
   if (!r?.trend && !r?.ndx_voltarget) return null;
@@ -237,6 +258,7 @@ function MultiAsset() {
         </Card>
       )}
       <Nqs1 n={r.nqs1} />
+      <NightScalper n={r.night_scalper} />
       {v && (
         <Card title="NASDAQ-100: hold less when prices swing wildly (1990 – Oct 2026)" actions={<Badge tone={v.passed ? "good" : "bad"}>{v.passed ? "passed" : "failed"}</Badge>}>
           <Table rows={vrows} empty="No result." columns={[

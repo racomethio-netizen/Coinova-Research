@@ -32,6 +32,20 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-27: night scalper test (owner: "Yes do it").** This was the public idea behind
+  popular MT5 "night scalper" robots; their code is closed and was not opened.
+  * Pre-registered before its data was downloaded.
+  * Rules: 12 pairs, real Exness bid/ask ticks, Standard (2015–2026) and Raw Spread
+    (2020–2026) accounts.
+  * **FAILED on both accounts.**
+    * Standard: −0.34R a trade.
+    * Raw Spread: −0.29R a trade.
+    * Both hit the 5% halt, and every year was negative with the halts off.
+  * The grid and martingale robot types are forbidden by NEXUS rules and were not
+    tested.
+  * Report: `docs/research/2026-11-27-night-scalper-report.md`.
+  * Not deployed yet: the dashboard card waits for the owner's "Deploy".
+
 * **2026-11-27: NQS-1 adaptive forex strategy (owner brief), research stage.**
   * Built and tested on synthetic data:
     * the strategy package `nexus_strategies/nqs1`;

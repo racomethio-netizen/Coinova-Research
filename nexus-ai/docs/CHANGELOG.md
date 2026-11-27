@@ -4,6 +4,16 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-27
 
+- **Night scalper (the public idea behind popular MT5 robots): FAILED on both Exness
+  accounts.** It was pre-registered before its data was downloaded.
+  * Rules: 12 pairs, real bid/ask fills from Exness ticks, NEXUS limits.
+  * Results:
+    * Standard 2015–2026: −0.34R a trade, halted at −5% in 2016;
+    * Raw Spread 2020–2026: −0.29R, halted in 2021.
+  * With the halts switched off, every year lost money.
+  * The Exness converter now keeps ask prices and supports any pairs and account types.
+  * Report: `docs/research/2026-11-27-night-scalper-report.md`.
+
 - **NQS-1 tested: FAILED in all three profiles.**
   * Data: Exness's public tick archive, 11 years, Standard-account bid and ask, built
     by the new `nexus_backtest.exness_ticks`.

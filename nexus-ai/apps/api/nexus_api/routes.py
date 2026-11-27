@@ -1182,16 +1182,19 @@ async def multi_asset_research() -> dict[str, Any]:
         return json.loads(files[-1].read_text()) if files else None
 
     nqs1 = await asyncio.to_thread(latest, "nqs1")
+    night = await asyncio.to_thread(latest, "night_scalper")
     return {"trend": await asyncio.to_thread(load, "multi_asset_trend_2026-11.json"),
             "ndx_voltarget": await asyncio.to_thread(load, "ndx_voltarget_2026-11.json"),
             "fx_styles": await asyncio.to_thread(load, "fx_styles_2026-11.json"),
             "nqs1": {"status": "result" if nqs1 else "waiting_for_data", "result": nqs1,
                      "preregistration": "docs/research/2026-11-27-nqs1-preregistration.md"},
+            "night_scalper": night,
             "preregistrations": [
                 "docs/research/2026-11-26-multi-asset-trend-preregistration.md",
                 "docs/research/2026-11-26-ndx-voltarget-preregistration.md",
                 "docs/research/2026-11-26-fx-styles-preregistration.md",
-                "docs/research/2026-11-27-nqs1-preregistration.md"]}
+                "docs/research/2026-11-27-nqs1-preregistration.md",
+                "docs/research/2026-11-27-night-scalper-preregistration.md"]}
 
 
 @router.post("/markets/{market}/autonomy", dependencies=[Depends(owner)])
