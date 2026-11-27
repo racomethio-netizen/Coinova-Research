@@ -42,7 +42,13 @@ something passes, which would be data snooping.
   * Owner to do:
     1. Switch Commodities and/or Forex to PAPER on All markets.
     2. Run `py -3 nexus_mt5_demo_trader.py` with MT5 logged in to an Exness demo account.
-  * Not deployed yet: waits for the owner's "Deploy".
+  * **Deployed 2026-11-27 18:29 UTC** (owner: "Deploy"; Render 7931119 = source 4e9da84).
+    * Health checks are ready.
+    * `/bridge/mt5/demo/sync` answers 401 without a token, and the halt reset answers
+      403 when signed out.
+    * The usual startup Redis blip hit 2 workers, which restarted on their own.
+    * The bot and trader were back in paper mode at 18:29:51.
+    * Forex and commodities are still RESEARCH until the owner switches them.
 
 * **2026-11-27: Exness gold and NASDAQ-100 with volatility control** (owner: "I need the
   forex to be effective").
