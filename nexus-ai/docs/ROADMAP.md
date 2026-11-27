@@ -32,6 +32,17 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-27: Binance Spot Grid bot (owner: "Test the Binance Spot Grid bot").**
+  * Pre-registered: the plain product, 6 settings, 10 coins, Binance 5m 2021–2026.
+  * **All FAILED.** In the corrected run:
+    * ±30% without a stop: +102% (Sharpe 0.50 against 0.90 for holding; Calmar 0.22
+      against 0.59; p 0.076), with almost all of the profit in 2021;
+    * narrow grids: −64% to −73%;
+    * stops made every setting worse.
+  * Both runs are reported. The fair-game check and the fill fix are documented in the
+    pre-registration.
+  * Not deployed yet: the dashboard card waits for the owner's "Deploy".
+
 * **2026-11-27: night scalper test (owner: "Yes do it").** This was the public idea behind
   popular MT5 "night scalper" robots; their code is closed and was not opened.
   * Pre-registered before its data was downloaded.

@@ -1,0 +1,1051 @@
+{
+ "configs": {
+  "\u00b110% / 40 grids": {
+   "config": {
+    "name": "\u00b110% / 40 grids",
+    "width": 0.1,
+    "grids": 40,
+    "stop": false,
+    "stop_below": 0.05
+   },
+   "metrics": {
+    "net_return": -0.6394668288230947,
+    "cagr": -0.16055976495257718,
+    "max_drawdown": -0.786369110985272,
+    "sharpe": -0.2185053120943698,
+    "calmar": -0.20417862643588036,
+    "half_years": {
+     "2021-H1": 0.4065339396304539,
+     "2021-H2": 0.06428926145256098,
+     "2022-H1": -0.6136204560102763,
+     "2022-H2": 0.020432482862345447,
+     "2023-H1": 0.046258138935121096,
+     "2023-H2": -0.02060273251697753,
+     "2024-H1": 0.03071757152291399,
+     "2024-H2": 0.0737939862367325,
+     "2025-H1": -0.05709198419659933,
+     "2025-H2": -0.2275692028776205,
+     "2026-H1": -0.2845690509888974,
+     "2026-H2": 0.033670006913113726
+    },
+    "by_year": {
+     "2021": 0.49695896781725657,
+     "2022": -0.6057257625993454,
+     "2023": 0.024702362354930063,
+     "2024": 0.10677832980983415,
+     "2025": -0.27166880973989793,
+     "2026": -0.2604804859898381
+    },
+    "days": 2130
+   },
+   "p_value": 0.7410517896420716,
+   "stress_2x_fees": {
+    "net_return": -0.9388694673072341,
+    "sharpe": -0.9656520917798486,
+    "max_drawdown": -0.9549868011011009
+   },
+   "without_best_coin": {
+    "best": "XRP",
+    "net_return": -0.6730429790826509
+   },
+   "by_coin": {
+    "BTC": {
+     "net_return": -0.5667908812734336,
+     "trips": 20561,
+     "fees_usdt": 796.4417922432452,
+     "stops": 0,
+     "below_range_share": 0.09802405960598604,
+     "above_range_share": 0.19400972233773137
+    },
+    "ETH": {
+     "net_return": -0.6946674586875081,
+     "trips": 28477,
+     "fees_usdt": 1361.505625108781,
+     "stops": 0,
+     "below_range_share": 0.12413347748876027,
+     "above_range_share": 0.25055322091166893
+    },
+    "BNB": {
+     "net_return": -0.49687214243086586,
+     "trips": 24402,
+     "fees_usdt": 939.3145504730018,
+     "stops": 0,
+     "below_range_share": 0.09813168696094594,
+     "above_range_share": 0.20647492690308808
+    },
+    "SOL": {
+     "net_return": -0.7397074440819092,
+     "trips": 40642,
+     "fees_usdt": 1972.835679272137,
+     "stops": 0,
+     "below_range_share": 0.188961020959612,
+     "above_range_share": 0.3098558934945787
+    },
+    "XRP": {
+     "net_return": -0.3372814764870884,
+     "trips": 37823,
+     "fees_usdt": 1973.5010996603378,
+     "stops": 0,
+     "below_range_share": 0.15201548529337422,
+     "above_range_share": 0.19596984477200124
+    },
+    "ADA": {
+     "net_return": -0.8370148691981976,
+     "trips": 41084,
+     "fees_usdt": 1752.0564322756052,
+     "stops": 0,
+     "below_range_share": 0.20651406412307352,
+     "above_range_share": 0.18729279695773343
+    },
+    "DOGE": {
+     "net_return": -0.8143165992130685,
+     "trips": 35333,
+     "fees_usdt": 1546.9542579481545,
+     "stops": 0,
+     "below_range_share": 0.1963922006043439,
+     "above_range_share": 0.2638451992492177
+    },
+    "LINK": {
+     "net_return": -0.4084332320388625,
+     "trips": 44050,
+     "fees_usdt": 2277.4616986423043,
+     "stops": 0,
+     "below_range_share": 0.15860684542591896,
+     "above_range_share": 0.28220707829237784
+    },
+    "AVAX": {
+     "net_return": -0.9474924477973026,
+     "trips": 45067,
+     "fees_usdt": 1963.778837438277,
+     "stops": 0,
+     "below_range_share": 0.24666722111061645,
+     "above_range_share": 0.26060007142542646
+    },
+    "LTC": {
+     "net_return": -0.5520917370227103,
+     "trips": 33285,
+     "fees_usdt": 1301.0560059762172,
+     "stops": 0,
+     "below_range_share": 0.13769452421370879,
+     "above_range_share": 0.2380244183638359
+    }
+   },
+   "fees_usdt": 15884.905979038062,
+   "trips": 350724,
+   "nexus_fit": {
+    "allocation_share_for_5pct_drawdown": 0.0635833723648594,
+    "net_return_at_that_share": -0.04065945749203464
+   },
+   "gates": {
+    "net_positive_after_fees": false,
+    "sharpe_ge_0_5": false,
+    "sharpe_above_holding": false,
+    "calmar_at_least_holding": false,
+    "positive_in_60pct_of_half_years": false,
+    "positive_at_2x_fees": false,
+    "positive_without_best_coin": false,
+    "significant_after_holm": false
+   },
+   "passed": false
+  },
+  "\u00b110% / 40 grids + stop": {
+   "config": {
+    "name": "\u00b110% / 40 grids + stop",
+    "width": 0.1,
+    "grids": 40,
+    "stop": true,
+    "stop_below": 0.05
+   },
+   "metrics": {
+    "net_return": -0.7253353133392932,
+    "cagr": -0.19883615952014966,
+    "max_drawdown": -0.7865692461875885,
+    "sharpe": -0.9920873246072478,
+    "calmar": -0.252789135201873,
+    "half_years": {
+     "2021-H1": 0.1353380862970599,
+     "2021-H2": -0.1803129695741491,
+     "2022-H1": -0.22751548838812763,
+     "2022-H2": -0.07194721391988901,
+     "2023-H1": -0.031110343784843897,
+     "2023-H2": 0.03315382676879586,
+     "2024-H1": -0.15780368157685354,
+     "2024-H2": -0.04332492768767249,
+     "2025-H1": -0.18080286664847467,
+     "2025-H2": -0.13118763042337978,
+     "2026-H1": -0.28335059132045215,
+     "2026-H2": 0.0007574354337862577
+    },
+    "by_year": {
+     "2021": -0.06937809551379448,
+     "2022": -0.283093596794868,
+     "2023": 0.001012056035391673,
+     "2024": -0.1942917761713604,
+     "2025": -0.28827139742248675,
+     "2026": -0.2828077756647164
+    },
+    "days": 2130
+   },
+   "p_value": 0.9896020795840832,
+   "stress_2x_fees": {
+    "net_return": -0.9376323352150518,
+    "sharpe": -2.2002696741286316,
+    "max_drawdown": -0.9440517223242771
+   },
+   "without_best_coin": {
+    "best": "LTC",
+    "net_return": -0.7429803039395837
+   },
+   "by_coin": {
+    "BTC": {
+     "net_return": -0.6186905894665692,
+     "trips": 18540,
+     "fees_usdt": 714.5675193923767,
+     "stops": 21,
+     "below_range_share": 0.09802405960598604,
+     "above_range_share": 0.19400972233773137
+    },
+    "ETH": {
+     "net_return": -0.7349922047205038,
+     "trips": 22412,
+     "fees_usdt": 927.9284351460217,
+     "stops": 29,
+     "below_range_share": 0.12413347748876027,
+     "above_range_share": 0.25055322091166893
+    },
+    "BNB": {
+     "net_return": -0.6360088665227183,
+     "trips": 19966,
+     "fees_usdt": 713.6599987718453,
+     "stops": 22,
+     "below_range_share": 0.09813168696094594,
+     "above_range_share": 0.20647492690308808
+    },
+    "SOL": {
+     "net_return": -0.8598239917412467,
+     "trips": 28995,
+     "fees_usdt": 1023.7589241309473,
+     "stops": 39,
+     "below_range_share": 0.188961020959612,
+     "above_range_share": 0.3098558934945787
+    },
+    "XRP": {
+     "net_return": -0.710317407389469,
+     "trips": 28065,
+     "fees_usdt": 1170.2124383332248,
+     "stops": 31,
+     "below_range_share": 0.15201548529337422,
+     "above_range_share": 0.19596984477200124
+    },
+    "ADA": {
+     "net_return": -0.8934847185133387,
+     "trips": 32315,
+     "fees_usdt": 773.9847222185144,
+     "stops": 42,
+     "below_range_share": 0.20651406412307352,
+     "above_range_share": 0.18729279695773343
+    },
+    "DOGE": {
+     "net_return": -0.7686506628779122,
+     "trips": 28701,
+     "fees_usdt": 1216.1454049389333,
+     "stops": 35,
+     "below_range_share": 0.1963922006043439,
+     "above_range_share": 0.2638451992492177
+    },
+    "LINK": {
+     "net_return": -0.5815375694090464,
+     "trips": 34943,
+     "fees_usdt": 1664.6879294261464,
+     "stops": 34,
+     "below_range_share": 0.15860684542591896,
+     "above_range_share": 0.28220707829237784
+    },
+    "AVAX": {
+     "net_return": -0.883316724815449,
+     "trips": 31779,
+     "fees_usdt": 929.0312912924022,
+     "stops": 42,
+     "below_range_share": 0.24666722111061645,
+     "above_range_share": 0.26060007142542646
+    },
+    "LTC": {
+     "net_return": -0.5665303979366795,
+     "trips": 29399,
+     "fees_usdt": 1438.2236873544452,
+     "stops": 31,
+     "below_range_share": 0.13769452421370879,
+     "above_range_share": 0.2380244183638359
+    }
+   },
+   "fees_usdt": 10572.200351004858,
+   "trips": 275115,
+   "nexus_fit": {
+    "allocation_share_for_5pct_drawdown": 0.06356719416929191,
+    "net_return_at_that_share": -0.04610753070088304
+   },
+   "gates": {
+    "net_positive_after_fees": false,
+    "sharpe_ge_0_5": false,
+    "sharpe_above_holding": false,
+    "calmar_at_least_holding": false,
+    "positive_in_60pct_of_half_years": false,
+    "positive_at_2x_fees": false,
+    "positive_without_best_coin": false,
+    "significant_after_holm": false
+   },
+   "passed": false
+  },
+  "\u00b120% / 40 grids": {
+   "config": {
+    "name": "\u00b120% / 40 grids",
+    "width": 0.2,
+    "grids": 40,
+    "stop": false,
+    "stop_below": 0.05
+   },
+   "metrics": {
+    "net_return": 0.12126925508248321,
+    "cagr": 0.019830987648266074,
+    "max_drawdown": -0.6209612427251279,
+    "sharpe": 0.23734212735381932,
+    "calmar": 0.031935950722522595,
+    "half_years": {
+     "2021-H1": 0.6349634023811861,
+     "2021-H2": 0.2369349566822585,
+     "2022-H1": -0.5470382267401208,
+     "2022-H2": 0.07667035926740406,
+     "2023-H1": 0.1305234032046254,
+     "2023-H2": 0.061491645359570635,
+     "2024-H1": 0.10524266599116161,
+     "2024-H2": 0.17550156935402028,
+     "2025-H1": -0.0018895000511535143,
+     "2025-H2": -0.13650620009253533,
+     "2026-H1": -0.22561910469655955,
+     "2026-H2": 0.09254978392790103
+    },
+    "by_year": {
+     "2021": 1.0223433853014505,
+     "2022": -0.5123094848498855,
+     "2023": 0.20004114738517909,
+     "2024": 0.2992144883896317,
+     "2025": -0.13813777167163122,
+     "2026": -0.15395032015833154
+    },
+    "days": 2130
+   },
+   "p_value": 0.2535492901419716,
+   "stress_2x_fees": {
+    "net_return": -0.5182190300801406,
+    "sharpe": -0.13616699572970328,
+    "max_drawdown": -0.7295159052077558
+   },
+   "without_best_coin": {
+    "best": "LINK",
+    "net_return": 0.03304910147393603
+   },
+   "by_coin": {
+    "BTC": {
+     "net_return": 0.06972754171143514,
+     "trips": 7760,
+     "fees_usdt": 507.1418880134106,
+     "stops": 0,
+     "below_range_share": 0.02211742144426126,
+     "above_range_share": 0.06745462936237315
+    },
+    "ETH": {
+     "net_return": 0.016840798324463835,
+     "trips": 11692,
+     "fees_usdt": 956.2814765919421,
+     "stops": 0,
+     "below_range_share": 0.030861328676004156,
+     "above_range_share": 0.12029966064768838
+    },
+    "BNB": {
+     "net_return": 0.1733383323965647,
+     "trips": 9347,
+     "fees_usdt": 570.399617717754,
+     "stops": 0,
+     "below_range_share": 0.032335497295455026,
+     "above_range_share": 0.0968271129614319
+    },
+    "SOL": {
+     "net_return": 0.10686711932006099,
+     "trips": 18017,
+     "fees_usdt": 1548.2318384218288,
+     "stops": 0,
+     "below_range_share": 0.0649253865208153,
+     "above_range_share": 0.18523157003850124
+    },
+    "XRP": {
+     "net_return": 0.5970972512000292,
+     "trips": 15268,
+     "fees_usdt": 1261.7252503555856,
+     "stops": 0,
+     "below_range_share": 0.04037004241496216,
+     "above_range_share": 0.1102153036314448
+    },
+    "ADA": {
+     "net_return": -0.43572953210027277,
+     "trips": 17212,
+     "fees_usdt": 1219.3337484899466,
+     "stops": 0,
+     "below_range_share": 0.06377736140124293,
+     "above_range_share": 0.10870852066200608
+    },
+    "DOGE": {
+     "net_return": -0.0345644868942363,
+     "trips": 16323,
+     "fees_usdt": 1501.1065546260072,
+     "stops": 0,
+     "below_range_share": 0.06238962080925987,
+     "above_range_share": 0.1577229965412482
+    },
+    "LINK": {
+     "net_return": 0.9152506375594085,
+     "trips": 18119,
+     "fees_usdt": 1877.4318023368444,
+     "stops": 0,
+     "below_range_share": 0.051905738005665114,
+     "above_range_share": 0.15490511670229784
+    },
+    "AVAX": {
+     "net_return": -0.6467743271623357,
+     "trips": 20654,
+     "fees_usdt": 1477.7053163124242,
+     "stops": 0,
+     "below_range_share": 0.08327258910648096,
+     "above_range_share": 0.138002729821094
+    },
+    "LTC": {
+     "net_return": 0.45063921646971417,
+     "trips": 13909,
+     "fees_usdt": 1125.9519657820147,
+     "stops": 0,
+     "below_range_share": 0.04480070186081174,
+     "above_range_share": 0.12458192480109323
+    }
+   },
+   "fees_usdt": 12045.309458647758,
+   "trips": 148301,
+   "nexus_fit": {
+    "allocation_share_for_5pct_drawdown": 0.08052032326618619,
+    "net_return_at_that_share": 0.00976463962149114
+   },
+   "gates": {
+    "net_positive_after_fees": true,
+    "sharpe_ge_0_5": false,
+    "sharpe_above_holding": false,
+    "calmar_at_least_holding": false,
+    "positive_in_60pct_of_half_years": true,
+    "positive_at_2x_fees": false,
+    "positive_without_best_coin": true,
+    "significant_after_holm": false
+   },
+   "passed": false
+  },
+  "\u00b120% / 40 grids + stop": {
+   "config": {
+    "name": "\u00b120% / 40 grids + stop",
+    "width": 0.2,
+    "grids": 40,
+    "stop": true,
+    "stop_below": 0.05
+   },
+   "metrics": {
+    "net_return": -0.26077542626407635,
+    "cagr": -0.05051664687553714,
+    "max_drawdown": -0.5920290092797034,
+    "sharpe": -0.07319117039954612,
+    "calmar": -0.08532799252016147,
+    "half_years": {
+     "2021-H1": 0.3245955471767199,
+     "2021-H2": -0.052401414147328906,
+     "2022-H1": -0.33057541818627545,
+     "2022-H2": 0.08488109591302995,
+     "2023-H1": -0.003357142461004603,
+     "2023-H2": 0.08141643897700312,
+     "2024-H1": 0.07551957925731556,
+     "2024-H2": 0.03288909730157785,
+     "2025-H1": 0.013881298194000191,
+     "2025-H2": -0.11018266778953456,
+     "2026-H1": -0.29848414120644984,
+     "2026-H2": 0.07017523510777557
+    },
+    "by_year": {
+     "2021": 0.2551848673314048,
+     "2022": -0.27375392605080473,
+     "2023": 0.07778596993168496,
+     "2024": 0.1108924473492614,
+     "2025": -0.09783084806293141,
+     "2026": -0.24925510088377933
+    },
+    "days": 2130
+   },
+   "p_value": 0.5782843431313738,
+   "stress_2x_fees": {
+    "net_return": -0.6480697258629241,
+    "sharpe": -0.5480227054403295,
+    "max_drawdown": -0.782341868752761
+   },
+   "without_best_coin": {
+    "best": "BTC",
+    "net_return": -0.3444560103386869
+   },
+   "by_coin": {
+    "BTC": {
+     "net_return": 0.4923498304074192,
+     "trips": 7759,
+     "fees_usdt": 652.3056324307373,
+     "stops": 4,
+     "below_range_share": 0.02211742144426126,
+     "above_range_share": 0.06745462936237315
+    },
+    "ETH": {
+     "net_return": -0.16610849754114732,
+     "trips": 10474,
+     "fees_usdt": 769.8482978594202,
+     "stops": 13,
+     "below_range_share": 0.030861328676004156,
+     "above_range_share": 0.12029966064768838
+    },
+    "BNB": {
+     "net_return": -0.3253602158537098,
+     "trips": 8364,
+     "fees_usdt": 527.2168627281678,
+     "stops": 12,
+     "below_range_share": 0.032335497295455026,
+     "above_range_share": 0.0968271129614319
+    },
+    "SOL": {
+     "net_return": -0.14860827967314905,
+     "trips": 15286,
+     "fees_usdt": 1088.1473223010125,
+     "stops": 17,
+     "below_range_share": 0.0649253865208153,
+     "above_range_share": 0.18523157003850124
+    },
+    "XRP": {
+     "net_return": 0.021132097363722346,
+     "trips": 13541,
+     "fees_usdt": 928.1422704710149,
+     "stops": 14,
+     "below_range_share": 0.04037004241496216,
+     "above_range_share": 0.1102153036314448
+    },
+    "ADA": {
+     "net_return": -0.8974438407920524,
+     "trips": 14038,
+     "fees_usdt": 371.2134458974377,
+     "stops": 24,
+     "below_range_share": 0.06377736140124293,
+     "above_range_share": 0.10870852066200608
+    },
+    "DOGE": {
+     "net_return": -0.8127476864153599,
+     "trips": 12622,
+     "fees_usdt": 461.7356128465951,
+     "stops": 21,
+     "below_range_share": 0.06238962080925987,
+     "above_range_share": 0.1577229965412482
+    },
+    "LINK": {
+     "net_return": 0.21646565121752026,
+     "trips": 16727,
+     "fees_usdt": 1400.1454297876978,
+     "stops": 17,
+     "below_range_share": 0.051905738005665114,
+     "above_range_share": 0.15490511670229784
+    },
+    "AVAX": {
+     "net_return": -0.6855951765788773,
+     "trips": 17881,
+     "fees_usdt": 1125.5742796686618,
+     "stops": 26,
+     "below_range_share": 0.08327258910648096,
+     "above_range_share": 0.138002729821094
+    },
+    "LTC": {
+     "net_return": -0.3018381447751286,
+     "trips": 13026,
+     "fees_usdt": 851.7237969330914,
+     "stops": 15,
+     "below_range_share": 0.04480070186081174,
+     "above_range_share": 0.12458192480109323
+    }
+   },
+   "fees_usdt": 8176.052950923837,
+   "trips": 129718,
+   "nexus_fit": {
+    "allocation_share_for_5pct_drawdown": 0.08445532096616834,
+    "net_return_at_that_share": -0.022023872325221933
+   },
+   "gates": {
+    "net_positive_after_fees": false,
+    "sharpe_ge_0_5": false,
+    "sharpe_above_holding": false,
+    "calmar_at_least_holding": false,
+    "positive_in_60pct_of_half_years": false,
+    "positive_at_2x_fees": false,
+    "positive_without_best_coin": false,
+    "significant_after_holm": false
+   },
+   "passed": false
+  },
+  "\u00b130% / 30 grids": {
+   "config": {
+    "name": "\u00b130% / 30 grids",
+    "width": 0.3,
+    "grids": 30,
+    "stop": false,
+    "stop_below": 0.05
+   },
+   "metrics": {
+    "net_return": 1.0158782887913138,
+    "cagr": 0.12780423031062393,
+    "max_drawdown": -0.5741568521384781,
+    "sharpe": 0.5001269608087572,
+    "calmar": 0.22259462694664392,
+    "half_years": {
+     "2021-H1": 0.7896124958187156,
+     "2021-H2": 0.3188939261368533,
+     "2022-H1": -0.4923761805788387,
+     "2022-H2": 0.08679836189867784,
+     "2023-H1": 0.16907193059971282,
+     "2023-H2": 0.11173410311320287,
+     "2024-H1": 0.1377106871814877,
+     "2024-H2": 0.22059414054026338,
+     "2025-H1": 0.013665528594672738,
+     "2025-H2": -0.05470109716216642,
+     "2026-H1": -0.20361284801691526,
+     "2026-H2": 0.12401242407219693
+    },
+    "by_year": {
+     "2021": 1.3603090508739188,
+     "2022": -0.44831526459233173,
+     "2023": 0.29969713424009226,
+     "2024": 0.3886829984037605,
+     "2025": -0.04178308797492336,
+     "2026": -0.10485094679953988
+    },
+    "days": 2130
+   },
+   "p_value": 0.07618476304739052,
+   "stress_2x_fees": {
+    "net_return": 0.311948129583826,
+    "sharpe": 0.3003664813790927,
+    "max_drawdown": -0.5914362722242281
+   },
+   "without_best_coin": {
+    "best": "LINK",
+    "net_return": 0.8360429268236755
+   },
+   "by_coin": {
+    "BTC": {
+     "net_return": 0.5119946000356765,
+     "trips": 2149,
+     "fees_usdt": 278.61587081852116,
+     "stops": 0,
+     "below_range_share": 0.008845011716705233,
+     "above_range_share": 0.026494267212630887
+    },
+    "ETH": {
+     "net_return": 0.7198962798567046,
+     "trips": 3483,
+     "fees_usdt": 577.8316717964782,
+     "stops": 0,
+     "below_range_share": 0.014405758389633856,
+     "above_range_share": 0.06677625088262584
+    },
+    "BNB": {
+     "net_return": 0.7082989072587784,
+     "trips": 2744,
+     "fees_usdt": 336.14684037590837,
+     "stops": 0,
+     "below_range_share": 0.01284679246021457,
+     "above_range_share": 0.05217806782806367
+    },
+    "SOL": {
+     "net_return": 1.2364974786713843,
+     "trips": 5764,
+     "fees_usdt": 1023.444412981109,
+     "stops": 0,
+     "below_range_share": 0.027851024172125493,
+     "above_range_share": 0.11605979514926773
+    },
+    "XRP": {
+     "net_return": 1.5273525595656903,
+     "trips": 4716,
+     "fees_usdt": 773.4631162105916,
+     "stops": 0,
+     "below_range_share": 0.015935371404064074,
+     "above_range_share": 0.07008823812389213
+    },
+    "ADA": {
+     "net_return": 0.01990244451304446,
+     "trips": 5194,
+     "fees_usdt": 658.620556753987,
+     "stops": 0,
+     "below_range_share": 0.011455790433232717,
+     "above_range_share": 0.07242668701802106
+    },
+    "DOGE": {
+     "net_return": 1.2452873724836837,
+     "trips": 5390,
+     "fees_usdt": 1125.9843940808141,
+     "stops": 0,
+     "below_range_share": 0.017606856840941446,
+     "above_range_share": 0.10632441167789415
+    },
+    "LINK": {
+     "net_return": 2.634396546500059,
+     "trips": 5622,
+     "fees_usdt": 1217.1332582379544,
+     "stops": 0,
+     "below_range_share": 0.017034474998654656,
+     "above_range_share": 0.07741831328366168
+    },
+    "AVAX": {
+     "net_return": -0.25542251615239364,
+     "trips": 6302,
+     "fees_usdt": 804.3366317811727,
+     "stops": 0,
+     "below_range_share": 0.03675474171880886,
+     "above_range_share": 0.0888056135819199
+    },
+    "LTC": {
+     "net_return": 1.8105792151805096,
+     "trips": 4488,
+     "fees_usdt": 856.3340361316372,
+     "stops": 0,
+     "below_range_share": 0.015030323191901205,
+     "above_range_share": 0.05151599652331029
+    }
+   },
+   "fees_usdt": 7651.910789168173,
+   "trips": 45852,
+   "nexus_fit": {
+    "allocation_share_for_5pct_drawdown": 0.08708421716778666,
+    "net_return_at_that_share": 0.08846696551714227
+   },
+   "gates": {
+    "net_positive_after_fees": true,
+    "sharpe_ge_0_5": true,
+    "sharpe_above_holding": false,
+    "calmar_at_least_holding": false,
+    "positive_in_60pct_of_half_years": true,
+    "positive_at_2x_fees": true,
+    "positive_without_best_coin": true,
+    "significant_after_holm": false
+   },
+   "passed": false
+  },
+  "\u00b130% / 30 grids + stop": {
+   "config": {
+    "name": "\u00b130% / 30 grids + stop",
+    "width": 0.3,
+    "grids": 30,
+    "stop": true,
+    "stop_below": 0.05
+   },
+   "metrics": {
+    "net_return": 0.08123979835264405,
+    "cagr": 0.013490407392538373,
+    "max_drawdown": -0.5516955516421114,
+    "sharpe": 0.18768939568695137,
+    "calmar": 0.024452630354521495,
+    "half_years": {
+     "2021-H1": 0.4919509125901713,
+     "2021-H2": 0.06292081886737089,
+     "2022-H1": -0.44105694613355506,
+     "2022-H2": 0.06824085620009201,
+     "2023-H1": 0.09605150042782373,
+     "2023-H2": 0.10379799964231085,
+     "2024-H1": 0.07424813772997796,
+     "2024-H2": 0.11466217793654021,
+     "2025-H1": -0.006586596938457312,
+     "2025-H2": -0.11214668236601522,
+     "2026-H1": -0.2080744194797478,
+     "2026-H2": 0.12851095824849823
+    },
+    "by_year": {
+     "2021": 0.5858256857202662,
+     "2022": -0.40291419357061464,
+     "2023": 0.20981945367718513,
+     "2024": 0.19742376884636959,
+     "2025": -0.11799461430974245,
+     "2026": -0.10630330426559198
+    },
+    "days": 2130
+   },
+   "p_value": 0.3277344531093781,
+   "stress_2x_fees": {
+    "net_return": -0.27507019638054564,
+    "sharpe": -0.030735476574391924,
+    "max_drawdown": -0.6494551932244521
+   },
+   "without_best_coin": {
+    "best": "LINK",
+    "net_return": -0.008418148592782448
+   },
+   "by_coin": {
+    "BTC": {
+     "net_return": 0.2290491711399183,
+     "trips": 2106,
+     "fees_usdt": 245.49971229714797,
+     "stops": 4,
+     "below_range_share": 0.008845011716705233,
+     "above_range_share": 0.026494267212630887
+    },
+    "ETH": {
+     "net_return": -0.04141731294068385,
+     "trips": 3320,
+     "fees_usdt": 452.59312303701176,
+     "stops": 7,
+     "below_range_share": 0.014405758389633856,
+     "above_range_share": 0.06677625088262584
+    },
+    "BNB": {
+     "net_return": 0.4448472461295445,
+     "trips": 2702,
+     "fees_usdt": 314.6522616264297,
+     "stops": 5,
+     "below_range_share": 0.01284679246021457,
+     "above_range_share": 0.05217806782806367
+    },
+    "SOL": {
+     "net_return": 0.005093173632554349,
+     "trips": 5073,
+     "fees_usdt": 598.5294784547777,
+     "stops": 12,
+     "below_range_share": 0.027851024172125493,
+     "above_range_share": 0.11605979514926773
+    },
+    "XRP": {
+     "net_return": 0.37353964182164057,
+     "trips": 4438,
+     "fees_usdt": 554.3128941603167,
+     "stops": 8,
+     "below_range_share": 0.015935371404064074,
+     "above_range_share": 0.07008823812389213
+    },
+    "ADA": {
+     "net_return": -0.42280307881429957,
+     "trips": 4941,
+     "fees_usdt": 485.6501638277745,
+     "stops": 8,
+     "below_range_share": 0.011455790433232717,
+     "above_range_share": 0.07242668701802106
+    },
+    "DOGE": {
+     "net_return": -0.5791439413861705,
+     "trips": 4569,
+     "fees_usdt": 303.0050518785978,
+     "stops": 12,
+     "below_range_share": 0.017606856840941446,
+     "above_range_share": 0.10632441167789415
+    },
+    "LINK": {
+     "net_return": 0.8881613208614823,
+     "trips": 5213,
+     "fees_usdt": 754.9245431497732,
+     "stops": 8,
+     "below_range_share": 0.017034474998654656,
+     "above_range_share": 0.07741831328366168
+    },
+    "AVAX": {
+     "net_return": -0.21305302313199292,
+     "trips": 5818,
+     "fees_usdt": 713.3139013361175,
+     "stops": 11,
+     "below_range_share": 0.03675474171880886,
+     "above_range_share": 0.0888056135819199
+    },
+    "LTC": {
+     "net_return": 0.12812478621444767,
+     "trips": 4127,
+     "fees_usdt": 472.79179320663746,
+     "stops": 8,
+     "below_range_share": 0.015030323191901205,
+     "above_range_share": 0.05151599652331029
+    }
+   },
+   "fees_usdt": 4895.272922974585,
+   "trips": 42307,
+   "nexus_fit": {
+    "allocation_share_for_5pct_drawdown": 0.09062969576458602,
+    "net_return_at_that_share": 0.0073627382086764465
+   },
+   "gates": {
+    "net_positive_after_fees": true,
+    "sharpe_ge_0_5": false,
+    "sharpe_above_holding": false,
+    "calmar_at_least_holding": false,
+    "positive_in_60pct_of_half_years": true,
+    "positive_at_2x_fees": false,
+    "positive_without_best_coin": false,
+    "significant_after_holm": false
+   },
+   "passed": false
+  }
+ },
+ "holding": {
+  "net_return": 10.48740207750861,
+  "cagr": 0.5201660820750478,
+  "max_drawdown": -0.8764259012515273,
+  "sharpe": 0.901785223173648,
+  "calmar": 0.5935083403311745,
+  "half_years": {
+   "2021-H1": 9.766208233844074,
+   "2021-H2": 1.018604118586445,
+   "2022-H1": -0.7473387253630904,
+   "2022-H2": -0.3123470514823672,
+   "2023-H1": 0.21909382870501903,
+   "2023-H2": 1.5940708513363409,
+   "2024-H1": 0.3518290482646762,
+   "2024-H2": 0.5318912140017158,
+   "2025-H1": -0.2590896700702543,
+   "2025-H2": -0.16199082219612837,
+   "2026-H1": -0.4042112136288716,
+   "2026-H2": 0.2558115807230732
+  },
+  "by_year": {
+   "2021": 20.732712282396943,
+   "2022": -0.8262567295197057,
+   "2023": 2.1624157660877086,
+   "2024": 1.0708550418689589,
+   "2025": -0.3791103435891785,
+   "2026": -0.2518015424101919
+  },
+  "days": 2130
+ },
+ "holding_by_coin": {
+  "BTC": 1.678287012841019,
+  "ETH": 2.0584183661225985,
+  "BNB": 17.814315613495765,
+  "SOL": 62.226973101834204,
+  "XRP": 4.694093465494969,
+  "ADA": 0.06270451852045111,
+  "DOGE": 15.165058483354773,
+  "LINK": 0.03703280415803456,
+  "AVAX": 1.688768165096513,
+  "LTC": -0.5516307558322293
+ },
+ "generated_at": "2026-11-27T12:38:08.129303+00:00",
+ "harness_commit": "24b15ba",
+ "kind": "historical backtest (no orders placed)",
+ "paper": false,
+ "preregistration": "docs/research/2026-11-27-binance-spot-grid-preregistration.md",
+ "coins": [
+  "BTC",
+  "ETH",
+  "BNB",
+  "SOL",
+  "XRP",
+  "ADA",
+  "DOGE",
+  "LINK",
+  "AVAX",
+  "LTC"
+ ],
+ "period": [
+  "2021-01",
+  "2026-10"
+ ],
+ "original_run": {
+  "harness_commit": "29dfdfc",
+  "generated_at": "2026-11-27T12:33:51.663914+00:00",
+  "configs": {
+   "\u00b110% / 40 grids": {
+    "net_return": -0.7828180351963091,
+    "sharpe": -0.4299763952651447,
+    "max_drawdown": -0.8518310043579969,
+    "passed": false,
+    "failed": [
+     "net_positive_after_fees",
+     "sharpe_ge_0_5",
+     "sharpe_above_holding",
+     "calmar_at_least_holding",
+     "positive_in_60pct_of_half_years",
+     "positive_at_2x_fees",
+     "positive_without_best_coin",
+     "significant_after_holm"
+    ]
+   },
+   "\u00b110% / 40 grids + stop": {
+    "net_return": -0.8058196436817102,
+    "sharpe": -1.2664409607135296,
+    "max_drawdown": -0.8330394711790063,
+    "passed": false,
+    "failed": [
+     "net_positive_after_fees",
+     "sharpe_ge_0_5",
+     "sharpe_above_holding",
+     "calmar_at_least_holding",
+     "positive_in_60pct_of_half_years",
+     "positive_at_2x_fees",
+     "positive_without_best_coin",
+     "significant_after_holm"
+    ]
+   },
+   "\u00b120% / 40 grids": {
+    "net_return": -0.10939994845171419,
+    "sharpe": 0.1378515314675554,
+    "max_drawdown": -0.6212137906575682,
+    "passed": false,
+    "failed": [
+     "net_positive_after_fees",
+     "sharpe_ge_0_5",
+     "sharpe_above_holding",
+     "calmar_at_least_holding",
+     "positive_at_2x_fees",
+     "positive_without_best_coin",
+     "significant_after_holm"
+    ]
+   },
+   "\u00b120% / 40 grids + stop": {
+    "net_return": -0.36729905147231523,
+    "sharpe": -0.1704231290296304,
+    "max_drawdown": -0.6330847085143021,
+    "passed": false,
+    "failed": [
+     "net_positive_after_fees",
+     "sharpe_ge_0_5",
+     "sharpe_above_holding",
+     "calmar_at_least_holding",
+     "positive_in_60pct_of_half_years",
+     "positive_at_2x_fees",
+     "positive_without_best_coin",
+     "significant_after_holm"
+    ]
+   },
+   "\u00b130% / 30 grids": {
+    "net_return": 0.8041284194174885,
+    "sharpe": 0.448134784609171,
+    "max_drawdown": -0.5735096862211287,
+    "passed": false,
+    "failed": [
+     "sharpe_ge_0_5",
+     "sharpe_above_holding",
+     "calmar_at_least_holding",
+     "significant_after_holm"
+    ]
+   },
+   "\u00b130% / 30 grids + stop": {
+    "net_return": 0.010862458073091608,
+    "sharpe": 0.1518790384914815,
+    "max_drawdown": -0.5650837630330794,
+    "passed": false,
+    "failed": [
+     "sharpe_ge_0_5",
+     "sharpe_above_holding",
+     "calmar_at_least_holding",
+     "positive_at_2x_fees",
+     "positive_without_best_coin",
+     "significant_after_holm"
+    ]
+   }
+  }
+ },
+ "correction": "After the pre-registered run (commit 29dfdfc), a fair-game sanity check led to one fix: an order that is already through the market when it becomes active now fills at the bar's open, like a real limit order, instead of at its worse line price. The check's remaining bias was traced to the synthetic generator's price jumps (it shrinks with a near-continuous path). Re-run at commit 24b15ba. Both runs fail every configuration; the figures above are the corrected run."
+}

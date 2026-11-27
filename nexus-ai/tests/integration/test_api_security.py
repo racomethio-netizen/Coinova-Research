@@ -855,6 +855,9 @@ def test_markets_overview_and_per_market_switch(client: TestClient) -> None:
     night = m2["night_scalper"]
     assert set(night["accounts"]) == {"Standard", "Raw Spread"}
     assert not any(a["passed"] for a in night["accounts"].values())
+    grid = m2["binance_grid"]
+    assert len(grid["configs"]) == 6 and not any(c["passed"] for c in grid["configs"].values())
+    assert grid["original_run"]["harness_commit"] and grid["holding"]["net_return"] > 0
     assert client.post("/api/v1/markets/gold/autonomy",
                        json={"autonomy": "OFF", "reason": "unknown"},
                        headers=CSRF).status_code == 404

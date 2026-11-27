@@ -95,3 +95,56 @@ The mechanics are rebuilt from Binance's public description of the product. The 
 * **Nothing passes:** the result is recorded, and there is no re-tuning on this data.
 * **A harness bug found after the run:** it is fixed and the test re-run. Both results
   are reported.
+
+## Results (2026-11-27)
+
+* **Data.** 700 monthly archives, all SHA-256 verified. There are 7 exchange-outage gaps
+  over 5 minutes, which are not filled.
+* **Before any result was seen,** the timing check found a timestamp-unit bug (pandas 3
+  stores milliseconds), which was fixed and tested.
+
+**Verdict: all 6 configurations FAILED, in both runs.** No re-tuning will follow.
+
+### The two runs
+
+* **Pre-registered run** (commit 29dfdfc).
+* **Corrected re-run** (commit 24b15ba). After the first run, a fair-game sanity check
+  led to one realism fix: an order that is already through the market when it becomes
+  active fills at the bar's open, as a real limit order does, not at its worse line
+  price.
+  * The check's remaining bias was traced to the synthetic generator's price jumps; it
+    shrinks to non-significance with a near-continuous price.
+  * Both runs are reported, as the pre-registration requires.
+
+| Configuration (corrected run) | Net | Sharpe | Max drawdown | Calmar | Original run |
+|---|---|---|---|---|---|
+| ±10% / 40 grids | −63.9% | −0.22 | −78.6% | −0.20 | −78.3% |
+| ±10% / 40 grids + stop | −72.5% | −0.99 | −78.7% | −0.25 | −80.6% |
+| ±20% / 40 grids | +12.1% | 0.24 | −62.1% | 0.03 | −10.9% |
+| ±20% / 40 grids + stop | −26.1% | −0.07 | −59.2% | −0.09 | −36.7% |
+| ±30% / 30 grids | **+101.6%** | 0.50 | −57.4% | 0.22 | +80.4% |
+| ±30% / 30 grids + stop | +8.1% | 0.19 | −55.2% | 0.02 | +1.1% |
+| *Holding the same coins* | *+1,049%* | *0.90* | *−87.6%* | *0.59* | |
+
+### The best configuration (±30%, no stop)
+
+* **Return.** +101.6% in almost 6 years (12.8% a year).
+* **Failed checks:**
+  * a lower Sharpe than holding;
+  * a lower Calmar than holding;
+  * not significant (p 0.076).
+* **When the profit was made.** Nearly all of it came in 2021 (+136%). It then lost 45%
+  in 2022, 4% in 2025 and 10% so far in 2026.
+* **Not allowed live.** It has no stop, so NEXUS rules forbid it for real money.
+
+### What the test shows
+
+* **Narrow grids lose heavily.** At ±10%, the bot made about 350,000 trades and paid
+  about 15,900 USDT in fees on 10,000 USDT. It also capped every rally: in 2021 it made
+  +6% (original run) while holding made +2,073%.
+* **The stop-loss hurts.** It sells near the lows and the bot then waits.
+* **NEXUS fit.** To keep the 5% drawdown limit, at most about 9% of the account could go
+  into the best grid, which would have earned about +9% in total over 6 years.
+
+**Decision.** The Binance Spot Grid is recorded as failed. No live or paper order path
+is added.

@@ -218,6 +218,26 @@ function NightScalper({ n }: { n: Any }) {
   );
 }
 
+function BinanceGrid({ g }: { g: Any }) {
+  if (!g?.configs) return null;
+  const h = g.holding;
+  const rows = [...Object.entries(g.configs).map(([k, x]: [string, Any]) => ({ key: k, ...x.metrics, passed: x.passed, gates: x.gates })),
+    { key: "Holding the same coins (benchmark)", ...h, benchmark: true }];
+  const anyPassed = Object.values(g.configs).some((x: Any) => x.passed);
+  return (
+    <Card title="Binance Spot Grid bot, as people run it (10 coins, 2021 – Oct 2026)" actions={<Badge tone={anyPassed ? "good" : "bad"}>{anyPassed ? "passed" : "none passed"}</Badge>}>
+      <Table rows={rows} empty="No result." columns={[
+        { key: "key", label: "Grid setting" },
+        { key: "n", label: "Net", numeric: true, render: (x: Any) => <span className={x.net_return > 0 ? "text-up" : "text-down"}>{pct(x.net_return, 1)}</span> },
+        { key: "s", label: "Sharpe", numeric: true, render: (x: Any) => num(x.sharpe, 2) },
+        { key: "d", label: "Worst drop", numeric: true, render: (x: Any) => pct(x.max_drawdown, 1) },
+        { key: "why", label: "Failed checks", render: (x: Any) => x.benchmark ? DASH : <span className="text-xs text-muted">{failed(x.gates)}</span> },
+      ]} />
+      <p className="mt-2 text-xs text-muted">The plain Binance grid: a fixed price range around the current price, equal coin amount per grid, a new bot every 30 days, 0.1% fees, on Binance&apos;s own 5-minute prices. Narrow grids traded hundreds of thousands of times and lost most of the money; the widest grid (±30%, no stop) made +{num(100 * (g.configs["±30% / 30 grids"]?.metrics?.net_return ?? 0), 0)}% in 6 years, but holding the same coins made far more for the risk taken, and almost all of the grid&apos;s profit came in 2021. Grids cap the gains in rallies and keep the full losses in crashes. Historical backtest, no orders placed. Rules written before the run: {g.preregistration}</p>
+    </Card>
+  );
+}
+
 function MultiAsset() {
   const { data: r } = useApi<Any>("/research/multi-asset", 60_000);
   if (!r?.trend && !r?.ndx_voltarget) return null;
@@ -259,6 +279,7 @@ function MultiAsset() {
       )}
       <Nqs1 n={r.nqs1} />
       <NightScalper n={r.night_scalper} />
+      <BinanceGrid g={r.binance_grid} />
       {v && (
         <Card title="NASDAQ-100: hold less when prices swing wildly (1990 – Oct 2026)" actions={<Badge tone={v.passed ? "good" : "bad"}>{v.passed ? "passed" : "failed"}</Badge>}>
           <Table rows={vrows} empty="No result." columns={[

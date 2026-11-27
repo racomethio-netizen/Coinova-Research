@@ -4,6 +4,18 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-27
 
+- **Binance Spot Grid bot (as people run it): all 6 settings FAILED.** It was
+  pre-registered before any run.
+  * Setup: 10 coins, Binance 5-minute data 2021–2026, new bot every 30 days, 0.1% fees.
+  * Results:
+    * best (±30%, no stop): +102% over 6 years, against +1,049% for holding the coins,
+      with a lower Sharpe and Calmar and no significance;
+    * narrow grids: −64% to −73%.
+  * Both the pre-registered run and a corrected re-run are reported. The correction: an
+    order already through the market fills at the bar's open.
+  * A timestamp-unit bug (pandas 3) was caught before any result was seen.
+  * Report: `docs/research/2026-11-27-binance-spot-grid-report.md`.
+
 - **Night scalper (the public idea behind popular MT5 robots): FAILED on both Exness
   accounts.** It was pre-registered before its data was downloaded.
   * Rules: 12 pairs, real bid/ask fills from Exness ticks, NEXUS limits.
