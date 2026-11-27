@@ -32,6 +32,9 @@ from nexus_strategies.nqs1.regime import SELECTION, classify
 
 Row = dict[str, Any]
 STALE_RATE = pd.Timedelta(days=4)   # a carry series must have a value within 4 days
+# The only frame columns the simulator reads (kept per bar; the rest stay in the frame).
+ROW_COLS = ("open", "high", "low", "close", "atr", "bb_mid", "regime", "ema20", "adx", "rsi",
+            "vol_pct", "width_pct", "mom", "macd_hist", "htf_adx")
 
 HTF_COLS = ("close", "ema50", "ema200", "adx")
 
@@ -171,7 +174,8 @@ class Portfolio:
                  carry: dict[str, pd.Series] | None = None, cost_mult: float = 1.0,
                  veto: Callable[[Position, float], bool] | None = None,
                  win_rates: dict[str, float] | None = None) -> None:
-        self.rows = {k: dict(zip(df.index, df.to_dict("records"), strict=True))
+        self.rows = {k: dict(zip(df.index, df[[c for c in ROW_COLS if c in df.columns]]
+                                 .to_dict("records"), strict=True))
                      for k, df in frames.items()}
         self.pick_rows = {k: dict(zip(df.index, df.to_dict("records"), strict=True))
                           for k, df in picks.items()}
