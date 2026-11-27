@@ -164,6 +164,25 @@ def simulate(t: np.ndarray, ohlc: np.ndarray, cfg: GridCfg, *, fee: float = FEE,
                     hb, ls = bounds(L, held, active, b)
                     dirty = False
                 if lo[b] < hb or h[b] > ls or lo[b] < stop_px:
+                    # An order that is already marketable when it becomes active (the bar
+                    # opens beyond its line) fills at once at the open, as a real limit
+                    # order placed through the market does: never at the worse line price.
+                    for k in range(N):
+                        if active[k] != b:
+                            continue
+                        if not held[k] and o[b] < L[k]:
+                            quote -= q * o[b] * (1 + fee)
+                            fees += q * o[b] * fee
+                            base += q
+                            held[k], active[k] = True, b + 1
+                            dirty = True
+                        elif held[k] and o[b] > L[k + 1]:
+                            quote += q * o[b] * (1 - fee)
+                            fees += q * o[b] * fee
+                            base -= q
+                            held[k], active[k] = False, b + 1
+                            trips += 1
+                            dirty = True
                     path = (o[b], lo[b], h[b], c[b]) if c[b] >= o[b] else \
                         (o[b], h[b], lo[b], c[b])
                     for a, z in itertools.pairwise(path):

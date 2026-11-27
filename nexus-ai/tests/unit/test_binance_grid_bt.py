@@ -138,3 +138,15 @@ def test_load_reads_binance_archives_in_seconds_for_ms_and_us_timestamps(tmp_pat
     assert t[0] == jan // 1000 and t[3] == feb // 1000
     assert list(np.diff(t[:3])) == [300, 300]
     assert ohlc.shape == (6, 4) and ohlc[0, 3] == 100.5
+
+
+def test_an_order_already_through_the_market_fills_at_the_open():
+    # Bar 1 buys at the 99.49 line; bar 2 opens at 105, above the 104.61 sell line, so the
+    # sell (active from bar 2) fills at the 105 open, not at the worse line price.
+    t, o = bars([(100, 100, 100, 100), (100, 100, 99.0, 99.2), (105, 105, 105, 105),
+                 (105, 105, 105, 105)])
+    res = bg.simulate(t, o, CFG, fee=0.0, slip=0.0)
+    L = bg.lines(100.0, CFG)
+    q = 1000 / (L[0] + L[1] + L[2] + 100.0)
+    assert res["trips"] == 1
+    assert res["daily"].iloc[-1] == pytest.approx(1000 + q * (105 - L[2]) + q * 5)
