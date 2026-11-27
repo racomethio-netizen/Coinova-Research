@@ -1,0 +1,478 @@
+{
+ "description": "Scheduled high-impact events copied from the publishers' official pages (read 2026-11-27). Nothing inferred: see each source's note.",
+ "sources": {
+  "FOMC": {
+   "currency": "USD",
+   "title": "Fed FOMC rate decision (press conference follows)",
+   "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+   "time_url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
+   "tz": "America/New_York",
+   "time": "14:00",
+   "before_min": 30,
+   "after_min": 90,
+   "covers_until": "2028-01-26",
+   "note": "Decision on the second day of each meeting. Time from the FOMC statement of 28 Oct 2026 ('For release at 2:00 p.m. EDT'); the calendar page prints no time. Dates are tentative until confirmed at the preceding meeting. The 2027 list printed no December meeting.",
+   "read_on": "2026-11-27"
+  },
+  "ECB": {
+   "currency": "EUR",
+   "title": "ECB monetary policy decision and press conference",
+   "url": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html",
+   "time_url": "https://www.ecb.europa.eu/press/press_conference/html/index.en.html",
+   "tz": "Europe/Berlin",
+   "time": "14:45",
+   "before_min": 45,
+   "after_min": 60,
+   "covers_until": "2027-12-31",
+   "note": "Day 2 of each meeting, 'followed by press conference' (14:45 CET per the ECB). The decision's publication time is not printed on the pages read, so the window starts 45 minutes before the press conference.",
+   "read_on": "2026-11-27"
+  },
+  "BOE": {
+   "currency": "GBP",
+   "title": "Bank of England MPC decision",
+   "url": "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates",
+   "tz": "Europe/London",
+   "time": null,
+   "covers_until": "2027-12-31",
+   "note": "The announcement time is not printed on the pages read: the whole London day is blocked.",
+   "read_on": "2026-11-27"
+  },
+  "BOJ": {
+   "currency": "JPY",
+   "title": "Bank of Japan monetary policy meeting",
+   "url": "https://www.boj.or.jp/en/mopo/mpmsche_minu/index.htm",
+   "tz": "Asia/Tokyo",
+   "time": null,
+   "covers_until": "2027-12-31",
+   "note": "The decision time is not printed: both meeting days are blocked for the whole Tokyo day.",
+   "read_on": "2026-11-27"
+  },
+  "RBA": {
+   "currency": "AUD",
+   "title": "Reserve Bank of Australia monetary policy meeting",
+   "url": "https://www.rba.gov.au/schedules-events/board-meeting-schedules.html",
+   "time_url": "https://www.rba.gov.au/monetary-policy/int-rate-decisions/2026/",
+   "tz": "Australia/Sydney",
+   "time": null,
+   "covers_until": "2027-12-31",
+   "note": "The RBA announces 'at 2.30 pm after each Board meeting', without the day or time zone: both meeting days are blocked for the whole Sydney day.",
+   "read_on": "2026-11-27"
+  },
+  "SNB": {
+   "currency": "CHF",
+   "title": "Swiss National Bank monetary policy assessment",
+   "url": "https://www.snb.ch/en/services-events/digital-services/event-schedule",
+   "tz": "Europe/Zurich",
+   "time": "09:30",
+   "before_min": 30,
+   "after_min": 60,
+   "covers_until": "2027-12-31",
+   "note": "Press release 09:30, news conference 10:00 (Swiss local time, CET/CEST).",
+   "read_on": "2026-11-27"
+  },
+  "BLS_CPI": {
+   "currency": "USD",
+   "title": "US consumer price index (CPI)",
+   "url": "https://www.bls.gov/schedule/news_release/cpi.htm",
+   "time_url": "https://www.bls.gov/schedule/2027/home.htm",
+   "tz": "America/New_York",
+   "time": "08:30",
+   "covers_until": "2027-12-31",
+   "note": "08:30 AM; 'All times on calendar are Eastern Time'.",
+   "read_on": "2026-11-27"
+  },
+  "BLS_NFP": {
+   "currency": "USD",
+   "title": "US employment situation (jobs report)",
+   "url": "https://www.bls.gov/schedule/news_release/empsit.htm",
+   "time_url": "https://www.bls.gov/schedule/2027/home.htm",
+   "tz": "America/New_York",
+   "time": "08:30",
+   "covers_until": "2027-12-31",
+   "note": "08:30 AM; 'All times on calendar are Eastern Time'.",
+   "read_on": "2026-11-27"
+  }
+ },
+ "events": [
+  {
+   "date": "2026-12-04",
+   "source": "BLS_NFP"
+  },
+  {
+   "date": "2026-12-07",
+   "source": "RBA"
+  },
+  {
+   "date": "2026-12-08",
+   "source": "RBA"
+  },
+  {
+   "date": "2026-12-09",
+   "source": "FOMC"
+  },
+  {
+   "date": "2026-12-10",
+   "source": "BLS_CPI"
+  },
+  {
+   "date": "2026-12-10",
+   "source": "SNB"
+  },
+  {
+   "date": "2026-12-17",
+   "source": "BOE"
+  },
+  {
+   "date": "2026-12-17",
+   "source": "BOJ"
+  },
+  {
+   "date": "2026-12-17",
+   "source": "ECB"
+  },
+  {
+   "date": "2026-12-18",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-01-08",
+   "source": "BLS_NFP"
+  },
+  {
+   "date": "2027-01-13",
+   "source": "BLS_CPI"
+  },
+  {
+   "date": "2027-01-21",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-01-22",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-01-27",
+   "source": "FOMC"
+  },
+  {
+   "date": "2027-02-04",
+   "source": "BOE"
+  },
+  {
+   "date": "2027-02-04",
+   "source": "ECB"
+  },
+  {
+   "date": "2027-02-05",
+   "source": "BLS_NFP"
+  },
+  {
+   "date": "2027-02-08",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-02-09",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-02-11",
+   "source": "BLS_CPI"
+  },
+  {
+   "date": "2027-03-05",
+   "source": "BLS_NFP"
+  },
+  {
+   "date": "2027-03-10",
+   "source": "BLS_CPI"
+  },
+  {
+   "date": "2027-03-17",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-03-17",
+   "source": "FOMC"
+  },
+  {
+   "date": "2027-03-18",
+   "source": "BOE"
+  },
+  {
+   "date": "2027-03-18",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-03-18",
+   "source": "ECB"
+  },
+  {
+   "date": "2027-03-18",
+   "source": "SNB"
+  },
+  {
+   "date": "2027-03-22",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-03-23",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-04-02",
+   "source": "BLS_NFP"
+  },
+  {
+   "date": "2027-04-13",
+   "source": "BLS_CPI"
+  },
+  {
+   "date": "2027-04-27",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-04-28",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-04-28",
+   "source": "FOMC"
+  },
+  {
+   "date": "2027-04-29",
+   "source": "BOE"
+  },
+  {
+   "date": "2027-04-29",
+   "source": "ECB"
+  },
+  {
+   "date": "2027-05-03",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-05-04",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-05-07",
+   "source": "BLS_NFP"
+  },
+  {
+   "date": "2027-05-12",
+   "source": "BLS_CPI"
+  },
+  {
+   "date": "2027-06-04",
+   "source": "BLS_NFP"
+  },
+  {
+   "date": "2027-06-09",
+   "source": "FOMC"
+  },
+  {
+   "date": "2027-06-10",
+   "source": "BLS_CPI"
+  },
+  {
+   "date": "2027-06-10",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-06-10",
+   "source": "ECB"
+  },
+  {
+   "date": "2027-06-11",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-06-17",
+   "source": "BOE"
+  },
+  {
+   "date": "2027-06-21",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-06-22",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-06-24",
+   "source": "SNB"
+  },
+  {
+   "date": "2027-07-02",
+   "source": "BLS_NFP"
+  },
+  {
+   "date": "2027-07-14",
+   "source": "BLS_CPI"
+  },
+  {
+   "date": "2027-07-21",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-07-22",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-07-22",
+   "source": "ECB"
+  },
+  {
+   "date": "2027-07-28",
+   "source": "FOMC"
+  },
+  {
+   "date": "2027-07-29",
+   "source": "BOE"
+  },
+  {
+   "date": "2027-08-06",
+   "source": "BLS_NFP"
+  },
+  {
+   "date": "2027-08-09",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-08-10",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-08-11",
+   "source": "BLS_CPI"
+  },
+  {
+   "date": "2027-09-03",
+   "source": "BLS_NFP"
+  },
+  {
+   "date": "2027-09-09",
+   "source": "ECB"
+  },
+  {
+   "date": "2027-09-14",
+   "source": "BLS_CPI"
+  },
+  {
+   "date": "2027-09-15",
+   "source": "FOMC"
+  },
+  {
+   "date": "2027-09-16",
+   "source": "BOE"
+  },
+  {
+   "date": "2027-09-21",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-09-22",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-09-23",
+   "source": "SNB"
+  },
+  {
+   "date": "2027-09-27",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-09-28",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-10-08",
+   "source": "BLS_NFP"
+  },
+  {
+   "date": "2027-10-14",
+   "source": "BLS_CPI"
+  },
+  {
+   "date": "2027-10-27",
+   "source": "FOMC"
+  },
+  {
+   "date": "2027-10-28",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-10-28",
+   "source": "ECB"
+  },
+  {
+   "date": "2027-10-29",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-11-01",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-11-02",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-11-04",
+   "source": "BOE"
+  },
+  {
+   "date": "2027-11-05",
+   "source": "BLS_NFP"
+  },
+  {
+   "date": "2027-11-10",
+   "source": "BLS_CPI"
+  },
+  {
+   "date": "2027-11-17",
+   "source": "FOMC"
+  },
+  {
+   "date": "2027-12-03",
+   "source": "BLS_NFP"
+  },
+  {
+   "date": "2027-12-10",
+   "source": "BLS_CPI"
+  },
+  {
+   "date": "2027-12-13",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-12-14",
+   "source": "RBA"
+  },
+  {
+   "date": "2027-12-16",
+   "source": "BOE"
+  },
+  {
+   "date": "2027-12-16",
+   "source": "BOJ"
+  },
+  {
+   "date": "2027-12-16",
+   "source": "ECB"
+  },
+  {
+   "date": "2027-12-16",
+   "source": "SNB"
+  },
+  {
+   "date": "2027-12-17",
+   "source": "BOJ"
+  },
+  {
+   "date": "2028-01-26",
+   "source": "FOMC"
+  }
+ ]
+}

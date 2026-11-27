@@ -71,6 +71,7 @@ where = [
 
 [tool.setuptools.package-data]
 nexus_backtest = ["results/*.json"]
+nexus_news = ["data/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
