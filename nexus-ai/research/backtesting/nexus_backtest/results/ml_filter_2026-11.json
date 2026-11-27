@@ -1,0 +1,826 @@
+{
+ "run_at": "2026-11-27T22:33:13.053626+00:00",
+ "preregistration": "docs/research/2026-11-28-ml-filter-preregistration.md",
+ "test_years": [
+  2020,
+  2026
+ ],
+ "threshold": 0.4,
+ "min_train": 1500,
+ "features": [
+  "atr_pct",
+  "adx",
+  "rsi",
+  "ema50_dist",
+  "ema20_slope",
+  "range_atr",
+  "rv_day",
+  "hour_sin",
+  "hour_cos",
+  "dow",
+  "h1_adx",
+  "h1_rsi",
+  "h1_ema50_dist",
+  "h1_atr_rank",
+  "d1_ema50_dist",
+  "d1_atr_pct",
+  "side",
+  "risk_atr",
+  "cost_risk",
+  "symbol_code"
+ ],
+ "modules": {
+  "fx_scalp_pullback": {
+   "name": "Forex scalping momentum pullback",
+   "folds": [
+    {
+     "year": 2020,
+     "train": 3414,
+     "test": 1007,
+     "allowed": 0,
+     "fit_rows": 2729,
+     "purged": 2,
+     "calibration_rows": 683,
+     "base_rate": 0.3602811950790861,
+     "psi_mean": 0.04971514400278754,
+     "psi_max": 0.1753870645733664,
+     "psi_max_feature": "d1_ema50_dist"
+    },
+    {
+     "year": 2021,
+     "train": 4421,
+     "test": 989,
+     "allowed": 985,
+     "fit_rows": 3535,
+     "purged": 1,
+     "calibration_rows": 885,
+     "base_rate": 0.3752544673150871,
+     "psi_mean": 0.1981191405204537,
+     "psi_max": 2.3198079103967,
+     "psi_max_feature": "d1_atr_pct"
+    },
+    {
+     "year": 2022,
+     "train": 5410,
+     "test": 1443,
+     "allowed": 131,
+     "fit_rows": 4327,
+     "purged": 1,
+     "calibration_rows": 1082,
+     "base_rate": 0.3744916820702403,
+     "psi_mean": 0.14333879978412234,
+     "psi_max": 0.9139936434871976,
+     "psi_max_feature": "d1_atr_pct"
+    },
+    {
+     "year": 2023,
+     "train": 6853,
+     "test": 1133,
+     "allowed": 26,
+     "fit_rows": 5481,
+     "purged": 1,
+     "calibration_rows": 1371,
+     "base_rate": 0.37589376915219613,
+     "psi_mean": 0.05695797450099048,
+     "psi_max": 0.4732422973185641,
+     "psi_max_feature": "d1_atr_pct"
+    },
+    {
+     "year": 2024,
+     "train": 7986,
+     "test": 991,
+     "allowed": 25,
+     "fit_rows": 6387,
+     "purged": 1,
+     "calibration_rows": 1598,
+     "base_rate": 0.36977210117705983,
+     "psi_mean": 0.05724765900534021,
+     "psi_max": 0.26579543962096963,
+     "psi_max_feature": "d1_atr_pct"
+    },
+    {
+     "year": 2025,
+     "train": 8977,
+     "test": 1357,
+     "allowed": 7,
+     "fit_rows": 7181,
+     "purged": 0,
+     "calibration_rows": 1796,
+     "base_rate": 0.3676061044892503,
+     "psi_mean": 0.03964485909215456,
+     "psi_max": 0.17580058962752731,
+     "psi_max_feature": "cost_risk"
+    },
+    {
+     "year": 2026,
+     "train": 10334,
+     "test": 942,
+     "allowed": 3,
+     "fit_rows": 8265,
+     "purged": 2,
+     "calibration_rows": 2067,
+     "base_rate": 0.36723437197600156,
+     "psi_mean": 0.09775463903562405,
+     "psi_max": 0.654165808196312,
+     "psi_max_feature": "d1_atr_pct"
+    }
+   ],
+   "metrics": {
+    "trades": 780,
+    "win_rate": 0.35128205128205126,
+    "mean_r": -0.139849558521273,
+    "median_r": -1.0050128401584812,
+    "total_r": -109.08265564659294,
+    "profit_factor": 0.7667472650116214,
+    "max_drawdown": 0.2521908889488157,
+    "return_at_risk": -0.24122559654115983,
+    "half_mean_r": {
+     "first": -0.14493885998171022,
+     "second": -0.02818429706579798
+    },
+    "half_trades": {
+     "first": 746,
+     "second": 34
+    },
+    "avg_bars": 19.452564102564104,
+    "carry_r": -0.020545040415675734,
+    "exit_reasons": {
+     "stop": 437,
+     "time": 217,
+     "target": 126
+    },
+    "years": {
+     "2021": {
+      "trades": 634,
+      "mean_r": -0.13461760087891134,
+      "total_r": -85.34755895722978
+     },
+     "2022": {
+      "trades": 98,
+      "mean_r": -0.24669592259792775,
+      "total_r": -24.17620041459692
+     },
+     "2023": {
+      "trades": 20,
+      "mean_r": 0.005571227698534453,
+      "total_r": 0.11142455397068907
+     },
+     "2024": {
+      "trades": 19,
+      "mean_r": -0.12049743913697125,
+      "total_r": -2.2894513436024537
+     },
+     "2025": {
+      "trades": 6,
+      "mean_r": 0.11418536176549421,
+      "total_r": 0.6851121705929653
+     },
+     "2026": {
+      "trades": 3,
+      "mean_r": 0.6446727814241856,
+      "total_r": 1.934018344272557
+     }
+    },
+    "symbols": {
+     "AUDUSD": {
+      "trades": 108,
+      "mean_r": -0.04733600247179429,
+      "win_rate": 0.4074074074074074
+     },
+     "EURUSD": {
+      "trades": 209,
+      "mean_r": -0.15282933423674427,
+      "win_rate": 0.32057416267942584
+     },
+     "GBPUSD": {
+      "trades": 216,
+      "mean_r": -0.15209100909801218,
+      "win_rate": 0.35648148148148145
+     },
+     "USDCHF": {
+      "trades": 96,
+      "mean_r": -0.37376990305558655,
+      "win_rate": 0.2708333333333333
+     },
+     "USDJPY": {
+      "trades": 151,
+      "mean_r": -0.021824290501011014,
+      "win_rate": 0.3973509933774834
+     }
+    },
+    "p_value": 0.9998000399920016
+   },
+   "metrics_2x_costs": {
+    "trades": 780,
+    "win_rate": 0.3230769230769231,
+    "mean_r": -0.24270531087491812,
+    "median_r": -1.010163062640736,
+    "total_r": -189.31014248243613,
+    "profit_factor": 0.6144032627077906,
+    "max_drawdown": 0.3839404304873554,
+    "return_at_risk": -0.37894707545391515,
+    "half_mean_r": {
+     "first": -0.25083093383038285,
+     "second": -0.06441958367560371
+    },
+    "half_trades": {
+     "first": 746,
+     "second": 34
+    },
+    "avg_bars": 19.56282051282051,
+    "carry_r": -0.0366604410959483,
+    "exit_reasons": {
+     "stop": 452,
+     "time": 231,
+     "target": 97
+    },
+    "years": {
+     "2021": {
+      "trades": 634,
+      "mean_r": -0.24957643595302922,
+      "total_r": -158.23146039422053
+     },
+     "2022": {
+      "trades": 98,
+      "mean_r": -0.2975005513870379,
+      "total_r": -29.155054035929712
+     },
+     "2023": {
+      "trades": 20,
+      "mean_r": -0.06007858845458732,
+      "total_r": -1.2015717690917465
+     },
+     "2024": {
+      "trades": 19,
+      "mean_r": -0.15584756116039716,
+      "total_r": -2.961103662047546
+     },
+     "2025": {
+      "trades": 6,
+      "mean_r": 0.1026887350575741,
+      "total_r": 0.6161324103454446
+     },
+     "2026": {
+      "trades": 3,
+      "mean_r": 0.5409716561693211,
+      "total_r": 1.6229149685079634
+     }
+    },
+    "symbols": {
+     "AUDUSD": {
+      "trades": 108,
+      "mean_r": -0.16016247205159356,
+      "win_rate": 0.37037037037037035
+     },
+     "EURUSD": {
+      "trades": 209,
+      "mean_r": -0.2844908409658003,
+      "win_rate": 0.291866028708134
+     },
+     "GBPUSD": {
+      "trades": 216,
+      "mean_r": -0.24060192554282953,
+      "win_rate": 0.33796296296296297
+     },
+     "USDCHF": {
+      "trades": 96,
+      "mean_r": -0.44733393458253373,
+      "win_rate": 0.23958333333333334
+     },
+     "USDJPY": {
+      "trades": 151,
+      "mean_r": -0.11682076888634003,
+      "win_rate": 0.36423841059602646
+     }
+    },
+    "p_value": null
+   },
+   "unfiltered_same_years": {
+    "trades": 4719,
+    "win_rate": 0.3564314473405383,
+    "mean_r": -0.09757666970058335,
+    "median_r": -1.005318406827347,
+    "total_r": -460.46430431705284,
+    "profit_factor": 0.8377784935054894,
+    "max_drawdown": 0.7341528528897829,
+    "return_at_risk": -0.6905548258848035,
+    "half_mean_r": {
+     "first": -0.07564947052753639,
+     "second": -0.11996401138304329
+    },
+    "half_trades": {
+     "first": 2384,
+     "second": 2335
+    },
+    "avg_bars": 18.562407289680017,
+    "carry_r": -0.020545040415675734,
+    "exit_reasons": {
+     "target": 891,
+     "stop": 2700,
+     "time": 1128
+    },
+    "years": {
+     "2020": {
+      "trades": 603,
+      "mean_r": 0.0549734691579872,
+      "total_r": 33.14900190226628
+     },
+     "2021": {
+      "trades": 634,
+      "mean_r": -0.1350148425309734,
+      "total_r": -85.59941016463713
+     },
+     "2022": {
+      "trades": 843,
+      "mean_r": -0.10504895865753815,
+      "total_r": -88.55627214830466
+     },
+     "2023": {
+      "trades": 702,
+      "mean_r": -0.11663050420902442,
+      "total_r": -81.87461395473514
+     },
+     "2024": {
+      "trades": 600,
+      "mean_r": -0.12339899157727009,
+      "total_r": -74.03939494636205
+     },
+     "2025": {
+      "trades": 759,
+      "mean_r": -0.11251204507419728,
+      "total_r": -85.39664221131574
+     },
+     "2026": {
+      "trades": 578,
+      "mean_r": -0.13520237507606292,
+      "total_r": -78.14697279396437
+     }
+    },
+    "symbols": {
+     "AUDUSD": {
+      "trades": 686,
+      "mean_r": -0.09987664013338314,
+      "win_rate": 0.3688046647230321
+     },
+     "EURUSD": {
+      "trades": 1129,
+      "mean_r": -0.09083859182171217,
+      "win_rate": 0.3463241806908769
+     },
+     "GBPUSD": {
+      "trades": 1201,
+      "mean_r": -0.0843608736304554,
+      "win_rate": 0.3572023313905079
+     },
+     "USDCHF": {
+      "trades": 650,
+      "mean_r": -0.21368747345086778,
+      "win_rate": 0.3169230769230769
+     },
+     "USDJPY": {
+      "trades": 1053,
+      "mean_r": -0.046702651515287665,
+      "win_rate": 0.38271604938271603
+     }
+    },
+    "p_value": null
+   },
+   "classification": {
+    "n": 7862,
+    "positive_rate": 0.36797252607479014,
+    "roc_auc": 0.4850862419242651,
+    "pr_auc": 0.36594732532526775,
+    "precision": 0.3721325403568394,
+    "recall": 0.15139993086761147,
+    "f1": 0.21523341523341524,
+    "brier": 0.23536359574109733,
+    "brier_ref": 0.23256874612892808,
+    "brier_skill": -0.012017305242811416,
+    "ece": 0.024575584138000595
+   },
+   "auc_by_model_raw": {
+    "lightgbm": 0.5010538550210754,
+    "xgboost": 0.49962630389298546,
+    "catboost": 0.507927651265012
+   },
+   "candidates_test_years": 7862,
+   "allowed": 1177,
+   "gates": {
+    "enough_trades": true,
+    "positive_expectancy": false,
+    "significant_after_holm": false,
+    "profit_factor": false,
+    "both_halves_positive": false,
+    "positive_at_2x_costs": false,
+    "max_drawdown": false
+   },
+   "passed": false
+  },
+  "fx_intraday_breakout": {
+   "name": "Forex intraday trend breakout",
+   "folds": [
+    {
+     "year": 2020,
+     "train": 1513,
+     "test": 413,
+     "allowed": 25,
+     "fit_rows": 1210,
+     "purged": 0,
+     "calibration_rows": 303,
+     "base_rate": 0.3456708526107072,
+     "psi_mean": 0.04457420772818926,
+     "psi_max": 0.13864173294248033,
+     "psi_max_feature": "d1_atr_pct"
+    },
+    {
+     "year": 2021,
+     "train": 1927,
+     "test": 488,
+     "allowed": 198,
+     "fit_rows": 1541,
+     "purged": 0,
+     "calibration_rows": 386,
+     "base_rate": 0.35132330046704724,
+     "psi_mean": 0.12044964481410743,
+     "psi_max": 0.8580455825161137,
+     "psi_max_feature": "d1_atr_pct"
+    },
+    {
+     "year": 2022,
+     "train": 2415,
+     "test": 480,
+     "allowed": 28,
+     "fit_rows": 1931,
+     "purged": 1,
+     "calibration_rows": 483,
+     "base_rate": 0.3494824016563147,
+     "psi_mean": 0.20601455996738863,
+     "psi_max": 1.2293479738387731,
+     "psi_max_feature": "d1_atr_pct"
+    },
+    {
+     "year": 2023,
+     "train": 2895,
+     "test": 431,
+     "allowed": 33,
+     "fit_rows": 2314,
+     "purged": 2,
+     "calibration_rows": 579,
+     "base_rate": 0.35233160621761656,
+     "psi_mean": 0.08657678423239172,
+     "psi_max": 0.7056836565361234,
+     "psi_max_feature": "d1_atr_pct"
+    },
+    {
+     "year": 2024,
+     "train": 3326,
+     "test": 329,
+     "allowed": 41,
+     "fit_rows": 2658,
+     "purged": 2,
+     "calibration_rows": 666,
+     "base_rate": 0.3496692723992784,
+     "psi_mean": 0.07315297271128064,
+     "psi_max": 0.2682322482458932,
+     "psi_max_feature": "d1_atr_pct"
+    },
+    {
+     "year": 2025,
+     "train": 3655,
+     "test": 449,
+     "allowed": 123,
+     "fit_rows": 2924,
+     "purged": 0,
+     "calibration_rows": 731,
+     "base_rate": 0.3518467852257182,
+     "psi_mean": 0.06031783507351357,
+     "psi_max": 0.3617353053420863,
+     "psi_max_feature": "cost_risk"
+    },
+    {
+     "year": 2026,
+     "train": 4104,
+     "test": 343,
+     "allowed": 100,
+     "fit_rows": 3283,
+     "purged": 0,
+     "calibration_rows": 821,
+     "base_rate": 0.35282651072124754,
+     "psi_mean": 0.10497982878694911,
+     "psi_max": 0.5425111268650991,
+     "psi_max_feature": "d1_atr_pct"
+    }
+   ],
+   "metrics": {
+    "trades": 545,
+    "win_rate": 0.3908256880733945,
+    "mean_r": -0.08968371257365455,
+    "median_r": -1.0025740025740149,
+    "total_r": -48.877623352641734,
+    "profit_factor": 0.8424348936910583,
+    "max_drawdown": 0.13746460930953774,
+    "return_at_risk": -0.11705630942965062,
+    "half_mean_r": {
+     "first": -0.17828009133370676,
+     "second": -0.005215480494178285
+    },
+    "half_trades": {
+     "first": 266,
+     "second": 279
+    },
+    "avg_bars": 74.04587155963303,
+    "carry_r": -0.03278080178293808,
+    "exit_reasons": {
+     "stop": 297,
+     "target": 82,
+     "clock": 166
+    },
+    "years": {
+     "2020": {
+      "trades": 25,
+      "mean_r": -0.1429963158709875,
+      "total_r": -3.574907896774687
+     },
+     "2021": {
+      "trades": 198,
+      "mean_r": -0.21215107726074617,
+      "total_r": -42.00591329762774
+     },
+     "2022": {
+      "trades": 28,
+      "mean_r": -0.09531741170771395,
+      "total_r": -2.6688875278159907
+     },
+     "2023": {
+      "trades": 33,
+      "mean_r": 0.18172153664145252,
+      "total_r": 5.996810709167933
+     },
+     "2024": {
+      "trades": 41,
+      "mean_r": 0.0913202339590708,
+      "total_r": 3.7441295923219027
+     },
+     "2025": {
+      "trades": 121,
+      "mean_r": -0.08369052478394703,
+      "total_r": -10.126553498857591
+     },
+     "2026": {
+      "trades": 99,
+      "mean_r": -0.00244748922278351,
+      "total_r": -0.2423014330555675
+     }
+    },
+    "symbols": {
+     "AUDUSD": {
+      "trades": 114,
+      "mean_r": -0.1655594662238088,
+      "win_rate": 0.42105263157894735
+     },
+     "EURUSD": {
+      "trades": 98,
+      "mean_r": 0.07482897235406263,
+      "win_rate": 0.41836734693877553
+     },
+     "GBPUSD": {
+      "trades": 102,
+      "mean_r": -0.10777115591429669,
+      "win_rate": 0.3431372549019608
+     },
+     "USDCHF": {
+      "trades": 80,
+      "mean_r": -0.1582996608384299,
+      "win_rate": 0.325
+     },
+     "USDJPY": {
+      "trades": 151,
+      "mean_r": -0.0905990246588942,
+      "win_rate": 0.41721854304635764
+     }
+    },
+    "p_value": 0.9528094381123775
+   },
+   "metrics_2x_costs": {
+    "trades": 545,
+    "win_rate": 0.3724770642201835,
+    "mean_r": -0.13350605747070016,
+    "median_r": -1.0051813471502355,
+    "total_r": -72.76080132153159,
+    "profit_factor": 0.7694213982864196,
+    "max_drawdown": 0.18136206936902743,
+    "return_at_risk": -0.16814665155897002,
+    "half_mean_r": {
+     "first": -0.21919365579742503,
+     "second": -0.051811071252389
+    },
+    "half_trades": {
+     "first": 266,
+     "second": 279
+    },
+    "avg_bars": 74.82201834862386,
+    "carry_r": -0.08392602778400887,
+    "exit_reasons": {
+     "stop": 300,
+     "target": 74,
+     "clock": 171
+    },
+    "years": {
+     "2020": {
+      "trades": 25,
+      "mean_r": -0.17039061135819586,
+      "total_r": -4.259765283954897
+     },
+     "2021": {
+      "trades": 198,
+      "mean_r": -0.2597694354509346,
+      "total_r": -51.43434821928505
+     },
+     "2022": {
+      "trades": 28,
+      "mean_r": -0.11607114851603453,
+      "total_r": -3.249992158448967
+     },
+     "2023": {
+      "trades": 33,
+      "mean_r": 0.12844382960951525,
+      "total_r": 4.238646377114003
+     },
+     "2024": {
+      "trades": 41,
+      "mean_r": 0.03511053488521601,
+      "total_r": 1.4395319302938565
+     },
+     "2025": {
+      "trades": 121,
+      "mean_r": -0.13639820804283614,
+      "total_r": -16.504183173183172
+     },
+     "2026": {
+      "trades": 99,
+      "mean_r": -0.030208997919872187,
+      "total_r": -2.9906907940673464
+     }
+    },
+    "symbols": {
+     "AUDUSD": {
+      "trades": 114,
+      "mean_r": -0.22273845888648228,
+      "win_rate": 0.37719298245614036
+     },
+     "EURUSD": {
+      "trades": 98,
+      "mean_r": 0.03666694182878085,
+      "win_rate": 0.41836734693877553
+     },
+     "GBPUSD": {
+      "trades": 102,
+      "mean_r": -0.1272683277416003,
+      "win_rate": 0.3333333333333333
+     },
+     "USDCHF": {
+      "trades": 80,
+      "mean_r": -0.23728743392793347,
+      "win_rate": 0.3125
+     },
+     "USDJPY": {
+      "trades": 151,
+      "mean_r": -0.1258120077073856,
+      "win_rate": 0.3973509933774834
+     }
+    },
+    "p_value": null
+   },
+   "unfiltered_same_years": {
+    "trades": 2771,
+    "win_rate": 0.354384698664742,
+    "mean_r": -0.08436602408484406,
+    "median_r": -1.0038095238095064,
+    "total_r": -233.7782527391029,
+    "profit_factor": 0.8655115203943744,
+    "max_drawdown": 0.47116210323705043,
+    "return_at_risk": -0.45032043809916167,
+    "half_mean_r": {
+     "first": -0.06834048850514698,
+     "second": -0.10273766828155331
+    },
+    "half_trades": {
+     "first": 1480,
+     "second": 1291
+    },
+    "avg_bars": 58.760736196319016,
+    "carry_r": -0.03278080178293808,
+    "exit_reasons": {
+     "target": 617,
+     "stop": 1693,
+     "clock": 461
+    },
+    "years": {
+     "2020": {
+      "trades": 388,
+      "mean_r": -0.023873356488533445,
+      "total_r": -9.262862317550976
+     },
+     "2021": {
+      "trades": 467,
+      "mean_r": -0.13467219251324986,
+      "total_r": -62.89191390368768
+     },
+     "2022": {
+      "trades": 443,
+      "mean_r": -0.02336984845277289,
+      "total_r": -10.35284286457839
+     },
+     "2023": {
+      "trades": 418,
+      "mean_r": -0.15683077397418616,
+      "total_r": -65.55526352120981
+     },
+     "2024": {
+      "trades": 312,
+      "mean_r": -0.0921557438234683,
+      "total_r": -28.752592072922113
+     },
+     "2025": {
+      "trades": 418,
+      "mean_r": -0.06859000846912859,
+      "total_r": -28.670623540095754
+     },
+     "2026": {
+      "trades": 325,
+      "mean_r": -0.08705278313556357,
+      "total_r": -28.29215451905816
+     }
+    },
+    "symbols": {
+     "AUDUSD": {
+      "trades": 539,
+      "mean_r": -0.14210147945042784,
+      "win_rate": 0.36178107606679033
+     },
+     "EURUSD": {
+      "trades": 594,
+      "mean_r": -0.03481628466012655,
+      "win_rate": 0.3569023569023569
+     },
+     "GBPUSD": {
+      "trades": 636,
+      "mean_r": -0.04509537815066926,
+      "win_rate": 0.34591194968553457
+     },
+     "USDCHF": {
+      "trades": 516,
+      "mean_r": -0.15192249717805364,
+      "win_rate": 0.3178294573643411
+     },
+     "USDJPY": {
+      "trades": 486,
+      "mean_r": -0.06055969790021769,
+      "win_rate": 0.39300411522633744
+     }
+    },
+    "p_value": null
+   },
+   "classification": {
+    "n": 2933,
+    "positive_rate": 0.3583361745652915,
+    "roc_auc": 0.5141578639239386,
+    "pr_auc": 0.3671200197920277,
+    "precision": 0.3905109489051095,
+    "recall": 0.20361560418648905,
+    "f1": 0.267667292057536,
+    "brier": 0.2329455074230912,
+    "brier_ref": 0.22993136056320446,
+    "brier_skill": -0.013108898466497765,
+    "ece": 0.03451567058752707
+   },
+   "auc_by_model_raw": {
+    "lightgbm": 0.5302242386432232,
+    "xgboost": 0.5384616745754005,
+    "catboost": 0.5391378687975927
+   },
+   "candidates_test_years": 2933,
+   "allowed": 548,
+   "gates": {
+    "enough_trades": true,
+    "positive_expectancy": false,
+    "significant_after_holm": false,
+    "profit_factor": false,
+    "both_halves_positive": false,
+    "positive_at_2x_costs": false,
+    "max_drawdown": false
+   },
+   "passed": false
+  }
+ },
+ "not_tested": {
+  "fx_swing_trend": "933 signals in 11 years; about 250 before the first test year: too few to train",
+  "crypto_scalp_volume": "288 signals since 2021: too few to train",
+  "crypto_breakout_retest": "94 signals since 2021: too few to train",
+  "crypto_swing_trend": "a portfolio rule, not a stream of trades to filter"
+ },
+ "holm_family": [
+  "fx_scalp_pullback",
+  "fx_intraday_breakout"
+ ]
+}

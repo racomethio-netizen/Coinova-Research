@@ -114,3 +114,39 @@ A pass allows only:
 It never allows real-money trading.
 
 A fail is recorded. No filter is attached and no model is registered for use.
+
+## Results (single run, 27 Nov 2026 22:33 UTC, after commits a676605 and b71536a)
+
+Output: `research/backtesting/nexus_backtest/results/ml_filter_2026-11.json` (and `.md`).
+Test years 2020 to Oct 2026. Every yearly model had enough training trades.
+
+### Decision: both FAIL
+
+| Module | Allowed / signals | Trades booked | Mean R filtered | Mean R unfiltered (same years) | Profit factor | Mean R at 2x costs | AUC | p-value | Result |
+|---|---|---|---|---|---|---|---|---|---|
+| Forex scalping momentum pullback | 1,177 / 7,862 | 780 | −0.140 | −0.098 | 0.77 | −0.243 | 0.485 | 1.00 | **FAIL** |
+| Forex intraday trend breakout | 548 / 2,933 | 545 | −0.090 | −0.084 | 0.84 | −0.134 | 0.514 | 0.95 | **FAIL** |
+
+Both failed every gate except the trade count.
+
+* **No predictive power.**
+  * Out of sample the ensemble's AUC is 0.485 and 0.514. Each model alone is between
+    0.50 and 0.54.
+  * The Brier skill is slightly negative (−0.012 and −0.013): the probabilities are no
+    better than the plain win rate.
+  * Calibration error is small (0.025 and 0.035). The calibration works, but it is
+    calibrating a model with no skill.
+* **Filtering made the scalper worse:** −0.140R against −0.098R unfiltered.
+* **Drift explains part of the behaviour.** The daily-volatility feature (`d1_atr_pct`)
+  moved far outside its training range: PSI 2.32 in 2021 and 0.91 in 2022 (above 0.25
+  is a strong shift). The scalping filter therefore let through 985 of 989 signals in
+  2021, then almost none from 2023 on (26, 25, 7, 3).
+
+### Consequences
+
+* No filter is attached to any module and no model is registered.
+* The modules stay as recorded in Phase 3 (all OFF; OBSERVE allowed; PAPER refused).
+* What this adds to the evidence: on these forex rules, the market state at the signal
+  (trend, momentum, volatility, session, cost) does not tell winners from losers well
+  enough to beat Exness Standard costs.
+* Live trading stays disabled.
