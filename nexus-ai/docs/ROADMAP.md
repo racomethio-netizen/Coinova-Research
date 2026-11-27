@@ -44,7 +44,11 @@ something passes, which would be data snooping.
     * running it with more money needs an explicit owner risk mandate for that money;
     * real money in any case only after the paper forward test (at least 3 months) and
       the owner's explicit approval.
-  * Not deployed yet: waits for the owner's "Deploy".
+  * **Deployed 2026-11-27 14:04 UTC** (owner: "Deploy"; Render 4e6840b = source 5719b09).
+    * Health checks are ready.
+    * The usual 5-second startup Redis blip hit 2 workers, which restarted on their own.
+    * The bot and trader were back in paper mode at 14:04:57.
+    * The voltarget-paper worker is running.
 
 * **2026-11-27: Binance Spot Grid bot (owner: "Test the Binance Spot Grid bot").**
   * Pre-registered: the plain product, 6 settings, 10 coins, Binance 5m 2021–2026.
