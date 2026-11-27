@@ -44,7 +44,13 @@ something passes, which would be data snooping.
   * The grid and martingale robot types are forbidden by NEXUS rules and were not
     tested.
   * Report: `docs/research/2026-11-27-night-scalper-report.md`.
-  * Not deployed yet: the dashboard card waits for the owner's "Deploy".
+  * **Deployed 2026-11-27 11:22 UTC** (owner: "Deploy"; Render 0a9ff13 = source 47060e6).
+    * The usual startup burst came back: Redis and database timeouts for about 5
+      seconds, one readiness check degraded, and the derivatives worker hit "No
+      connection available" (connection pool) at 11:23:04.
+    * Everything restarted on its own by 11:23:30.
+    * This is the third deploy in a row with this burst. The follow-up is a connect
+      retry with backoff at worker start, and a larger pool or staggered worker start.
 
 * **2026-11-27: NQS-1 adaptive forex strategy (owner brief), research stage.**
   * Built and tested on synthetic data:
