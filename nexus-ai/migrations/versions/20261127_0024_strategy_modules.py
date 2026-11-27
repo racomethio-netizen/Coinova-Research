@@ -94,22 +94,22 @@ def upgrade() -> None:
     )
     op.create_index("ix_strategy_module_signals_status", "strategy_module_signals",
                     ["status", "module_code"])
-    for table in ("strategy_modules", "strategy_module_signals"):
-        op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
-        op.execute(f"""
-        DO $$
-        BEGIN
-          IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
-            EXECUTE 'REVOKE ALL ON {table} FROM anon';
-          END IF;
-          IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
-            EXECUTE 'REVOKE ALL ON {table} FROM authenticated';
-          END IF;
-          IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'nexus_app') THEN
-            EXECUTE 'GRANT SELECT, INSERT, UPDATE ON {table} TO nexus_app';
-          END IF;
-        END $$;
-        """)
+    op.execute("ALTER TABLE strategy_modules ENABLE ROW LEVEL SECURITY")
+    op.execute("ALTER TABLE strategy_module_signals ENABLE ROW LEVEL SECURITY")
+    op.execute("""
+    DO $$
+    BEGIN
+      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+        EXECUTE 'REVOKE ALL ON strategy_modules, strategy_module_signals FROM anon';
+      END IF;
+      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+        EXECUTE 'REVOKE ALL ON strategy_modules, strategy_module_signals FROM authenticated';
+      END IF;
+      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'nexus_app') THEN
+        EXECUTE 'GRANT SELECT, INSERT, UPDATE ON strategy_modules, strategy_module_signals TO nexus_app';
+      END IF;
+    END $$;
+    """)
 
 
 def downgrade() -> None:
