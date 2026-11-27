@@ -113,7 +113,7 @@ def signals(m5: pd.DataFrame, h1: pd.DataFrame, r: Rules) -> pd.DataFrame:
     hadx = hadx[~hadx.index.duplicated(keep="last")]
     f["adx_h1"] = hadx.reindex(m5.index, method="ffill")
     close_ny = (m5.index + pd.Timedelta(minutes=5)).tz_convert(NY)
-    clock = np.array([t.hour * 60 + t.minute for t in close_ny])
+    clock = np.asarray(close_ny.hour) * 60 + np.asarray(close_ny.minute)
     wd = np.asarray(close_ny.day_of_week)
     weeknight = wd <= 3                                       # Monday..Thursday evenings
     start = r.start.hour * 60 + r.start.minute
