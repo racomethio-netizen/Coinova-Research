@@ -41,7 +41,10 @@ something passes, which would be data snooping.
   * Best: the 50/50, at 15.2% a year, Sharpe 1.24, worst drop −18%.
   * Report: the results section in
     `docs/research/2026-11-27-exness-voltarget-preregistration.md`.
-  * Not deployed yet: waits for the owner's "Deploy".
+  * **Deployed 2026-11-27 17:52 UTC** (owner: "Deploy"; Render f8c6e86 = source 5197a30).
+    * Health checks are ready.
+    * The usual startup Redis blip hit 2 workers, which restarted on their own.
+    * The trader and bot were back in paper mode by 17:53:36.
 
 * **2026-11-27: bot league** (owner: "the most profitable and effective bot … competitive
   with other best bots").
