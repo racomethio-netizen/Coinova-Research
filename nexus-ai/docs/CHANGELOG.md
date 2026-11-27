@@ -4,6 +4,36 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-27
 
+- **Unified brief Phase 4: intelligence** (owner: "Phase 4").
+  * **Economic calendar and event blackout** (`nexus_news.calendar`,
+    `data/economic_calendar.json`).
+    * 95 scheduled events, Dec 2026 to Dec 2027: Fed, ECB, BoE, BoJ, RBA and SNB
+      decisions, US CPI and the US jobs report.
+    * Every date was copied from the publisher's official page and verified against the
+      page text, with the source and the date it was read.
+    * New entries pause from 30 minutes before to 30 minutes after an event: 90 after
+      the Fed, to cover its press conference.
+    * When a publisher prints no time (BoE, BoJ, RBA), the whole local day is blocked.
+      Nothing is inferred.
+    * Exits are never blocked. A coverage warning appears 45 days before a source's
+      published schedule runs out.
+  * **Forex + crypto market intelligence:** `GET /api/v1/intelligence/markets` and a
+    *Market intelligence* page.
+    * One snapshot per instrument: trend by timeframe, RSI, ADX, ATR, daily VWAP
+      (tick volume for forex), support and resistance, liquidity, the FX session, a
+      regime label and event risk.
+    * Stored closed bars only.
+  * **Machine-learning trade filter (meta-labelling) tested once, FAILED**
+    (`nexus_ai.meta_filter`, `nexus_backtest.ml_filter_bt`; pre-registered in a676605
+    before the run).
+    * LightGBM + XGBoost + CatBoost with isotonic calibration and purged walk-forward
+      (2020 to 2026), used only to block signals of the forex scalping and intraday
+      breakout modules.
+    * Out-of-sample AUC 0.485 and 0.514: no predictive power.
+    * Filtered results: −0.140R and −0.090R per trade (unfiltered −0.098R and −0.084R).
+    * The drift check found a strong volatility shift: PSI up to 2.3 in 2021.
+    * No filter is attached and no model is registered.
+
 - **Unified brief Phase 3: the six strategy modules** (owner: "Phase 3").
   * **One framework** (`nexus_strategies.modules`):
     * each module has its own settings, signal rule, historical test, forward record

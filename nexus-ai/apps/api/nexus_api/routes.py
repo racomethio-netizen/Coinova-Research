@@ -1246,6 +1246,77 @@ async def revoke_bridge_token(bridge_id: int, s: Session = Depends(db),
     return {"id": bridge.id, "revoked": True}
 
 
+@router.get("/intelligence/markets")
+async def market_intelligence(s: Session = Depends(db), redis: Any = Depends(redis_dep),
+                              settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """One snapshot per instrument for forex and crypto (unified brief, section D): trend
+    by timeframe, momentum, volatility, VWAP, support/resistance, liquidity, session,
+    regime and the economic-event blackout. Stored closed bars only; features, not
+    trade signals."""
+    from datetime import timedelta as _td
+
+    from nexus_analysis.intelligence import snapshot
+    from nexus_common.timeutil import utcnow as _now
+    from nexus_market import fx_bars
+    from nexus_news import calendar as econ
+    from nexus_strategies.frames import to_frame
+    from nexus_strategies.modules.base import FX_DAY_OFFSET, resample
+
+    from nexus_api.bridge import STATUS_KEY as FX_STATUS
+
+    key = "nexus:intelligence:markets"
+    cached = await redis.get(key)
+    if cached:
+        return dict(json.loads(cached))
+    raw = await redis.get(FX_STATUS)
+    quotes = {x["base_name"]: x for x in (json.loads(raw) if raw else {}).get("symbols", [])}
+    cal = econ.load()
+
+    def spread_of(sym: str) -> float | None:
+        q = quotes.get(sym) or {}
+        try:
+            return float(q["ask"]) - float(q["bid"])
+        except (KeyError, TypeError, ValueError):
+            return None
+
+    def build() -> dict[str, Any]:
+        now = _now()
+        crypto, forex = [], []
+        for sym in settings.trading_pairs:
+            try:
+                frames = _frames(s, settings.signal_exchange, sym, ("15m", "1h", "4h", "1d"))
+            except LookupError:
+                frames = {}
+            crypto.append(snapshot(sym, "crypto", frames, "1h", now,
+                                   event_risk=econ.event_risk(sym, "crypto", now, cal)))
+        for sym in fx_bars.INTRADAY_SYMBOLS:
+            frames = {}
+            try:
+                pid = repo.pair_id(s, "exness", sym)
+                frames = {"5m": to_frame(repo.load_candles(s, pid, "5m", limit=600)),
+                          "1h": to_frame(repo.load_candles(s, pid, "1h", limit=2500))}
+                if not frames["1h"].empty:
+                    frames["1d"] = resample(frames["1h"], "1D", offset=FX_DAY_OFFSET,
+                                            min_bars=6)
+            except LookupError:
+                pass
+            forex.append(snapshot(sym, "forex", frames, "1h", now, spread=spread_of(sym),
+                                  event_risk=econ.event_risk(sym, "forex", now, cal)))
+        upcoming = [e.as_dict() for e in cal.events if now < e.start <= now + _td(days=7)]
+        return {"at": now.isoformat(), "crypto": crypto, "forex": forex,
+                "upcoming_events": upcoming,
+                "calendar_sources": {k: {"title": v["title"], "url": v["url"],
+                                         "covers_until": v["covers_until"],
+                                         "note": v.get("note")}
+                                     for k, v in cal.sources.items()},
+                "note": "Features from stored closed bars, not trade signals. Forex needs "
+                        "the Exness bridge 1.1 sending M5/H1 bars."}
+
+    out = await asyncio.to_thread(build)
+    await redis.set(key, json.dumps(out, default=str), ex=60)
+    return out
+
+
 # ------------------------------------------------------------- strategy modules (Phase 3)
 
 

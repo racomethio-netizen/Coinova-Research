@@ -1,56 +1,64 @@
+"""Market intelligence snapshot for forex and crypto on synthetic bars: FX sessions,
+daily VWAP anchoring, the regime label, and a complete snapshot from closed bars."""
+
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
-from decimal import Decimal
+import sys
+from datetime import UTC, datetime
+from pathlib import Path
 
-import numpy as np
 import pandas as pd
-from nexus_api.intelligence import analyze, event_or_none, klines_frame
-from nexus_exchange.models import OrderBook
+from nexus_analysis import intelligence as intel
+from nexus_strategies import modules as mods
 
-NOW = datetime(2026, 11, 20, 12, 0, tzinfo=UTC)
-
-
-def test_klines_frame_drops_the_unclosed_bar() -> None:
-    def row(open_min: int, close_ms_offset: int) -> list[object]:
-        t = int((NOW - timedelta(minutes=open_min)).timestamp() * 1000)
-        return [t, "1", "2", "0.5", "1.5", "10", t + close_ms_offset, "0", 0, "0", "0", "0"]
-
-    rows = [row(10, 299_999), row(5, 299_999), row(0, 299_999)]  # last bar still open
-    df = klines_frame(rows, NOW)
-    assert len(df) == 2 and df.index[-1] == NOW - timedelta(minutes=5)
+sys.path.insert(0, str(Path(__file__).parent))
+from test_strategy_modules import crypto_regimes, fx_m5
 
 
-def test_event_or_none_hides_nan() -> None:
-    assert event_or_none(float("nan")) is None and event_or_none(None) is None
-    assert event_or_none("bos_up") == "bos_up"
+def test_fx_sessions_and_weekend():
+    at = lambda d, h: datetime(2026, 11, d, h, 0, tzinfo=UTC)  # noqa: E731
+    assert intel.fx_session(at(25, 3)) == "Asia-Pacific"
+    assert intel.fx_session(at(25, 9)) == "London"
+    assert intel.fx_session(at(25, 13)) == "London / New York overlap"
+    assert intel.fx_session(at(25, 18)) == "New York"
+    assert intel.fx_session(at(28, 12)) == "closed"                  # Saturday
 
 
-def _frame(tf: str, n: int, seed: int) -> pd.DataFrame:
-    rng = np.random.default_rng(seed)
-    step = pd.Timedelta(tf.replace("m", "min"))
-    idx = pd.date_range(end=NOW - step, periods=n, freq=step, tz="UTC", name="open_time")
-    close = 100 * np.exp(np.cumsum(rng.normal(0, 0.003, n)))
-    wick = rng.uniform(0.001, 0.004, n) * close
-    return pd.DataFrame({"open": np.r_[close[0], close[:-1]], "high": close + wick,
-                         "low": close - wick, "close": close,
-                         "volume": rng.uniform(5, 15, n)}, index=idx)
+def test_daily_vwap_resets_each_day():
+    idx = pd.date_range("2026-11-24 21:00", periods=4, freq="1h", tz="UTC")
+    df = pd.DataFrame({"high": [2.0, 4, 6, 8], "low": [2.0, 4, 6, 8], "close": [2.0, 4, 6, 8],
+                       "volume": [1.0, 1, 1, 1]}, index=idx)
+    fx = intel.daily_vwap(df, "forex")           # FX day starts at 22:00 UTC
+    assert list(fx) == [2.0, 4.0, 5.0, 6.0]
+    cr = intel.daily_vwap(df, "crypto")          # UTC day starts at 00:00
+    assert list(cr) == [2.0, 3.0, 4.0, 8.0]
 
 
-def test_analysis_outputs_both_sides_with_exact_2r_and_reasons() -> None:
-    frames = {tf: _frame(tf, 1000, i) for i, tf in enumerate(("5m", "15m", "1h", "4h", "1d"))}
-    last = Decimal(str(float(frames["5m"]["close"].iloc[-1])))
-    book = OrderBook("ETH/USDT", bids=((last - Decimal("0.01"), Decimal(50)),),
-                     asks=((last + Decimal("0.01"), Decimal(50)),), timestamp=NOW)
-    out = analyze("ETH/USDT", frames, book, frames, now=NOW, news_risk=0.1,
-                  kill_switch=False, order_quote=Decimal(100))
-    assert out["funding_rate"] is None and "not estimated" in out["futures_data_note"]
-    sides = {h["side"]: h for h in out["hypotheses"]}
-    assert set(sides) == {"long", "short"}
-    for h in sides.values():
-        assert h["reward_risk"] == 2.0
-        assert 0 <= h["score"] <= 100
-        assert h["decision"] in ("ENTER", "NO_TRADE")
-        assert h["decision"] == "ENTER" or h["no_trade_reasons"]
-        assert set(h["reasons_for"]).isdisjoint(h["reasons_against"])
-    assert all("error" not in v for v in out["timeframes"].values())
+def test_regime_thresholds():
+    assert intel.regime(0.8, 0.95) == "HIGH_VOLATILITY"
+    assert intel.regime(0.6, 0.5) == "TRENDING_UP"
+    assert intel.regime(-0.6, 0.5) == "TRENDING_DOWN"
+    assert intel.regime(0.1, 0.5) == "RANGING"
+    assert intel.regime(None, None) is None
+
+
+def test_snapshots_for_both_markets():
+    raw = fx_m5(days=90)
+    no_volume = intel.snapshot("EURUSD", "forex", mods.fx_frames(raw), "1h",
+                               (raw.index[-1] + pd.Timedelta(hours=1)).to_pydatetime())
+    assert no_volume["vwap"]["value"] is None                # no volume: no VWAP, not a guess
+    fx = mods.fx_frames(raw.assign(volume=100.0))            # MT5 tick volume
+    now = (fx["1h"].index[-1] + pd.Timedelta(hours=1)).to_pydatetime()
+    s = intel.snapshot("EURUSD", "forex", fx, "1h", now, spread=0.0001,
+                       event_risk={"blocked": False})
+    assert s["insufficient_history"] is False and s["regime"] is not None
+    assert s["liquidity"]["spread"] == 0.0001 and s["liquidity"]["spread_vs_atr"] > 0
+    assert s["vwap"]["value"] is not None and set(s["trend_by_timeframe"]) >= {"5m", "1h"}
+    assert s["data_age_minutes"] == 0.0
+    cr = mods.crypto_frames(crypto_regimes(days=60))
+    now = (cr["1h"].index[-1] + pd.Timedelta(hours=1)).to_pydatetime()
+    c = intel.snapshot("BTC/USDT", "crypto", cr, "1h", now)
+    assert c["session"] == "24/7" and c["liquidity"]["quote_volume_24h"] > 0
+    assert c["levels"]["support"] is None or c["levels"]["support"] < c["price"] * 1.5
+    empty = intel.snapshot("GBPUSD", "forex", {}, "1h", now)
+    assert empty["insufficient_history"] is True and empty["bars"] == 0
