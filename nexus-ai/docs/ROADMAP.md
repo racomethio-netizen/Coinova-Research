@@ -32,6 +32,34 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-27: unified brief Phase 4, intelligence** (owner: "Phase 4").
+  Commits a676605 and b71536a (ML filter pre-registration and code, before the run),
+  3864250 (results), fa42d53 and 616cae7 (snapshot, API, page; restored a test file
+  that fa42d53 had overwritten). **Not deployed yet: needs the owner's "Deploy".**
+  * **Economic calendar:** 95 official events (Fed, ECB, BoE, BoJ, RBA, SNB, US CPI, US
+    jobs report), Dec 2026 to Dec 2027.
+    * Each event's source and the date it was read are recorded.
+    * Blackout of new entries around each event; the whole local day where no time is
+      published.
+    * **Refresh before Nov 2027.** The dashboard warns 45 days before a source runs out.
+      The Fed list has no December 2027 meeting printed.
+  * **Market intelligence for forex + crypto:** `GET /api/v1/intelligence/markets` and
+    the *Market intelligence* page. Forex fills once the bridge 1.1 sends bars.
+  * **ML trade filter** (LightGBM + XGBoost + CatBoost, calibrated, purged walk-forward,
+    drift check): **FAILED**.
+    * AUC 0.485 and 0.514 on the forex scalping and breakout modules.
+    * Filtered results −0.140R and −0.090R per trade.
+    * No filter attached; no model registered.
+  * **Tests:**
+    * `scripts/test.sh`: ruff and mypy clean, **1181 passed**, integration included;
+    * `scripts/e2e.sh`: **15 passed, 1 skipped**.
+  * **Next (owner go-ahead needed):** Phase 5, the strategy orchestrator.
+    * BUY / SELL / NO_TRADE per instrument, chosen by regime, volatility, liquidity,
+      session, signal quality, event risk and expected profit after costs.
+    * Every reason is logged.
+    * With today's evidence it will mostly say NO_TRADE, except the crypto swing
+      module's own forward test.
+
 * **2026-11-27: unified brief Phase 3, the six strategy modules** (owner: "Phase 3").
   Commits f7d0c6f (rules and pre-registration, before any run), e9d7831 (results),
   9f57628 and 2f9a25e (registry, switch, observer, dashboard). **Not deployed yet: needs
