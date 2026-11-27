@@ -61,7 +61,7 @@ class Venue:
     code: str
     name: str
     instruments: tuple[str, ...]
-    connector: str                    # "built" | "read_only" (data only) | "not_built"
+    connector: str                    # "built" | "demo_only" | "read_only" | "not_built"
     access: str                       # how NEXUS talks to it
     owner_needs: tuple[str, ...] = ()
     notes: str = ""
@@ -117,16 +117,16 @@ FRED = "FRED (Federal Reserve Bank of St. Louis)"
 EXNESS = Venue(
     "exness_mt5", "Exness (MetaTrader 5)",
     ("forex pairs", "gold, silver, oil and other CFDs", "index and stock CFDs"),
-    "read_only",
-    "NEXUS bridge next to the owner's logged-in MT5 terminal on Windows; it sends data "
-    "out to NEXUS, nothing comes in",
+    "demo_only",
+    "NEXUS bridge next to the owner's logged-in MT5 terminal on Windows: the read-only "
+    "bridge sends data out; the separate demo trader places orders on a DEMO account only",
     ("an Exness MT5 account (a demo account first)",
      "a Windows PC or VPS running the MT5 terminal, logged in",
      "the NEXUS bridge (apps/mt5_bridge) running there with a token created on the All "
      "markets page"),
-    "Read-only: prices, contract details, account summary and positions. NEXUS has no "
-    "order path to Exness. Exness offers high leverage; NEXUS's 1x notional ceiling "
-    "applies whatever the account allows.")
+    "Orders only on an Exness DEMO account (XAUUSD, EURUSD), refused for real accounts "
+    "both by NEXUS and by the demo trader; there is no live order path. Exness offers "
+    "high leverage; NEXUS's 1x notional ceiling applies whatever the account allows.")
 
 MARKETS: dict[Market, MarketSpec] = {
     Market.CRYPTO: MarketSpec(
@@ -166,10 +166,12 @@ MARKETS: dict[Market, MarketSpec] = {
                "existing Binance futures market data (public klines)", role="data",
                notes="History only since late 2025 or 2026: too short for a strategy test; "
                      "research view only.")),
-        research_data=True, paper_engine=False, live_connector=False,
+        research_data=True, paper_engine=True, live_connector=False,
         default=Autonomy.RESEARCH,
-        notes=("No commodity strategy has passed a test: no free tradable history long "
-               "enough exists yet.", "Futures expire and must be rolled; even micro "
+        notes=("PAPER = gold (XAUUSD) orders on the owner's Exness DEMO account through the "
+               "NEXUS demo trader (volatility rule in a 25% sleeve; it failed its test "
+               "narrowly, so this is observation, not a proven strategy).",
+               "No commodity strategy has passed a test.", "Futures expire and must be rolled; even micro "
                "contracts can exceed a small account's risk budget, in which case NEXUS "
                "refuses the trade.")),
     Market.FOREX: MarketSpec(
@@ -180,9 +182,12 @@ MARKETS: dict[Market, MarketSpec] = {
                "release of daily rates", role="data",
                notes="Trend following on these pairs failed its pre-registered test "
                      "(2026-11-26).")),
-        research_data=True, paper_engine=False, live_connector=False,
+        research_data=True, paper_engine=True, live_connector=False,
         default=Autonomy.RESEARCH,
-        notes=("No forex strategy has passed a test.", "Forex is leveraged by default; "
+        notes=("PAPER = EURUSD orders on the owner's Exness DEMO account through the NEXUS "
+               "demo trader (NQS-1 intraday; it failed its test narrowly, so this is "
+               "observation, not a proven strategy).",
+               "No forex strategy has passed a test.", "Forex is leveraged by default; "
                "NEXUS keeps notional at or below equity (1x) unless the owner changes the "
                "mandate.")),
 }

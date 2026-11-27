@@ -830,15 +830,22 @@ def test_markets_overview_and_per_market_switch(client: TestClient) -> None:
     assert by["stocks"]["autonomy"] == "PAPER" and by["stocks"]["allowed"] == [
         "OFF", "RESEARCH", "PAPER"]
     assert by["stocks"]["paper_forward"]["paper"] is True
-    for k in ("commodities", "forex"):
-        assert by[k]["autonomy"] == "RESEARCH" and by[k]["allowed"] == ["OFF", "RESEARCH"]
+    for k in ("commodities", "forex"):          # PAPER = orders on an Exness DEMO account
+        assert by[k]["autonomy"] == "RESEARCH" and by[k]["allowed"] == [
+            "OFF", "RESEARCH", "PAPER"]
     for k in ("stocks", "commodities", "forex"):
-        assert all(v["connector"] in ("not_built", "read_only") for v in by[k]["venues"]
-                   if v["role"] == "broker")
+        assert all(v["connector"] in ("not_built", "read_only", "demo_only")
+                   for v in by[k]["venues"] if v["role"] == "broker")
         assert by[k]["live_blockers"] and by[k]["paper_positions"] is None
     r = client.post("/api/v1/markets/forex/autonomy",
-                    json={"autonomy": "PAPER", "reason": "try forex"}, headers=CSRF)
-    assert r.status_code == 409 and "no paper trading engine" in r.json()["detail"]
+                    json={"autonomy": "LIVE", "reason": "try forex live"}, headers=CSRF)
+    assert r.status_code in (400, 409)                       # never possible for forex
+    r = client.post("/api/v1/markets/forex/autonomy",
+                    json={"autonomy": "PAPER", "reason": "exness demo"}, headers=CSRF)
+    assert r.status_code == 200, r.text
+    r = client.post("/api/v1/markets/forex/autonomy",
+                    json={"autonomy": "RESEARCH", "reason": "back to research"}, headers=CSRF)
+    assert r.status_code == 200
     r = client.post("/api/v1/markets/stocks/autonomy",
                     json={"autonomy": "LIVE", "reason": "try stocks live"}, headers=CSRF)
     assert r.status_code == 409 and "no broker connector" in r.json()["detail"]
@@ -1037,3 +1044,86 @@ def test_exness_history_chunks_for_research(client: TestClient, migrated_engine:
     assert client.get("/api/v1/research/history").status_code == 401
     with migrated_engine.begin() as c:
         c.execute(text("DELETE FROM history_chunks"))
+
+
+def test_exness_demo_trading_is_demo_only_switch_gated_and_limited(
+        client: TestClient, migrated_engine: Engine) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from nexus_api import mt5_demo
+    from nexus_strategies import exness_demo as plan
+    from sqlalchemy import text
+
+    r = sync_redis.Redis.from_url(os.environ["NEXUS_TEST_REDIS_URL"])
+    for k in r.scan_iter("nexus:mt5demo:*"):
+        r.delete(k)
+    login(client)
+    token = client.post("/api/v1/bridge-tokens", json={"name": "demo pc",
+                                                       "reason": "exness demo trading"},
+                        headers=CSRF).json()["token"]
+    auth = {"Authorization": f"Bearer {token}"}
+    url = "/api/v1/bridge/mt5/demo/sync"
+    today = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+    rows = []
+    for i in range(70, 0, -1):                         # closed daily bars, calm gold
+        t = int((today - timedelta(days=i)).timestamp())
+        c = 2000 * (1 + 0.003 * ((i % 3) - 1))
+        rows.append([t, c, c + 1, c - 1, c])
+
+    def body(**over: Any) -> dict[str, Any]:
+        b = {"bridge_version": "1.0", "server_utc_offset_hours": 0,
+             "account": {"login": 55555555, "trade_mode": "demo", "currency": "USD",
+                         "balance": "10000", "equity": "10000", "margin": "0",
+                         "margin_free": "10000", "leverage": 2000,
+                         "server": "Exness-MT5Trial", "company": "Exness"},
+             "symbols": [{"name": "XAUUSDm", "base_name": "XAUUSD", "point": 0.001,
+                          "contract_size": 100, "volume_min": 0.01, "volume_step": 0.01,
+                          "volume_max": 200, "bid": 2000.0, "ask": 2000.3},
+                         {"name": "EURUSDm", "base_name": "EURUSD", "point": 0.00001,
+                          "contract_size": 100000, "volume_min": 0.01, "volume_step": 0.01,
+                          "volume_max": 200, "bid": 1.1, "ask": 1.10008}],
+             "positions": [], "bars": {"XAUUSDm": {"D1": rows},
+                                       "EURUSDm": {"H1": [[rows[-1][0], 1.1, 1.2, 1.0, 1.1]]}},
+             "results": []}
+        b.update(over)
+        return b
+
+    assert client.post(url, json=body()).status_code == 401                      # no token
+    real = body(account=body()["account"] | {"trade_mode": "real"})
+    assert client.post(url, json=real, headers=auth).status_code == 403          # real: never
+    res = client.post(url, json=body(), headers=auth)
+    assert res.status_code == 200, res.text
+    out = res.json()
+    assert out["demo_only"] is True and out["instructions"] == []
+    assert out["gates"]["XAUUSD"]["entries_allowed"] is False
+    assert "commodities switch is RESEARCH (PAPER needed)" in out["gates"]["XAUUSD"]["blocked_by"]
+    assert client.post("/api/v1/markets/commodities/autonomy",
+                       json={"autonomy": "PAPER", "reason": "gold on exness demo"},
+                       headers=CSRF).status_code == 200
+    out = client.post(url, json=body(), headers=auth).json()
+    (ins,) = out["instructions"]                                   # EURUSD: too few bars
+    gold = plan.Spec("XAUUSDm", 100, 0.01, 0.01, 200, 0.001)
+    assert ins["action"] == "open" and ins["side"] == "buy" and ins["magic"] == plan.MAGIC
+    assert ins["volume"] == plan.lots(0.25 * 10_000 / 2000.3, gold)
+    assert ins["client_id"].startswith("nxG")
+    acct = body()["account"]
+    out = client.post(url, json=body(account=acct | {"equity": "9850"}), headers=auth).json()
+    assert out["instructions"] == [] and "daily loss limit" in out["gates"]["XAUUSD"]["blocked_by"]
+    out = client.post(url, json=body(account=acct | {"equity": "9400"}), headers=auth).json()
+    assert "drawdown halt (owner reset required)" in out["gates"]["XAUUSD"]["blocked_by"]
+    m = client.get("/api/v1/markets").json()
+    assert m["exness_demo"]["demo_only"] is True and m["exness_demo"]["account"] == "***555"
+    assert client.post("/api/v1/bridge-demo/reset-halt", json={"reason": "reviewed the demo"},
+                       headers=CSRF).status_code == 200
+    assert client.post("/api/v1/bridge-demo/reset-halt", json={"reason": "again please"},
+                       headers=CSRF).status_code == 409
+    audit = {a["action"] for a in client.get("/api/v1/security").json()["audit"]}
+    assert {"mt5_demo_refused", "mt5_demo_instructions", "mt5_demo_halted",
+            "mt5_demo_halt_reset"} <= audit
+    client.post("/api/v1/markets/commodities/autonomy",
+                json={"autonomy": "RESEARCH", "reason": "back to research"}, headers=CSRF)
+    for k in r.scan_iter("nexus:mt5demo:*"):
+        r.delete(k)
+    r.delete(mt5_demo.STATUS_KEY)
+    with migrated_engine.begin() as c:
+        c.execute(text("SELECT 1"))

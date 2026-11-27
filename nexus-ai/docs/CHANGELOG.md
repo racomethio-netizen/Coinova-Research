@@ -4,6 +4,25 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-27
 
+- **Exness DEMO trading for gold (XAUUSD) and EURUSD** (owner: "make the forex bot
+  available for trading").
+  * Orders go only on an Exness demo account, through a new Windows program
+    (`apps/mt5_bridge/nexus_mt5_demo_trader.py`).
+    * It refuses non-demo accounts before every order.
+    * It never resends a client ID that is already in the order history.
+  * The server endpoint `POST /api/v1/bridge/mt5/demo/sync`:
+    * refuses non-demo accounts (403, audited);
+    * opens new trades only when the market switch is PAPER, the kill switch is off and
+      the demo account is within 1% daily, 3% weekly and the 5% drawdown halt;
+    * exits are always allowed.
+  * Strategies (`nexus_strategies.exness_demo`), both failed narrowly and shown as
+    observation:
+    * gold: the volatility rule in a 25% sleeve;
+    * EURUSD: NQS-1 intraday.
+  * Forex and commodities can now be switched to PAPER (Exness demo). LIVE remains
+    impossible.
+  * The owner can reset the demo halt (audited). There is an All markets card.
+
 - **Exness gold and NASDAQ-100 with volatility control: FAILED narrowly** (all three
   portfolios). It uses the unchanged NASDAQ-100 rule on Exness's own bid/ask ticks.
   * Every portfolio had a higher Sharpe and smaller drops than holding, held at 2× costs

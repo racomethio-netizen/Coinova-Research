@@ -32,6 +32,18 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-27: Exness DEMO trading for XAUUSD and EURUSD** (owner: "Make the forex bot
+  available for trading like gold usd and EUR usd").
+  * Built:
+    * a demo-only order path: the endpoint, the Windows demo trader, and the strategy
+      plans in `nexus_strategies.exness_demo`;
+    * forex and commodities PAPER mode (= Exness demo).
+  * LIVE forex is impossible by capability.
+  * Owner to do:
+    1. Switch Commodities and/or Forex to PAPER on All markets.
+    2. Run `py -3 nexus_mt5_demo_trader.py` with MT5 logged in to an Exness demo account.
+  * Not deployed yet: waits for the owner's "Deploy".
+
 * **2026-11-27: Exness gold and NASDAQ-100 with volatility control** (owner: "I need the
   forex to be effective").
   * Currency pairs failed all earlier tests, so the passed NASDAQ-100 rule was tested

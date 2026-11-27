@@ -17,14 +17,14 @@ from nexus_common.markets import (
 from nexus_common.opmode import OperatingMode as Op
 
 
-def test_only_crypto_can_go_live_and_only_stocks_has_a_paper_engine():
+def test_only_crypto_can_go_live_and_forex_commodities_paper_means_exness_demo():
     assert MARKETS[Market.CRYPTO].allowed() == (Autonomy.OFF, Autonomy.RESEARCH,
                                                 Autonomy.PAPER, Autonomy.LIVE)
-    assert MARKETS[Market.STOCKS].allowed() == (Autonomy.OFF, Autonomy.RESEARCH,
-                                                Autonomy.PAPER)
+    for m in (Market.STOCKS, Market.COMMODITIES, Market.FOREX):
+        assert MARKETS[m].allowed() == (Autonomy.OFF, Autonomy.RESEARCH, Autonomy.PAPER)
     for m in (Market.COMMODITIES, Market.FOREX):
-        assert MARKETS[m].allowed() == (Autonomy.OFF, Autonomy.RESEARCH)
-        assert MARKETS[m].missing_for(Autonomy.PAPER) == ["no paper trading engine is built yet"]
+        assert MARKETS[m].default is Autonomy.RESEARCH        # the owner must switch
+        assert "DEMO" in MARKETS[m].notes[0]
     for m in (Market.STOCKS, Market.COMMODITIES, Market.FOREX):
         assert MARKETS[m].missing_for(Autonomy.LIVE)[-1] == "no broker connector is built yet"
         assert MARKETS[m].missing_for(Autonomy.OFF) == []
@@ -62,9 +62,9 @@ def test_no_broker_is_described_as_connected_outside_crypto():
     for d in describe():
         if d["market"] != "crypto":
             brokers = [v for v in d["venues"] if v["role"] == "broker"]
-            assert brokers and all(v["connector"] in ("not_built", "read_only")
+            assert brokers and all(v["connector"] in ("not_built", "read_only", "demo_only")
                                    for v in brokers)
-            assert any(v["code"] == "exness_mt5" and v["connector"] == "read_only"
+            assert any(v["code"] == "exness_mt5" and v["connector"] == "demo_only"
                        for v in brokers)
             assert all(v["role"] == "data" for v in d["venues"] if v["connector"] == "built")
             assert d["capabilities"]["live_connector"] is False

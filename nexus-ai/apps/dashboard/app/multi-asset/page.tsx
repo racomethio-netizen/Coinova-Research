@@ -207,6 +207,50 @@ function ExnessBridge({ ex, reload }: { ex: Any; reload: () => Promise<void> }) 
   );
 }
 
+function ExnessDemo({ d, reload }: { d: Any; reload: () => Promise<void> }) {
+  const [reason, setReason] = useState("");
+  const [msg, setMsg] = useState<string | null>(null);
+  const reset = async () => {
+    setMsg(null);
+    try { await api.post("/bridge-demo/reset-halt", { reason }); setReason(""); await reload(); } catch (e) { setMsg(e instanceof Error ? e.message : String(e)); }
+  };
+  const halted = (d?.limits?.blocked ?? []).some((x: string) => x.startsWith("drawdown halt"));
+  const state = !d ? "not started" : d.connected ? `running (demo account ${d.account})` : `not connected (last sync ${time(d.at)})`;
+  return (
+    <Card title="Exness DEMO trading: gold (XAUUSD) and EURUSD, virtual money only" actions={<Badge tone={d?.connected ? "info" : "muted"}>{state}</Badge>}>
+      <p className="text-sm">NEXUS can trade gold and EURUSD on an Exness <strong>demo</strong> account so you can watch it work with no money at risk. Neither strategy passed its test (gold: the volatility rule, narrowly; EURUSD: NQS-1, narrowly), so this is observation, not a proven bot. Real accounts are refused twice: by NEXUS and by the demo trader program. There is no real-money forex mode.</p>
+      <p className="mt-2 text-sm">To start: (1) switch Commodities (gold) and/or Forex (EURUSD) to PAPER on this page; (2) on your Windows PC, log MT5 in to an Exness demo account and run <code>py -3 nexus_mt5_demo_trader.py</code> with the same NEXUS_URL and bridge token (apps/mt5_bridge/README.md).</p>
+      {d && (
+        <div className="mt-3 space-y-2 text-sm">
+          <p>Demo account {d.account} on {d.server}: balance {num(d.balance, 2)} {d.currency}, equity {num(d.equity, 2)}. Limits: 1% a day, 3% a week, 5% drawdown halt (only you can reset it).</p>
+          <Table rows={Object.entries(d.gates ?? {}).map(([k, v]: [string, Any]) => ({ key: k, ...v }))} empty="No symbols." columns={[
+            { key: "key", label: "Instrument" },
+            { key: "autonomy", label: "Switch", render: (x: Any) => `${x.market}: ${x.autonomy}` },
+            { key: "e", label: "New trades", render: (x: Any) => x.entries_allowed ? <Badge tone="good">allowed</Badge> : <span className="text-xs text-muted">paused: {(x.blocked_by ?? []).join(", ")}</span> },
+          ]} />
+          <Table rows={d.positions ?? []} empty="No NEXUS positions on the demo account." columns={[
+            { key: "symbol", label: "Symbol" },
+            { key: "side", label: "Side" },
+            { key: "volume", label: "Lots", numeric: true },
+            { key: "price_open", label: "Open", numeric: true },
+            { key: "sl", label: "Stop", numeric: true, render: (x: Any) => x.sl || DASH },
+            { key: "tp", label: "Target", numeric: true, render: (x: Any) => x.tp || DASH },
+          ]} />
+          {(d.instructions ?? []).length > 0 && <p className="text-xs text-muted">Last instructions: {d.instructions.map((i: Any) => `${i.action} ${i.symbol} ${i.side ?? ""} ${i.volume ?? ""} (${i.reason})`).join("; ")}</p>}
+          {(d.results ?? []).length > 0 && <p className="text-xs text-muted">Last results from MT5: {d.results.map((r: Any) => `${r.client_id}: ${r.retcode === 10009 ? "done" : r.message || r.retcode}`).join("; ")}</p>}
+          {halted && (
+            <div className="grid gap-3 md:grid-cols-3">
+              <Field id="demo-reset-reason" label="Reason for resetting the demo halt" value={reason} onChange={setReason} />
+              <div className="flex items-end"><Button tone="danger" disabled={reason.trim().length < 5} onClick={reset}>Reset demo halt</Button></div>
+            </div>
+          )}
+          {msg && <p role="alert" className="text-down">{msg}</p>}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export default function MultiAssetPage() {
   const { data, error, loading, reload } = useApi<Any>("/markets", 15000);
   return (
@@ -219,6 +263,7 @@ export default function MultiAssetPage() {
             Global operating mode: <strong>{data.operating_mode}</strong>; server trading mode: <strong>{data.server_trading_mode}</strong>. A market switch can only narrow the operating mode, never widen it. Live trading is never switched on by code: each market needs its own typed phrase, your two-factor code and its live checks.
           </p>
           <ExnessBridge ex={data.exness} reload={reload} />
+          <ExnessDemo d={data.exness_demo} reload={reload} />
           {data.markets.map((m: Any) => <MarketCard key={m.market} m={m} reload={reload} />)}
         </div>
       )}

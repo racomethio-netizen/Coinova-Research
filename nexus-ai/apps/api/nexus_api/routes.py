@@ -1074,8 +1074,18 @@ async def markets_overview(s: Session = Depends(db), redis: Any = Depends(redis_
             if mk is Market.STOCKS:
                 d["paper_forward"] = stocks_forward
         out.append(d)
+    from nexus_api.mt5_demo import STATUS_KEY as DEMO_KEY
+
+    raw_demo = await redis.get(DEMO_KEY)
+    exness_demo = json.loads(raw_demo) if raw_demo else None
+    if exness_demo:
+        from datetime import UTC as _UTC2
+        from datetime import datetime as _dt2
+
+        exness_demo["connected"] = (_dt2.now(_UTC2) - _dt2.fromisoformat(
+            exness_demo["at"])).total_seconds() < 600
     return {"operating_mode": op.value, "markets": out, "exness": exness,
-            "server_trading_mode": settings.trading_mode.value}
+            "exness_demo": exness_demo, "server_trading_mode": settings.trading_mode.value}
 
 
 class BridgeTokenBody(BaseModel):
@@ -1145,6 +1155,34 @@ async def research_history_csv(symbol: str, timeframe: str,
         raise HTTPException(status.HTTP_404_NOT_FOUND, "no history for this series")
     return Response(text_, media_type="text/csv", headers={
         "Content-Disposition": f'attachment; filename="{symbol}_{timeframe}.csv"'})
+
+
+class DemoHaltResetBody(BaseModel):
+    reason: str = Field(min_length=5, max_length=500)
+
+
+@router.post("/bridge-demo/reset-halt", dependencies=[Depends(owner)])
+async def reset_demo_halt(body: DemoHaltResetBody, s: Session = Depends(db),
+                          redis: Any = Depends(redis_dep),
+                          viewer: Viewer = Depends(current_viewer)) -> dict[str, Any]:
+    """Clear the Exness DEMO account's drawdown halt (owner only, audited). The peak
+    restarts from the demo equity last reported; the halt is never cleared by code."""
+    from nexus_api.mt5_demo import HALT_KEY, PEAK_KEY
+    from nexus_api.mt5_demo import STATUS_KEY as DEMO_KEY
+
+    halt = await redis.get(HALT_KEY)
+    if halt is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "the demo account is not halted")
+    raw = await redis.get(DEMO_KEY)
+    equity = json.loads(raw).get("equity") if raw else None
+    await redis.delete(HALT_KEY)
+    if equity is not None:
+        await redis.set(PEAK_KEY, equity)
+    repo.record_audit(s, actor=viewer.actor, action="mt5_demo_halt_reset",
+                      user_id=viewer.user.id,
+                      details={"reason": body.reason, "halt": json.loads(halt),
+                               "new_peak": equity})
+    return {"reset": True, "new_peak": equity}
 
 
 @router.post("/bridge-tokens/{bridge_id}/revoke", dependencies=[Depends(owner)])

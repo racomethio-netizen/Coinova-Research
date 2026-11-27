@@ -21,6 +21,21 @@ enforces it; a static test checks no other module constructs it).
 `Settings.live_trading_config_problems()` lists every unmet configuration gate; the
 API exposes only the boolean.
 
+### Exness (MetaTrader 5): demo orders only
+
+Forex and commodities have **no LIVE mode at all** (`live_connector=False`).
+* Their PAPER mode means orders on an Exness **demo** account.
+* The orders are placed by `apps/mt5_bridge/nexus_mt5_demo_trader.py` on the owner's PC.
+
+| Guard | Where |
+|---|---|
+| The account must be `trade_mode == demo`, otherwise 403 (audited `mt5_demo_refused`) | `POST /api/v1/bridge/mt5/demo/sync` |
+| The account must be `ACCOUNT_TRADE_MODE_DEMO`, checked before every sync and every order; otherwise the program stops | the demo trader |
+| New entries only with the owner's market switch at PAPER, the kill switch clear, and the 1% daily / 3% weekly / 5% drawdown limits; exits always allowed | the endpoint |
+| The 5% halt is never cleared by code: the owner resets it (`POST /api/v1/bridge-demo/reset-halt`, audited) | the API |
+| No duplicate orders: an order whose client ID is in the MT5 order history is never resent | the demo trader |
+| The read-only bridge (`nexus_mt5_bridge.py`) still contains no order call (static test) | `tests/unit/test_mt5_bridge.py` |
+
 ## Credentials
 
 * Exchange keys are entered via the dashboard (Phase 11/13), never in env files.

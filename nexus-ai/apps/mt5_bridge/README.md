@@ -75,11 +75,41 @@ NEXUS under *All markets → Exness bridge → Price history*.
 
 It only reads prices. Like the normal mode, it has no order function.
 
+## Demo trading: gold and EURUSD on an Exness DEMO account
+
+NEXUS can trade **XAUUSD** and **EURUSD** on an Exness **demo** account (virtual
+money), so you can watch the bots work.
+* **Gold** uses the volatility rule in a 25% part of the account.
+* **EURUSD** uses NQS-1 on hourly bars, with a stop and a target on every trade.
+* Neither passed its test (both narrowly), so treat this as observation.
+
+1. In MT5, log in to an Exness **demo** account. A real account is refused, both by
+   NEXUS and by the program.
+2. On the NEXUS *All markets* page, switch **Commodities** (gold) and/or **Forex**
+   (EURUSD) to **PAPER**. Without that, nothing new is opened.
+3. In the same folder, with the same two settings as for the read-only bridge, run:
+
+   ```
+   py -3 nexus_mt5_demo_trader.py
+   ```
+
+Every 2 minutes it sends NEXUS the demo account, quotes, closed bars and NEXUS's own
+positions, then carries out NEXUS's instructions: open, close, or move a stop.
+
+**Safety:**
+* Each order carries NEXUS's magic number and a client ID. An ID already in the order
+  history is never sent again.
+* NEXUS's limits apply to the demo account: 1% a day, 3% a week, and a 5% drawdown halt
+  that only you can reset on the *All markets* page.
+* Your own trades (without NEXUS's magic number) are never touched.
+
+**Stopping.** Close the window, or switch the markets back to RESEARCH.
+
 ## Notes
 
 * **Leverage.** Exness accounts can have very high leverage. NEXUS keeps positions at or
   below 1x of equity (its rule), whatever the account allows.
-* **No trading yet.** No forex, commodity or index strategy has passed NEXUS's tests, so
-  NEXUS does not trade on Exness.
-  * A demo-only order path comes later.
-  * Real money needs your explicit authorization per market.
+* **No real-money trading.** No forex, commodity or index strategy has passed NEXUS's
+  tests.
+  * NEXUS trades on Exness only on a demo account, through the demo trader above.
+  * There is no live forex mode in NEXUS.
