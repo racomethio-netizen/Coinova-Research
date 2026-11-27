@@ -67,6 +67,12 @@ something passes, which would be data snooping.
     * Every single setup was worse, and the ML filter did not help.
     * Report: `docs/research/2026-11-27-nqs1-report.md`.
     * The bridge export is no longer needed for NQS-1.
+  * **Results deployed 2026-11-27 09:08 UTC** (owner: "Deploy"; Render cb562f2 = source
+    7f55ed6). The Strategy test page shows the NQS-1 card with its results.
+  * **Small follow-up.** On both of today's deploys, the workers hit Redis connection
+    timeouts for about 3 seconds after start (Render Key Value), then restarted on their
+    own after 5 seconds. Worth a short connect retry at worker start, so the start does
+    not log errors.
   * Possible next forex hypothesis, observed after the fact: intraday squeeze breakouts
     averaged +0.12R. It can only be tested on new data, as a pre-registered forward
     paper test, never by re-tuning on these 11 years.
