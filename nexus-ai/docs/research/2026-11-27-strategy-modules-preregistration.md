@@ -160,3 +160,69 @@ it manually (brief acceptance rules).
 
 A fail is recorded. The module stays in the registry with its activation OFF by default.
 The owner may switch it to OBSERVE (record signals, no orders) but not to paper trading.
+
+## Results (single run, 27 Nov 2026 20:52 UTC, after commit f7d0c6f)
+
+Output: `research/backtesting/nexus_backtest/results/strategy_modules_2026-11.json` (and
+`.md`).
+
+Data checks:
+* Forex: 5 pairs, about 833,000 M5 bars each; 0 bars dropped; swap rates known for every
+  pair.
+* Crypto: 70 monthly files per coin, all matching Binance's SHA-256; 213 bars missing in
+  Binance's own archive, left missing.
+
+Evaluation: forex 1 Jan 2016 to 30 Oct 2026; crypto 1 Mar 2021 to 31 Oct 2026.
+Historical simulation only; no order was placed.
+
+### Decision: all four new modules FAIL
+
+| Module | Trades | Win rate | Mean R (net) | Profit factor | Mean R at 2x costs | Max drawdown at 0.25% | p-value | Result |
+|---|---|---|---|---|---|---|---|---|
+| 1 Forex scalping momentum pullback | 6,825 | 35.3% | −0.103 | 0.83 | −0.206 | 83.5% | 1.00 | **FAIL** |
+| 2 Forex intraday trend breakout | 4,222 | 35.1% | −0.093 | 0.85 | −0.168 | 64.5% | 1.00 | **FAIL** |
+| 3 Forex swing trend following | 281 | 32.0% | −0.130 | 0.80 | −0.166 | 10.0% | 0.98 | **FAIL** |
+| 4 Crypto scalping volume momentum | 240 | 38.3% | −0.117 | 0.81 | −0.288 | 7.5% | 0.92 | **FAIL** |
+| 5 Crypto breakout retest (re-run) | 91 | 40.7% | −0.046 | 0.94 | −0.240 | 3.1% | 0.68 | not eligible; the 23 Nov FAIL stands and this agrees |
+
+Failed gates:
+* Modules 1 and 2: positive expectancy, significance, profit factor, both halves, 2x
+  costs and drawdown.
+* Modules 3 and 4: every gate except trade count and drawdown.
+* No module had a positive mean in both halves. Module 1 had one positive year out of
+  eleven (2020); module 2 had none.
+
+**Module 6, crypto swing trend momentum (replication):** PASS on all six gates again.
+Sharpe 1.11, max drawdown 15.6%, CAGR 14.1% (Aug 2018 to Nov 2026), unseen period
+2022-11 to 2024-11 +44%. This is identical to the 23 Nov result; it stays the one module
+with evidence, and its forward paper test (trend-paper) continues.
+
+### Diagnostic added after the run (not a gate; cannot change a verdict)
+
+The same trades with every cost at zero
+(`results/strategy_modules_before_costs_2026-11.json`):
+
+| Module | Mean R before costs | Mean R after costs |
+|---|---|---|
+| 1 Forex scalping | +0.012 | −0.103 |
+| 2 Forex intraday breakout | −0.012 | −0.093 |
+| 3 Forex swing | −0.109 | −0.130 |
+| 4 Crypto scalping | +0.074 | −0.117 |
+| 5 Crypto breakout retest | +0.289 | −0.046 |
+
+What this shows:
+* The forex rules have no edge even before costs. The Standard account's spread then
+  turns them clearly negative: about 0.1R per trade for scalping and breakout.
+* The two crypto rules show a small gross edge that Binance's fees and slippage more
+  than remove.
+* A future hypothesis would have to start from lower costs (maker-only entries, a raw-
+  spread account) or longer holding periods. It must be pre-registered separately; these
+  rules are not re-tuned.
+
+### Consequences
+
+* No module is enabled. All six stay in the registry with activation OFF.
+* The owner may switch any module to OBSERVE (signals recorded, no orders). PAPER is
+  refused, because no new module passed.
+* Module 6's forward paper test is unchanged.
+* Live trading stays disabled.

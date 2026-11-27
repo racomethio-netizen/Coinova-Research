@@ -148,6 +148,7 @@ class Job:
     fx_dir: str
     fred: str
     crypto_dir: str
+    cost_multiplier: float = 1.0     # 0: the post-run "before costs" diagnostic only
 
 
 def _frames(spec: mods.ModuleSpec, job: Job) -> tuple[dict[str, pd.DataFrame], dict[str, Any]]:
@@ -181,9 +182,11 @@ def run_job(job: Job) -> dict[str, Any]:
         carry = None
     delay = int(spec.max_entry_delay.total_seconds() * 1e9)
     period = TIMEFRAME_SECONDS[spec.signal_tf]
+    if job.cost_multiplier != 1.0:
+        costs = costs.stressed(job.cost_multiplier)
     normal = sim.candidates(bars, sig, period, delay, costs, symbol=job.symbol, carry=carry)
-    double = sim.candidates(bars, sig, period, delay, costs.stressed(2), symbol=job.symbol,
-                            carry=carry)
+    double = [] if job.cost_multiplier != 1.0 else sim.candidates(
+        bars, sig, period, delay, costs.stressed(2), symbol=job.symbol, carry=carry)
     return {"code": job.code, "symbol": job.symbol, "data": info, "signals": len(sig),
             "carry_known": carry is not None,
             "first_bar": str(exec_df.index[0]), "last_bar": str(exec_df.index[-1]),
@@ -290,6 +293,28 @@ def evaluate(results: list[dict[str, Any]], end: dict[str, pd.Timestamp]) -> dic
     return out
 
 
+def before_costs(fx_dir: Path, fred: Path, crypto_5m: Path, *, workers: int = 4
+                 ) -> dict[str, Any]:
+    """POST-RUN DIAGNOSTIC, not a gate: the same rules with every cost at zero (spread,
+    slippage, fees and swap), to show whether a module loses before costs or only after.
+    Added after the single run; it cannot change any verdict."""
+    jobs = [Job(code, sym, str(fx_dir), str(fred), str(crypto_5m), 0.0)
+            for code, spec in mods.MODULES.items() if spec.signals is not None
+            for sym in spec.symbols]
+    with ProcessPoolExecutor(workers, mp_context=get_context("spawn")) as ex:
+        results = list(ex.map(run_job, jobs))
+    out = {}
+    for code in {r["code"] for r in results}:
+        spec = mods.get(code)
+        taken = sim.book([_trade(t) for r in results if r["code"] == code for t in r["normal"]],
+                         MAX_OPEN)
+        start = FX_START if spec.market == "forex" else CRYPTO_START
+        end = max(pd.Timestamp(r["last_bar"]) for r in results if r["code"] == code)
+        m = metrics(taken, start, end, p_value=False)
+        out[code] = {k: m.get(k) for k in ("trades", "win_rate", "mean_r", "profit_factor")}
+    return out
+
+
 def crypto_trends_replication(daily_dir: Path) -> dict[str, Any]:
     from nexus_backtest.crypto_trends import SimConfig, load_archive_dir
     from nexus_backtest.crypto_trends_run import evaluate as ct_evaluate
@@ -363,7 +388,16 @@ def main() -> None:
     ap.add_argument("--crypto-1d", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--before-costs", action="store_true",
+                    help="post-run diagnostic only: every cost at zero, no gates")
     a = ap.parse_args()
+    if a.before_costs:
+        diag = before_costs(a.fx_dir, a.fred, a.crypto_5m, workers=a.workers)
+        a.out.write_text(json.dumps({"diagnostic": "before costs (post-run, not a gate)",
+                                     "run_at": datetime.now(UTC).isoformat(),
+                                     "modules": diag}, indent=1))
+        print(json.dumps(diag, indent=1))
+        return
     rep = run(a.fx_dir, a.fred, a.crypto_5m, a.crypto_1d, workers=a.workers)
     a.out.write_text(json.dumps(rep, indent=1, default=str))
     a.out.with_suffix(".md").write_text(render(rep) + "\n")

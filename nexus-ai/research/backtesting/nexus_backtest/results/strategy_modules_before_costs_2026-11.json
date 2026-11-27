@@ -1,0 +1,36 @@
+{
+ "diagnostic": "before costs (post-run, not a gate)",
+ "run_at": "2026-11-27T20:53:57.806030+00:00",
+ "modules": {
+  "fx_scalp_pullback": {
+   "trades": 6747,
+   "win_rate": 0.3883207351415444,
+   "mean_r": 0.01173206867225333,
+   "profit_factor": 1.0207295123706703
+  },
+  "fx_swing_trend": {
+   "trades": 284,
+   "win_rate": 0.33098591549295775,
+   "mean_r": -0.10884283002753194,
+   "profit_factor": 0.8325965990341644
+  },
+  "crypto_scalp_volume": {
+   "trades": 243,
+   "win_rate": 0.43621399176954734,
+   "mean_r": 0.07357656256428877,
+   "profit_factor": 1.1461493367045574
+  },
+  "fx_intraday_breakout": {
+   "trades": 4222,
+   "win_rate": 0.3732828043581241,
+   "mean_r": -0.012196582851553894,
+   "profit_factor": 0.9797667728936047
+  },
+  "crypto_breakout_retest": {
+   "trades": 91,
+   "win_rate": 0.43956043956043955,
+   "mean_r": 0.2892674216005667,
+   "profit_factor": 1.5161438306990505
+  }
+ }
+}
