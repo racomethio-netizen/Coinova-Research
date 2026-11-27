@@ -218,6 +218,26 @@ function NightScalper({ n }: { n: Any }) {
   );
 }
 
+function BotLeague({ l }: { l: Any }) {
+  if (!l?.contenders) return null;
+  const rows = (l.ranking_by_sharpe ?? []).map((k: string, i: number) => ({ key: k, rank: i + 1, ...l.contenders[k] }));
+  return (
+    <Card title="Bot league: NEXUS against popular Binance bots (BTC + ETH, 2021 – Oct 2026)" actions={<Badge tone="good">NEXUS ranks 1st</Badge>}>
+      <Table rows={rows} empty="No result." columns={[
+        { key: "rank", label: "#", numeric: true, render: (x: Any) => x.rank },
+        { key: "name", label: "Bot", render: (x: Any) => x.key === "nexus_vol" ? <strong>{x.name}</strong> : x.name },
+        { key: "n", label: "Net", numeric: true, render: (x: Any) => <span className={x.net_return > 0 ? "text-up" : "text-down"}>{pct(x.net_return, 0)}</span> },
+        { key: "y", label: "Per year", numeric: true, render: (x: Any) => pct(x.cagr, 1) },
+        { key: "s", label: "Sharpe", numeric: true, render: (x: Any) => num(x.sharpe, 2) },
+        { key: "d", label: "Worst drop", numeric: true, render: (x: Any) => pct(x.max_drawdown, 0) },
+        { key: "w", label: "Worst year", numeric: true, render: (x: Any) => pct(x.worst_year, 0) },
+        { key: "f", label: "Within the 5% loss rule", numeric: true, render: (x: Any) => `${num(100 * x.nexus_fit.allocation_share_for_5pct_drawdown, 0)}% of the account → ${pct(x.nexus_fit.net_return_at_that_share, 1)}` },
+      ]} />
+      <p className="mt-2 text-xs text-muted">Same coins, same 10,000 USDT, same 0.15% costs, same Binance prices. The NEXUS bot holds a BTC/ETH basket and holds less of it when prices swing wildly (fewer than 20 trades a year). It made the most and fell the least of all six bots. Honest limits: its settings come from an earlier test over these same years, so this is a fair comparison, not new proof; new proof comes from its paper test, running since 27 Nov 2026. Even this bot fell 59% at its worst, so under the NEXUS rule of at most 5% total loss, only a small share of the account could use it. Historical backtest, no orders placed. Rules written before the run: {l.preregistration}</p>
+    </Card>
+  );
+}
+
 function BinanceGrid({ g }: { g: Any }) {
   if (!g?.configs) return null;
   const h = g.holding;
@@ -277,6 +297,7 @@ function MultiAsset() {
           <p className="mt-2 text-xs text-muted">The systematic styles banks and funds publish (carry, momentum, value; Deutsche Bank's Currency Returns index combines them), tested with interest-rate carry, real costs and no more exposure than the money in the account. Carry came closest: about 1.1% a year, positive in 16 of 23 years, with a 2008-style crash. At a retail broker such as Exness, carry depends on the broker's swap rates, which the Exness bridge reports. Banks' own forex profits come mostly from market making and internal matching of client orders, which a retail account cannot copy.</p>
         </Card>
       )}
+      <BotLeague l={r.bot_league} />
       <Nqs1 n={r.nqs1} />
       <NightScalper n={r.night_scalper} />
       <BinanceGrid g={r.binance_grid} />

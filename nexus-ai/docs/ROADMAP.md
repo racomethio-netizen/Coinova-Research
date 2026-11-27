@@ -32,6 +32,20 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-27: bot league** (owner: "the most profitable and effective bot … competitive
+  with other best bots").
+  * The NEXUS volatility-control bot (the batch3 rule, already paper trading since
+    2026-11-27) ranks 1st of 6 on BTC + ETH, 2021-02 to 2026-10.
+  * Its numbers: +126.9%, Sharpe 0.55, worst drop −59%, against Rebalancing +121%,
+    hold +98% and the best grid +34%.
+  * Report: `docs/research/2026-11-27-bot-league-report.md`.
+  * **Open owner decision:**
+    * the 5% NEXUS drawdown rule limits this bot to about 9% of an account;
+    * running it with more money needs an explicit owner risk mandate for that money;
+    * real money in any case only after the paper forward test (at least 3 months) and
+      the owner's explicit approval.
+  * Not deployed yet: waits for the owner's "Deploy".
+
 * **2026-11-27: Binance Spot Grid bot (owner: "Test the Binance Spot Grid bot").**
   * Pre-registered: the plain product, 6 settings, 10 coins, Binance 5m 2021–2026.
   * **All FAILED.** In the corrected run:

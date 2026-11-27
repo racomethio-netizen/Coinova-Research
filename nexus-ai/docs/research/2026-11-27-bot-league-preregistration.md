@@ -46,3 +46,23 @@ The league puts every candidate on the same footing:
   (5% ÷ maximum drawdown), and the return at that share.
 * **Ranking.** Contenders are ranked by Sharpe (return per unit of risk). Calmar and
   return are shown alongside. The table is reported as it comes out.
+
+## Results (single run, 2026-11-27; commit 00e565e)
+
+| Rank | Bot | Net | Per year | Sharpe | Max drawdown | Calmar | Worst year |
+|---|---|---|---|---|---|---|---|
+| 1 | **NEXUS volatility-control bot** | **+126.9%** | +15.3% | **0.55** | **−58.8%** | **0.26** | **−48.8%** |
+| 2 | Binance Rebalancing bot | +121.4% | +14.8% | 0.53 | −76.2% | 0.19 | −65.1% |
+| 3 | Buy and hold 50/50 | +97.5% | +12.6% | 0.50 | −76.8% | 0.16 | −66.4% |
+| 4 | Binance Spot Grid ±30% / 30 | +34.2% | +5.3% | 0.31 | −58.7% | 0.09 | −42.5% |
+| 5 | Binance Spot Grid ±30% / 30 + stop | −18.9% | −3.6% | 0.02 | −61.3% | −0.06 | −44.4% |
+| 6 | Binance Spot Grid ±10% / 40 | −67.1% | −17.6% | −0.32 | −74.9% | −0.24 | −61.4% |
+
+* **Ranking.** The NEXUS bot ranks first by Sharpe, and also has the highest return and
+  Calmar, and the shallowest worst year.
+* **Limits:**
+  * its parameters came from an earlier test over overlapping years;
+  * its own drawdown (−59%) means that under the 5% NEXUS rule only about 9% of an
+    account could run it, which would have earned about +10.8% over the period;
+  * its paper forward test (started 2026-11-27) is the independent evidence that is
+    still to come.

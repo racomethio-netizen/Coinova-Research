@@ -4,6 +4,15 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-27
 
+- **Bot league: the NEXUS volatility-control bot ranks first** against 5 popular Binance
+  bots: the Spot Grid at 3 settings, the Rebalancing bot, and buy-and-hold.
+  * Setup: BTC + ETH, 10,000 USDT, 2021-02 to 2026-10, the same costs and data for all.
+  * NEXUS: +126.9% (15.3% a year), Sharpe 0.55, worst drop −59%.
+  * Rebalancing bot: +121.4%; hold: +97.5%; best grid: +34.2%.
+  * Pre-registered as a comparison (the NEXUS bot's parameters come from an earlier
+    test over overlapping years).
+  * There is a card on the Strategy test page.
+
 - **Binance Spot Grid bot (as people run it): all 6 settings FAILED.** It was
   pre-registered before any run.
   * Setup: 10 coins, Binance 5-minute data 2021–2026, new bot every 30 days, 0.1% fees.

@@ -1184,6 +1184,7 @@ async def multi_asset_research() -> dict[str, Any]:
     nqs1 = await asyncio.to_thread(latest, "nqs1")
     night = await asyncio.to_thread(latest, "night_scalper")
     bgrid = await asyncio.to_thread(latest, "binance_grid")
+    league = await asyncio.to_thread(latest, "bot_league")
     return {"trend": await asyncio.to_thread(load, "multi_asset_trend_2026-11.json"),
             "ndx_voltarget": await asyncio.to_thread(load, "ndx_voltarget_2026-11.json"),
             "fx_styles": await asyncio.to_thread(load, "fx_styles_2026-11.json"),
@@ -1191,6 +1192,7 @@ async def multi_asset_research() -> dict[str, Any]:
                      "preregistration": "docs/research/2026-11-27-nqs1-preregistration.md"},
             "night_scalper": night,
             "binance_grid": bgrid,
+            "bot_league": league,
             "preregistrations": [
                 "docs/research/2026-11-26-multi-asset-trend-preregistration.md",
                 "docs/research/2026-11-26-ndx-voltarget-preregistration.md",
