@@ -185,3 +185,28 @@ checks under NEXUS risk limits.
   and the bug are reported.
 
 The output is `results/nqs1_<date>.json` and a generated markdown comparison report.
+
+## Amendment 1 (2026-11-27, before any NQS-1 run on real data)
+
+**Data source changed.** The owner asked for the test to be done without their PC.
+Exness publishes its own historical ticks at `https://ticks.ex2archive.com`: bid and
+ask, UTC timestamps, one file per symbol and month. The test now uses that archive
+instead of the bridge export. The broker is the same, and the history is longer.
+
+* **Symbols:** the Standard-account symbols EURUSDm, GBPUSDm, USDJPYm, AUDUSDm and
+  USDCHFm, for the complete months August 2015 to October 2026.
+* **Bars:** built by `nexus_backtest.exness_ticks` (committed with this amendment).
+  * M5 bars of the bid price; slots without ticks have no bar.
+  * H1 and D1 bars are resampled from the M5 bars. D1 days are UTC days, as on Exness's
+    GMT+0 MT5 server.
+  * M15, H4 and W1 bars are resampled by the harness, as before.
+* **Coverage:** all three profiles use the full span. The "3 years of M5" limit was the
+  bridge export's limit, not a test choice.
+* **Costs: unchanged.** The pre-registered spread, commission and slippage table stays
+  the primary assumption.
+  * Spreads observed in the ticks are reported in `quality.json`.
+  * Only one month (EURUSD, January 2024) was opened to check the format: median
+    spread 1.0 pip on the Standard account, which has no commission.
+* **Data checks:** as pre-registered (`quality.json`).
+* **Unchanged:** the strategy, its parameters, the walk-forward, the gates and the
+  decision rule.
