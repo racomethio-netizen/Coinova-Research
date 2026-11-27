@@ -218,6 +218,28 @@ function NightScalper({ n }: { n: Any }) {
   );
 }
 
+const EXVOL_NAMES: Record<string, string> = { gold: "Gold (XAUUSD), 2015–2026", nasdaq100: "NASDAQ-100 (USTEC), 2019–2026", gold_nasdaq_50_50: "Gold + NASDAQ-100, 50/50, 2019–2026" };
+
+function ExnessVol({ e }: { e: Any }) {
+  if (!e?.portfolios) return null;
+  const rows = Object.entries(e.portfolios).map(([k, x]: [string, Any]) => ({ key: k, ...x }));
+  const anyPassed = rows.some((x: Any) => x.passed);
+  return (
+    <Card title="Exness: gold and NASDAQ-100 with volatility control (Exness's own prices)" actions={<Badge tone={anyPassed ? "good" : "bad"}>{anyPassed ? "passed" : "none passed (narrowly)"}</Badge>}>
+      <Table rows={rows} empty="No result." columns={[
+        { key: "key", label: "Portfolio", render: (x: Any) => EXVOL_NAMES[x.key] ?? x.key },
+        { key: "a", label: "Per year", numeric: true, render: (x: Any) => pct(x.strategy.annual_return, 1) },
+        { key: "s", label: "Sharpe", numeric: true, render: (x: Any) => num(x.strategy.sharpe, 2) },
+        { key: "d", label: "Worst drop", numeric: true, render: (x: Any) => pct(x.strategy.max_drawdown, 0) },
+        { key: "h", label: "Holding: per year / worst drop", numeric: true, render: (x: Any) => `${pct(x.hold.annual_return, 1)} / ${pct(x.hold.max_drawdown, 0)}` },
+        { key: "w", label: "If swaps are charged", numeric: true, render: (x: Any) => pct(x.with_swaps.strategy.annual_return, 1) },
+        { key: "why", label: "Failed checks", render: (x: Any) => <span className="text-xs text-muted">{failed(x.gates)}</span> },
+      ]} />
+      <p className="mt-2 text-xs text-muted">Currency pairs failed every NEXUS test after real Exness costs, so this tests the one rule that passed on the NASDAQ-100 index (hold less when prices swing wildly) on Exness&apos;s gold and NASDAQ-100 CFDs, with Exness&apos;s real bid and ask prices and at most 1x leverage. It had a better return per unit of risk and smaller drops than holding in all three, and stayed positive with overnight swaps, but each portfolio missed one of the strict checks by a small margin, so it is recorded as failed. Historical backtest, no orders placed. Rules written before the run: {e.preregistration}</p>
+    </Card>
+  );
+}
+
 function BotLeague({ l }: { l: Any }) {
   if (!l?.contenders) return null;
   const rows = (l.ranking_by_sharpe ?? []).map((k: string, i: number) => ({ key: k, rank: i + 1, ...l.contenders[k] }));
@@ -298,6 +320,7 @@ function MultiAsset() {
         </Card>
       )}
       <BotLeague l={r.bot_league} />
+      <ExnessVol e={r.exness_voltarget} />
       <Nqs1 n={r.nqs1} />
       <NightScalper n={r.night_scalper} />
       <BinanceGrid g={r.binance_grid} />

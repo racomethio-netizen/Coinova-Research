@@ -106,7 +106,7 @@ def evaluate(series: dict[str, pd.DataFrame], start: pd.Timestamp,
     def run(**kw: Any) -> pd.Series:
         parts = [simulate(d, start, capital=1 / len(series), **kw)["equity"]
                  for d in series.values()]
-        return pd.concat(parts, axis=1).ffill().dropna().sum(axis=1)
+        return pd.concat(parts, axis=1, sort=True).ffill().dropna().sum(axis=1)
 
     strat, hold = run(), run(rule=False)
     strat2 = run(cost_mult=2.0)
@@ -126,7 +126,7 @@ def evaluate(series: dict[str, pd.DataFrame], start: pd.Timestamp,
         "holds_at_2x_costs": (m2["sharpe"] or 0) > (hm["sharpe"] or 0) and
             m2["net_return"] > 0,
         "net_positive_with_swaps": mb["net_return"] > 0}
-    weights = pd.concat([simulate(d, start)["weight"] for d in series.values()], axis=1)
+    weights = pd.concat([simulate(d, start)["weight"] for d in series.values()], axis=1, sort=True)
     share = min(1.0, 0.05 / abs(m["max_drawdown"])) if m["max_drawdown"] < 0 else 1.0
     return {"start": str(strat.index[0].date()), "end": str(strat.index[-1].date()),
             "strategy": m, "hold": hm, "strategy_2x_costs": m2,

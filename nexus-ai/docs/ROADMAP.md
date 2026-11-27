@@ -32,6 +32,17 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-27: Exness gold and NASDAQ-100 with volatility control** (owner: "I need the
+  forex to be effective").
+  * Currency pairs failed all earlier tests, so the passed NASDAQ-100 rule was tested
+    unchanged on Exness `XAUUSDm` and `USTECm` ticks.
+  * **All three portfolios FAILED narrowly.** Each had a better Sharpe and smaller drops
+    than holding, and stayed positive with swaps, but missed one strict gate.
+  * Best: the 50/50, at 15.2% a year, Sharpe 1.24, worst drop −18%.
+  * Report: the results section in
+    `docs/research/2026-11-27-exness-voltarget-preregistration.md`.
+  * Not deployed yet: waits for the owner's "Deploy".
+
 * **2026-11-27: bot league** (owner: "the most profitable and effective bot … competitive
   with other best bots").
   * The NEXUS volatility-control bot (the batch3 rule, already paper trading since

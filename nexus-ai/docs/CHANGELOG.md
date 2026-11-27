@@ -4,6 +4,17 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-27
 
+- **Exness gold and NASDAQ-100 with volatility control: FAILED narrowly** (all three
+  portfolios). It uses the unchanged NASDAQ-100 rule on Exness's own bid/ask ticks.
+  * Every portfolio had a higher Sharpe and smaller drops than holding, held at 2× costs
+    and stayed positive with swaps.
+  * Each missed one strict gate:
+    * gold: drawdown only 8.8 points better, and the first-half Sharpe;
+    * NASDAQ-100: the second-half Sharpe;
+    * 50/50: drawdown only 8.7 points better.
+  * 50/50: 15.2% a year, Sharpe 1.24, worst drop −18%.
+  * There is a card on the Strategy test page.
+
 - **Bot league: the NEXUS volatility-control bot ranks first** against 5 popular Binance
   bots: the Spot Grid at 3 settings, the Rebalancing bot, and buy-and-hold.
   * Setup: BTC + ETH, 10,000 USDT, 2021-02 to 2026-10, the same costs and data for all.

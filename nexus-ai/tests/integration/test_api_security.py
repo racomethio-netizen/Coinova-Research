@@ -860,6 +860,9 @@ def test_markets_overview_and_per_market_switch(client: TestClient) -> None:
     assert grid["original_run"]["harness_commit"] and grid["holding"]["net_return"] > 0
     league = m2["bot_league"]
     assert league["ranking_by_sharpe"][0] == "nexus_vol" and len(league["contenders"]) == 6
+    exvol = m2["exness_voltarget"]
+    assert set(exvol["portfolios"]) == {"gold", "nasdaq100", "gold_nasdaq_50_50"}
+    assert not any(p["passed"] for p in exvol["portfolios"].values())
     assert client.post("/api/v1/markets/gold/autonomy",
                        json={"autonomy": "OFF", "reason": "unknown"},
                        headers=CSRF).status_code == 404

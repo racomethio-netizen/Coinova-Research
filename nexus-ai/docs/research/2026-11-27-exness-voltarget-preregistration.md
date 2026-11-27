@@ -65,3 +65,38 @@ the Exness (forex broker) account to be effective.
 * **Nothing passes:** recorded as failed, with no re-tuning on this data.
 * **A harness bug found after the run:** it is fixed and the test re-run. Both results
   are reported.
+
+## Results (single run, 2026-11-27; harness commit 01c76fb)
+
+* **Data.** Exness ticks, no month missing.
+  * Gold: 135 months, median spread about USD 0.23.
+  * USTEC: 87 months, median spread about 4 index points.
+* **Verdict: all three portfolios FAILED, narrowly.** No re-tuning will follow.
+* A later edit only made date sorting explicit in pandas. Re-run, the result was
+  identical.
+
+| Portfolio (swap-free) | Per year | Sharpe | Worst drop | Holding: per year / Sharpe / worst drop | With swaps charged | Failed gate |
+|---|---|---|---|---|---|---|
+| Gold, 2015-10 to 2026-10 | 11.6% | 0.87 | −20.9% | 11.6% / 0.74 / −29.7% | 7.0% | drawdown only 8.8 points smaller (10 needed); first-half Sharpe 0.60 vs 0.62 |
+| NASDAQ-100, 2019-10 to 2026-10 | 15.6% | 0.97 | −22.7% | 20.9% / 0.89 / −35.6% | 10.9% | second-half Sharpe 1.16 vs 1.20 |
+| Gold + NASDAQ-100 50/50 | 15.2% | **1.24** | **−18.2%** | 17.8% / 1.04 / −26.9% | 10.2% | drawdown only 8.7 points smaller (10 needed) |
+
+**What held in all three:**
+* a higher overall Sharpe than holding;
+* smaller drawdowns;
+* unchanged at 2× costs;
+* positive with swaps charged.
+
+**Why it failed.** Each portfolio missed one strict gate by a small margin. The 50/50
+portfolio's worst year was −12% (2022), against −21% for holding.
+
+**Caveat.** 2019–2026 was a strong period for both gold and the NASDAQ-100. Holding them
+earned more than the rule did.
+
+**NEXUS fit.** With the 5% drawdown rule:
+* 50/50: about 27% of an account, about 4.2% a year;
+* gold: about 24%, 2.8% a year;
+* NASDAQ-100: about 22%, 3.4% a year.
+
+**Decision.** Recorded as failed. Paper observation on new data is possible, clearly
+labelled, as with the adaptive grid. No real-money path follows from this test.
