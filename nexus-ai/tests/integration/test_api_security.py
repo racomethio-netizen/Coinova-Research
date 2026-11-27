@@ -1035,6 +1035,17 @@ def test_exness_bridge_intraday_bars_backfill_and_data_health(
     assert eur["spread"] == "0.0001" and eur["spread_vs_m5_range"] == 0.5
     xau = s5[("XAUUSD", "5m")]["last_batch"]
     assert xau["rejected"] == {"ohlc_inconsistent": 1} and xau["stored"] == 10
+
+    def send_gold(full: bool) -> list[str]:
+        r = client.post("/api/v1/bridge/mt5/snapshot", headers=auth, json=_snapshot(
+            intraday=[{"name": "XAUUSDm", "timeframe": "M5", "full": full,
+                       "rows": rows(m5_last, 300, 10)}]))
+        assert r.status_code == 200, r.text
+        return list(r.json()["need_intraday"])
+
+    assert send_gold(False) == ["XAUUSDm/M5"]                       # still short: asked
+    assert send_gold(True) == []                                    # the broker's whole series
+    assert send_gold(False) == []                                   # not asked again for hours
     with OrmSession(migrated_engine) as orm:
         pid = orm.execute(text("SELECT id FROM trading_pairs WHERE exchange_symbol = "
                                "'EURUSDm'")).scalar_one()

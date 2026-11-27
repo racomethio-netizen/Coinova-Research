@@ -269,14 +269,16 @@ async def mt5_snapshot(request: Request, s: Session = Depends(db),
         bases = {sym.name: sym.base_name.upper() for sym in snap.symbols}
         recently_full = set()
         for item in snap.intraday:
-            key = FULL_KEY.format(name=item.name, tf=item.timeframe)
-            if item.full:
-                await redis.set(key, "1", ex=FULL_MARKER_SECONDS)
-            elif await redis.exists(key):
+            if not item.full and await redis.exists(
+                    FULL_KEY.format(name=item.name, tf=item.timeframe)):
                 recently_full.add(f"{item.name}/{item.timeframe}")
         intraday_written, quality, need_intraday = await asyncio.to_thread(
             store_intraday, s, snap.intraday, pids, bases, snap.server_utc_offset_hours, now,
             recently_full)
+        for item in snap.intraday:       # only after the bars were stored without error
+            if item.full and item.name in pids:
+                await redis.set(FULL_KEY.format(name=item.name, tf=item.timeframe), "1",
+                                ex=FULL_MARKER_SECONDS)
         old = await redis.get(QUALITY_KEY)
         merged = {**(json.loads(old) if old else {}), **quality}
         await redis.set(QUALITY_KEY, json.dumps(merged), ex=7 * 86400)

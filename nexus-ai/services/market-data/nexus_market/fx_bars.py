@@ -160,13 +160,15 @@ def expected_opens(start: datetime, end: datetime, seconds: int,
 
 
 def series_health(times: list[datetime], now: datetime, seconds: int, *,
-                  window: timedelta, grace: timedelta, kind: str = SESSION) -> dict[str, Any]:
-    """Freshness and completeness of one stored series over session hours only."""
+                  window: timedelta, grace: timedelta, kind: str = SESSION,
+                  expected: list[datetime] | None = None) -> dict[str, Any]:
+    """Freshness and completeness of one stored series over session hours only.
+    ``expected``: the session's bar opens in the window, if already computed."""
     step = timedelta(seconds=seconds)
-    last_closed = _floor(now, seconds) - step
     have = set(times)
     newest = max(times) if times else None
-    expected = expected_opens(now - window, last_closed, seconds, kind)
+    if expected is None:
+        expected = expected_opens(now - window, _floor(now, seconds) - step, seconds, kind)
     missing_runs, run, largest = 0, 0, 0
     for t in expected:
         if t in have:
@@ -200,34 +202,43 @@ def health_report(s: Session, pairs: list[tuple[int, str, str]], now: datetime,
                   quality: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """One row per (instrument, timeframe). ``pairs``: (pair id, base name, asset class).
     ``quotes``: the bridge's latest bid/ask by base name. ``quality``: the last batch's
-    validation counts by "<base>/<timeframe>"."""
+    validation counts by "<base>/<timeframe>". One query per timeframe for all pairs (the
+    database is far from the server)."""
+    if not pairs:
+        return []
     c = models.MarketCandle
+    ids = [p for p, _, _ in pairs]
+    times: dict[tuple[int, str], list[datetime]] = {}
+    ranges: dict[int, list[Decimal]] = {}
+    expected: dict[str, list[datetime]] = {}
+    for tf, secs in MT5_TF.values():
+        window = HEALTH_WINDOW[tf]
+        expected[tf] = expected_opens(now - window, _floor(now, secs) - timedelta(seconds=secs),
+                                      secs)
+        rows = s.execute(select(c.pair_id, c.open_time, c.high - c.low).where(
+            c.pair_id.in_(ids), c.timeframe == tf, c.open_time >= now - window)
+            .order_by(c.open_time.desc())).all()
+        for pid, t, rng in rows:
+            times.setdefault((int(pid), tf), []).append(t)
+            if tf == "5m" and len(ranges.setdefault(int(pid), [])) < 288 and rng is not None:
+                ranges[int(pid)].append(Decimal(rng))
     out = []
     for pid, base, asset_class in pairs:
         grace = STALE_GRACE.get(asset_class, STALE_GRACE["forex"])
-        typical_range: Decimal | None = None
-        for mt5_tf, (tf, secs) in MT5_TF.items():
-            window = HEALTH_WINDOW[tf]
-            times = list(s.scalars(select(c.open_time).where(
-                c.pair_id == pid, c.timeframe == tf, c.open_time >= now - window)))
-            row = {"symbol": base, "asset_class": asset_class, "timeframe": tf,
-                   **series_health(times, now, secs, window=window, grace=grace)}
-            if tf == "5m":
-                rng = list(s.execute(select(c.high - c.low).where(
-                    c.pair_id == pid, c.timeframe == tf).order_by(c.open_time.desc())
-                    .limit(288)).scalars())
-                positive = [Decimal(x) for x in rng if x is not None and x > 0]
-                typical_range = median(positive) if len(positive) >= 20 else None
-            q = (quality or {}).get(f"{base}/{mt5_tf}")
-            row["last_batch"] = q
-            out.append(row)
+        positive = [r for r in ranges.get(pid, []) if r > 0]
+        typical = median(positive) if len(positive) >= 20 else None
         quote = (quotes or {}).get(base)
         spread = None
         if quote and quote.get("bid") and quote.get("ask"):
             spread = Decimal(str(quote["ask"])) - Decimal(str(quote["bid"]))
-        for row in out[-len(MT5_TF):]:
-            row["spread"] = str(spread) if spread is not None else None
-            row["spread_points"] = quote.get("spread_points") if quote else None
-            row["spread_vs_m5_range"] = (round(float(spread / typical_range), 3)
-                                         if spread is not None and typical_range else None)
+        for mt5_tf, (tf, secs) in MT5_TF.items():
+            out.append({
+                "symbol": base, "asset_class": asset_class, "timeframe": tf,
+                **series_health(times.get((pid, tf), []), now, secs, window=HEALTH_WINDOW[tf],
+                                grace=grace, expected=expected[tf]),
+                "last_batch": (quality or {}).get(f"{base}/{mt5_tf}"),
+                "spread": str(spread) if spread is not None else None,
+                "spread_points": quote.get("spread_points") if quote else None,
+                "spread_vs_m5_range": (round(float(spread / typical), 3)
+                                       if spread is not None and typical else None)})
     return out
