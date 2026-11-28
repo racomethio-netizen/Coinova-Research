@@ -32,6 +32,21 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **Deployed 2026-11-28 04:06 UTC** (owner: "Deploy"): Render deploy dep-dc555i3… is live,
+  from deploy commit e5e933c (source b44e558). It contains the unified brief Phases 2, 3
+  and 4.
+  * Health checks are ready: database and Redis ok.
+  * The new endpoints answer 401 when signed out: strategy modules, market intelligence,
+    forex data health and the bridge snapshot.
+  * Migration 0024 is applied on Supabase: 6 modules, all OFF; crypto swing marked as
+    passed; row-level security on.
+  * **Redis start-up fix confirmed.** The 18 inline workers started one by one
+    (04:06:25 to 04:06:46), module-observer included. There was no "Timeout connecting",
+    no "No connection available" and no worker crash. Earlier deploys showed that burst
+    every time.
+  * Owner to do: copy the bridge 1.1 (`apps/mt5_bridge/nexus_mt5_bridge.py`) to the PC
+    and restart it, so that forex M5/H1 bars start arriving.
+
 * **2026-11-27: unified brief Phase 4, intelligence** (owner: "Phase 4").
   Commits a676605 and b71536a (ML filter pre-registration and code, before the run),
   3864250 (results), fa42d53 and 616cae7 (snapshot, API, page; restored a test file
