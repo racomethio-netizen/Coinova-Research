@@ -37,7 +37,7 @@ def test_paper_mode_builds_both_workers():
                                  "trend-paper", "spot-engine", "library-paper", "bot", "grid-paper",
                                  "adaptive-grid", "rebalance-paper",
                                  "voltarget-paper", "multiasset-research",
-                                 "module-observer"}
+                                 "module-observer", "orchestrator"}
 
 
 def test_restarts_a_crashed_worker_and_stops_cleanly():
@@ -64,7 +64,7 @@ def test_inline_mode_selected():
                                  "trend-paper", "spot-engine", "library-paper", "bot", "grid-paper",
                                  "adaptive-grid", "rebalance-paper",
                                  "voltarget-paper", "multiasset-research",
-                                 "module-observer"}
+                                 "module-observer", "orchestrator"}
 
 
 def test_inline_restarts_crashes_and_stops_cleanly():

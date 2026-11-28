@@ -50,6 +50,7 @@ WORKERS: dict[str, list[str]] = {
     "voltarget-paper": ["-m", "nexus_backtest.voltarget_paper"],
     "multiasset-research": ["-m", "nexus_backtest.multiasset_paper"],
     "module-observer": ["-m", "nexus_backtest.module_observer"],
+    "orchestrator": ["-m", "nexus_api.orchestrator_worker"],
     "x-sentiment": ["-m", "nexus_social.service"],
 }
 
@@ -169,7 +170,7 @@ class InlineWorkers:
         from nexus_notify import service as notifier
         from nexus_social import service as social
 
-        from nexus_api import decision_log
+        from nexus_api import decision_log, orchestrator_worker
 
         workers: dict[str, Serve] = {
             "market-data": lambda stop: runner.serve(settings, stop),
@@ -189,7 +190,8 @@ class InlineWorkers:
             "rebalance-paper": lambda stop: rebalance_paper.serve(settings, stop),
             "voltarget-paper": lambda stop: voltarget_paper.serve(settings, stop),
             "multiasset-research": lambda stop: multiasset_paper.serve(settings, stop),
-            "module-observer": lambda stop: module_observer.serve(settings, stop)}
+            "module-observer": lambda stop: module_observer.serve(settings, stop),
+            "orchestrator": lambda stop: orchestrator_worker.serve(settings, stop)}
         if settings.x_bearer_token is not None:
             workers["x-sentiment"] = lambda stop: social.serve(settings, stop)
         if only is not None:

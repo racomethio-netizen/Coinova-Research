@@ -1317,6 +1317,34 @@ async def market_intelligence(s: Session = Depends(db), redis: Any = Depends(red
     return out
 
 
+@router.get("/orchestrator")
+async def orchestrator_board(s: Session = Depends(db),
+                             redis: Any = Depends(redis_dep)) -> dict[str, Any]:
+    """The strategy orchestrator's latest BUY / SELL / NO_TRADE per instrument (forex and
+    crypto) with reasons, and the recent decision log. Proposals only: the risk engine
+    and execution decide."""
+    from nexus_api.orchestrator_worker import STATUS_KEY as ORCH_KEY
+
+    raw = await redis.get(ORCH_KEY)
+    board = json.loads(raw) if raw else None
+
+    def history() -> list[dict[str, Any]]:
+        d = models.OrchestratorDecision
+        rows = s.scalars(select(d).order_by(desc(d.decided_at)).limit(60))
+        return [{"decided_at": r.decided_at.isoformat(), "market": r.market,
+                 "symbol": r.symbol, "action": r.action, "module": r.module,
+                 "regime": r.regime, "reasons": r.reasons, "blockers": r.blockers}
+                for r in rows]
+
+    return {"board": (board or {}).get("board", []), "at": (board or {}).get("at"),
+            "history": await asyncio.to_thread(history),
+            "rules": {"min_reward_risk": 2.0, "max_spread_vs_atr": 0.25,
+                      "min_crypto_volume_24h": 20_000_000,
+                      "only_tested_modules_trade": True},
+            "note": "Proposals only. A BUY or SELL still needs the independent risk engine "
+                    "and execution; nothing here places an order."}
+
+
 # ------------------------------------------------------------- strategy modules (Phase 3)
 
 

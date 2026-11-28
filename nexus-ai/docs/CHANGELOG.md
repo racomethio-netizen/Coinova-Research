@@ -2,6 +2,35 @@
 
 Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
+## 2026-11-28
+
+- **Unified brief Phase 5: the strategy orchestrator** (owner: "Phase 5").
+  * `nexus_decision.orchestrator` gives one BUY / SELL / NO_TRADE per instrument,
+    forex and crypto, with every reason.
+    * **Only a strategy module that passed its pre-registered test can propose a
+      trade.** The highest tested result after costs wins.
+    * **Blockers (any one gives NO_TRADE):**
+      * the market switch is OFF;
+      * the kill switch is engaged;
+      * the risk state, which fails closed when unknown;
+      * stale data or a closed forex market;
+      * a scheduled economic event;
+      * the spread is above 0.25 of the hourly ATR, or crypto volume is below
+        20 million USDT a day.
+    * **Signal quality:** at least 2:1, a fresh signal bar, direction matching the
+      regime, and no high-volatility regime for trend or breakout modules.
+  * **Worker** (`nexus_api.orchestrator_worker`, paper mode):
+    * runs every 5 minutes;
+    * higher-timeframe bars are cached until a new bar can exist;
+    * the crypto swing module's stance comes from its forward paper test;
+    * other modules' signals come from the forward observer when switched to OBSERVE.
+  * **Log:** migration 0025 adds `orchestrator_decisions`, append-only. A row is
+    written on change and at least hourly; rows are pruned after 180 days.
+  * **API and dashboard:** `GET /api/v1/orchestrator` and the *Strategy orchestrator*
+    page.
+  * Proposals only: the independent risk engine and execution still decide (Phases 6
+    and 7). Nothing places an order.
+
 ## 2026-11-27
 
 - **Unified brief Phase 4: intelligence** (owner: "Phase 4").

@@ -65,7 +65,7 @@ GET_ROUTES = ["/api/v1/overview", "/api/v1/portfolio", "/api/v1/exchanges", "/ap
               "/api/v1/decision/fusion", "/api/v1/decision/log", "/api/v1/spot-engine",
               "/api/v1/research/trend-forward", "/api/v1/research/library",
               "/api/v1/trading-bot", "/api/v1/strategy-modules",
-              "/api/v1/intelligence/markets"]
+              "/api/v1/intelligence/markets", "/api/v1/orchestrator"]
 
 
 @pytest.mark.parametrize("path", GET_ROUTES)
@@ -1294,4 +1294,75 @@ def test_strategy_modules_registry_switch_and_observation(
     with migrated_engine.begin() as c:
         c.execute(text("DELETE FROM strategy_module_signals"))
         c.execute(text("UPDATE strategy_modules SET activation = 'OFF', activated_at = NULL"))
+        c.execute(text("DELETE FROM market_candles WHERE pair_id = :p"), {"p": pid})
+
+
+def test_orchestrator_cycle_proposes_only_from_tested_modules(
+        client: TestClient, migrated_engine: Engine, db_url: str,
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    import asyncio
+    from datetime import UTC, datetime, timedelta
+    from decimal import Decimal as D
+
+    import redis.asyncio as aioredis
+    from nexus_api import orchestrator_worker as ow
+    from nexus_backtest import trend_paper
+    from nexus_common.timeutil import utcnow
+    from nexus_db import make_session_factory, repo
+    from sqlalchemy import text
+
+    now = datetime(2026, 12, 1, 12, 2, tzinfo=UTC)          # no scheduled USD event
+    run = "test-orchestrator"            # forward_test_events is append-only: own run name
+    monkeypatch.setattr(trend_paper, "RUN", run)
+    factory = make_session_factory(migrated_engine)
+    with transaction(factory) as s:
+        pid = repo.upsert_trading_pair(
+            s, exchange_id=repo.exchange_id(s, "binance"), symbol="BTC/USDT",
+            exchange_symbol="BTCUSDT", base="BTC", quote="USDT", price_tick=D("0.01"),
+            amount_step=D("0.00001"), min_amount=None, min_notional=None, maker_fee=None,
+            taker_fee=None, synced_at=utcnow())
+        last = now.replace(minute=0) - timedelta(hours=1)
+        rows = [repo.CandleRow(last - timedelta(hours=i), D(str(60000 + i % 7 * 50)),
+                               D(str(60200 + i % 7 * 50)), D(str(59800 + i % 7 * 50)),
+                               D(str(60010 + i % 7 * 50)), D("1000")) for i in range(300)]
+        repo.upsert_candles(s, pid, "1h", rows)
+        s.add(models.ForwardTestEvent(run=run, symbol="PORTFOLIO", kind="day",
+                                      key="2026-11-30",
+                                      at=datetime(2026, 11, 30, tzinfo=UTC),
+                                      data={"targets": {"BTCUSDT": 0.6, "ETHUSDT": 0.0},
+                                            "weights": {"BTCUSDT": 0.3, "ETHUSDT": 0.0}}))
+    settings = Settings(database_url=db_url, redis_url=os.environ["NEXUS_TEST_REDIS_URL"],
+                        credential_encryption_keys=generate_key_entry("k1"))
+
+    async def cycle(at: datetime) -> list[dict[str, Any]]:
+        r = aioredis.from_url(os.environ["NEXUS_TEST_REDIS_URL"])
+        try:
+            await r.set(ow.RISK_KEY, json.dumps({"state": "NORMAL", "entries_allowed": True}))
+            return await ow.step(factory, r, settings, cache, at)
+        finally:
+            await r.aclose()
+
+    cache = ow.FrameCache()
+    board = {b["symbol"]: b for b in asyncio.run(cycle(now))}
+    btc = board["BTC/USDT"]
+    assert btc["action"] == "BUY" and btc["module"] == "crypto_swing_trend", btc
+    assert any("risk engine must approve" in r for r in btc["reasons"])
+    assert board["ETH/USDT"]["action"] == "NO_TRADE"
+    assert "not enough stored price history" in board["ETH/USDT"]["blockers"]
+    fx = board["EURUSD"]
+    assert fx["action"] == "NO_TRADE" and fx["blockers"]
+    with migrated_engine.begin() as c:
+        first = c.execute(text("SELECT count(*) FROM orchestrator_decisions")).scalar_one()
+    assert first == len(board)
+    asyncio.run(cycle(now + timedelta(minutes=5)))
+    with migrated_engine.begin() as c:
+        again = c.execute(text("SELECT count(*) FROM orchestrator_decisions")).scalar_one()
+    assert again == first                                     # unchanged: nothing re-logged
+    login(client)
+    r = client.get("/api/v1/orchestrator")
+    assert r.status_code == 200, r.text
+    got = {b["symbol"]: b for b in r.json()["board"]}
+    assert got["BTC/USDT"]["action"] == "BUY" and r.json()["history"]
+    with migrated_engine.begin() as c:
+        c.execute(text("DELETE FROM orchestrator_decisions"))
         c.execute(text("DELETE FROM market_candles WHERE pair_id = :p"), {"p": pid})

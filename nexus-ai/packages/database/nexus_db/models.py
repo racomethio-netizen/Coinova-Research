@@ -955,3 +955,39 @@ class StrategyModuleSignal(Base):
     note: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[created_at]
     resolved_at: Mapped[datetime | None]
+
+
+class OrchestratorDecision(Base):
+    """The strategy orchestrator's decision for one instrument (BUY / SELL / NO_TRADE),
+    written when it changes and at least hourly, with its reasons. A proposal: the risk
+    engine and execution still decide. Append-only; pruned after 180 days."""
+
+    __tablename__ = "orchestrator_decisions"
+    __table_args__ = (
+        CheckConstraint(in_list("market", ("forex", "crypto")), name="market_valid"),
+        CheckConstraint(in_list("action", ("BUY", "SELL", "NO_TRADE")), name="action_valid"),
+        CheckConstraint("side IS NULL OR side IN (-1, 1)", name="side_valid"),
+        CheckConstraint("action = 'NO_TRADE' OR (module IS NOT NULL AND side IS NOT NULL)",
+                        name="trade_has_source"),
+        Index("ix_orchestrator_decisions_symbol_decided", "symbol", "decided_at"),
+    )
+
+    id: Mapped[bigint_pk]
+    decided_at: Mapped[datetime]
+    market: Mapped[str] = mapped_column(String(16))
+    symbol: Mapped[str] = mapped_column(String(32))
+    action: Mapped[str] = mapped_column(String(10))
+    module: Mapped[str | None] = mapped_column(String(40))
+    side: Mapped[int | None] = mapped_column(SmallInteger)
+    entry_ref: Mapped[Decimal | None]
+    stop: Mapped[Decimal | None]
+    target: Mapped[Decimal | None]
+    reward_risk: Mapped[Decimal | None] = mapped_column(Ratio)
+    expected_r: Mapped[Decimal | None] = mapped_column(Ratio)
+    regime: Mapped[str | None] = mapped_column(String(20))
+    reasons: Mapped[list[Any]] = mapped_column(server_default=text("'[]'::jsonb"))
+    blockers: Mapped[list[Any]] = mapped_column(server_default=text("'[]'::jsonb"))
+    candidates: Mapped[list[Any]] = mapped_column(server_default=text("'[]'::jsonb"))
+    context: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
+    fingerprint: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[created_at]
