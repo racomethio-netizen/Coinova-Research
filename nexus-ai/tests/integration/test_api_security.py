@@ -66,7 +66,7 @@ GET_ROUTES = ["/api/v1/overview", "/api/v1/portfolio", "/api/v1/exchanges", "/ap
               "/api/v1/research/trend-forward", "/api/v1/research/library",
               "/api/v1/trading-bot", "/api/v1/strategy-modules",
               "/api/v1/intelligence/markets", "/api/v1/orchestrator",
-              "/api/v1/portfolio-risk", "/api/v1/execution"]
+              "/api/v1/portfolio-risk", "/api/v1/execution", "/api/v1/guardian"]
 
 
 @pytest.mark.parametrize("path", GET_ROUTES)
@@ -1503,3 +1503,91 @@ def test_exness_demo_executes_approved_intents_once_with_verified_stops(
                                           "stop_verified"])
     with migrated_engine.begin() as c:
         c.execute(text("DELETE FROM execution_intents"))
+
+
+def test_guardian_alerts_once_and_engages_the_kill_switch_at_the_drawdown_pause(
+        client: TestClient, migrated_engine: Engine, db_url: str) -> None:
+    import asyncio
+
+    import redis.asyncio as aioredis
+    from nexus_api import guardian_worker as gw
+    from nexus_api import portfolio_risk as pr
+    from nexus_common import events
+    from nexus_db import repo
+    from nexus_risk.kill_switch import KillSwitch
+    from sqlalchemy import text
+
+    url = os.environ["NEXUS_TEST_REDIS_URL"]
+    r = sync_redis.Redis.from_url(url)
+    for k in (gw.REPORT_KEY, gw.LEADER_KEY, events.KILL_SWITCH_KEY, pr.STATUS_KEY,
+              events.NOTIFY_STREAM):
+        r.delete(k)
+    factory = make_session_factory(migrated_engine)
+    with transaction(factory) as s:          # the audit log is append-only: clear durably
+        repo.record_audit(s, actor="user:1", action="kill_switch_cleared",
+                          details={"reason": "test start"})
+    settings = Settings(database_url=db_url, redis_url=url,
+                        credential_encryption_keys=generate_key_entry("k1"))
+    limits = {"daily_loss": "0.01", "weekly_loss": "0.025", "drawdown_pause": "0.05",
+              "max_positions": 3, "max_open_risk": "0.01"}
+
+    def book(drawdown: str) -> str:
+        from nexus_common.timeutil import utcnow
+
+        return json.dumps({"at": utcnow().isoformat(), "equity": "9400.00", "day_loss": "0.002",
+                           "week_loss": "0.004", "drawdown": drawdown, "open_risk_usd": "0",
+                           "limits": limits, "accounts": [
+                               {"name": "crypto_paper", "reconciled": True, "positions": []}]})
+
+    async def run(instance: str, last: dict[str, Any] | None = None) -> dict[str, Any] | None:
+        red = aioredis.from_url(url)
+        try:
+            return await gw.step(factory, red, settings, instance, last_state=last)
+        finally:
+            await red.aclose()
+
+    r.set(pr.STATUS_KEY, book("0.02"))
+    rep = asyncio.run(run("a"))
+    assert rep is not None and set(rep["domains"]) == {"platform", "market_data", "models",
+                                                       "execution", "risk"}
+    checks = {c["name"]: c for c in rep["checks"]}
+    assert checks["database"]["status"] == "ok" and checks["redis"]["status"] == "ok"
+    assert checks["drawdown"]["status"] == "ok" and rep["shutdown_conditions"] == []
+    assert checks["kill_switch"]["status"] == "ok"
+    assert asyncio.run(run("b")) is None                  # one leader: no doubled alerts
+    first_alerts = rep["alerts_sent"]
+
+    r.set(pr.STATUS_KEY, book("0.06"))                    # combined drawdown past the pause
+    rep = asyncio.run(run("a", rep["state"]))
+    assert rep is not None and rep["shutdown_conditions"] == ["drawdown 6.00% reached the 5% pause"]
+    ks = json.loads(r.get(events.KILL_SWITCH_KEY))
+    assert ks["actor"] == "system:guardian" and "drawdown 6.00%" in ks["reason"]
+    with migrated_engine.begin() as c:
+        audit = c.execute(text("SELECT actor, action FROM audit_logs ORDER BY id DESC "
+                               "LIMIT 1")).one()
+        shut = c.execute(text("SELECT count(*) FROM system_events WHERE component = "
+                              "'guardian' AND event_type = 'emergency_shutdown'")).scalar_one()
+    assert tuple(audit) == ("system:guardian", "kill_switch_engaged") and shut == 1
+    kinds = [events.decode(f)["type"] for _, f in r.xrange(events.NOTIFY_STREAM)]
+    assert "emergency_shutdown" in kinds and "guardian_alert" in kinds
+
+    again = asyncio.run(run("a", rep["state"]))           # nothing new: no repeated alert
+    assert again is not None and again["alerts_sent"] == 0 and again["shutdown_conditions"] == []
+    assert {c["name"]: c for c in again["checks"]}["kill_switch"]["status"] == "critical"
+    r.delete(events.KILL_SWITCH_KEY)                      # Redis lost the key: restored
+    restored = asyncio.run(run("a", again["state"]))
+    assert restored is not None and "restored" in restored["actions"][0]
+    assert asyncio.run(KillSwitch(aioredis.from_url(url)).status()) is not None
+
+    login(client)
+    got = client.get("/api/v1/guardian").json()
+    assert got["report"]["overall"] == "critical" and "state" not in got["report"]
+    assert got["kill_switch"]["actor"] == "system:guardian" and got["stale"] is False
+    assert any(a["event_type"] == "emergency_shutdown" for a in got["alerts"])
+    assert "Telegram is not configured" in got["alerts_channel"] and first_alerts >= 0
+
+    for k in (gw.REPORT_KEY, gw.LEADER_KEY, events.KILL_SWITCH_KEY, pr.STATUS_KEY):
+        r.delete(k)
+    with transaction(factory) as s:
+        repo.record_audit(s, actor="user:1", action="kill_switch_cleared",
+                          details={"reason": "test end"})

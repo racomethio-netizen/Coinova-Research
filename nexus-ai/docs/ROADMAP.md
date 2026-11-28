@@ -32,6 +32,33 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-28: unified brief Phase 8, the Guardian** (owner: "Phase 8"). **Not deployed
+  yet: needs the owner's "Deploy"** (together with Phase 7). No migration.
+  * **Audit first:** monitoring existed in pieces:
+    * heartbeats for 3 workers, the kill switch, reconciliation status, the risk-state
+      machine, the portfolio book, the edge-decay monitor, PSI drift and Telegram
+      alerts;
+    * an operations monitor (`nexus_notify.monitor`) that was never started on the
+      server.
+    The Guardian reuses all of them; the old monitor is kept but superseded.
+  * **What it checks** (every minute): platform health, market data, models, execution
+    and risk.
+    * Alerts are sent once per change.
+    * It restores the kill switch if Redis lost it.
+    * It engages the kill switch only for a drawdown at the 5% pause or a stop-loss not
+      verified within 10 minutes.
+  * **Pages:** the *Guardian* page and `GET /api/v1/guardian`.
+  * **Tests:**
+    * `scripts/test.sh`: ruff and mypy clean, **1214 passed** (31 deselected);
+    * `scripts/e2e.sh`: **15 passed**.
+  * **Expected after the deploy:** a few warnings, which are real.
+    * Forex: "no forex data" while the Exness programs on the PC are off and the forex
+      market is open.
+    * Possibly a stale quote or candle series.
+    * Alerts go to the server log unless Telegram is configured (`NEXUS_TELEGRAM_*` on
+      Render).
+  * **Next (owner go-ahead needed):** Phase 9, the integrated dashboard.
+
 * **2026-11-28: unified brief Phase 7, execution adapters (paper and demo only)** (owner:
   "Phase 7"). **Not deployed yet: needs the owner's "Deploy".** Migration 0026
   (`execution_intents`).

@@ -61,6 +61,12 @@ def format_event(p: dict[str, Any]) -> str | None:
     if kind == "system_alert":
         state = "recovered" if p.get("ok") else "PROBLEM"
         return f"🖥️ <b>System {state}</b>: {_e(p.get('check'))} ({_e(p.get('detail'))})"
+    if kind == "guardian_alert":
+        st = p.get("status")
+        recovered = p.get("kind") == "recovered"
+        head = "recovered" if recovered else str(st).upper()
+        mark = "✅" if recovered else ("🚨" if st == "critical" else "⚠️")
+        return f"{mark} <b>Guardian {_e(head)}</b> · {_e(p.get('domain'))}\n{_e(p.get('detail'))}"
     if kind == "daily_report":
         r = p.get("report") or {}
         return (f"{icon} {m}<b>Daily performance</b> {_e(p.get('date'))}\n"

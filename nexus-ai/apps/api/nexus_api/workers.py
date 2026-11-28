@@ -16,11 +16,15 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 import sys
 import threading
 from collections.abc import Awaitable, Callable, Sequence
+from datetime import datetime, timedelta
+from typing import Any
 
 from nexus_common.logging import get_logger
+from nexus_common.timeutil import utcnow
 from nexus_config import Settings, TradingMode
 
 log = get_logger("nexus.api.workers")
@@ -30,6 +34,67 @@ log = get_logger("nexus.api.workers")
 # at the same moment while the old instance still holds its own (see
 # nexus_common.redisutil).
 STAGGER_SECONDS = 1.0
+
+# Each worker's state, published every PUBLISH_SECONDS for the Guardian
+# (nexus_api.guardian_worker): running or restarting, restarts in the last hour, last error.
+STATUS_KEY = "nexus:workers:status"
+PUBLISH_SECONDS = 30.0
+
+Publish = Callable[[dict[str, Any]], Awaitable[None]]
+
+
+class WorkerStates:
+    """What the supervisors know about their workers (no secrets: error text is cut)."""
+
+    def __init__(self, names: Sequence[str]) -> None:
+        self.state: dict[str, dict[str, Any]] = {
+            n: {"state": "waiting", "since": None, "last_error": None, "restarts": 0}
+            for n in names}
+        self.crashes: dict[str, list[datetime]] = {n: [] for n in names}
+
+    def started(self, name: str) -> None:
+        self.state[name].update(state="running", since=utcnow().isoformat())
+
+    def stopped(self, name: str, error: str | None) -> None:
+        now = utcnow()
+        self.crashes[name] = [t for t in self.crashes[name] if now - t < timedelta(hours=1)]
+        self.crashes[name].append(now)
+        self.state[name].update(state="restarting", since=now.isoformat(),
+                                last_error=(error or "exited")[:200],
+                                restarts=self.state[name]["restarts"] + 1)
+
+    def snapshot(self) -> dict[str, Any]:
+        now = utcnow()
+        return {"at": now.isoformat(), "workers": {
+            n: {**w, "restarts_1h": sum(1 for t in self.crashes[n]
+                                        if now - t < timedelta(hours=1))}
+            for n, w in self.state.items()}}
+
+
+def redis_publisher(url: str) -> Publish:
+    """Writes the snapshot to Redis (one connection, opened on first use, in the loop
+    that publishes)."""
+    conn: list[Any] = []
+
+    async def publish(doc: dict[str, Any]) -> None:
+        if not conn:
+            from nexus_common.redisutil import connect as connect_redis
+
+            conn.append(connect_redis(url, max_connections=1))
+        await conn[0].set(STATUS_KEY, json.dumps(doc), ex=180)
+
+    return publish
+
+
+async def publish_loop(states: WorkerStates, publish: Publish, stop: asyncio.Event,
+                       every: float = PUBLISH_SECONDS) -> None:
+    while not stop.is_set():
+        try:
+            await publish(states.snapshot())
+        except Exception as exc:  # Redis may be down: the Guardian reports a stale status
+            log.warning("worker_status_publish_failed", error=type(exc).__name__)
+        with contextlib.suppress(TimeoutError):
+            await asyncio.wait_for(stop.wait(), timeout=every)
 
 WORKERS: dict[str, list[str]] = {
     "market-data": ["-m", "nexus_market.runner"],
@@ -51,21 +116,26 @@ WORKERS: dict[str, list[str]] = {
     "multiasset-research": ["-m", "nexus_backtest.multiasset_paper"],
     "module-observer": ["-m", "nexus_backtest.module_observer"],
     "orchestrator": ["-m", "nexus_api.orchestrator_worker"],
+    "guardian": ["-m", "nexus_api.guardian_worker"],
     "x-sentiment": ["-m", "nexus_social.service"],
 }
 
 
 # Live mode on one server: no paper forward tests, no paper bot (paper ledgers stay frozen).
-LIVE_WORKERS = ("market-data", "trader", "notifier", "news", "derivatives", "decision-log")
+LIVE_WORKERS = ("market-data", "trader", "notifier", "news", "derivatives", "decision-log",
+                "guardian")
 
 
 class WorkerSupervisor:
     def __init__(self, commands: dict[str, Sequence[str]], *, base_delay: float = 5.0,
-                 max_delay: float = 300.0, grace: float = 20.0) -> None:
+                 max_delay: float = 300.0, grace: float = 20.0,
+                 publish: Publish | None = None) -> None:
         self.commands = commands
         self.base_delay, self.max_delay, self.grace = base_delay, max_delay, grace
         self.procs: dict[str, asyncio.subprocess.Process] = {}
         self.restarts: dict[str, int] = dict.fromkeys(commands, 0)
+        self.states = WorkerStates(list(commands))
+        self.publish = publish
         self._stop = asyncio.Event()
         self._tasks: list[asyncio.Task[None]] = []
 
@@ -82,7 +152,8 @@ class WorkerSupervisor:
             log.warning("live_workers_starting", workers=list(LIVE_WORKERS))
             if settings.workers_mode == "inline":
                 return InlineWorkers.for_settings(settings, only=LIVE_WORKERS)
-            return cls({n: [sys.executable, *WORKERS[n]] for n in LIVE_WORKERS})
+            return cls({n: [sys.executable, *WORKERS[n]] for n in LIVE_WORKERS},
+                       publish=redis_publisher(settings.redis_url.get_secret_value()))
         if settings.trading_mode is not TradingMode.PAPER:
             log.warning("workers_not_started", reason=f"no workers for mode "
                         f"{settings.trading_mode.value}")
@@ -90,10 +161,14 @@ class WorkerSupervisor:
         if settings.workers_mode == "inline":
             return InlineWorkers.for_settings(settings)
         return cls({name: [sys.executable, *args] for name, args in WORKERS.items()
-                    if name != "x-sentiment" or settings.x_bearer_token is not None})
+                    if name != "x-sentiment" or settings.x_bearer_token is not None},
+                   publish=redis_publisher(settings.redis_url.get_secret_value()))
 
     def start(self) -> None:
         self._tasks = [asyncio.create_task(self._keep(name)) for name in self.commands]
+        if self.publish is not None:
+            self._tasks.append(asyncio.create_task(
+                publish_loop(self.states, self.publish, self._stop)))
 
     async def _keep(self, name: str) -> None:
         delay = self.base_delay
@@ -101,10 +176,12 @@ class WorkerSupervisor:
             proc = await asyncio.create_subprocess_exec(*self.commands[name])
             self.procs[name] = proc
             log.info("worker_started", worker=name, pid=proc.pid)
+            self.states.started(name)
             code = await proc.wait()
             if self._stop.is_set():
                 return
             self.restarts[name] += 1
+            self.states.stopped(name, f"exit code {code}")
             log.error("worker_exited", worker=name, code=code, restart_in=delay)
             with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(self._stop.wait(), timeout=delay)
@@ -141,11 +218,13 @@ class InlineWorkers:
 
     def __init__(self, workers: dict[str, Serve], *, base_delay: float = 5.0,
                  max_delay: float = 300.0, grace: float = 20.0, threaded: bool = False,
-                 stagger: float = 0.0) -> None:
+                 stagger: float = 0.0, publish: Publish | None = None) -> None:
         self.workers = workers
         self.base_delay, self.max_delay, self.grace = base_delay, max_delay, grace
         self.stagger = stagger
         self.restarts: dict[str, int] = dict.fromkeys(workers, 0)
+        self.states = WorkerStates(list(workers))
+        self.publish = publish
         self.threaded = threaded
         self._stop = asyncio.Event()
         self._tasks: list[asyncio.Task[None]] = []
@@ -170,7 +249,7 @@ class InlineWorkers:
         from nexus_notify import service as notifier
         from nexus_social import service as social
 
-        from nexus_api import decision_log, orchestrator_worker
+        from nexus_api import decision_log, guardian_worker, orchestrator_worker
 
         workers: dict[str, Serve] = {
             "market-data": lambda stop: runner.serve(settings, stop),
@@ -191,17 +270,24 @@ class InlineWorkers:
             "voltarget-paper": lambda stop: voltarget_paper.serve(settings, stop),
             "multiasset-research": lambda stop: multiasset_paper.serve(settings, stop),
             "module-observer": lambda stop: module_observer.serve(settings, stop),
-            "orchestrator": lambda stop: orchestrator_worker.serve(settings, stop)}
+            "orchestrator": lambda stop: orchestrator_worker.serve(settings, stop),
+            "guardian": lambda stop: guardian_worker.serve(settings, stop)}
         if settings.x_bearer_token is not None:
             workers["x-sentiment"] = lambda stop: social.serve(settings, stop)
         if only is not None:
             workers = {n: w for n, w in workers.items() if n in only}
-        return cls(workers, threaded=True, stagger=STAGGER_SECONDS)
+        return cls(workers, threaded=True, stagger=STAGGER_SECONDS,
+                   publish=redis_publisher(settings.redis_url.get_secret_value()))
+
+    def _status_task(self) -> list[asyncio.Task[None]]:
+        if self.publish is None:
+            return []
+        return [asyncio.create_task(publish_loop(self.states, self.publish, self._stop))]
 
     def start(self) -> None:
         if not self.threaded:
             self._tasks = [asyncio.create_task(self._keep(n, i * self.stagger))
-                           for i, n in enumerate(self.workers)]
+                           for i, n in enumerate(self.workers)] + self._status_task()
             return
         ready = threading.Event()
         self._thread = threading.Thread(target=self._thread_main, args=(ready,),
@@ -213,7 +299,7 @@ class InlineWorkers:
         async def main() -> None:
             self._loop = asyncio.get_running_loop()
             self._tasks = [asyncio.create_task(self._keep(n, i * self.stagger))
-                           for i, n in enumerate(self.workers)]
+                           for i, n in enumerate(self.workers)] + self._status_task()
             ready.set()
             await self._stop.wait()
             await self._drain()
@@ -232,6 +318,8 @@ class InlineWorkers:
         delay = self.base_delay
         while not self._stop.is_set():
             log.info("worker_started", worker=name, mode="inline")
+            self.states.started(name)
+            error = None
             try:
                 await self.workers[name](self._stop)
                 if self._stop.is_set():
@@ -240,9 +328,10 @@ class InlineWorkers:
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
-                log.error("worker_crashed", worker=name, restart_in=delay,
-                          error=f"{type(exc).__name__}: {exc}"[:300])
+                error = f"{type(exc).__name__}: {exc}"[:300]
+                log.error("worker_crashed", worker=name, restart_in=delay, error=error)
             self.restarts[name] += 1
+            self.states.stopped(name, error)
             with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(self._stop.wait(), timeout=delay)
             delay = min(delay * 2, self.max_delay)

@@ -4,6 +4,48 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-28
 
+- **Unified brief Phase 8: the Guardian** (owner: "Phase 8"). One 24/7 watchdog, every
+  minute, over the whole platform (`nexus_risk.guardian`, worker `guardian`).
+  * **Platform:**
+    * database and Redis reachable and fast;
+    * memory (the container's limit) and disk;
+    * every worker running and not crash-looping (the supervisors now publish each
+      worker's state);
+    * heartbeats of the market data, trader and notifier;
+    * the orchestrator and the risk book refreshed.
+  * **Market data:**
+    * stored 5m/1h/4h candles fresh and complete;
+    * open/high/low/close consistent, with a warning on a 15% one-bar jump;
+    * live quotes fresh, not crossed, within 3% of the last close;
+    * exchange reachable; Exness quotes fresh while the forex market is open.
+  * **Models:**
+    * every ML model in use (none today) predicting and not drifting;
+    * each OBSERVE/PAPER strategy module's forward record checked by the edge-decay
+      monitor against its test.
+  * **Execution:**
+    * paper/demo orders answered in time (never resent);
+    * stop-losses verified after fills;
+    * rejections, and slippage against twice the tested cost;
+    * orders in an unknown state.
+  * **Risk:**
+    * the kill switch (restored from the audit log if Redis lost it; never cleared);
+    * the trader's risk state;
+    * losses at 80% and 100% of the daily/weekly limits;
+    * drawdown, open risk, positions, reconciliation, and the Exness demo halt.
+  * **Alerts:** once per change (a warning after 2 runs, a critical problem at once, a
+    recovery only if alerted). Each alert is a `system_events` row and a Telegram
+    message when configured; otherwise it goes to the server log.
+  * **Emergency shutdown:** the durable kill switch is engaged as `system:guardian`
+    (audit log, risk event, system event) only when:
+    * the combined drawdown reaches the 5% pause while the switch is clear;
+    * a filled position's stop-loss is not verified within 10 minutes.
+    Only the owner clears it.
+  * One leader (a Redis lock), so a deploy's overlap does not double alerts.
+  * **Pages:** the *Guardian* page (with an emergency-stop button) and
+    `GET /api/v1/guardian`.
+  * **Tests:** `scripts/test.sh` ruff and mypy clean, 1214 passed; `scripts/e2e.sh`
+    15 passed.
+
 - **Unified brief Phase 7: execution adapters, paper and demo only** (owner: "Phase 7").
   * **Execution intents** (migration 0026, `execution_intents`; `nexus_execution.intents`).
     An approved orchestrator proposal becomes a pending intent only when:

@@ -49,6 +49,20 @@ Exness **demo** account (`execution_intents`). There is no live venue.
 | Crypto intents run only when the trader is in paper mode; new entries need the bot's own entry gates; reductions are always allowed | `Trader.execute_intents` |
 | The stop-loss is verified on the broker after the fill: restored if missing; a demo position whose stop cannot be set after two tries is closed | the trader, `intents.demo_manage` |
 
+## The Guardian (Phase 8)
+
+`nexus_api.guardian_worker` checks the platform every minute (`nexus_risk.guardian`). It
+reads and protects; it never opens or closes a position and never clears anything.
+
+| Guard | Detail |
+|---|---|
+| Kill switch restore | If the durable record (audit log) says engaged and Redis lost the key, the Guardian restores it |
+| Emergency shutdown | It engages the durable kill switch as `system:guardian` (audit log, risk event, system event) only on: combined drawdown at the 5% pause while the switch is clear; a filled position whose stop-loss is not verified within 10 minutes |
+| Clearing | Only the owner, with 2FA (Risk center). The Guardian never clears it |
+| Alerts | Once per change; `system_events` (component `guardian`) and Telegram when configured. No secrets in alerts (worker errors are cut to 200 characters) |
+| One leader | A Redis lock; during a deploy only one instance checks and alerts |
+| Limitation | If the whole server is down, the Guardian is down too. Render's health check restarts the service; an outside uptime monitor would be needed for an alert in that case |
+
 ## Credentials
 
 * Exchange keys are entered via the dashboard (Phase 11/13), never in env files.

@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any, Literal
 
@@ -848,6 +848,37 @@ async def system(s: Session = Depends(db), redis: Any = Depends(redis_dep)) -> d
     return {"heartbeats": beats, "events": _rows(ev, ["id", "component", "event_type", "severity",
                                                       "message", "created_at"]),
             "counts": counts, "server_time": ser(utcnow())}
+
+
+@router.get("/guardian")
+async def guardian(s: Session = Depends(db), redis: Any = Depends(redis_dep),
+                   settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """The Guardian's latest report (platform, market data, models, execution, risk),
+    its recent alerts, and the kill switch. The Guardian runs every minute."""
+    from nexus_api.guardian_worker import INTERVAL, REPORT_KEY
+
+    raw = await redis.get(REPORT_KEY)
+    rep = json.loads(raw) if raw else None
+    if rep is not None:
+        rep.pop("state", None)
+    age = (utcnow() - datetime.fromisoformat(rep["at"])).total_seconds() if rep else None
+    kill = await KillSwitch(redis).status()
+
+    def alerts() -> list[dict[str, Any]]:
+        ev = s.scalars(select(models.SystemEvent).where(
+            models.SystemEvent.component == "guardian")
+            .order_by(desc(models.SystemEvent.id)).limit(50)).all()
+        return _rows(ev, ["id", "event_type", "severity", "message", "details", "created_at"])
+
+    telegram = settings.telegram_bot_token is not None and bool(settings.telegram_chat_id)
+    return {"report": rep, "age_seconds": age,
+            "stale": age is None or age > 3 * INTERVAL, "kill_switch": kill,
+            "alerts": await asyncio.to_thread(alerts),
+            "alerts_channel": "Telegram" if telegram else
+            "dashboard and server log only (Telegram is not configured)",
+            "note": "The Guardian reads and protects; it never opens or closes a position. "
+                    "It engages the kill switch only for a drawdown at the pause limit or a "
+                    "position whose stop-loss could not be verified. Only you clear it."}
 
 
 @router.get("/security", dependencies=[Depends(owner)])

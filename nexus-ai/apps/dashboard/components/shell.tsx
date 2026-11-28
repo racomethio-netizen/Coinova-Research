@@ -22,7 +22,7 @@ export const SECTIONS: [string, [string, string][]][] = [
   ["Performance Analytics", [["/performance/", "Performance"]]],
   ["Backtesting", [["/backtests/", "Backtesting"]]],
   ["Settings", [["/settings/", "Settings"], ["/connection/", "Binance connection"], ["/telegram/", "Telegram"], ["/security/", "Security"]]],
-  ["System Health", [["/system/", "System health"]]],
+  ["System Health", [["/system/", "System health"], ["/guardian/", "Guardian"]]],
 ];
 
 export const NAV: [string, string][] = SECTIONS.flatMap(([, links]) => links);

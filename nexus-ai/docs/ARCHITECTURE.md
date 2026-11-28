@@ -62,6 +62,7 @@ live trading only after explicit owner activation (see SECURITY.md).
 | paper trading | Simulated fills on live prices (execution-engine mode) | ✅ |
 | `apps/dashboard` | Next.js + Tailwind + Lightweight Charts | ✅ |
 | `services/notification-engine` | Telegram | ✅ |
+| Guardian (`nexus_risk.guardian` + `nexus_api.guardian_worker`) | 24/7 checks every minute over platform, market data, models, execution and risk; debounced alerts; kill-switch restore and emergency shutdown (unified brief Phase 8) | ✅ 2026-11-28 |
 | `infrastructure/` | Docker, Nginx, monitoring, backups | ✅ verified locally; VPS pending |
 
 All Python services share one image; each Compose service runs a different command.
