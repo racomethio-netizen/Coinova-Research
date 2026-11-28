@@ -12,7 +12,7 @@ order ID); Decimal + NUMERIC for money; new migration per schema change, models 
 (`alembic check`); risk ceilings in `nexus_config/settings.py` change only by explicit owner
 mandate (ceilings: 1% risk per trade, 2% daily, 4% weekly, 10% drawdown, 3 open
 positions; defaults since 2026-11-23 (owner, master directive Part 8): 0.25% per trade, 1% daily,
-3% weekly, 5% drawdown, 1% aggregate open risk, 3 positions, 30% spot exposure, futures 0.25%
+3% weekly (2.5% since 2026-11-28, owner unified brief F), 5% drawdown, 1% aggregate open risk, 3 positions, 30% spot exposure, futures 0.25%
 at 1x; the bot keeps
 BOT_RISK, the spot-engine forward test its pre-registered profile, the global library
 RESEARCH_PROFILE).

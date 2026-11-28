@@ -1317,6 +1317,28 @@ async def market_intelligence(s: Session = Depends(db), redis: Any = Depends(red
     return out
 
 
+@router.get("/portfolio-risk")
+async def portfolio_risk_book(redis: Any = Depends(redis_dep),
+                              settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
+    """The cross-market risk book (crypto paper + Exness demo) as of the orchestrator's
+    last cycle: equity, day/week loss, drawdown, open risk, positions, checks, limits and
+    measured correlations. Every BUY/SELL proposal is approved or rejected against it."""
+    from nexus_risk import portfolio_book as pb
+
+    from nexus_api.portfolio_risk import STATUS_KEY as BOOK_KEY
+
+    raw = await redis.get(BOOK_KEY)
+    if raw:
+        return dict(json.loads(raw))
+    lim = pb.Limits.from_settings(settings.risk)
+    return {"at": None, "accounts": [], "checks": [], "correlations": [],
+            "limits": {"risk_per_trade": str(lim.risk_per_trade),
+                       "daily_loss": str(lim.daily_loss), "weekly_loss": str(lim.weekly_loss),
+                       "drawdown_pause": str(lim.drawdown), "max_positions": lim.max_positions,
+                       "min_reward_risk": str(lim.min_reward_risk)},
+            "note": "not computed yet: the orchestrator builds the book every 5 minutes"}
+
+
 @router.get("/orchestrator")
 async def orchestrator_board(s: Session = Depends(db),
                              redis: Any = Depends(redis_dep)) -> dict[str, Any]:

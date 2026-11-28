@@ -11,7 +11,7 @@ Forex and commodities have no LIVE mode in NEXUS at all.
 * the instrument's market switch at PAPER (forex for EURUSD, commodities for XAUUSD),
   which only the owner can set;
 * the kill switch not engaged;
-* the demo account within NEXUS's limits: 1% daily loss, 3% weekly loss, and the 5%
+* the demo account within NEXUS's limits: 1% daily loss, 2.5% weekly loss, and the 5%
   drawdown halt, which stays until the owner resets it.
 
 Exits and reductions are always allowed.
@@ -49,7 +49,7 @@ STATUS_KEY = "nexus:broker:exness:demo"
 HALT_KEY = "nexus:mt5demo:halt"
 PEAK_KEY = "nexus:mt5demo:peak"
 MAX_BODY = 1_500_000
-DAILY, WEEKLY, DRAWDOWN = 0.01, 0.03, 0.05
+DAILY, WEEKLY, DRAWDOWN = 0.01, 0.025, 0.05
 INSTRUMENTS = {"XAUUSD": Market.COMMODITIES, "EURUSD": Market.FOREX}
 TF_SECONDS = {"D1": 86400, "H1": 3600}
 
@@ -212,7 +212,8 @@ async def demo_sync(request: Request, s: Session = Depends(db),
         "gates": gates, "kill_switch": killed,
         "positions": [p.model_dump() for p in body.positions if p.magic == plan.MAGIC],
         "instructions": instructions, "results": [r.model_dump() for r in body.results],
-        "symbols": {k: {"bid": v.bid, "ask": v.ask} for k, v in by_name.items()}}
+        "symbols": {k: {"bid": v.bid, "ask": v.ask, "contract_size": v.contract_size,
+                        "base_name": v.base_name} for k, v in by_name.items()}}
     await redis.set(STATUS_KEY, json.dumps(status_doc, default=str), ex=86400)
     log.info("mt5_demo_sync", bridge=bridge.name, instructions=len(instructions),
              gates={k: v["entries_allowed"] for k, v in gates.items()})

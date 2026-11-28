@@ -129,7 +129,7 @@ def swing_signals(s: Any, now: datetime) -> dict[str, orch.Signal]:
             side = 1 if t > held else -1
             out[sym] = orch.Signal(SWING, side, close, None, None, None, "forward_test",
                                    f"trend rule target {t:.0%} of its sleeve vs {held:.0%} "
-                                   "held")
+                                   "held", {"target": t, "held": held})
     return out
 
 
@@ -158,13 +158,43 @@ def observer_signals(s: Any, now: datetime) -> dict[str, list[orch.Signal]]:
 
 def fingerprint(v: orch.Verdict) -> str:
     key = json.dumps([v.action, v.module, v.side, v.regime, sorted(v.blockers),
-                      sorted((c["module"], c["eligible"]) for c in v.candidates)])
+                      sorted((c["module"], c["eligible"]) for c in v.candidates),
+                      (v.risk or {}).get("approved")])
     return hashlib.sha256(key.encode()).hexdigest()
 
 
+def proposal_for(v: orch.Verdict, price: float | None, book: Any, lim: Any) -> Any:
+    """The risk engine's view of a BUY/SELL: a bracket trade (entry at the latest price
+    when the signal has none, the strategy's stop, its reward/risk) or, for the crypto
+    swing module, an allocation change of its sleeve (half of the 30% spot cap per coin)."""
+    from decimal import Decimal
+
+    from nexus_risk import portfolio_book as pb
+
+    account = "crypto_paper" if v.market == "crypto" else "exness_demo"
+    side = int(v.side or 0)
+    if v.module == SWING:
+        acct = book.account(account)
+        equity = acct.equity if acct else Decimal(0)
+        change = abs(Decimal(repr(v.meta.get("target", 0.0))) -
+                     Decimal(repr(v.meta.get("held", 0.0))))
+        return pb.Proposal(v.market, v.symbol, side, v.module, account, kind="allocation",
+                           notional_usd=change * lim.max_spot_crypto_exposure * equity / 2)
+    entry = v.entry_ref if v.entry_ref is not None else price
+    if entry is None or v.stop is None or v.reward_risk is None:
+        return pb.Proposal(v.market, v.symbol, side, v.module or "", account)
+    target = entry + side * v.reward_risk * abs(entry - v.stop)
+    return pb.Proposal(v.market, v.symbol, side, v.module or "", account,
+                       entry=Decimal(repr(entry)), stop=Decimal(repr(v.stop)),
+                       target=Decimal(repr(target)))
+
+
 def step_sync(factory: Any, cache: FrameCache, settings: Settings, killed_redis: bool,
-              risk: dict[str, Any] | None, spreads: dict[str, float], now: datetime
-              ) -> list[dict[str, Any]]:
+              risk: dict[str, Any] | None, spreads: dict[str, float], now: datetime,
+              demo: dict[str, Any] | None = None) -> tuple[list[dict[str, Any]],
+                                                           dict[str, Any], bool]:
+    """(board, portfolio-risk summary, pause): pause means the combined drawdown reached
+    the limit and the kill switch must be engaged."""
     from decimal import Decimal
 
     from nexus_analysis.intelligence import snapshot
@@ -172,12 +202,16 @@ def step_sync(factory: Any, cache: FrameCache, settings: Settings, killed_redis:
     from nexus_common.markets import Market, effective
     from nexus_db import models, repo, transaction
     from nexus_news import calendar as econ
+    from nexus_risk import portfolio_book as pb
     from nexus_strategies import modules as mods
     from nexus_strategies.modules.base import FX_DAY_OFFSET, resample
     from sqlalchemy import delete, func, select
 
+    from nexus_api import portfolio_risk as pr
+
     cal = econ.load()
-    board = []
+    lim = pb.Limits.from_settings(settings.risk)
+    board: list[dict[str, Any]] = []
     with transaction(factory) as s:
         sync_registry(s)
         ev = evidence(list(s.scalars(select(models.StrategyModule))))
@@ -194,6 +228,8 @@ def step_sync(factory: Any, cache: FrameCache, settings: Settings, killed_redis:
             select(models.OrchestratorDecision).where(
                 models.OrchestratorDecision.decided_at >= now - 2 * HEARTBEAT)
             .order_by(models.OrchestratorDecision.decided_at))}
+        decided: list[tuple[orch.Verdict, dict[str, Any]]] = []
+        daily: dict[str, pd.DataFrame] = {}
         for market, sym, msym in instruments(settings):
             venue = settings.signal_exchange if market == "crypto" else "exness"
             if market == "crypto":
@@ -203,6 +239,8 @@ def step_sync(factory: Any, cache: FrameCache, settings: Settings, killed_redis:
                 frames = {"1h": h1}
                 if not h1.empty:
                     frames["1d"] = resample(h1, "1D", offset=FX_DAY_OFFSET, min_bars=6)
+            if frames.get("1d") is not None and not frames["1d"].empty:
+                daily[sym] = frames["1d"]
             snap = snapshot(sym, market, frames, "1h", now, spread=spreads.get(sym),
                             event_risk=econ.event_risk(sym, market, now, cal))
             covering = tuple(c for c, m in mods.MODULES.items() if msym in m.symbols)
@@ -217,14 +255,25 @@ def step_sync(factory: Any, cache: FrameCache, settings: Settings, killed_redis:
                               None if risk is None else bool(risk.get("entries_allowed")),
                               tuple(signals), ev, covering)
             v = orch.orchestrate(inp)
+            decided.append((v, {k: snap.get(k) for k in (
+                "price", "as_of", "session", "regime", "liquidity", "volatility")}))
+        book = pr.build_book(s, demo, now)
+        corr = pr.correlations(daily)
+        checks, pause = pb.portfolio_checks(book, lim, kill_switch=killed)
+        for v, snap_d in decided:
+            if v.action != orch.NO_TRADE:
+                approval = pb.approve(proposal_for(v, snap_d.get("price"), book, lim), book,
+                                      lim, kill_switch=killed, correlations=corr)
+                v.risk = approval.as_dict()
+                v.reasons.append("risk engine: " + ("APPROVED" if approval.approved else
+                                                    "REJECTED: " + "; ".join(approval.reasons)))
             fp = fingerprint(v)
-            d = v.as_dict() | {"snapshot": {k: snap.get(k) for k in (
-                "price", "as_of", "session", "regime", "liquidity", "volatility")}}
+            d = v.as_dict() | {"snapshot": snap_d}
             board.append(d)
-            prev = last.get(sym)
-            if prev is None or last_fp.get(sym) != fp or now - prev >= HEARTBEAT:
+            prev = last.get(v.symbol)
+            if prev is None or last_fp.get(v.symbol) != fp or now - prev >= HEARTBEAT:
                 s.add(models.OrchestratorDecision(
-                    decided_at=now, market=market, symbol=sym, action=v.action,
+                    decided_at=now, market=v.market, symbol=v.symbol, action=v.action,
                     module=v.module, side=v.side,
                     entry_ref=Decimal(repr(v.entry_ref)) if v.entry_ref is not None else None,
                     stop=Decimal(repr(v.stop)) if v.stop is not None else None,
@@ -234,11 +283,11 @@ def step_sync(factory: Any, cache: FrameCache, settings: Settings, killed_redis:
                     if v.expected_r is not None else None,
                     regime=v.regime, reasons=v.reasons, blockers=v.blockers,
                     candidates=v.candidates, context=json.loads(json.dumps(
-                        d["snapshot"], default=str)), fingerprint=fp))
+                        snap_d | {"risk": v.risk}, default=str)), fingerprint=fp))
         if now.hour == 3 and now.minute < 5:
             s.execute(delete(models.OrchestratorDecision).where(
                 models.OrchestratorDecision.decided_at < now - RETENTION))
-    return board
+    return board, pr.summary(book, lim, checks, corr), pause and not killed
 
 
 async def fx_spreads(redis: Any) -> dict[str, float]:
@@ -249,17 +298,32 @@ async def fx_spreads(redis: Any) -> dict[str, float]:
 
 async def step(factory: Any, redis: Any, settings: Settings, cache: FrameCache,
                now: datetime | None = None) -> list[dict[str, Any]]:
+    from nexus_db import repo, transaction
     from nexus_risk.kill_switch import KillSwitch
 
+    from nexus_api import portfolio_risk as pr
+    from nexus_api.mt5_demo import STATUS_KEY as DEMO_KEY
+
     now = now or utcnow()
-    killed = await KillSwitch(redis).status() is not None
+    kill = KillSwitch(redis)
+    killed = await kill.status() is not None
     raw = await redis.get(RISK_KEY)
     risk = json.loads(raw) if raw else None
+    raw_demo = await redis.get(DEMO_KEY)
+    demo = json.loads(raw_demo) if raw_demo else None
     spreads = await fx_spreads(redis)
-    board = await asyncio.to_thread(step_sync, factory, cache, settings, killed, risk,
-                                    spreads, now)
+    board, book, pause = await asyncio.to_thread(step_sync, factory, cache, settings, killed,
+                                                 risk, spreads, now, demo)
+    if pause:   # combined drawdown at the limit: pause everything (owner clears it)
+        reason = (f"cross-market portfolio drawdown {float(book['drawdown'] or 0):.2%} "
+                  f"reached the {float(book['limits']['drawdown_pause']):.0%} pause")
+        await kill.engage(reason, actor="system:portfolio-risk")
+        with transaction(factory) as s:
+            repo.record_audit(s, actor="system:portfolio-risk", action="kill_switch_engaged",
+                              details={"reason": reason})
     await redis.set(STATUS_KEY, json.dumps({"at": now.isoformat(), "board": board},
                                            default=str), ex=1800)
+    await redis.set(pr.STATUS_KEY, pr.dumps(book), ex=1800)
     trades = [b["symbol"] for b in board if b["action"] != orch.NO_TRADE]
     if trades:
         log.info("orchestrator_proposals", symbols=trades)

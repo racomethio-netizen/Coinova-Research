@@ -31,7 +31,7 @@ Forex and commodities have **no LIVE mode at all** (`live_connector=False`).
 |---|---|
 | The account must be `trade_mode == demo`, otherwise 403 (audited `mt5_demo_refused`) | `POST /api/v1/bridge/mt5/demo/sync` |
 | The account must be `ACCOUNT_TRADE_MODE_DEMO`, checked before every sync and every order; otherwise the program stops | the demo trader |
-| New entries only with the owner's market switch at PAPER, the kill switch clear, and the 1% daily / 3% weekly / 5% drawdown limits; exits always allowed | the endpoint |
+| New entries only with the owner's market switch at PAPER, the kill switch clear, and the 1% daily / 2.5% weekly / 5% drawdown limits; exits always allowed | the endpoint |
 | The 5% halt is never cleared by code: the owner resets it (`POST /api/v1/bridge-demo/reset-halt`, audited) | the API |
 | No duplicate orders: an order whose client ID is in the MT5 order history is never resent | the demo trader |
 | The read-only bridge (`nexus_mt5_bridge.py`) still contains no order call (static test) | `tests/unit/test_mt5_bridge.py` |

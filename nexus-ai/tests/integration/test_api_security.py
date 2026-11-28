@@ -65,7 +65,8 @@ GET_ROUTES = ["/api/v1/overview", "/api/v1/portfolio", "/api/v1/exchanges", "/ap
               "/api/v1/decision/fusion", "/api/v1/decision/log", "/api/v1/spot-engine",
               "/api/v1/research/trend-forward", "/api/v1/research/library",
               "/api/v1/trading-bot", "/api/v1/strategy-modules",
-              "/api/v1/intelligence/markets", "/api/v1/orchestrator"]
+              "/api/v1/intelligence/markets", "/api/v1/orchestrator",
+              "/api/v1/portfolio-risk"]
 
 
 @pytest.mark.parametrize("path", GET_ROUTES)
@@ -1347,6 +1348,9 @@ def test_orchestrator_cycle_proposes_only_from_tested_modules(
     btc = board["BTC/USDT"]
     assert btc["action"] == "BUY" and btc["module"] == "crypto_swing_trend", btc
     assert any("risk engine must approve" in r for r in btc["reasons"])
+    # No crypto paper account in the book yet: the risk engine rejects (fails closed).
+    assert btc["risk"]["approved"] is False
+    assert any("no crypto_paper account" in r for r in btc["risk"]["reasons"])
     assert board["ETH/USDT"]["action"] == "NO_TRADE"
     assert "not enough stored price history" in board["ETH/USDT"]["blockers"]
     fx = board["EURUSD"]
@@ -1363,6 +1367,27 @@ def test_orchestrator_cycle_proposes_only_from_tested_modules(
     assert r.status_code == 200, r.text
     got = {b["symbol"]: b for b in r.json()["board"]}
     assert got["BTC/USDT"]["action"] == "BUY" and r.json()["history"]
+    # With a fresh paper equity snapshot the allocation is approved and sized:
+    # |60% - 30%| x (30% spot cap x 10,000 / 2 coins) = 450 USD.
+    with transaction(factory) as s:
+        owner = s.scalar(select(models.User.id).where(models.User.role == "owner"))
+        port = models.Portfolio(user_id=owner, name="main", mode="paper",
+                                initial_capital=D(10_000))
+        s.add(port)
+        s.flush()
+        s.add(models.PerformanceSnapshot(
+            portfolio_id=port.id, mode="paper", captured_at=now - timedelta(minutes=2),
+            equity=D(10_000), cash=D(10_000), exposure=D(0), realized_pnl=D(0),
+            unrealized_pnl=D(0), fees_paid=D(0), peak_equity=D(10_000), drawdown=D(0),
+            open_positions=0))
+    board = {b["symbol"]: b for b in asyncio.run(cycle(now + timedelta(minutes=10)))}
+    risk = board["BTC/USDT"]["risk"]
+    assert risk["approved"] is True and D(risk["notional_usd"]) == D(450), risk
+    book = client.get("/api/v1/portfolio-risk").json()
+    assert book["equity"] == "10000.00" and book["accounts"][0]["name"] == "crypto_paper"
+    assert book["limits"]["weekly_loss"] == "0.025"
     with migrated_engine.begin() as c:
         c.execute(text("DELETE FROM orchestrator_decisions"))
         c.execute(text("DELETE FROM market_candles WHERE pair_id = :p"), {"p": pid})
+        c.execute(text("DELETE FROM performance_snapshots"))
+        c.execute(text("DELETE FROM portfolios WHERE mode = 'paper'"))

@@ -16,7 +16,7 @@ def test_defaults_are_safe() -> None:
     # Owner mandate 2026-11-23 (master directive, Part 8).
     assert s.risk.risk_per_trade == Decimal("0.0025")
     assert s.risk.daily_loss_limit == Decimal("0.01")
-    assert s.risk.weekly_loss_limit == Decimal("0.03")
+    assert s.risk.weekly_loss_limit == Decimal("0.025")   # owner, unified brief F
     assert s.risk.max_open_risk == Decimal("0.01")
     assert s.risk.max_drawdown == Decimal("0.05")
     assert s.risk.max_open_positions == 3

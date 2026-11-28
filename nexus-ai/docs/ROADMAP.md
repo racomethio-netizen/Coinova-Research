@@ -32,6 +32,33 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-28: unified brief Phase 6, the cross-market portfolio risk engine** (owner:
+  "Phase 6"). **Not deployed yet: needs the owner's "Deploy".** No migration.
+  * The weekly loss limit is now **2.5%** (owner mandate, brief section F), for the
+    crypto paper book and the Exness demo account. Ceilings unchanged.
+  * **`nexus_risk.portfolio_book`.** One book over both accounts that approves or rejects
+    every orchestrator BUY/SELL.
+    * Portfolio limits: 1% daily and 2.5% weekly loss on combined equity; a 5%
+      drawdown pause through the durable kill switch.
+    * Positions: at most 3; a central minimum of 2:1 reward/risk.
+    * Sizing: 0.25% of the executing account at risk.
+    * Exposure: open risk at most 1%; correlated positions at most 0.5% together; no
+      leverage; spot crypto at most 30%.
+    * Accounts must be reconciled; the book fails closed.
+  * **Pages:** the *Portfolio risk* page and `GET /api/v1/portfolio-risk`. The
+    orchestrator board shows each proposal's risk answer.
+  * **Tests:**
+    * `scripts/test.sh`: ruff and mypy clean, **1197 passed**;
+    * `scripts/e2e.sh`: **15 passed, 1 skipped**.
+  * **After the deploy:** the Exness demo trader's next sync records contract sizes.
+    Until then, an open demo position makes that account "not reconciled", so entries
+    are blocked (fails closed).
+  * **Next (owner go-ahead needed):** Phase 7, execution adapters.
+    * Approved proposals become paper orders: the crypto paper book, and the Exness
+      DEMO account through the demo trader.
+    * Stop-loss verification after the fill, partial exits, slippage tracking and
+      duplicate prevention.
+
 * **Deployed 2026-11-28 04:22 UTC** (owner: "Deploy"): Render dep-dc55d83… is live, from
   deploy commit 47d5dce (source bf8a7ec). It adds Phase 5, the strategy orchestrator.
   * Health checks are ready. `/api/v1/orchestrator` answers 401 when signed out.

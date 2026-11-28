@@ -252,7 +252,7 @@ function ExnessDemo({ d, reload }: { d: Any; reload: () => Promise<void> }) {
       <p className="mt-2 text-sm">To start: (1) switch Commodities (gold) and/or Forex (EURUSD) to PAPER on this page; (2) on your Windows PC, log MT5 in to an Exness demo account and run <code>py -3 nexus_mt5_demo_trader.py</code> with the same NEXUS_URL and bridge token (apps/mt5_bridge/README.md).</p>
       {d && (
         <div className="mt-3 space-y-2 text-sm">
-          <p>Demo account {d.account} on {d.server}: balance {num(d.balance, 2)} {d.currency}, equity {num(d.equity, 2)}. Limits: 1% a day, 3% a week, 5% drawdown halt (only you can reset it).</p>
+          <p>Demo account {d.account} on {d.server}: balance {num(d.balance, 2)} {d.currency}, equity {num(d.equity, 2)}. Limits: 1% a day, 2.5% a week, 5% drawdown halt (only you can reset it).</p>
           <Table rows={Object.entries(d.gates ?? {}).map(([k, v]: [string, Any]) => ({ key: k, ...v }))} empty="No symbols." columns={[
             { key: "key", label: "Instrument" },
             { key: "autonomy", label: "Switch", render: (x: Any) => `${x.market}: ${x.autonomy}` },

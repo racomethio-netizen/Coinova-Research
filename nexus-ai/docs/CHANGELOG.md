@@ -4,6 +4,37 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-28
 
+- **Unified brief Phase 6: one risk engine for forex and crypto** (owner: "Phase 6").
+  * **Weekly loss limit 3% → 2.5%** (owner mandate, brief section F).
+    * It applies to the crypto paper book (`RiskSettings`) and the Exness demo account.
+    * The ceilings are unchanged.
+  * **`nexus_risk.portfolio_book`.** One book over the crypto paper account and the
+    Exness demo account; independent approval of every orchestrator proposal.
+    * **Portfolio checks:**
+      * the kill switch;
+      * 1% daily and 2.5% weekly loss on combined equity;
+      * a 5% drawdown pause, which engages the durable kill switch, audited; only the
+        owner clears it;
+      * every account reconciled within 15 minutes (fails closed);
+      * at most 3 positions in all.
+    * **Trade checks:**
+      * a central minimum of 2:1 planned reward/risk;
+      * no duplicate instrument;
+      * size from 0.25% of the executing account at risk, with a 10% allowance for
+        slippage, converted to USD (USDJPY-style pairs divided by the price);
+      * all open risk at most 1% of equity;
+      * correlated positions (measured 90-day return correlation ≥ 0.7, or the same
+        currency on the same side when unmeasured) at most 0.5% together;
+      * no leverage (notional at most 1× equity), and spot crypto at most 30% of its
+        account.
+    * **Allocations** (the crypto swing module): exposure caps apply; reductions are
+      always allowed.
+  * **Wiring.** `nexus_api.portfolio_risk` builds the book from the paper equity
+    snapshots and the demo sync. The demo sync now keeps each symbol's contract size.
+    * The orchestrator attaches the risk engine's answer to every BUY/SELL and logs it.
+    * `GET /api/v1/portfolio-risk` and the *Portfolio risk* page.
+  * Nothing places an order: execution is Phase 7.
+
 - **Unified brief Phase 5: the strategy orchestrator** (owner: "Phase 5").
   * `nexus_decision.orchestrator` gives one BUY / SELL / NO_TRADE per instrument,
     forex and crypto, with every reason.

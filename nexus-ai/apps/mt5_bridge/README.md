@@ -105,7 +105,7 @@ positions, then carries out NEXUS's instructions: open, close, or move a stop.
 **Safety:**
 * Each order carries NEXUS's magic number and a client ID. An ID already in the order
   history is never sent again.
-* NEXUS's limits apply to the demo account: 1% a day, 3% a week, and a 5% drawdown halt
+* NEXUS's limits apply to the demo account: 1% a day, 2.5% a week, and a 5% drawdown halt
   that only you can reset on the *All markets* page.
 * Your own trades (without NEXUS's magic number) are never touched.
 

@@ -68,6 +68,7 @@ class Signal:
     reward_risk: float | None
     source: str                  # "observer" | "forward_test"
     note: str = ""
+    meta: dict[str, float] = field(default_factory=dict)   # e.g. target / held allocation
 
 
 @dataclass(frozen=True)
@@ -102,6 +103,8 @@ class Verdict:
     reasons: list[str] = field(default_factory=list)
     blockers: list[str] = field(default_factory=list)
     candidates: list[dict[str, Any]] = field(default_factory=list)
+    meta: dict[str, float] = field(default_factory=dict)
+    risk: dict[str, Any] | None = None   # the portfolio risk engine's answer
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -197,7 +200,7 @@ def orchestrate(inp: Inputs, r: Rules = DEFAULT) -> Verdict:
         return v
     exp, sig, ev = max(eligible, key=lambda t: t[0])
     v.action = BUY if sig.side > 0 else SELL
-    v.module, v.side, v.expected_r = sig.module, sig.side, exp
+    v.module, v.side, v.expected_r, v.meta = sig.module, sig.side, exp, dict(sig.meta)
     v.entry_ref, v.stop, v.reward_risk = sig.entry_ref, sig.stop, sig.reward_risk
     if sig.entry_ref is not None and sig.stop is not None and sig.reward_risk is not None:
         v.target = sig.entry_ref + sig.side * sig.reward_risk * abs(sig.entry_ref - sig.stop)

@@ -79,11 +79,13 @@ LIVE_TRADING_ACK_PHRASE: Final = "I accept that live trading can lose real money
 MAX_RISK_PER_TRADE: Final = Decimal("0.01")
 # Owner mandate 2026-11-23 (master directive, Part 8): 0.25% per trade, 1% daily, 3% weekly,
 # 5% drawdown, 1% aggregate open risk, 3 positions, 30% spot allocation, futures 1x.
+# Owner mandate 2026-11-28 (unified brief, section F): weekly loss limit 2.5% (stricter);
+# a minimum planned reward/risk of 2:1 is enforced centrally (nexus_risk.portfolio_book).
 DEFAULT_RISK_PER_TRADE: Final = Decimal("0.0025")
 MAX_DAILY_LOSS: Final = Decimal("0.02")
 DEFAULT_DAILY_LOSS: Final = Decimal("0.01")
 MAX_WEEKLY_LOSS: Final = Decimal("0.04")
-DEFAULT_WEEKLY_LOSS: Final = Decimal("0.03")
+DEFAULT_WEEKLY_LOSS: Final = Decimal("0.025")   # owner, unified brief F (2026-11-28)
 MAX_DRAWDOWN: Final = Decimal("0.10")
 DEFAULT_DRAWDOWN: Final = Decimal("0.05")
 MAX_OPEN_POSITIONS: Final = 3
