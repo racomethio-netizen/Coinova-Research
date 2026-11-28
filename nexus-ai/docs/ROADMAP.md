@@ -32,6 +32,31 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-28: unified brief Phase 5, the strategy orchestrator** (owner: "Phase 5").
+  Commit 78a1f51. **Not deployed yet: needs the owner's "Deploy".** Migration 0025 is
+  applied by the pre-deploy step.
+  * **Decision:** one BUY / SELL / NO_TRADE per instrument, forex and crypto, with
+    reasons.
+    * Only modules that passed their test can propose. Today that is only crypto swing
+      trend momentum, from its forward paper test.
+    * Regime, volatility, liquidity, session and events can only block.
+    * Proposals only: the risk engine (Phase 6) and execution (Phase 7) still decide.
+  * **Built:**
+    * `nexus_decision.orchestrator`;
+    * the `orchestrator` worker (paper mode, every 5 minutes, logs on change and
+      hourly);
+    * the `orchestrator_decisions` table;
+    * `GET /api/v1/orchestrator` and the *Strategy orchestrator* page.
+  * **Tests:**
+    * `scripts/test.sh`: ruff and mypy clean, **1189 passed**, integration included;
+    * `scripts/e2e.sh`: **15 passed, 1 skipped**.
+  * **Next (owner go-ahead needed):** Phase 6, the cross-market portfolio risk engine.
+    * One book for forex and crypto.
+    * 0.25% per trade, 1% daily, **2.5% weekly** (owner brief; was 3%), 5% drawdown
+      pause, 3 positions.
+    * Correlation-aware exposure, and a central 2:1 minimum.
+    * It approves or rejects every orchestrator proposal.
+
 * **Deployed 2026-11-28 04:06 UTC** (owner: "Deploy"): Render deploy dep-dc555i3… is live,
   from deploy commit e5e933c (source b44e558). It contains the unified brief Phases 2, 3
   and 4.
