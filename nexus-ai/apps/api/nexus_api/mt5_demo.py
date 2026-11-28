@@ -49,6 +49,11 @@ router = APIRouter(prefix="/api/v1/bridge/mt5/demo", tags=["bridge"])
 
 STATUS_KEY = "nexus:broker:exness:demo"
 HALT_KEY = "nexus:mt5demo:halt"
+# One equity point per hour from the syncs (a sorted set scored by the hour), kept 90
+# days, for the command centre's forex equity curve. Display only: the account itself
+# (MT5) is the record.
+EQUITY_KEY = "nexus:mt5demo:equity"
+EQUITY_DAYS = 90
 PEAK_KEY = "nexus:mt5demo:peak"
 MAX_BODY = 1_500_000
 DAILY, WEEKLY, DRAWDOWN = 0.01, 0.025, 0.05
@@ -344,6 +349,12 @@ async def demo_sync(request: Request, s: Session = Depends(db),
         "symbols": {k: {"bid": v.bid, "ask": v.ask, "contract_size": v.contract_size,
                         "base_name": v.base_name} for k, v in by_name.items()}}
     await redis.set(STATUS_KEY, json.dumps(status_doc, default=str), ex=86400)
+    hour = int(now.timestamp()) // 3600 * 3600
+    await redis.zremrangebyscore(EQUITY_KEY, hour, hour)
+    await redis.zadd(EQUITY_KEY, {json.dumps({"t": datetime.fromtimestamp(hour, tz=UTC)
+                                              .isoformat(), "equity": str(acct.equity),
+                                              "balance": str(acct.balance)}): hour})
+    await redis.zremrangebyscore(EQUITY_KEY, "-inf", hour - EQUITY_DAYS * 86400)
     log.info("mt5_demo_sync", bridge=bridge.name, instructions=len(instructions),
              gates={k: v["entries_allowed"] for k, v in gates.items()})
     return {"ok": True, "demo_only": True, "instructions": instructions, "gates": gates}

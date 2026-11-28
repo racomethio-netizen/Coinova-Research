@@ -850,6 +850,23 @@ async def system(s: Session = Depends(db), redis: Any = Depends(redis_dep)) -> d
             "counts": counts, "server_time": ser(utcnow())}
 
 
+@router.get("/command-center")
+async def command_center(s: Session = Depends(db),
+                         redis: Any = Depends(redis_dep)) -> dict[str, Any]:
+    """The integrated dashboard (unified brief, section J): forex and crypto performance,
+    the six strategies, market regime and BUY/SELL/NO_TRADE, signal confidence and
+    calibration, open positions, P&L, drawdown, risk exposure, model health and
+    execution status, from what NEXUS records. Cached for 30 seconds."""
+    from nexus_api import command_center as cc
+
+    cached = await redis.get(cc.CACHE_KEY)
+    if cached:
+        return dict(json.loads(cached))
+    doc = await cc.build(s, redis, utcnow())
+    await redis.set(cc.CACHE_KEY, json.dumps(doc, default=str), ex=cc.CACHE_SECONDS)
+    return doc
+
+
 @router.get("/guardian")
 async def guardian(s: Session = Depends(db), redis: Any = Depends(redis_dep),
                    settings: Settings = Depends(settings_dep)) -> dict[str, Any]:
@@ -1495,9 +1512,10 @@ async def set_module_activation(code: str, body: ModuleActivationBody,
                                 s: Session = Depends(db),
                                 viewer: Viewer = Depends(current_viewer)) -> dict[str, Any]:
     """Owner switch, audited. OBSERVE records signals on new data with what they would
-    have done; it places no order. PAPER is refused in this phase: module paper trading
-    needs the orchestrator, the cross-market risk book and the execution adapters
-    (unified brief Phases 5-7), and a passed test."""
+    have done; it places no order. PAPER is refused here: paper/demo orders do not use
+    this switch. The strategy orchestrator turns a module's signals into orders only if
+    the module passed its test and the market's switch is PAPER (unified brief Phases
+    5-7)."""
     from nexus_backtest import module_observer as mo
     from nexus_common.timeutil import utcnow as _now
     from nexus_strategies import modules as mods
@@ -1510,10 +1528,11 @@ async def set_module_activation(code: str, body: ModuleActivationBody,
     if body.activation == "PAPER":
         passed = bool((row.validation or {}).get("passed"))
         raise HTTPException(status.HTTP_409_CONFLICT,
-                            "paper trading of strategy modules is not available yet: it needs "
-                            "the orchestrator, the cross-market risk book and the execution "
-                            "adapters (unified brief Phases 5-7)"
-                            + ("" if passed else ", and this module did not pass its test"))
+                            "paper orders do not use this switch: the strategy orchestrator "
+                            "places paper/demo orders for a module only if it passed its "
+                            "test and the market's switch is PAPER (Markets page); this "
+                            "switch controls the OBSERVE record"
+                            + ("" if passed else ". This module did not pass its test"))
     if body.activation == "OBSERVE" and code not in mo.OBSERVABLE:
         raise HTTPException(status.HTTP_409_CONFLICT,
                             "this module already runs as a forward paper test "

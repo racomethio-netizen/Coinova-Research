@@ -146,6 +146,9 @@ def summary(book: pb.Book, lim: pb.Limits, checks: list[pb.Check],
                       "positions": [{"symbol": p.symbol, "side": p.side,
                                      "quantity": str(p.quantity), "entry": str(p.entry),
                                      "stop": str(p.stop) if p.stop is not None else None,
+                                     "price": str(p.price),
+                                     "unrealized_usd": None if (u := p.unrealized_usd())
+                                     is None else usd(u),
                                      "risk_usd": usd(p.risk_usd()),
                                      "notional_usd": usd(p.notional_usd())}
                                     for p in a.positions]} for a in book.accounts],

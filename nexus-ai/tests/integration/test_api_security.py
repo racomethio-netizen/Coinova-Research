@@ -66,7 +66,8 @@ GET_ROUTES = ["/api/v1/overview", "/api/v1/portfolio", "/api/v1/exchanges", "/ap
               "/api/v1/research/trend-forward", "/api/v1/research/library",
               "/api/v1/trading-bot", "/api/v1/strategy-modules",
               "/api/v1/intelligence/markets", "/api/v1/orchestrator",
-              "/api/v1/portfolio-risk", "/api/v1/execution", "/api/v1/guardian"]
+              "/api/v1/portfolio-risk", "/api/v1/execution", "/api/v1/guardian",
+              "/api/v1/command-center"]
 
 
 @pytest.mark.parametrize("path", GET_ROUTES)
@@ -1248,7 +1249,7 @@ def test_strategy_modules_registry_switch_and_observation(
     assert client.post(url.format("nope"), json=observe, headers=CSRF).status_code == 404
     paper = client.post(url.format("crypto_swing_trend"),
                         json={"activation": "PAPER", "reason": "paper trade it"}, headers=CSRF)
-    assert paper.status_code == 409 and "Phases 5-7" in paper.text
+    assert paper.status_code == 409 and "market's switch is PAPER" in paper.text
     assert client.post(url.format("crypto_swing_trend"), json=observe,
                        headers=CSRF).status_code == 409           # it has its own forward test
     ok = client.post(url.format("crypto_scalp_volume"), json=observe, headers=CSRF)
@@ -1391,6 +1392,15 @@ def test_orchestrator_cycle_proposes_only_from_tested_modules(
     book = client.get("/api/v1/portfolio-risk").json()
     assert book["equity"] == "10000.00" and book["accounts"][0]["name"] == "crypto_paper"
     assert book["limits"]["weekly_loss"] == "0.025"
+    sync_redis.Redis.from_url(os.environ["NEXUS_TEST_REDIS_URL"]).delete("nexus:command-center")
+    cmd = client.get("/api/v1/command-center").json()           # the integrated dashboard
+    assert cmd["status"]["real_money"] == "OFF" and cmd["crypto"]["label"] == "PAPER"
+    assert cmd["crypto"]["equity"] == "10000.00" and cmd["crypto"]["total_pnl"] == "0.00"
+    assert cmd["exposure"]["equity"] == "10000.00" and len(cmd["strategies"]) == 6
+    assert {x["symbol"] for x in cmd["signals"]["rows"]} >= {"BTC/USDT", "EURUSD"}
+    btc_row = next(x for x in cmd["signals"]["rows"] if x["symbol"] == "BTC/USDT")
+    assert btc_row["action"] == "BUY" and btc_row["risk_approved"] is True
+    assert cmd["forex"]["connected"] is False and cmd["calibration"]["ml"]
     with migrated_engine.begin() as c:
         c.execute(text("DELETE FROM orchestrator_decisions"))
         c.execute(text("DELETE FROM market_candles WHERE pair_id = :p"), {"p": pid})
@@ -1459,6 +1469,7 @@ def test_exness_demo_executes_approved_intents_once_with_verified_stops(
     assert ins["sl"] == 1.248 and ins["tp"] == 1.25424 and ins["magic"] == plan.MAGIC
     again = client.post(url, json=body(), headers=auth).json()["instructions"]
     assert again == [] and status(cid)[0] == "sent"                # sent once, never again
+    assert r.zcard("nexus:mt5demo:equity") == 1                  # one equity point per hour
     filled = {"ticket": 91, "symbol": "GBPUSDm", "side": "buy", "volume": 0.3,
               "price_open": 1.2501, "sl": 1.248, "tp": 1.25424, "time": 1,
               "magic": plan.MAGIC, "comment": cid}

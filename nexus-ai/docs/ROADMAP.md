@@ -32,6 +32,25 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-28: unified brief Phase 9, the command centre** (owner: "Phase 9").
+  **Not deployed yet: needs the owner's "Deploy"** (with Phases 7 and 8). No migration.
+  * **Audit:** all 12 dashboard elements of brief section J already had a data source,
+    spread over about 60 pages.
+    * Missing: a single view, a forex equity history, and open P&L per position.
+    * No probability model passed, so "confidence" is shown as evidence (the module's
+      test) and "calibration" as measurements.
+  * **Built:**
+    * the `/command-center/` page and `GET /api/v1/command-center`;
+    * the demo sync keeps hourly equity;
+    * the risk book reports open P&L in USD per position.
+  * **Tests:**
+    * `scripts/test.sh`: ruff and mypy clean, **1222 passed** (31 deselected);
+    * `scripts/e2e.sh`: **15 passed**.
+    * Screenshot checks at 1280 px and 360 px: no horizontal page scroll, no console
+      errors.
+  * **Next (owner go-ahead needed):** Phase 10, the historical and out-of-sample test
+    run.
+
 * **2026-11-28: unified brief Phase 8, the Guardian** (owner: "Phase 8"). **Not deployed
   yet: needs the owner's "Deploy"** (together with Phase 7). No migration.
   * **Audit first:** monitoring existed in pieces:

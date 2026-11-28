@@ -4,6 +4,38 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-28
 
+- **Unified brief Phase 9: the command centre, an integrated dashboard** (owner:
+  "Phase 9"). One page (`/command-center/`, first in the menu) and one endpoint
+  (`GET /api/v1/command-center`, cached 30 seconds) with every element of brief section J.
+  It is built from what NEXUS already records; a missing source shows as missing.
+  * **Forex performance:** the Exness DEMO account: equity, open P&L, today, this week,
+    drawdown, and an hourly equity curve. Each demo sync now keeps one equity point per
+    hour, for 90 days.
+  * **Crypto performance:** the crypto PAPER book: equity, total, realized and
+    unrealized P&L, trades, win rate, profit factor, max drawdown, equity curve.
+  * **The six strategies:**
+    * the historical test (after costs) and the forward record;
+    * Guardian health;
+    * whether each can place paper orders (passed its test and its market's switch is
+      PAPER).
+  * **Signals and market regime:** the orchestrator's BUY/SELL/NO TRADE per instrument,
+    with the regime, the tested result and why.
+  * **Signal confidence and calibration** (measurements only):
+    * the evidence behind each live signal;
+    * each module's tested vs forward win rate (judged at 20 forward trades, 2 standard
+      errors);
+    * the ML filters' measured AUC, Brier skill and calibration error, shown as not used
+      because they failed.
+  * **Open positions** with open P&L in USD (the risk book now reports price and
+    unrealized P&L per position).
+  * **P&L, drawdown and risk exposure:** today, this week, combined drawdown, and
+    meters against every limit.
+  * **Model health and execution status:** from the Guardian and the execution intents.
+  * The Strategy modules API no longer says module paper trading needs Phases 5-7. It
+    now explains which switch actually controls paper orders.
+  * **Tests:** `scripts/test.sh` ruff and mypy clean, 1222 passed; `scripts/e2e.sh`
+    15 passed.
+
 - **Unified brief Phase 8: the Guardian** (owner: "Phase 8"). One 24/7 watchdog, every
   minute, over the whole platform (`nexus_risk.guardian`, worker `guardian`).
   * **Platform:**

@@ -99,6 +99,13 @@ class Position:
             return self.notional_usd()
         return max(ZERO, self.side * (self.entry - self.stop)) * self.quantity * move
 
+    def unrealized_usd(self) -> Decimal | None:
+        """Open profit (+) or loss (-) in USD at the latest price; None for a cross."""
+        _, move = usd_per_unit(self.symbol, self.price)
+        if move is None:
+            return None
+        return self.side * (self.price - self.entry) * self.quantity * move
+
     def exposures(self) -> dict[str, Decimal]:
         return exposures(self.symbol, self.side, self.notional_usd())
 
