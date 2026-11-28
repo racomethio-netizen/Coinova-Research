@@ -32,6 +32,18 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **Deployed 2026-11-28 04:22 UTC** (owner: "Deploy"): Render dep-dc55d83… is live, from
+  deploy commit 47d5dce (source bf8a7ec). It adds Phase 5, the strategy orchestrator.
+  * Health checks are ready. `/api/v1/orchestrator` answers 401 when signed out.
+  * Migration 0025 was applied in the pre-deploy step.
+  * The `orchestrator` worker started at 04:22:47. There were no crashes and no Redis
+    errors.
+  * **First live decisions** (04:22:47; all NO_TRADE, each with its reason):
+    * BTC and ETH: TRENDING_DOWN, "no signal now". The crypto swing module's latest
+      forward-test day asks for no change.
+    * The 8 forex and gold symbols: "not enough stored price history; forex market
+      closed". It is Saturday, and the bridge 1.1 is not yet running on the owner's PC.
+
 * **2026-11-28: unified brief Phase 5, the strategy orchestrator** (owner: "Phase 5").
   Commit 78a1f51. **Not deployed yet: needs the owner's "Deploy".** Migration 0025 is
   applied by the pre-deploy step.
