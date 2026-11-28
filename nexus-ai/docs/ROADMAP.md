@@ -32,6 +32,19 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **Deployed 2026-11-28 04:45 UTC** (owner: "Deploy"): Render dep-dc55nulb… is live, from
+  deploy commit c24a73f (source 81ff83c). It adds Phase 6, the cross-market risk engine,
+  and the 2.5% weekly limit.
+  * Health checks are ready. `/api/v1/portfolio-risk` and `/api/v1/orchestrator` answer
+    401 when signed out.
+  * The orchestrator restarted at 04:45:32. No crashes, no Redis errors, and no kill
+    switch engaged.
+  * First decisions: BTC and ETH NO_TRADE ("no signal now"); forex NO_TRADE (market
+    closed, no stored bars).
+  * Known and harmless: during a deploy, the old and new instances overlap for about a
+    minute. Both ran an orchestrator cycle, so each instrument has two log rows at
+    04:45. The decisions were identical; the log only.
+
 * **2026-11-28: unified brief Phase 6, the cross-market portfolio risk engine** (owner:
   "Phase 6"). **Not deployed yet: needs the owner's "Deploy".** No migration.
   * The weekly loss limit is now **2.5%** (owner mandate, brief section F), for the
