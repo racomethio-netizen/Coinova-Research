@@ -1469,3 +1469,70 @@ async def test_spot_runner_respects_the_crypto_market_switch(
     assert any("crypto market switch is RESEARCH" in r for r in rec["reasons"])
     with transaction(factory) as s:
         assert s.scalar(select(func.count()).select_from(models.Order)) == 0
+
+
+async def test_execution_intent_lifecycle_in_the_paper_book(
+        engine_setup: tuple[Any, ...]) -> None:
+    from datetime import timedelta
+
+    from nexus_execution import intents as ix
+
+    eng, factory, state, _ = engine_setup
+    eng.bootstrap()
+    now = utcnow()
+    with transaction(factory) as s:
+        it = ix.create(s, venue="crypto_paper", market="crypto", symbol="BTC/USDT", side=1,
+                       kind="bracket", module="test_module", now=now, quantity=D("0.02"),
+                       notional_usd=D(1200), entry_ref=D(60000), stop=D(59000),
+                       target=D(62000))
+        assert it is not None
+        assert ix.create(s, venue="crypto_paper", market="crypto", symbol="BTC/USDT", side=1,
+                         kind="bracket", module="other", now=now, quantity=D("0.02"),
+                         entry_ref=D(60000), stop=D(59000), target=D(62000)) is None
+        cid = it.client_id
+    await eng.execute_intents(True, "")
+    with transaction(factory) as s:
+        row = s.scalar(select(models.ExecutionIntent).where(
+            models.ExecutionIntent.client_id == cid))
+        assert row.status == "sent" and row.order_id is not None
+        order = s.get(models.Order, row.order_id)
+        assert order.status == "filled" and order.details["intent"] == cid
+    await eng.execute_intents(True, "")           # sent -> filled (fill price, slippage)
+    await eng.execute_intents(True, "")           # filled -> protected (stop on position)
+    with transaction(factory) as s:
+        row = s.scalar(select(models.ExecutionIntent).where(
+            models.ExecutionIntent.client_id == cid))
+        assert row.status == "protected" and row.stop_verified is True
+        assert row.fill_price is not None and row.slippage_bps >= 0
+        pos = s.scalar(select(models.Position).where(
+            models.Position.entry_order_id == row.order_id))
+        assert pos.stop_loss == D(59000) and pos.take_profit == D(62000)
+        assert [e["kind"] for e in row.events] == ["created", "sent", "filled",
+                                                   "stop_verified"]
+    state.update(bid=58_900.0, ask=58_901.0)      # through the stop
+    await eng.cycle()
+    await eng.execute_intents(True, "")
+    with transaction(factory) as s:
+        row = s.scalar(select(models.ExecutionIntent).where(
+            models.ExecutionIntent.client_id == cid))
+        assert row.status == "closed" and "stop_loss" in row.events[-1]["detail"]
+        blocked = ix.create(s, venue="crypto_paper", market="crypto", symbol="BTC/USDT",
+                            side=1, kind="bracket", module="m", now=utcnow(),
+                            quantity=D("0.02"), entry_ref=D(60000), stop=D(59000),
+                            target=D(62000))
+        cut = ix.create(s, venue="crypto_paper", market="crypto", symbol="ETH/USDT",
+                        side=-1, kind="allocation", module="crypto_swing_trend",
+                        now=utcnow(), notional_usd=D(100))
+        late = ix.create(s, venue="exness_demo", market="forex", symbol="EURUSD", side=1,
+                         kind="bracket", module="m", now=utcnow() - timedelta(hours=1),
+                         quantity=D(1000), entry_ref=D("1.1"), stop=D("1.09"),
+                         target=D("1.12"))
+        assert blocked is not None and cut is not None and late is not None
+        ids = (blocked.client_id, cut.client_id)
+    await eng.execute_intents(False, "kill switch engaged")
+    with transaction(factory) as s:
+        got = {r.client_id: r for r in s.scalars(select(models.ExecutionIntent))}
+    assert got[ids[0]].status == "rejected"
+    assert got[ids[0]].events[-1]["detail"] == "kill switch engaged"
+    assert got[ids[1]].status == "closed"                  # a reduction is never blocked
+    assert got[ids[1]].events[-1]["detail"] == "nothing held to reduce"

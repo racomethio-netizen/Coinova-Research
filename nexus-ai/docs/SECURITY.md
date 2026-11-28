@@ -36,6 +36,19 @@ Forex and commodities have **no LIVE mode at all** (`live_connector=False`).
 | No duplicate orders: an order whose client ID is in the MT5 order history is never resent | the demo trader |
 | The read-only bridge (`nexus_mt5_bridge.py`) still contains no order call (static test) | `tests/unit/test_mt5_bridge.py` |
 
+### Orchestrator orders (Phase 7): paper and demo only
+
+Approved orchestrator proposals are executed only on the crypto **paper** book and the
+Exness **demo** account (`execution_intents`). There is no live venue.
+
+| Guard | Where |
+|---|---|
+| An intent is created only after the portfolio risk engine approved the proposal, with the market's switch at PAPER, the operating mode placing paper orders, and the kill switch clear | `orchestrator_worker.execute` |
+| At most one active intent per venue and instrument (partial unique index); each has its own client ID (`nxO` + 20 hex) | migration 0026, `nexus_execution.intents.create` |
+| Sent once; a timeout is never retried; reconciled by client ID (a late demo fill is matched back by the position's comment) | the trader, `mt5_demo.orchestrator_instructions` |
+| Crypto intents run only when the trader is in paper mode; new entries need the bot's own entry gates; reductions are always allowed | `Trader.execute_intents` |
+| The stop-loss is verified on the broker after the fill: restored if missing; a demo position whose stop cannot be set after two tries is closed | the trader, `intents.demo_manage` |
+
 ## Credentials
 
 * Exchange keys are entered via the dashboard (Phase 11/13), never in env files.

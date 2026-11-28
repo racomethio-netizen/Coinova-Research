@@ -991,3 +991,54 @@ class OrchestratorDecision(Base):
     context: Mapped[dict[str, Any]] = mapped_column(server_default=text("'{}'::jsonb"))
     fingerprint: Mapped[str] = mapped_column(String(64))
     created_at: Mapped[created_at]
+
+
+INTENT_ACTIVE = ("pending", "sent", "filled", "protected")
+
+
+class ExecutionIntent(Base):
+    """An approved proposal on its way to a PAPER or DEMO broker: its own client ID, its
+    lifecycle, the fill and slippage, and whether the stop-loss was verified on the
+    broker. At most one active intent per venue and instrument."""
+
+    __tablename__ = "execution_intents"
+    __table_args__ = (
+        CheckConstraint(in_list("venue", ("crypto_paper", "exness_demo")), name="venue_valid"),
+        CheckConstraint(in_list("market", ("forex", "crypto")), name="market_valid"),
+        CheckConstraint("side IN (-1, 1)", name="side_valid"),
+        CheckConstraint(in_list("kind", ("bracket", "allocation")), name="kind_valid"),
+        CheckConstraint(in_list("status", ("pending", "sent", "filled", "protected", "closed",
+                                           "rejected", "expired")), name="status_valid"),
+        CheckConstraint("kind = 'allocation' OR (stop IS NOT NULL AND target IS NOT NULL)",
+                        name="bracket_has_stop"),
+        UniqueConstraint("client_id"),
+        Index("ix_execution_intents_one_active", "venue", "symbol", unique=True,
+              postgresql_where=text("status IN ('pending', 'sent', 'filled', 'protected')")),
+        Index("ix_execution_intents_status", "status", "venue"),
+    )
+
+    id: Mapped[bigint_pk]
+    client_id: Mapped[str] = mapped_column(String(31))
+    venue: Mapped[str] = mapped_column(String(16))
+    market: Mapped[str] = mapped_column(String(16))
+    symbol: Mapped[str] = mapped_column(String(32))
+    side: Mapped[int] = mapped_column(SmallInteger)
+    kind: Mapped[str] = mapped_column(String(12))
+    module: Mapped[str] = mapped_column(String(40))
+    status: Mapped[str] = mapped_column(String(12), server_default="pending")
+    quantity: Mapped[Decimal | None]
+    notional_usd: Mapped[Decimal | None]
+    entry_ref: Mapped[Decimal | None]
+    stop: Mapped[Decimal | None]
+    target: Mapped[Decimal | None]
+    order_id: Mapped[int | None] = mapped_column(BigInteger)
+    broker_ref: Mapped[str | None] = mapped_column(String(40))
+    fill_price: Mapped[Decimal | None]
+    slippage: Mapped[Decimal | None]
+    slippage_bps: Mapped[Decimal | None] = mapped_column(Ratio)
+    stop_verified: Mapped[bool | None]
+    partial_taken: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    events: Mapped[list[Any]] = mapped_column(server_default=text("'[]'::jsonb"))
+    expires_at: Mapped[datetime]
+    created_at: Mapped[created_at]
+    updated_at: Mapped[updated_at]

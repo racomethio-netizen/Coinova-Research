@@ -37,9 +37,13 @@ from typing import Any
 
 from nexus_mt5_bridge import log, measure_offset, post, resolve
 
-VERSION = "1.0"
+VERSION = "1.1"
 MAGIC = 26112701
 SYMBOLS = ("XAUUSD", "EURUSD")
+# Quotes and contract details only (no bars), so NEXUS can place orders approved by its
+# orchestrator and risk engine on these pairs too. Skipped if the account does not offer
+# them.
+EXTRA = ("GBPUSD", "USDJPY", "AUDUSD", "USDCHF", "USDCAD", "NZDUSD")
 BARS = {"XAUUSD": ("TIMEFRAME_D1", "D1", 80), "EURUSD": ("TIMEFRAME_H1", "H1", 1100)}
 DEVIATION_POINTS = 20
 OK = 10009                                            # TRADE_RETCODE_DONE
@@ -68,8 +72,9 @@ def collect(mt5: Any, state: dict[str, Any], results: list[dict[str, Any]],
     resolved, missing = resolve(available, list(SYMBOLS))
     if missing:
         raise RuntimeError(f"symbols not offered on this account: {missing}")
+    extra, _ = resolve(available, list(EXTRA))
     symbols, bars, ticks = [], {}, []
-    for base, name in resolved.items():
+    for base, name in {**resolved, **extra}.items():
         mt5.symbol_select(name, True)
         info, tick = mt5.symbol_info(name), mt5.symbol_info_tick(name)
         if info is None or tick is None or not tick.bid or not tick.ask:
@@ -81,6 +86,8 @@ def collect(mt5: Any, state: dict[str, Any], results: list[dict[str, Any]],
                         "volume_step": float(info.volume_step),
                         "volume_max": float(info.volume_max), "bid": float(tick.bid),
                         "ask": float(tick.ask)})
+        if base not in BARS:
+            continue
         tf_attr, tf, count = BARS[base]
         rates = mt5.copy_rates_from_pos(name, getattr(mt5, tf_attr), 1, count)  # closed bars
         bars[name] = {tf: [[int(r["time"]), float(r["open"]), float(r["high"]),

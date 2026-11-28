@@ -32,6 +32,36 @@ something passes, which would be data snooping.
 
 ## Verified this session
 
+* **2026-11-28: unified brief Phase 7, execution adapters (paper and demo only)** (owner:
+  "Phase 7"). **Not deployed yet: needs the owner's "Deploy".** Migration 0026
+  (`execution_intents`).
+  * Approved proposals become **execution intents**. They are sent to the crypto paper
+    book (the trader) or to the Exness demo account (the demo sync). Real money: none;
+    there is no live venue.
+  * Order lifecycle: pending → sent → filled → protected → closed, or rejected / expired.
+    * The stop-loss is verified after every fill: restored if missing, or the demo
+      position is closed.
+    * Demo positions: partial exit at +1R and the stop moved to break-even.
+    * Slippage is measured against the decision price.
+    * Duplicates are prevented by client ID and by one active intent per instrument.
+    * Nothing is resent; late fills are reconciled.
+  * **Pages:** the *Execution* page and `GET /api/v1/execution`.
+  * **Tests:**
+    * `scripts/test.sh`: ruff and mypy clean, **1203 passed** (31 deselected);
+    * `scripts/e2e.sh`: **15 passed**.
+  * **What the owner sees now:** probably no orders. Only module 6 (crypto swing trend)
+    has passed its test, so only it can propose. Its allocation becomes a paper order
+    only with the crypto switch at PAPER.
+  * **Owner action after the deploy:** update `nexus_mt5_demo_trader.py` to 1.1 on the
+    PC. Version 1.0 keeps working for gold/EURUSD but sends no quotes for the other
+    pairs, so orchestrator forex intents for them are rejected ("not offered").
+  * **Next (owner go-ahead needed):** Phase 8, the Guardian.
+  * **Commands:**
+    * tests: `export NEXUS_TEST_DATABASE_URL=… NEXUS_TEST_REDIS_URL=…` then
+      `bash scripts/test.sh`;
+    * e2e: migrate the e2e database first (`NEXUS_DATABASE_URL=…nexus_e2e alembic upgrade
+      head`), then run `bash scripts/e2e.sh`.
+
 * **Deployed 2026-11-28 04:45 UTC** (owner: "Deploy"): Render dep-dc55nulb… is live, from
   deploy commit c24a73f (source 81ff83c). It adds Phase 6, the cross-market risk engine,
   and the 2.5% weekly limit.
@@ -46,7 +76,7 @@ something passes, which would be data snooping.
     04:45. The decisions were identical; the log only.
 
 * **2026-11-28: unified brief Phase 6, the cross-market portfolio risk engine** (owner:
-  "Phase 6"). **Not deployed yet: needs the owner's "Deploy".** No migration.
+  "Phase 6"). Deployed at 04:45 (see above). No migration.
   * The weekly loss limit is now **2.5%** (owner mandate, brief section F), for the
     crypto paper book and the Exness demo account. Ceilings unchanged.
   * **`nexus_risk.portfolio_book`.** One book over both accounts that approves or rejects

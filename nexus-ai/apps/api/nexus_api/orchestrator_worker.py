@@ -174,12 +174,16 @@ def proposal_for(v: orch.Verdict, price: float | None, book: Any, lim: Any) -> A
     account = "crypto_paper" if v.market == "crypto" else "exness_demo"
     side = int(v.side or 0)
     if v.module == SWING:
+        # Sized from what the paper BOOK holds (not the forward test's own ledger), so a
+        # filled change is not repeated: target share of the sleeve minus the holding.
         acct = book.account(account)
         equity = acct.equity if acct else Decimal(0)
-        change = abs(Decimal(repr(v.meta.get("target", 0.0))) -
-                     Decimal(repr(v.meta.get("held", 0.0))))
-        return pb.Proposal(v.market, v.symbol, side, v.module, account, kind="allocation",
-                           notional_usd=change * lim.max_spot_crypto_exposure * equity / 2)
+        sleeve = lim.max_spot_crypto_exposure * equity / 2
+        held = sum((q.notional_usd() for q in (acct.positions if acct else ())
+                    if q.symbol == v.symbol), Decimal(0))
+        change = Decimal(repr(v.meta.get("target", 0.0))) * sleeve - held
+        return pb.Proposal(v.market, v.symbol, 1 if change > 0 else -1, v.module, account,
+                           kind="allocation", notional_usd=abs(change))
     entry = v.entry_ref if v.entry_ref is not None else price
     if entry is None or v.stop is None or v.reward_risk is None:
         return pb.Proposal(v.market, v.symbol, side, v.module or "", account)
@@ -187,6 +191,51 @@ def proposal_for(v: orch.Verdict, price: float | None, book: Any, lim: Any) -> A
     return pb.Proposal(v.market, v.symbol, side, v.module or "", account,
                        entry=Decimal(repr(entry)), stop=Decimal(repr(v.stop)),
                        target=Decimal(repr(target)))
+
+
+MIN_ALLOCATION_USD = 10      # below this an allocation change is not worth an order
+
+
+def execute(s: Any, v: orch.Verdict, prop: Any, approval: Any, op: Any,
+            switches: dict[str, Any], killed: bool, now: datetime) -> dict[str, Any]:
+    """Turn an APPROVED proposal into a pending execution intent for the paper/demo
+    broker, if the market's switch is PAPER and the operating mode places paper orders.
+    Returns what happened (the intent's client ID, or why nothing was sent)."""
+    from nexus_common.markets import Market, combine, effective
+    from nexus_common.opmode import places_orders
+    from nexus_db import models
+    from nexus_execution import intents as ix
+    from sqlalchemy import select
+
+    mk = Market.CRYPTO if v.market == "crypto" else (
+        Market.COMMODITIES if v.symbol.startswith(("XAU", "XAG")) else Market.FOREX)
+    auto = effective(mk, switches)
+    if killed:
+        return {"sent": False, "why": "kill switch engaged"}
+    if not places_orders(combine(op, auto), "paper"):
+        return {"sent": False, "why": f"{mk.value} switch is {auto.value} and the operating "
+                                      f"mode is {op.value}: paper orders need PAPER"}
+    venue = "crypto_paper" if v.market == "crypto" else "exness_demo"
+    if prop.kind == "allocation":
+        if prop.side != v.side:
+            return {"sent": False, "why": "the paper book is already at or beyond the target"}
+        if (prop.notional_usd or 0) < MIN_ALLOCATION_USD:
+            return {"sent": False, "why": "the paper book is already at the target allocation"}
+        today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        done = s.scalar(select(models.ExecutionIntent.id).where(
+            models.ExecutionIntent.venue == venue, models.ExecutionIntent.symbol == v.symbol,
+            models.ExecutionIntent.module == v.module,
+            models.ExecutionIntent.created_at >= today))
+        if done is not None:
+            return {"sent": False, "why": "one allocation change per coin per day (done)"}
+    it = ix.create(s, venue=venue, market=v.market, symbol=v.symbol, side=prop.side,
+                   kind=prop.kind, module=v.module or "", now=now,
+                   quantity=approval.quantity, notional_usd=approval.notional_usd,
+                   entry_ref=prop.entry, stop=prop.stop, target=prop.target,
+                   note=f"{v.action} approved: " + "; ".join(v.reasons[:1]))
+    if it is None:
+        return {"sent": False, "why": "an order for this instrument is already active"}
+    return {"sent": True, "client_id": it.client_id, "venue": venue, "status": it.status}
 
 
 def step_sync(factory: Any, cache: FrameCache, settings: Settings, killed_redis: bool,
@@ -199,6 +248,7 @@ def step_sync(factory: Any, cache: FrameCache, settings: Settings, killed_redis:
 
     from nexus_analysis.intelligence import snapshot
     from nexus_backtest.module_observer import sync_registry
+    from nexus_common import opmode
     from nexus_common.markets import Market, effective
     from nexus_db import models, repo, transaction
     from nexus_news import calendar as econ
@@ -260,13 +310,16 @@ def step_sync(factory: Any, cache: FrameCache, settings: Settings, killed_redis:
         book = pr.build_book(s, demo, now)
         corr = pr.correlations(daily)
         checks, pause = pb.portfolio_checks(book, lim, kill_switch=killed)
+        op = opmode.parse((repo.operating_mode_db_state(s) or {}).get("mode"))
         for v, snap_d in decided:
             if v.action != orch.NO_TRADE:
-                approval = pb.approve(proposal_for(v, snap_d.get("price"), book, lim), book,
-                                      lim, kill_switch=killed, correlations=corr)
+                prop = proposal_for(v, snap_d.get("price"), book, lim)
+                approval = pb.approve(prop, book, lim, kill_switch=killed, correlations=corr)
                 v.risk = approval.as_dict()
                 v.reasons.append("risk engine: " + ("APPROVED" if approval.approved else
                                                     "REJECTED: " + "; ".join(approval.reasons)))
+                if approval.approved:
+                    v.execution = execute(s, v, prop, approval, op, switches, killed, now)
             fp = fingerprint(v)
             d = v.as_dict() | {"snapshot": snap_d}
             board.append(d)
@@ -283,7 +336,8 @@ def step_sync(factory: Any, cache: FrameCache, settings: Settings, killed_redis:
                     if v.expected_r is not None else None,
                     regime=v.regime, reasons=v.reasons, blockers=v.blockers,
                     candidates=v.candidates, context=json.loads(json.dumps(
-                        snap_d | {"risk": v.risk}, default=str)), fingerprint=fp))
+                        snap_d | {"risk": v.risk, "execution": v.execution}, default=str)),
+                    fingerprint=fp))
         if now.hour == 3 and now.minute < 5:
             s.execute(delete(models.OrchestratorDecision).where(
                 models.OrchestratorDecision.decided_at < now - RETENTION))

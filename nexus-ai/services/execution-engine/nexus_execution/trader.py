@@ -388,6 +388,159 @@ class TradingEngine:
         if pos.stop_loss is None or stop > pos.stop_loss:
             pos.stop_loss = stop
 
+    # ------------------------------------------------------------------ Phase 7 intents
+    async def execute_intents(self, entries_ok: bool, why_not: str) -> None:
+        """Execute approved orchestrator proposals for the crypto PAPER book
+        (``execution_intents``, venue ``crypto_paper``) through the order manager, and
+        follow each one: fill price and slippage, stop-loss verified on the position (a
+        missing stop is restored), closed when the position is. New entries need
+        ``entries_ok``; reducing an allocation is always allowed. Paper only."""
+        if self.mode != "paper":
+            return
+        from nexus_execution import intents as ix
+
+        now = utcnow()
+        with transaction(self.factory) as s:
+            rows = list(s.scalars(select(models.ExecutionIntent).where(
+                models.ExecutionIntent.venue == "crypto_paper",
+                models.ExecutionIntent.status.in_(ix.ACTIVE))))
+            s.expunge_all()
+        for it in rows:
+            try:
+                if it.status == "pending":
+                    await self._send_intent(it, entries_ok, why_not, now)
+                else:
+                    self._track_intent(it, now)
+            except Exception as exc:  # one intent must not stop the others
+                log.error("intent_failed", client_id=it.client_id,
+                          error=f"{type(exc).__name__}: {exc}"[:300])
+
+    def _intent_update(self, intent_id: int, kind: str, detail: str, **fields: Any) -> None:
+        from nexus_execution import intents as ix
+
+        with transaction(self.factory) as s:
+            row = s.get(models.ExecutionIntent, intent_id, with_for_update=True)
+            if row is None:
+                return
+            for k, v in fields.items():
+                setattr(row, k, v)
+            ix.add_event(row, kind, detail, utcnow())
+
+    async def _send_intent(self, it: models.ExecutionIntent, entries_ok: bool, why_not: str,
+                           now: datetime) -> None:
+        reduce = it.kind == "allocation" and it.side < 0
+        if now >= it.expires_at:
+            self._intent_update(it.id, "expired", "not executed in time", status="expired")
+            return
+        if not reduce and not entries_ok:
+            self._intent_update(it.id, "rejected", why_not, status="rejected")
+            return
+        if it.side < 0 and not reduce:
+            self._intent_update(it.id, "rejected", "spot crypto cannot sell short",
+                                status="rejected")
+            return
+        code = self.settings.signal_exchange
+        book = await self.books.get(code, it.symbol)
+        if book is None or book.best_bid is None or book.best_ask is None:
+            return                                        # retried until it expires
+        rules = await self.adapters[code].market_rules(it.symbol)
+        details: dict[str, Any] = {"strategy": it.module, "intent": it.client_id}
+        position_id = None
+        if reduce:
+            with transaction(self.factory) as s:
+                pos = s.scalar(select(models.Position).join(
+                    models.TradingPair, models.TradingPair.id == models.Position.pair_id).where(
+                    models.Position.portfolio_id == self.portfolio_id,
+                    models.Position.status == "open", models.TradingPair.symbol == it.symbol))
+                held = pos.quantity if pos is not None else ZERO
+                position_id = pos.id if pos is not None else None
+            if position_id is None:
+                self._intent_update(it.id, "closed", "nothing held to reduce", status="closed")
+                return
+            bid = book.best_bid
+            qty = floor_to_step(min(held, (it.notional_usd or ZERO) / bid), rules.amount_step)
+            side, purpose, ref = Side.SELL, "exit", bid
+            price = floor_to_step(bid * (1 - MAX_EXIT_SLIPPAGE), rules.price_tick)
+            details["exit_reason"] = "allocation"
+        else:
+            ask = book.best_ask
+            if it.kind == "bracket":
+                assert it.entry_ref is not None and it.stop is not None and it.target is not None
+                qty = floor_to_step(it.quantity or ZERO, rules.amount_step)
+                details["stop"] = str(ask - (it.entry_ref - it.stop))
+                details["target"] = str(ask + (it.target - it.entry_ref))
+            else:
+                qty = floor_to_step((it.notional_usd or ZERO) / ask, rules.amount_step)
+            side, purpose, ref = Side.BUY, "entry", ask
+            price = floor_to_step(ask * (1 + self.settings.paper_slippage_bps / 10_000),
+                                  rules.price_tick)
+        small = qty <= 0 or (rules.min_amount is not None and qty < rules.min_amount) or (
+            rules.min_notional is not None and qty * price < rules.min_notional)
+        if small:
+            self._intent_update(it.id, "rejected", f"size {qty} below the exchange minimum",
+                                status="rejected")
+            return
+        try:
+            order_id = await self.orders.place(OrderIntent(
+                portfolio_id=self.portfolio_id or 0, mode=self.mode, exchange=code,
+                symbol=it.symbol, side=side, amount=qty, price=price, purpose=purpose,
+                expected_price=ref, time_in_force=TimeInForce.IOC, position_id=position_id,
+                details=details))
+        except (DuplicateOrder, InsufficientBalance, PreTradeDenied) as exc:
+            self._intent_update(it.id, "rejected", str(exc)[:300], status="rejected")
+            return
+        self._intent_update(it.id, "sent", f"{side.value} {qty} {it.symbol} at up to {price} "
+                            f"(paper order {order_id})", status="sent", order_id=order_id)
+        await self.notify({"type": "order_submitted", "mode": self.mode, "order_id": order_id,
+                           "strategy": it.module, "symbol": it.symbol, "exchange": code,
+                           "quantity": str(qty), "price": str(price)})
+
+    def _track_intent(self, it: models.ExecutionIntent, now: datetime) -> None:
+        from nexus_execution import intents as ix
+
+        with transaction(self.factory) as s:
+            order = s.get(models.Order, it.order_id) if it.order_id else None
+            pos = s.scalar(select(models.Position).where(
+                models.Position.entry_order_id == it.order_id)) if it.order_id else None
+            if pos is not None:
+                s.expunge(pos)
+            if order is not None:
+                s.expunge(order)
+        if order is None:
+            return
+        if it.status == "sent":
+            if order.filled_amount <= 0:
+                if order.status in ("rejected", "canceled", "expired"):
+                    self._intent_update(it.id, "rejected",
+                                        f"paper order {order.status}: {order.last_error or ''}",
+                                        status="rejected")
+                return
+            fill = order.average_fill_price or order.price or ZERO
+            adverse, bps = ix.slippage(it.side, order.expected_price or fill, fill)
+            drift = f"; {ix.slippage(it.side, it.entry_ref, fill)[1]:.1f} bps from the " \
+                    "decision price" if it.entry_ref else ""
+            done = it.kind == "allocation"
+            self._intent_update(it.id, "filled",
+                                f"filled {order.filled_amount} at {fill}: slippage {bps:.1f} bps"
+                                f" against the book{drift}",
+                                status="closed" if done else "filled", fill_price=fill,
+                                slippage=adverse, slippage_bps=bps)
+            return
+        if pos is None:
+            return
+        if pos.status != "open":
+            self._intent_update(it.id, "closed", f"position closed ({pos.exit_reason})",
+                                status="closed")
+        elif it.status == "filled":
+            planned = Decimal(str(order.details.get("stop"))) if order.details.get("stop") \
+                else None
+            if pos.stop_loss is None and planned is not None:
+                self._set_stop(pos, planned)
+                self._intent_update(it.id, "stop_fix", f"stop-loss was missing: set to {planned}")
+            self._intent_update(it.id, "stop_verified",
+                                f"stop-loss {pos.stop_loss or planned} on the paper position",
+                                status="protected", stop_verified=True)
+
     async def _streak(self) -> tuple[Decimal, str | None]:
         """Risk multiplier from the losing streak since the owner's last reset."""
         since = await protection.streak_reset_at(self.redis)
@@ -979,6 +1132,13 @@ class TradingEngine:
             log.info("entries_paused", state=state.value, risk_state=status.state.value,
                      operating_mode=self.operating_mode.value,
                      crypto_market=str(self.market_autonomy))
+        entries_ok = (state is BotState.RUNNING and entries_allowed(status.state)
+                      and places_orders(self.operating_mode, self.mode) and not kill)
+        why_not = ("kill switch engaged" if kill else
+                   f"bot {state.value}" if state is not BotState.RUNNING else
+                   f"risk state {status.state.value}" if not entries_allowed(status.state)
+                   else f"operating mode {self.operating_mode.value} places no paper orders")
+        await self.execute_intents(entries_ok, why_not)
         await self.redis.set(events.heartbeat_key(f"trader:{self.mode}"), utcnow().isoformat(),
                              ex=300)
 

@@ -4,6 +4,44 @@ Newest first. Architectural decisions: docs/PLATFORM_ARCHITECTURE.md (ADR log).
 
 ## 2026-11-28
 
+- **Unified brief Phase 7: execution adapters, paper and demo only** (owner: "Phase 7").
+  * **Execution intents** (migration 0026, `execution_intents`; `nexus_execution.intents`).
+    An approved orchestrator proposal becomes a pending intent only when:
+    * the portfolio risk engine approved it;
+    * the market's switch is PAPER and the operating mode places paper orders;
+    * the kill switch is clear.
+    Lifecycle: pending → sent → filled → protected → closed, or rejected / expired, with
+    every step in `events`.
+  * **Duplicate prevention:**
+    * each intent has its own client ID (`nxO` + 20 hex characters);
+    * at most one active intent per venue and instrument (a partial unique index);
+    * an intent is sent once and never resent after a timeout; it is reconciled by its
+      client ID;
+    * a swing allocation is sized from what the paper book already holds, at most once
+      per coin per UTC day, and only in the signal's direction.
+  * **Crypto adapter** (the paper trader, every cycle):
+    * IOC orders through the existing order manager, quantity floored to the exchange
+      step, stops re-anchored to the live ask, exchange minimums checked;
+    * reductions are always allowed; new entries need the same gates as the bot's own;
+    * fill price and slippage recorded; the stop verified on the position (restored if
+      missing);
+    * trailing stops and partial take-profits come from the trader's existing exit
+      management.
+  * **Exness demo adapter** (the demo sync):
+    * an open instruction with its stop and target, sent once, sized in lots rounded
+      down (rejected below the minimum lot);
+    * reconciled from MT5 results and positions; given up after 30 minutes without an
+      answer (never resent); a late fill is reconciled back by its client ID;
+    * stop verified after the fill: restored up to twice, then the position is closed;
+    * at +1R half is closed and the stop moves to break-even.
+    * The built-in gold/EURUSD plans ignore orchestrator positions.
+  * **Demo trader 1.1:** also sends quotes and contract sizes for GBPUSD, USDJPY,
+    AUDUSD, USDCHF, USDCAD and NZDUSD when the account offers them.
+  * **Pages:** the *Execution* page and `GET /api/v1/execution`. The orchestrator board
+    shows whether an order was sent and, if not, why.
+  * **Tests:** `scripts/test.sh` ruff and mypy clean, 1203 passed; `scripts/e2e.sh`
+    15 passed.
+
 - **Unified brief Phase 6: one risk engine for forex and crypto** (owner: "Phase 6").
   * **Weekly loss limit 3% → 2.5%** (owner mandate, brief section F).
     * It applies to the crypto paper book (`RiskSettings`) and the Exness demo account.

@@ -109,6 +109,19 @@ def test_collect_sends_demo_state_closed_bars_and_only_nexus_positions():
     assert body["server_utc_offset_hours"] == 0 and body["results"][0]["client_id"] == "x"
 
 
+def test_extra_forex_pairs_are_quoted_when_offered_without_bars_or_failure():
+    class More(FakeMT5):
+        def symbols_get(self) -> list[Any]:
+            return [SimpleNamespace(name=n) for n in ("XAUUSDm", "EURUSDm", "GBPUSDm")]
+
+    body = dt.collect(More(), {}, [], now=NOW)
+    assert dt.VERSION == "1.1"
+    assert [s["base_name"] for s in body["symbols"]] == ["XAUUSD", "EURUSD", "GBPUSD"]
+    assert "GBPUSDm" not in body["bars"]          # quotes only (the orchestrator's pairs)
+    gbp = body["symbols"][2]
+    assert gbp["contract_size"] == 100_000.0 and gbp["volume_step"] == 0.01
+
+
 def test_execute_builds_requests_and_never_resends():
     mt5 = FakeMT5()
     ins = [{"action": "open", "symbol": "EURUSDm", "side": "buy", "volume": 0.1,

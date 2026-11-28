@@ -1317,6 +1317,34 @@ async def market_intelligence(s: Session = Depends(db), redis: Any = Depends(red
     return out
 
 
+@router.get("/execution")
+async def execution_intents(s: Session = Depends(db)) -> dict[str, Any]:
+    """Paper and DEMO orders that came from approved orchestrator proposals, newest first,
+    with their lifecycle (pending, sent, filled, protected, closed, rejected, expired), the
+    fill and slippage, and whether the stop-loss was verified on the broker."""
+
+    def rows() -> list[dict[str, Any]]:
+        it = models.ExecutionIntent
+        return [{"client_id": r.client_id, "venue": r.venue, "market": r.market,
+                 "symbol": r.symbol, "side": "buy" if r.side > 0 else "sell",
+                 "kind": r.kind, "module": r.module, "status": r.status,
+                 "quantity": ser(r.quantity), "notional_usd": ser(r.notional_usd),
+                 "entry_ref": ser(r.entry_ref), "stop": ser(r.stop), "target": ser(r.target),
+                 "fill_price": ser(r.fill_price), "slippage_bps": ser(r.slippage_bps),
+                 "stop_verified": r.stop_verified, "partial_taken": r.partial_taken,
+                 "events": r.events, "created_at": ser(r.created_at)}
+                for r in s.scalars(select(it).order_by(desc(it.created_at)).limit(100))]
+
+    out = await asyncio.to_thread(rows)
+    filled = [float(r["slippage_bps"]) for r in out if r["slippage_bps"] is not None]
+    return {"intents": out,
+            "summary": {"total": len(out),
+                        "by_status": {k: sum(1 for r in out if r["status"] == k)
+                                      for k in sorted({r["status"] for r in out})},
+                        "avg_slippage_bps": sum(filled) / len(filled) if filled else None},
+            "note": "Paper and DEMO orders only. Real-money trading is off."}
+
+
 @router.get("/portfolio-risk")
 async def portfolio_risk_book(redis: Any = Depends(redis_dep),
                               settings: Settings = Depends(settings_dep)) -> dict[str, Any]:

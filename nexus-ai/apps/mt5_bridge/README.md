@@ -108,6 +108,11 @@ positions, then carries out NEXUS's instructions: open, close, or move a stop.
 * NEXUS's limits apply to the demo account: 1% a day, 2.5% a week, and a 5% drawdown halt
   that only you can reset on the *All markets* page.
 * Your own trades (without NEXUS's magic number) are never touched.
+* **Version 1.1 of the demo trader** (Phase 7) also sends quotes and contract sizes for
+  GBPUSD, USDJPY, AUDUSD, USDCHF, USDCAD and NZDUSD when your account offers them. The
+  strategy orchestrator can then place approved demo trades on those pairs. Each trade
+  carries a stop-loss and a comment starting with `nxO`; it is sent once and never
+  resent. Replace your copy of `nexus_mt5_demo_trader.py` with the new one.
 
 **Stopping.** Close the window, or switch the markets back to RESEARCH.
 

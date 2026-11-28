@@ -66,7 +66,7 @@ GET_ROUTES = ["/api/v1/overview", "/api/v1/portfolio", "/api/v1/exchanges", "/ap
               "/api/v1/research/trend-forward", "/api/v1/research/library",
               "/api/v1/trading-bot", "/api/v1/strategy-modules",
               "/api/v1/intelligence/markets", "/api/v1/orchestrator",
-              "/api/v1/portfolio-risk"]
+              "/api/v1/portfolio-risk", "/api/v1/execution"]
 
 
 @pytest.mark.parametrize("path", GET_ROUTES)
@@ -1367,8 +1367,9 @@ def test_orchestrator_cycle_proposes_only_from_tested_modules(
     assert r.status_code == 200, r.text
     got = {b["symbol"]: b for b in r.json()["board"]}
     assert got["BTC/USDT"]["action"] == "BUY" and r.json()["history"]
-    # With a fresh paper equity snapshot the allocation is approved and sized:
-    # |60% - 30%| x (30% spot cap x 10,000 / 2 coins) = 450 USD.
+    # With a fresh paper equity snapshot the allocation is approved and sized from what
+    # the paper BOOK holds (nothing yet): 60% x (30% spot cap x 10,000 / 2 coins) - 0
+    # = 900 USD.
     with transaction(factory) as s:
         owner = s.scalar(select(models.User.id).where(models.User.role == "owner"))
         port = models.Portfolio(user_id=owner, name="main", mode="paper",
@@ -1382,12 +1383,123 @@ def test_orchestrator_cycle_proposes_only_from_tested_modules(
             open_positions=0))
     board = {b["symbol"]: b for b in asyncio.run(cycle(now + timedelta(minutes=10)))}
     risk = board["BTC/USDT"]["risk"]
-    assert risk["approved"] is True and D(risk["notional_usd"]) == D(450), risk
+    assert risk["approved"] is True and D(risk["notional_usd"]) == D(900), risk
+    ex = board["BTC/USDT"]["execution"]                 # crypto switch decides: sent or why not
+    assert ex["sent"] is True or "PAPER" in ex["why"], ex
+    listed = client.get("/api/v1/execution").json()
+    assert len(listed["intents"]) == (1 if ex["sent"] else 0)
     book = client.get("/api/v1/portfolio-risk").json()
     assert book["equity"] == "10000.00" and book["accounts"][0]["name"] == "crypto_paper"
     assert book["limits"]["weekly_loss"] == "0.025"
     with migrated_engine.begin() as c:
         c.execute(text("DELETE FROM orchestrator_decisions"))
         c.execute(text("DELETE FROM market_candles WHERE pair_id = :p"), {"p": pid})
+        c.execute(text("DELETE FROM execution_intents"))
         c.execute(text("DELETE FROM performance_snapshots"))
         c.execute(text("DELETE FROM portfolios WHERE mode = 'paper'"))
+
+
+def test_exness_demo_executes_approved_intents_once_with_verified_stops(
+        client: TestClient, migrated_engine: Engine) -> None:
+    from datetime import UTC, datetime
+    from decimal import Decimal as D
+
+    from nexus_db import make_session_factory
+    from nexus_execution import intents as ix
+    from nexus_strategies import exness_demo as plan
+    from sqlalchemy import text
+
+    r = sync_redis.Redis.from_url(os.environ["NEXUS_TEST_REDIS_URL"])
+    for k in r.scan_iter("nexus:mt5demo:*"):
+        r.delete(k)
+    login(client)
+    token = client.post("/api/v1/bridge-tokens", json={"name": "demo pc",
+                                                       "reason": "exness demo trading"},
+                        headers=CSRF).json()["token"]
+    auth = {"Authorization": f"Bearer {token}"}
+    url = "/api/v1/bridge/mt5/demo/sync"
+    gbp = {"name": "GBPUSDm", "base_name": "GBPUSD", "point": 0.00001,
+           "contract_size": 100000, "volume_min": 0.01, "volume_step": 0.01,
+           "volume_max": 200, "bid": 1.25, "ask": 1.25008}
+
+    def body(positions: list[dict[str, Any]] | None = None, results: list[Any] | None = None,
+             bid: float = 1.25) -> dict[str, Any]:
+        return {"bridge_version": "1.1", "server_utc_offset_hours": 0,
+                "account": {"login": 55555555, "trade_mode": "demo", "currency": "USD",
+                            "balance": "10000", "equity": "10000", "margin": "0",
+                            "margin_free": "10000", "leverage": 2000,
+                            "server": "Exness-MT5Trial", "company": "Exness"},
+                "symbols": [gbp | {"bid": bid, "ask": bid + 0.00008}],
+                "positions": positions or [], "bars": {}, "results": results or []}
+
+    def new_intent(qty: str = "30000") -> str:
+        with transaction(make_session_factory(migrated_engine)) as s:
+            it = ix.create(s, venue="exness_demo", market="forex", symbol="GBPUSD", side=1,
+                           kind="bracket", module="test_module", now=datetime.now(UTC),
+                           quantity=D(qty), entry_ref=D("1.25008"), stop=D("1.2480"),
+                           target=D("1.25424"))
+            assert it is not None
+            return str(it.client_id)
+
+    def status(cid: str) -> tuple[str, list[str]]:
+        with migrated_engine.begin() as c:
+            st, ev = c.execute(text("SELECT status, events FROM execution_intents "
+                                    "WHERE client_id = :c"), {"c": cid}).one()
+        return st, [e["kind"] for e in ev]
+
+    cid = new_intent()
+    out = client.post(url, json=body(), headers=auth).json()       # forex switch RESEARCH
+    assert out["instructions"] == [] and status(cid)[0] == "rejected"
+    assert client.post("/api/v1/markets/forex/autonomy",
+                       json={"autonomy": "PAPER", "reason": "forex on exness demo"},
+                       headers=CSRF).status_code == 200
+    cid = new_intent()
+    (ins,) = client.post(url, json=body(), headers=auth).json()["instructions"]
+    assert ins["action"] == "open" and ins["client_id"] == cid and ins["volume"] == 0.3
+    assert ins["sl"] == 1.248 and ins["tp"] == 1.25424 and ins["magic"] == plan.MAGIC
+    again = client.post(url, json=body(), headers=auth).json()["instructions"]
+    assert again == [] and status(cid)[0] == "sent"                # sent once, never again
+    filled = {"ticket": 91, "symbol": "GBPUSDm", "side": "buy", "volume": 0.3,
+              "price_open": 1.2501, "sl": 1.248, "tp": 1.25424, "time": 1,
+              "magic": plan.MAGIC, "comment": cid}
+    client.post(url, json=body([filled]), headers=auth)
+    assert status(cid) == ("protected", ["created", "sent", "filled", "stop_verified"])
+    up = client.post(url, json=body([filled], bid=1.2524), headers=auth).json()  # +1R
+    acts = [(i["action"], i["client_id"]) for i in up["instructions"]]
+    assert acts == [("close", f"{cid}p"), ("modify", f"{cid}b")]
+    client.post(url, json=body([]), headers=auth)                  # position gone
+    assert status(cid)[0] == "closed"
+    bad = new_intent()                                             # broker refusal
+    client.post(url, json=body(), headers=auth)
+    client.post(url, json=body(results=[{"client_id": bad, "retcode": 10019,
+                                         "message": "no money"}]), headers=auth)
+    assert status(bad)[0] == "rejected"
+    naked = new_intent()                                           # stop missing on fill
+    client.post(url, json=body(), headers=auth)
+    no_sl = filled | {"comment": naked, "sl": 0.0}
+    fixes = [client.post(url, json=body([no_sl]), headers=auth).json()["instructions"]
+             for _ in range(3)]
+    assert [f[0]["action"] for f in fixes] == ["modify", "modify", "close"]
+    assert status(naked)[1].count("stop_fix") == 2 and "unprotected" in status(naked)[1]
+    with transaction(make_session_factory(migrated_engine)) as s:   # one active per symbol
+        assert ix.create(s, venue="exness_demo", market="forex", symbol="GBPUSD", side=1,
+                         kind="bracket", module="dup", now=datetime.now(UTC),
+                         quantity=D(1), entry_ref=D(1), stop=D("0.9"), target=D("1.2")) is None
+    client.post(url, json=body([]), headers=auth)                  # the closed position
+    assert status(naked)[0] == "closed"
+    tiny = new_intent(qty="400")                                   # below 0.01 lot
+    client.post(url, json=body(), headers=auth)
+    assert status(tiny)[0] == "rejected"
+    late = new_intent()                                            # no answer for 30 min
+    client.post(url, json=body(), headers=auth)
+    with migrated_engine.begin() as c:
+        c.execute(text("UPDATE execution_intents SET events = jsonb_set(events, '{1,at}', "
+                       "to_jsonb(CAST(:t AS text))) WHERE client_id = :c"),
+                  {"t": "2026-01-01T00:00:00+00:00", "c": late})
+    assert client.post(url, json=body(), headers=auth).json()["instructions"] == []
+    assert status(late)[0] == "rejected" and status(late)[1][-1] == "rejected"  # not resent
+    client.post(url, json=body([filled | {"comment": late}]), headers=auth)  # filled late
+    assert status(late) == ("protected", ["created", "sent", "rejected", "filled",
+                                          "stop_verified"])
+    with migrated_engine.begin() as c:
+        c.execute(text("DELETE FROM execution_intents"))

@@ -105,6 +105,7 @@ class Verdict:
     candidates: list[dict[str, Any]] = field(default_factory=list)
     meta: dict[str, float] = field(default_factory=dict)
     risk: dict[str, Any] | None = None   # the portfolio risk engine's answer
+    execution: dict[str, Any] | None = None   # the paper/demo order it led to, or why not
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)

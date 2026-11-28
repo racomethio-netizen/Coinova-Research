@@ -11,6 +11,7 @@ const TONE: Record<string, "good" | "bad" | "muted"> = { BUY: "good", SELL: "bad
 
 function Why({ d }: { d: Any }) {
   const lines: string[] = [...(d.reasons ?? [])];
+  if (d.execution) lines.push(d.execution.sent ? `paper/demo order sent (${d.execution.client_id})` : `no order: ${d.execution.why}`);
   for (const c of d.candidates ?? []) {
     if (!c.eligible) lines.push(`${c.module} (${c.side}) not taken: ${c.why_not.join(", ")}`);
   }
